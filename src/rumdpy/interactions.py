@@ -91,8 +91,7 @@ def apply_shifted_force_cutoff(pairpotential):  # Cut-off by computing potential
 #### Interactions 
 ###################################################
 
-def make_interactions(configuration, pb, tp, pairpotential_calculator, 
-                       dist_sq_dr_function, dist_sq_function, params_function, 
+def make_interactions(configuration, pb, tp, pairpotential_calculator, params_function, 
                        num_cscalars, verbose=True, gridsync=True, UtilizeNIII=True):
     D = configuration.D
     num_part = configuration.N
@@ -116,8 +115,8 @@ def make_interactions(configuration, pb, tp, pairpotential_calculator,
     ptype_function = numba.njit(configuration.ptype_function)
     params_function = numba.njit(params_function)
     pairpotential_calculator = numba.njit(pairpotential_calculator)
-    dist_sq_dr_function = numba.njit(dist_sq_dr_function)
-    dist_sq_function = numba.njit(dist_sq_function)
+    dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+    dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
     #@cuda.jit('void(float32[:,:,:], float32[:], float32, int32[:])', device=gridsync)
     @cuda.jit( device=gridsync)

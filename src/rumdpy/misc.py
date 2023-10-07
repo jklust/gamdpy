@@ -52,5 +52,6 @@ def plot_scalars(df, N, D, figsize):
     axs[2].set_xlabel('U/N')
     axs[2].set_ylabel('W/N')
     axs[2].legend()
+    plt.show()
 
     return

@@ -9,7 +9,7 @@ class Configuration():
     sid = {'u':0, 'w':1, 'lap':2, 'm':3, 'k':4, 'fsq':5}
     num_cscalars = 3 # Number of scalars to be updated by force calculator
     
-    def __init__(self, N, D, ftype=np.float32):
+    def __init__(self, N, D, simbox_data, ftype=np.float32):
         self.N = N
         self.D = D
         self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
@@ -17,6 +17,7 @@ class Configuration():
         self.r_im = np.zeros((N, D), dtype=np.int)
         self.ptype = np.zeros(N, dtype=np.int)
         self.ptype_function = self.make_ptype_function()
+        self.simbox = simbox(D, simbox_data)
         return
     
     def set_vector(self, key, data):
@@ -51,6 +52,7 @@ class Configuration():
         self.d_scalars = cuda.to_device(self.scalars)
         self.d_r_im = cuda.to_device(self.r_im)
         self.d_ptype = cuda.to_device(self.ptype)
+        self.simbox.copy_to_device()
         return
     
     def make_ptype_function(self):
@@ -58,6 +60,40 @@ class Configuration():
             ptype = ptype_array[pid]          # Default: read from ptype_array
             return ptype
         return ptype_function
+
+class simbox():
+    def __init__(self, D, data):
+        self.D = D
+        self.data = data.copy()
+        self.dist_sq_dr_function, self.dist_sq_function = self.make_simbox_functions()
+        return
+
+    def copy_to_device(self):
+        self.d_data = cuda.to_device(self.data)
+        
+    def make_simbox_functions(self):
+        D = self.D
+        def dist_sq_dr_function(ri, rj, sim_box, dr): # simbox could be compiled in, but not so flexible e.g for NpT
+            dist_sq = numba.float32(0.0)
+            for k in range(D):
+                dr[k] = ri[k] - rj[k]
+                box_k = sim_box[k]
+                dr[k] += (-box_k if numba.float32(2.0)*dr[k]>+box_k else 
+                          (+box_k if numba.float32(2.0)*dr[k]<-box_k else numba.float32(0.0))) # MIC 
+                dist_sq = dist_sq + dr[k]*dr[k]
+            return dist_sq
+
+        def dist_sq_function(ri, rj, sim_box): # simbox could be compiled in, but not so flexible e.g for NpT
+            dist_sq = numba.float32(0.0)
+            for k in range(D):
+                dr_k = ri[k] - rj[k]
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0)*dr_k>+box_k else 
+                         (+box_k if numba.float32(2.0)*dr_k<-box_k else numba.float32(0.0))) # MIC 
+                dist_sq = dist_sq + dr_k*dr_k
+            return dist_sq   
+    
+        return dist_sq_dr_function, dist_sq_function
     
 # Helper functions
 
@@ -97,27 +133,4 @@ def params_function(i_type, j_type, params):
 
 ##### Simbox, so far only functions... Should include also 'put back in box'-function ############
 
-def make_simbox_functions(D):
-    
-    def dist_sq_dr_function(ri, rj, sim_box, dr): # simbox could be compiled in, but not so flexible e.g for NpT
-        dist_sq = numba.float32(0.0)
-        for k in range(D):
-            dr[k] = ri[k] - rj[k]
-            box_k = sim_box[k]
-            dr[k] += (-box_k if numba.float32(2.0)*dr[k]>+box_k else 
-                     (+box_k if numba.float32(2.0)*dr[k]<-box_k else numba.float32(0.0))) # MIC 
-            dist_sq = dist_sq + dr[k]*dr[k]
-        return dist_sq
-
-    def dist_sq_function(ri, rj, sim_box): # simbox could be compiled in, but not so flexible e.g for NpT
-        dist_sq = numba.float32(0.0)
-        for k in range(D):
-            dr_k = ri[k] - rj[k]
-            box_k = sim_box[k]
-            dr_k += (-box_k if numba.float32(2.0)*dr_k>+box_k else 
-                    (+box_k if numba.float32(2.0)*dr_k<-box_k else numba.float32(0.0))) # MIC 
-            dist_sq = dist_sq + dr_k*dr_k
-        return dist_sq   
-    
-    return dist_sq_dr_function, dist_sq_function
 
