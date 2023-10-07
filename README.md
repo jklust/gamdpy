@@ -39,18 +39,36 @@ Unfortunately kernel calls are slow, especially in numba.cuda (as compared to c+
 There is a limit to how many thread blocks can be used with grid syncronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synconization. A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
 
-## TODO, short term
+## TODO, short term:
 - [x] Break single file into several files/modules 
-- [ ] Start using GIT
-- [ ] Make it into a python package that can be installed locally by pip
+- [x] Start using GIT
+- [x] Make it into a python package that can be installed locally by pip
 - [ ] Implement (FENE) spring, and settle on structure for defining interactions (beyond pair potentials)
 - [ ] Implement exlusion list
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] upload to GitLab/Hub
-- [ ] Use sympy to differential pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
+- [ ] Use 'colarray' for vectors and scalars in Configuration
+- [ ] Use colarray to introduce output-array from integrator
+- [ ] Configuration: include r_im in vectors
+- [ ] Move r_ref from Configuration to nblist
+- [ ] Requirements/dependendcies, especialy to use grid-sync 
+- [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Autotuner
 - [ ] Add CPU support (can it be done as a decorator?)
+- [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 
-## TODO, long term
-- [ ] make public GitLab/Hub page
-- [ ] upload to pypi
+
+## TODO, long term:
+- [ ] Add convenience functions/classes for non-expert users
+- [ ] make GitLab/Hub adress users, not ourselves (remove dev-state of page)
+- [ ] make installable by pip for all, by uploading to pypi
+
+
+## Various tools/strategies we will use:
+- Git ( https://git-scm.com/doc ).
+- Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
+- ... to be hosted on readthedocs ( https://about.readthedocs.com/ ).
+- doctest (no more failing examples in examples/docs because it was not updated!).
+- Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
+- Automatic testing upon uploading (CI). How to get acces to GPU's.
+- Systematic benchmarking. Substantial degradation in performance will be considered a bug.
