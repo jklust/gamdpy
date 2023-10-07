@@ -8,8 +8,8 @@ This is the developers version of the rumdpy package, not for generaæ consumpti
 
 ### 1. Configuration
 A class containing all relevant information about a configuration. Methods are kept to a minimum, relying instead on stand-alone functions taking configurations as input.
-- Vectors (r, v, f, etc) N,D float array storing D-dimensional vector for each particle 
-- Scalars (mass, kinetic energy, etc)  N, float array storing scalar each particle 
+- Vectors (r, v, f, etc): (N,D) float array storing D-dimensional vector for each particle 
+- Scalars (mass, kinetic energy, etc) (N,) float array storing scalar each particle 
 - sim_box (data + functions)
 
 ### 2. Integrator
@@ -43,6 +43,7 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
+- [ ] cut = 2.5 hardcoded - change that!
 - [ ] Implement (FENE) spring, and settle on structure for defining interactions (beyond pair potentials)
 - [ ] Implement exlusion list
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
