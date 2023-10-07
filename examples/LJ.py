@@ -3,7 +3,7 @@ import rumdpy as rp
 from numba import cuda
 import pandas as pd
 
-# Parameters determing how computations should be done. Schould be collected in a 'compute_plan' or something...
+# Parameters determing how computations should be done. Should be collected in a 'compute_plan' or something...
 UtilizeNIII = False
 gridsync = True
 pb = 8
@@ -13,7 +13,7 @@ tp = 16
 positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442)
 N, D = positions.shape
 
-### Make configuration ###
+### Make configuration. Could be read grom file, but this shows flexibility ###
 c1 = rp.Configuration(N, D, simbox_data)
 c1['r'] = positions
 c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
@@ -42,6 +42,7 @@ interactions = rp.make_interactions(c1, pb=pb, tp=tp,
                                     verbose=True, gridsync=gridsync, UtilizeNIII=False,)
 
 integrator_step = rp.make_step_nve(c1, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
+
 integrate = rp.make_integrator(c1, integrator_step, interactions, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
 
 dt = np.float32(0.005)
