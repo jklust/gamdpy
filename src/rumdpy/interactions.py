@@ -22,8 +22,13 @@ class PairPotential():
             cscalars[2] += numba.float32(1-D)*s + umm               # Laplacian 
             return
 
+        def params_function(i_type, j_type, params):
+            result = params[i_type, j_type]            # default: read from params array
+            return result
+
         self.pairpotential_function = pairpotential_function
         self.pairpotential_calculator = pairpotential_calculator
+        self.params_function = params_function
         self.params = params
         self.nblist = NbList(N, max_num_nbs)
         return
@@ -32,9 +37,6 @@ class PairPotential():
         self.d_params = cuda.to_device(self.params)
         self.nblist.copy_to_device()
     
-    def params_function(i_type, j_type, params):
-        result = params[i_type, j_type]            # default: read from params array
-        return result
 
 # Helper functions
 
@@ -112,7 +114,7 @@ class NbList():
 #### Interactions 
 ###################################################
 
-def make_interactions(configuration, pb, tp, pairpotential_calculator, params_function, 
+def make_interactions(configuration, pb, tp, pair_potential, #pairpotential_calculator, params_function, 
                        num_cscalars, verbose=True, gridsync=True, UtilizeNIII=True):
     D = configuration.D
     num_part = configuration.N
@@ -134,8 +136,8 @@ def make_interactions(configuration, pb, tp, pairpotential_calculator, params_fu
     # Prepare user-specified functions for inclusion in kernel(s)
     # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 
     ptype_function = numba.njit(configuration.ptype_function)
-    params_function = numba.njit(params_function)
-    pairpotential_calculator = numba.njit(pairpotential_calculator)
+    params_function = numba.njit(pair_potential.params_function)
+    pairpotential_calculator = numba.njit(pair_potential.pairpotential_calculator)
     dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 

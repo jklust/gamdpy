@@ -127,10 +127,3 @@ def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
     
     return conf*scale_factor, sim_box*scale_factor
 
-def params_function(i_type, j_type, params):
-    result = params[i_type, j_type]             # default: read from params array
-    return result
-
-##### Simbox, so far only functions... Should include also 'put back in box'-function ############
-
-

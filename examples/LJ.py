@@ -9,11 +9,11 @@ gridsync = True
 pb = 8
 tp = 16
 
-# Generate a FCC lattice with a given density 
+# Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
 positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442)
 N, D = positions.shape
 
-### Make configuration. Could be read from file, but this shows flexibility ###
+### Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
 c1 = rp.Configuration(N, D, simbox_data)
 c1['r'] = positions
 c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
@@ -27,12 +27,9 @@ print('Pairpotential paramaters:\n', params)
 LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.LJ_12_6), UtilizeNIII=UtilizeNIII, params=params, max_num_nbs=1000)
 num_cscalars = 3
 
-# NOTE: following objects are specific to system size and other parameters for technical reasons
+# NOTE: following three objects are specific to system size and other parameters for technical reasons
 
-interactions = rp.make_interactions(c1, pb=pb, tp=tp,
-                                    pairpotential_calculator=LJ.pairpotential_calculator,
-                                    params_function=rp.params_function,
-                                    num_cscalars=num_cscalars, 
+interactions = rp.make_interactions(c1, pb=pb, tp=tp, pair_potential = LJ, num_cscalars=num_cscalars, 
                                     verbose=True, gridsync=gridsync, UtilizeNIII=False,)
 
 integrator_step = rp.make_step_nve(c1, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
