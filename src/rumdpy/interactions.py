@@ -7,7 +7,10 @@ from numba import cuda
 class PairPotential():
     """ Pair potential """
 
-    def __init__(self, pairpotential_function, D, UtilizeNIII, params):
+    def __init__(self, configuration, pairpotential_function, UtilizeNIII, params, max_num_nbs):
+        N = configuration.N
+        D = configuration.D
+        
         def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
             u, s, umm = pairpotential_function(ij_dist, ij_params)
             for k in range(D):
@@ -22,8 +25,12 @@ class PairPotential():
         self.pairpotential_function = pairpotential_function
         self.pairpotential_calculator = pairpotential_calculator
         self.params = params
-        self.d_params = cuda.to_device(params)
+        self.nblist = NbList(N, max_num_nbs)
         return
+    
+    def copy_to_device(self):
+        self.d_params = cuda.to_device(self.params)
+        self.nblist.copy_to_device()
     
     def params_function(i_type, j_type, params):
         result = params[i_type, j_type]            # default: read from params array
@@ -86,6 +93,20 @@ def apply_shifted_force_cutoff(pairpotential):  # Cut-off by computing potential
         s -= s_cut
         return u, s, umm
     return potential
+
+####################################################
+### NBlist
+####################################################'
+
+class NbList():
+    def __init__(self, num_part, max_num_nbs):
+        self.nblist = np.zeros((num_part, max_num_nbs+1), dtype=np.int32)
+        self.nbflag = np.zeros(3, dtype=np.int32)
+
+    def copy_to_device(self):
+        self.d_nblist = cuda.to_device(self.nblist)
+        self.d_nbflag = cuda.to_device(self.nbflag)
+    
 
 ####################################################
 #### Interactions 
