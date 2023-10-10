@@ -4,7 +4,7 @@ from numba import cuda
 import pandas as pd
 
 # Parameters determing how computations should be done. Should be collected in a 'compute_plan' or something...
-UtilizeNIII = False
+UtilizeNIII = True
 gridsync = True
 pb = 8
 tp = 16
@@ -30,7 +30,7 @@ num_cscalars = 3
 # NOTE: following three objects are specific to system size and other parameters for technical reasons
 
 interactions = rp.make_interactions(c1, pb=pb, tp=tp, pair_potential = LJ, num_cscalars=num_cscalars, 
-                                    verbose=True, gridsync=gridsync, UtilizeNIII=False,)
+                                    verbose=True, gridsync=gridsync, UtilizeNIII=UtilizeNIII,)
 
 integrator_step = rp.make_step_nve(c1, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
 
