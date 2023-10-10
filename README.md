@@ -47,7 +47,7 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [ ] Implement (FENE) spring, and settle on structure for defining interactions (beyond pair potentials)
 - [ ] Implement exlusion list
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
-- [ ] upload to GitLab/Hub
+- [x] upload to GitLab
 - [ ] Use 'colarray' for vectors and scalars in Configuration
 - [ ] Use colarray to introduce output-array from integrator
 - [ ] Configuration: include r_im in vectors
