@@ -73,3 +73,5 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
 - Automatic testing upon uploading (CI). How to get acces to GPU's.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
+
+
