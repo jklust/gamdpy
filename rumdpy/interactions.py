@@ -7,9 +7,10 @@ from numba import cuda
 class PairPotential():
     """ Pair potential """
 
-    def __init__(self, configuration, pairpotential_function, UtilizeNIII, params, max_num_nbs):
+    def __init__(self, configuration, pairpotential_function, params, max_num_nbs, compute_plan):
         N = configuration.N
         D = configuration.D
+        UtilizeNIII = compute_plan['UtilizeNIII']
         
         def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
             u, s, umm = pairpotential_function(ij_dist, ij_params)
@@ -114,13 +115,15 @@ class NbList():
 #### Interactions 
 ###################################################
 
-def make_interactions(configuration, pb, tp, pair_potential, #pairpotential_calculator, params_function, 
-                       num_cscalars, verbose=True, gridsync=True, UtilizeNIII=True):
+def make_interactions(configuration, pair_potential, num_cscalars, compute_plan, verbose=True,):
     D = configuration.D
     num_part = configuration.N
-    #ptype_function = configuration.ptype_function
+    pb = compute_plan['pb']
+    tp = compute_plan['tp']
+    gridsync = compute_plan['gridsync']
+    UtilizeNIII = compute_plan['UtilizeNIII']
     num_blocks = (num_part-1)//pb + 1    
-    
+
     if verbose:
         print(f'Generating interactions for {num_part} particles in {D} dimensions:')
         print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')

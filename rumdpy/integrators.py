@@ -3,8 +3,10 @@ import numba
 from numba import cuda
 import math
 
-def make_integrator(configuration, integration_step, compute_interactions, 
-                    pb, tp, verbose=True, gridsync=True):
+def make_integrator(configuration, integration_step, compute_interactions, compute_plan, verbose=True,):
+    pb = compute_plan['pb']
+    tp = compute_plan['tp']
+    gridsync = compute_plan['gridsync']
     D = configuration.D
     num_part = configuration.N
     num_blocks = (num_part-1)//pb + 1  
@@ -35,7 +37,10 @@ def make_integrator(configuration, integration_step, compute_interactions,
     return 
 
 
-def make_step_nve(configuration, pb, tp, verbose=True, gridsync=True):
+def make_step_nve(configuration, compute_plan, verbose=True,):
+    pb = compute_plan['pb']
+    tp = compute_plan['tp']
+    gridsync = compute_plan['gridsync']   
     D = configuration.D
     num_part = configuration.N
     num_blocks = (num_part-1)//pb + 1  
@@ -98,7 +103,10 @@ def make_step_nve(configuration, pb, tp, verbose=True, gridsync=True):
 
     
     
-def make_step_nvt(configuration, pb, tp, verbose=True, gridsync=True):
+def make_step_nvt(configuration, compute_plan, verbose=True,):
+    pb = compute_plan['pb']
+    tp = compute_plan['tp']
+    gridsync = compute_plan['gridsync']   
     D = configuration.D
     num_part = configuration.N
     num_blocks = (num_part-1)//pb + 1  

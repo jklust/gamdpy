@@ -4,10 +4,10 @@ from numba import cuda
 import pandas as pd
 
 # Parameters determing how computations should be done. Should be collected in a 'compute_plan' or something...
-UtilizeNIII = True
-gridsync = True
-pb = 8
-tp = 16
+#UtilizeNIII = True
+#gridsync = True
+#pb = 8
+#tp = 16
 
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
 positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442)
@@ -20,24 +20,26 @@ c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
 c1['m'] =  np.ones(N, dtype=np.float32)     # Set masses
 c1.ptype = np.zeros(N, dtype=np.int32)      # Set types
 
+compute_plan = rp.get_default_compute_plan(c1)
+print('compute_plan: ', compute_plan)
+
 # Make the pair potential
 params = np.zeros((1,1), dtype="f,f,f")
 params[0][0] = (4., -4., 2.5)
 print('Pairpotential paramaters:\n', params)
-LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.LJ_12_6), UtilizeNIII=UtilizeNIII, params=params, max_num_nbs=1000)
+LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.LJ_12_6), params=params, max_num_nbs=1000, compute_plan=compute_plan)
 num_cscalars = 3
 
-# NOTE: following three objects are specific to system size and other parameters for technical reasons
+# NOTE: following three objects are specific to system size and compute_plan for technical reasons
 
-interactions = rp.make_interactions(c1, pb=pb, tp=tp, pair_potential = LJ, num_cscalars=num_cscalars, 
-                                    verbose=True, gridsync=gridsync, UtilizeNIII=UtilizeNIII,)
+interactions = rp.make_interactions(c1,pair_potential = LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=True,)
 
-integrator_step = rp.make_step_nve(c1, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
+integrator_step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=True)
 
-integrate = rp.make_integrator(c1, integrator_step, interactions, pb=pb, tp=tp, verbose=True, gridsync=gridsync)
+integrate = rp.make_integrator(c1, integrator_step, interactions, compute_plan=compute_plan, verbose=True)
 
 dt = np.float32(0.005)
-skin = np.float32(0.5)
+skin = np.float32(compute_plan['skin'])
 
 c1.copy_to_device()           
 LJ.copy_to_device()
@@ -74,7 +76,7 @@ print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-if UtilizeNIII:
+if compute_plan['UtilizeNIII']: # This correction should not be necesarry in user-land
     df['u'] *= 2
     df['w'] *= 2
     df['lap'] *= 2

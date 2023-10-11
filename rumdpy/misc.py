@@ -24,6 +24,43 @@ def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
     umm = numba.float32(156.0)*A12*invDist14 + numba.float32(42.0)*A6*invDist8
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)
 
+def get_default_compute_plan(configuration):
+    """
+    return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 
+    For now this only depends on the number of particles, but should also depend on cutoff and density, and ...
+    """
+    N = configuration.N
+
+    # pb: particle per (thread) block
+    pb = 2**int(math.log2(N/256))
+    if pb<8:
+        pb=8
+
+    # tp: threads per particle
+    tp = 2**int(math.log2(16*1024/N))
+    if tp<1:
+        tp=1
+    if tp>32:
+        tp=32
+
+    # skin: used when updating nblist
+    skin = np.float32(0.5)
+    if N>6*1024:
+        skin = np.float32(1.0) # We are (for now using a N^2 nblist updater, so make the nblist be valid for many steps)
+
+    # UtilizeNIII: Boolean flag indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
+    # Utilization of NIII is implemented by using atomic add's to the force array, so it is inefficient at small system sizes where a lot of conflicts occur.
+    UtilizeNIII = True
+    if N<16*1024:
+        UtilizeNIII = False
+
+    # gridsync: bolean flag indicating whether synchronization should be done via grid.sync()
+    gridsync = True
+    if  N>16*1024:
+        gridsync = False
+
+    return {'pb':pb, 'tp':tp, 'skin':skin, 'UtilizeNIII':UtilizeNIII, 'gridsync':gridsync}
+        
 def plot_scalars(df, N, D, figsize):
     df['e'] = df['u'] + df['k'] # Total energy
     df['Tkin'] =2*df['k']/D/(N-1)
