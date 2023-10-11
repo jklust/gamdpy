@@ -9,13 +9,13 @@ class Configuration():
     sid = {'u':0, 'w':1, 'lap':2, 'm':3, 'k':4, 'fsq':5}
     num_cscalars = 3 # Number of scalars to be updated by force calculator
     
-    def __init__(self, N, D, simbox_data, ftype=np.float32):
+    def __init__(self, N, D, simbox_data, ftype=np.float32, itype=np.int32):
         self.N = N
         self.D = D
         self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
         self.scalars = np.zeros((N, len(self.sid)), dtype=ftype)
-        self.r_im = np.zeros((N, D), dtype=np.int)
-        self.ptype = np.zeros(N, dtype=np.int)
+        self.r_im = np.zeros((N, D), dtype=itype)
+        self.ptype = np.zeros(N, dtype=itype)
         self.ptype_function = self.make_ptype_function()
         self.simbox = simbox(D, simbox_data)
         return
