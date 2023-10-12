@@ -53,7 +53,7 @@ def check_cuda(verbose=True):
     return True
 
 
-def check_gpu(device_id=0):
+def check_gpu_pycuda(device_id=0):
     """ Print some information about the GPU. """
     import pycuda.driver as cuda
 
@@ -80,6 +80,30 @@ def check_gpu(device_id=0):
     print("Total Constant Memory:", attributes[cuda.device_attribute.TOTAL_CONSTANT_MEMORY])
     print("Warp Size:", attributes[cuda.device_attribute.WARP_SIZE])
 
+def check_gpu(device_id=None):
+    """ Print some information about the GPU. """
+    from numba import cuda
+
+    # Get the device
+    if device_id==None:
+        device = cuda.get_current_device()
+    else:
+        device = cuda.select_device(device_id)
+
+    # Print relevant attributes
+    print("Device Name:", device.name)
+    print("Compute Capability:", device.compute_capability)
+    print("Max Threads Per Block:", device.MAX_THREADS_PER_BLOCK)
+    print("Max Block Dimensions (x, y, z):",
+          device.MAX_BLOCK_DIM_X, device.MAX_BLOCK_DIM_Y, device.MAX_BLOCK_DIM_Z)
+    print("Max Grid Dimensions (x, y, z):",
+          device.MAX_GRID_DIM_X, device.MAX_GRID_DIM_Y, device.MAX_GRID_DIM_Z)
+    print("Max Shared Memory Per Block:", device.MAX_SHARED_MEMORY_PER_BLOCK)
+    print("Total Constant Memory:", device.TOTAL_CONSTANT_MEMORY)
+    print("Warp Size:", device.WARP_SIZE)
+    print("L2 cache size:", device.L2_CACHE_SIZE)
+    print("Max registers per block:", device.MAX_REGISTERS_PER_BLOCK)
+    print("Single to double perfomance ratio:", device.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO)
 
 if __name__ == '__main__':
     print('  ..:: CUDA information ::..')
