@@ -43,7 +43,9 @@ def check_gridsync(verbose=True):
     except numba.cuda.cudadrv.driver.LinkerError as e:
         if verbose:
             print('Warning: gridsync is not supported. Try this hack:')
+            print('Find where libcudadevrt.a is located, and write something like this')
             print('    ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .')
+            print('in the directory where you run the code.')
         return False
 
     return True
