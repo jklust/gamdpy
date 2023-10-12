@@ -22,7 +22,12 @@ def gridsync_example():
 
 
 def check_gridsync(verbose=True):
-    """ Check CUDA availability, versions, and test if gridsync is supported. Returns True if gridsync is supported. """
+    """ Check CUDA availability, versions, and test if gridsync is supported. Returns True if gridsync is supported.
+
+    If gridsync is not supported, try this hack:
+        ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
+    in the directory where you run the code.
+    """
     import numba
     from numba import cuda
 
@@ -37,7 +42,8 @@ def check_gridsync(verbose=True):
         gridsync_example()
     except numba.cuda.cudadrv.driver.LinkerError as e:
         if verbose:
-            print('Warning: gridsync is not supported')
+            print('Warning: gridsync is not supported. Try this hack:')
+            print('    ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .')
         return False
 
     return True
