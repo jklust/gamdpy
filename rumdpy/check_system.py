@@ -2,9 +2,24 @@
 
 
 
+
+def check_cuda(verbose=True):
+    """ Check CUDA availability, versions, and test if gridsync is supported. Returns True if gridsync is supported."""
+    import numba
+    from numba import cuda
+
+    if verbose:
+        print('  ..:: CUDA information ::..')
+        print(f'{numba.__version__ = }')
+        print(f'{numba.cuda.is_available() = }')
+        print(f'{numba.cuda.is_supported_version() = }')
+        print(f'{cuda.runtime.get_version() = }')
+
+
 def gridsync_example():
     """ Example from https://numba.readthedocs.io/en/stable/cuda/cooperative_groups.html """
     from numba import cuda, int32
+    import numpy as np
 
     sig = (int32[:, ::1],)
 
@@ -21,26 +36,24 @@ def gridsync_example():
             M[row, col] = M[row - 1, opposite] + 1
             g.sync()
 
+    A = np.zeros((1024, 1024), dtype=np.int32)
+    blockdim = 32
+    griddim = A.shape[1] // blockdim
+    sequential_rows[griddim, blockdim](A)
 
-def check_cuda(verbose=True):
-    """ Check CUDA availability, versions, and test if gridsync is supported. Returns True if gridsync is supported.
 
-    If gridsync is not supported, try this hack:
-        ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
-    in the directory where you run the code.
-    """
+    overload = sequential_rows.overloads[(int32[:, ::1],)]
+    max_blocks = overload.max_cooperative_grid_blocks(blockdim)
+    return max_blocks
+
+def check_gridsync(verbose=True):
+    """ Check if gridsync is supported. Returns True if gridsync is supported."""
     import numba
     from numba import cuda
-
-    if verbose:
-        print(f'{numba.__version__ = }')
-        print(f'{numba.cuda.is_available() = }')
-        print(f'{numba.cuda.is_supported_version() = }')
-        print(f'{cuda.runtime.get_version() = }')
-
     # See if gridsync is working
+    max_blocks = None
     try:
-        gridsync_example()
+        max_blocks = gridsync_example()
     except numba.cuda.cudadrv.driver.LinkerError as e:
         if verbose:
             print('Warning: gridsync is not supported. Try this hack:')
@@ -49,36 +62,11 @@ def check_cuda(verbose=True):
             print('in the directory where you run the code.')
         return False
 
-    print('Confirmed that gridsync is supported.')
+    if verbose:
+        print('  ..:: Gridsync check ::..')
+        print('Confirmed that gridsync is supported by executing test code.')
+        print(f'{max_blocks = }')
     return True
-
-
-def check_gpu_pycuda(device_id=0):
-    """ Print some information about the GPU. """
-    import pycuda.driver as cuda
-
-    # Initialize the CUDA driver
-    cuda.init()
-
-    # Get the device
-    device = cuda.Device(device_id)
-
-    # Fetch device attributes
-    attributes = device.get_attributes()
-
-    # Print relevant attributes
-    print("Device Name:", device.name())
-    print("Compute Capability:", device.compute_capability())
-    print("Max Threads Per Block:", attributes[cuda.device_attribute.MAX_THREADS_PER_BLOCK])
-    print("Max Block Dimensions (x, y, z):", attributes[cuda.device_attribute.MAX_BLOCK_DIM_X],
-          attributes[cuda.device_attribute.MAX_BLOCK_DIM_Y],
-          attributes[cuda.device_attribute.MAX_BLOCK_DIM_Z])
-    print("Max Grid Dimensions (x, y, z):", attributes[cuda.device_attribute.MAX_GRID_DIM_X],
-          attributes[cuda.device_attribute.MAX_GRID_DIM_Y],
-          attributes[cuda.device_attribute.MAX_GRID_DIM_Z])
-    print("Max Shared Memory Per Block:", attributes[cuda.device_attribute.MAX_SHARED_MEMORY_PER_BLOCK])
-    print("Total Constant Memory:", attributes[cuda.device_attribute.TOTAL_CONSTANT_MEMORY])
-    print("Warp Size:", attributes[cuda.device_attribute.WARP_SIZE])
 
 def check_gpu(device_id=None):
     """ Print some information about the GPU. """
@@ -91,6 +79,7 @@ def check_gpu(device_id=None):
         device = cuda.select_device(device_id)
 
     # Print relevant attributes
+    print('  ..:: GPU information ::..')
     print("Device Name:", device.name)
     print("Compute Capability:", device.compute_capability)
     print("Max Threads Per Block:", device.MAX_THREADS_PER_BLOCK)
@@ -105,8 +94,8 @@ def check_gpu(device_id=None):
     print("Max registers per block:", device.MAX_REGISTERS_PER_BLOCK)
     print("Single to double perfomance ratio:", device.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO)
 
+
 if __name__ == '__main__':
-    print('  ..:: CUDA information ::..')
     check_cuda()
-    print('  ..:: GPU information ::..')
+    check_gridsync()
     check_gpu()
