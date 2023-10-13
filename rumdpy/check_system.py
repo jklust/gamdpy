@@ -93,6 +93,7 @@ def check_gpu(device_id=None):
     print("L2 cache size:", device.L2_CACHE_SIZE)
     print("Max registers per block:", device.MAX_REGISTERS_PER_BLOCK)
     print("Single to double performance ratio:", device.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO)
+    print("Number of Streaming Multiprocessors:", device.MULTIPROCESSOR_COUNT)
 
 
 if __name__ == '__main__':
