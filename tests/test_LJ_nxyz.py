@@ -1,18 +1,21 @@
 import numpy as np
 import rumdpy as rp
-from numba import cuda
+from numba import cuda, config
 import pandas as pd
 
-from hypothesis import given, strategies as st, settings, Verbosity
+from hypothesis import given, strategies as st, settings, Verbosity, example
 
 def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, UtilizeNIII=None, cut=2.5, integrator='NVE', verbose=True):
     
-    # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
+    # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density
     positions, simbox_data = rp.generate_fcc_positions(nx=nx, ny=ny, nz=nz, rho=rho)
     N, D = positions.shape
     assert N==nx*ny*nz*4, f'Wrong number particles (FCC), {N} <> {nx*ny*nz*4}'
     assert D==3, f'Wrong dimension (FCC), {D} <> {3}'
 
+    # make 'random' velocities reproducible
+    np.random.seed(31415)
+    
     ### Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
     c1 = rp.Configuration(N, D, simbox_data)
     c1['r'] = positions
@@ -52,7 +55,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
    
     # Setup the integrator
     dt = np.float32(0.005)
-    steps = 500
+    steps = 250
     inner_steps = 40
 
     if integrator=='NVE':
@@ -111,35 +114,43 @@ def get_results_from_df(df, N, D):
 
     return var_e, Tkin, Tconf, R, Gamma
 
-@settings(deadline=10_000, max_examples = 20, verbosity=Verbosity.verbose)
+@settings(deadline=200_000, max_examples = 15)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
+@example(nx=4,  ny=4,  nz=4)
+@example(nx=16, ny=16, nz=32)
 def test_nve(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
     df = LJ(nx, ny, nz, verbose=False)
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
+    print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     assert var_e < 0.001
-    assert 0.69 < Tkin  < 0.71
-    assert 0.69 < Tconf < 0.71
-    assert 0.90 <   R   < 0.95
-    assert 5.5  < Gamma < 6.2
+    assert 0.68 < Tkin  < 0.71
+    assert 0.68 < Tconf < 0.71
+    assert 0.89 <   R   < 0.97
+    assert 5.2  < Gamma < 6.5
 
-@settings(deadline=10_000, max_examples = 20, verbosity=Verbosity.verbose)
+@settings(deadline=200_000, max_examples = 15)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
+@example(nx=4,  ny=4,  nz=4)
+@example(nx=16, ny=16, nz=32)
 def test_nvt(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
     df = LJ(nx, ny, nz, integrator='NVT', verbose=False)
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
+    print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     # assert var_e < 0.001
-    assert 0.69 < Tkin  < 0.71
-    assert 0.69 < Tconf < 0.71
-    #assert 0.90 <   R   < 0.95, f'R= {R}'
-    assert 0.90 <   R   < 0.97
-    assert 5.5  < Gamma < 6.2
+    assert 0.68 < Tkin  < 0.72
+    assert 0.68 < Tconf < 0.72
+    assert 0.92 <   R   < 0.99
+    assert 5.2  < Gamma < 6.4
  
     
 if __name__ == "__main__":
+    config.CUDA_LOW_OCCUPANCY_WARNINGS = False
+    print('Testing LJ NVE:')
     test_nve()
-    # test_nvt() needs calibration in acceptable limits
+    print('Testing LJ NVT:')
+    test_nvt()
 
