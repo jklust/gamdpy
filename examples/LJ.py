@@ -3,12 +3,6 @@ import rumdpy as rp
 from numba import cuda
 import pandas as pd
 
-# Parameters determing how computations should be done. Should be collected in a 'compute_plan' or something...
-#UtilizeNIII = True
-#gridsync = True
-#pb = 8
-#tp = 16
-
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
 positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442)
 N, D = positions.shape

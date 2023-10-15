@@ -30,18 +30,37 @@ def get_default_compute_plan(configuration):
     For now this only depends on the number of particles, but should also depend on cutoff and density, and ...
     """
     N = configuration.N
+    
+    # Get relevant info about the device
+    device = cuda.get_current_device()
+        
+    from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
+    if device.compute_capability in cc_cores_per_SM_dict:
+        cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
+    else:
+        print('WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
+        cc_cores_per_SM=128
+    
+    num_SM = device.MULTIPROCESSOR_COUNT
+    num_cc_cores = cc_cores_per_SM*num_SM
+    warpsize = device.WARP_SIZE
 
     # pb: particle per (thread) block
-    pb = 2**int(math.log2(N/256))
+    pb = 512
+    while N//pb < 2*num_SM: # Number of thread blocks should be at least be twice the number of SM's
+        pb = pb//2
     if pb<8:
         pb=8
-
+    if pb>256:
+        pb=256
+   
     # tp: threads per particle
-    tp = 2**int(math.log2(16*1024/N))
-    if tp<1:
-        tp=1
-    if tp>32:
-        tp=32
+    tp = 1
+    while N*tp < 3*num_cc_cores: # The total number of threads should be 'much larger' than number of phyical cores
+        tp += 1
+        
+    while (pb*tp)%warpsize != 0: # Number of threads per threda-block should be multiplum of warpsize
+        tp +=1
 
     # skin: used when updating nblist
     skin = np.float32(0.5)
