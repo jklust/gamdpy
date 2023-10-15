@@ -72,11 +72,12 @@ def run(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose
     integrate = rp.make_integrator(c1, step, interactions, compute_plan=compute_plan, verbose=False) 
      
     # Run the simulation
-    scalars_t = []
-    tt = []
     
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, 1)
-    scalars_before = np.sum(c1.d_scalars.copy_to_host(), axis=0)
+    
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, 10)
+    
+    scalars_t = []
+    scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     start = cuda.event()
     end = cuda.event()
 
@@ -84,35 +85,47 @@ def run(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, steps)        
     end.record()
     end.synchronize()
+    scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
 
-    scalars_after = np.sum(c1.d_scalars.copy_to_host(), axis=0)
     nbflag = pair_potential.nblist.d_nbflag.copy_to_host()    
-    time_in_sec = cuda.event_elapsed_time(start, end)/1000
-    tps = steps/time_in_sec
+    time_in_sec = np.float32(cuda.event_elapsed_time(start, end)/1000)
+    tps = np.float32(steps/time_in_sec)
+    
     if verbose:
         print('\tsteps :', steps)
         print('\tnbflag : ', nbflag)
         print('\ttime :', time_in_sec, 's')
         print('\tTPS : ', tps )
     
-    print(c1.N, '\t', tps, '\t', time_in_sec, '\t', compute_plan)
-    return tps, time_in_sec
- 
-#    df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-#    if compute_plan['UtilizeNIII']:
-##        df['u'] *= 2
-#        df['w'] *= 2
-#        df['lap'] *= 2
-#    df['w'] *= 1/D/2
-#    df['t'] = np.array(tt)
+    df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
+    if compute_plan['UtilizeNIII']:
+        df['u'] *= 2
+        df['w'] *= 2
+        df['lap'] *= 2
+    df['w'] *= 1/c1.D/2
+    df['e'] = df['u'] + df['k'] # Total energy
+    df['Tkin'] =2*df['k']/c1.D/(c1.N-1)
+    df['Tconf'] = df['fsq']/df['lap']
+    
+    Tkin = df['Tkin'][1]
+    Tconf = df['Tconf'][1]
+    de = np.float32((df['e'][1] - df['e'][0])/c1.N)
+    
+    print(c1.N, '\t', tps, '\t',  steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
+    
+    assert  0.65 < Tkin    < 0.75
+    assert  0.6  < Tconf   < 0.8
+    assert -0.01 < de < 0.01
+    assert nbflag[0] == 0
+    assert nbflag[1] == 0
 
-#    return df
+    return tps, time_in_sec
 
 
 if __name__ == "__main__":
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
     print('Benchmarking LJ NVE:')
-    nxyzs = ((4,4,4), (4,4,8), (4,8,8), (8,8,8), (8,8,16), (8,16,16), (16,16,16), (16,16,32), (16,32,32),)
+    nxyzs = ((4,4,8), (4,8,8), (8,8,8), (8,8,16), (8,16,16), (16,16,16), (16,16,32), (16,32,32), (32,32,32))
     Ns = []
     tpss = []
     magic_number = 1e7
@@ -123,7 +136,7 @@ if __name__ == "__main__":
             steps = int(magic_number/c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             tps, time_in_sec = run(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
-            magic_number *= 2/time_in_sec   # Aim for 2 seconds (Assuming O(N) scaling)
+            magic_number *= 2.0/time_in_sec   # Aim for 1.2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
     
