@@ -77,11 +77,22 @@ def check_gpu(device_id=None):
         device = cuda.get_current_device()
     else:
         device = cuda.select_device(device_id)
+        
+    from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
 
+    from cc_cores_per_SM_dict import cc_cores_per_SM_dict 
+    if device.compute_capability in cc_cores_per_SM_dict:
+        cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
+    else:
+        print('WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
+        cc_cores_per_SM=128
+    
     # Print relevant attributes
     print('  ..:: GPU information ::..')
     print("Device Name:", device.name)
     print("Compute Capability:", device.compute_capability)
+    print("Number of Streaming Multiprocessors:", device.MULTIPROCESSOR_COUNT)
+    print("Total number of cores:", cc_cores_per_SM*device.MULTIPROCESSOR_COUNT)
     print("Max Threads Per Block:", device.MAX_THREADS_PER_BLOCK)
     print("Max Block Dimensions (x, y, z):",
           device.MAX_BLOCK_DIM_X, device.MAX_BLOCK_DIM_Y, device.MAX_BLOCK_DIM_Z)
@@ -93,8 +104,7 @@ def check_gpu(device_id=None):
     print("L2 cache size:", device.L2_CACHE_SIZE)
     print("Max registers per block:", device.MAX_REGISTERS_PER_BLOCK)
     print("Single to double performance ratio:", device.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO)
-    print("Number of Streaming Multiprocessors:", device.MULTIPROCESSOR_COUNT)
-
+ 
 
 if __name__ == '__main__':
     check_cuda()
