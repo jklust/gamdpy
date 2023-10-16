@@ -136,7 +136,7 @@ if __name__ == "__main__":
             steps = int(magic_number/c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             tps, time_in_sec = run(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
-            magic_number *= 2.0/time_in_sec   # Aim for 1.2 seconds (Assuming O(N) scaling)
+            magic_number *= 2.0/time_in_sec   # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
     
@@ -144,7 +144,8 @@ if __name__ == "__main__":
     tps = np.array(tpss)
     
     plt.figure()
-    plt.loglog(N, tps, '*-', label='This run')
+    plt.title('LJ benchmark')
+    plt.loglog(N, tps, 'o-', label='This run')
     plt.loglog(N, 200*1e6/N, '--', label='Perfect scaling (MATS=200)')
     plt.legend()
     plt.xlabel('N')

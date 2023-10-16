@@ -38,7 +38,7 @@ def get_default_compute_plan(configuration):
     if device.compute_capability in cc_cores_per_SM_dict:
         cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
     else:
-        print('WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
+        print('RUMDPY WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
         cc_cores_per_SM=128
     
     num_SM = device.MULTIPROCESSOR_COUNT
@@ -47,7 +47,7 @@ def get_default_compute_plan(configuration):
 
     # pb: particle per (thread) block
     pb = 512
-    while N//pb < 2*num_SM: # Number of thread blocks should be at least be twice the number of SM's
+    while N//pb < 2*num_SM: # Performance heuristic 
         pb = pb//2
     if pb<8:
         pb=8
@@ -56,7 +56,7 @@ def get_default_compute_plan(configuration):
    
     # tp: threads per particle
     tp = 1
-    while N*tp < 3*num_cc_cores: # The total number of threads should be 'much larger' than number of phyical cores
+    while N*tp < 3*num_cc_cores: # Performance heuristic 
         tp += 1
         
     while (pb*tp)%warpsize != 0: # Number of threads per threda-block should be multiplum of warpsize
@@ -64,18 +64,18 @@ def get_default_compute_plan(configuration):
 
     # skin: used when updating nblist
     skin = np.float32(0.5)
-    if N>6*1024:
+    if N > 6*1024:
         skin = np.float32(1.0) # We are (for now using a N^2 nblist updater, so make the nblist be valid for many steps)
 
     # UtilizeNIII: Boolean flag indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
     # Utilization of NIII is implemented by using atomic add's to the force array, so it is inefficient at small system sizes where a lot of conflicts occur.
     UtilizeNIII = True
-    if N<16*1024:
+    if N < 16*1024:
         UtilizeNIII = False
 
     # gridsync: bolean flag indicating whether synchronization should be done via grid.sync()
     gridsync = True
-    if  N>16*1024:
+    if  N*tp > 4.5*num_cc_cores: # Heuristic
         gridsync = False
 
     return {'pb':pb, 'tp':tp, 'skin':skin, 'UtilizeNIII':UtilizeNIII, 'gridsync':gridsync}
