@@ -18,9 +18,12 @@ def check_cuda(verbose=True):
 
 def gridsync_example():
     """ Example from https://numba.readthedocs.io/en/stable/cuda/cooperative_groups.html """
-    from numba import cuda, int32
+    from numba import cuda, int32, config
     import numpy as np
-
+ 
+    config.CUDA_LOW_OCCUPANCY_WARNINGS = False
+    config.CUDA_WARN_ON_IMPLICIT_COPY = False
+    
     sig = (int32[:, ::1],)
 
     @cuda.jit(sig)
