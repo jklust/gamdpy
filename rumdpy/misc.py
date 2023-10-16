@@ -75,7 +75,7 @@ def get_default_compute_plan(configuration):
 
     # gridsync: bolean flag indicating whether synchronization should be done via grid.sync()
     gridsync = True
-    if  N*tp > 4.5*num_cc_cores: # Heuristic
+    if  N*tp > 4*num_cc_cores: # Heuristic
         gridsync = False
 
     return {'pb':pb, 'tp':tp, 'skin':skin, 'UtilizeNIII':UtilizeNIII, 'gridsync':gridsync}
