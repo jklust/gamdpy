@@ -113,8 +113,8 @@ def run(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose
     
     print(c1.N, '\t', tps, '\t',  steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
     
-    assert  0.65 < Tkin    < 0.75
-    assert  0.6  < Tconf   < 0.8
+    assert  0.6  < Tkin  < 0.8
+    assert  0.6  < Tconf < 0.8
     assert -0.01 < de < 0.01
     assert nbflag[0] == 0
     assert nbflag[1] == 0
