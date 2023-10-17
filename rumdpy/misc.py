@@ -26,14 +26,21 @@ def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
 
 def get_default_compute_plan(configuration):
     """
-    return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 
-    For now this only depends on the number of particles, but should also depend on cutoff and density, and ...
+    Return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 
+    For now this only depends on the number of particles, and properties of the GPU. but should also depend on cutoff and density
+    - 'pb': particle per thread block
+    - 'tp': threads per particle
+    - 'gridsync': Boolean indicating if syncronization should be done by grid.sync() calls
+    - 'skin': used when updating nblist
+    - 'UtilizeNIII': Boolean indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
     """
     N = configuration.N
     
-    # Get relevant info about the device
+    # Get relevant info about the device. At some point we should be able to deal with no device (GPU) available
     device = cuda.get_current_device()
         
+    # Apperently we can't ask the device about how many cores it has, neither in total or per SM (Streaming Processor),
+    # so we read the latter from a stored dictionary dependent on the compute capability.
     from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
     if device.compute_capability in cc_cores_per_SM_dict:
         cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
@@ -59,21 +66,22 @@ def get_default_compute_plan(configuration):
     while N*tp < 3*num_cc_cores: # Performance heuristic 
         tp += 1
         
-    while (pb*tp)%warpsize != 0: # Number of threads per threda-block should be multiplum of warpsize
+    while (pb*tp)%warpsize != 0: # Number of threads per thread-block should be multiplum of warpsize
         tp +=1
 
     # skin: used when updating nblist
     skin = np.float32(0.5)
     if N > 6*1024:
-        skin = np.float32(1.0) # We are (for now using a N^2 nblist updater, so make the nblist be valid for many steps)
+        skin = np.float32(1.0) # We are (for now) using a N^2 nblist updater, so make the nblist be valid for many steps for large N.
 
     # UtilizeNIII: Boolean flag indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
-    # Utilization of NIII is implemented by using atomic add's to the force array, so it is inefficient at small system sizes where a lot of conflicts occur.
+    # Utilization of NIII is implemented by using atomic add's to the force array, 
+    # so it is inefficient at small system sizes where a lot of conflicts occur.
     UtilizeNIII = True
     if N < 16*1024:
         UtilizeNIII = False
 
-    # gridsync: bolean flag indicating whether synchronization should be done via grid.sync()
+    # gridsync: Bolean flag indicating whether synchronization should be done via grid.sync()
     gridsync = True
     if  N*tp > 4*num_cc_cores: # Heuristic
         gridsync = False
