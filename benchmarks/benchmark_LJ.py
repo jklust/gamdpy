@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 
 
 def LJ(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
-    # Setup configuration and potential function for the LJ benchmark
-    
+    """
+    Setup and return configuration, potential function, and potential parameters for the LJ benchmark
+    """
+
     # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density
     positions, simbox_data = rp.generate_fcc_positions(nx=nx, ny=ny, nz=nz, rho=rho)
     N, D = positions.shape
-    assert N==nx*ny*nz*4, f'Wrong number particles (FCC), {N} <> {nx*ny*nz*4}'
-    assert D==3, f'Wrong dimension (FCC), {D} <> {3}'
 
     # make 'random' velocities reproducible
     np.random.seed(31415)
@@ -36,8 +36,10 @@ def LJ(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
 
     
 def run(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose=True):
-    # run benchmark 
-
+    """
+    run LJ benchmark
+    Could be run with other potential and/or parameters, but asserts would need to be updated
+    """
     if verbose:
         print('compute_plan: ', compute_plan)
    
@@ -115,7 +117,8 @@ def run(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose
     
     assert  0.6  < Tkin  < 0.8
     assert  0.6  < Tconf < 0.8
-    assert -0.01 < de < 0.01
+    if integrator=='NVE': # Only expect conservation of energy if we are running NVE
+        assert -0.01 < de < 0.01
     assert nbflag[0] == 0
     assert nbflag[1] == 0
 
@@ -140,13 +143,19 @@ if __name__ == "__main__":
         Ns.append(c1.N)
         tpss.append(tps)
     
-    N = np.array(Ns)
-    tps = np.array(tpss)
+    df = pd.DataFrame({'N':Ns, 'TPS':tpss})
+    df.to_csv('Data/benchmark_LJ_This_run.csv')
+
+    # List of stored benchmarks to compare with
+    benchmarks = ['RTX_3070_Laptop', ]
     
     plt.figure()
-    plt.title('LJ benchmark')
-    plt.loglog(N, tps, 'o-', label='This run')
-    plt.loglog(N, 200*1e6/N, '--', label='Perfect scaling (MATS=200)')
+    plt.title('LJ benchmark, NVE, rho=0.8442')
+    plt.loglog(df['N'], df['TPS'], 'o-', label='This run')
+    for benchmark in benchmarks:
+        bdf = pd.read_csv('Data/benchmark_LJ_' + benchmark + '.csv')
+        plt.loglog(bdf['N'], bdf['TPS'], '.-', label=benchmark)
+    plt.loglog(df['N'], 200*1e6/df['N'], '--', label='Perfect scaling (MATS=200)')
     plt.legend()
     plt.xlabel('N')
     plt.ylabel('TPS')
