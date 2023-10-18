@@ -69,6 +69,9 @@ def get_default_compute_plan(configuration):
     while (pb*tp)%warpsize != 0: # Number of threads per thread-block should be multiplum of warpsize
         tp +=1
 
+    if tp > 16:
+        tp = 16
+        
     # skin: used when updating nblist
     skin = np.float32(0.5)
     if N > 6*1024:

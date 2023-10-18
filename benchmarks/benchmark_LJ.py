@@ -147,7 +147,7 @@ if __name__ == "__main__":
     df.to_csv('Data/benchmark_LJ_This_run.csv')
 
     # List of stored benchmarks to compare with
-    benchmarks = ['RTX_3070_Laptop', ]
+    benchmarks = ['RTX_3070_Laptop', 'RTX_4090']
     
     plt.figure()
     plt.title('LJ benchmark, NVE, rho=0.8442')
