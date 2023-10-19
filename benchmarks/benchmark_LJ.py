@@ -138,6 +138,7 @@ if __name__ == "__main__":
         while time_in_sec < 1.0:             # At least 1s to get reliable timing
             steps = int(magic_number/c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
+            #compute_plan['tp'] = 1
             tps, time_in_sec = run(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
             magic_number *= 2.0/time_in_sec   # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     df.to_csv('Data/benchmark_LJ_This_run.csv')
 
     # List of stored benchmarks to compare with
-    benchmarks = ['RTX_3070_Laptop', 'RTX_4090']
+    benchmarks = ['RTX_3070_Laptop', 'RTX_4090', 'RTX_3070_Laptop_tp1', 'RTX_4090_tp1']
     
     plt.figure()
     plt.title('LJ benchmark, NVE, rho=0.8442')
@@ -159,5 +160,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.xlabel('N')
     plt.ylabel('TPS')
+    plt.savefig('Data/benhcmarks.pdf')
     plt.show()
     
