@@ -25,19 +25,19 @@ cache:
     - pip install virtualenv
     - virtualenv env
     - source env/bin/activate
-    - pip install -r requirements.txt
-    # - pip install coverage
-    # - coverage run --source atooms -m unittest discover -s tests
-    # - coverage report -m
+    - pip install .
+    - pip install coverage
+    - coverage run --source rumdpy -m unittest discover -s tests
+    - coverage report -m
   artifacts:
     paths:
       - .coverage
   coverage: '/^TOTAL.+?(\d+\%)$/'
 
-test:3.6:
-  image: python:3.6
+test:3.7:
+  image: python:3.7
   extends: .test
 
-test:3.8:
-  image: python:3.8
+test:3.10:
+  image: python:3.10
   extends: .test
