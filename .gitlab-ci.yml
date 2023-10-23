@@ -12,10 +12,10 @@ variables:
 #
 # If you want to also cache the installed packages, you have to install
 # them in a virtualenv and cache it as well.
-cache:
-  paths:
-    - .cache/pip
-    - env/
+# cache:
+#   paths:
+#     - .cache/pip
+#     - env/
 
 .test:
   script:
@@ -38,6 +38,10 @@ test:3.7:
   image: python:3.7
   extends: .test
 
+test:3.8:
+  image: python:3.8
+  extends: .test
+  
 test:3.10:
   image: python:3.10
   extends: .test
