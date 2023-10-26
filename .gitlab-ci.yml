@@ -1,0 +1,48 @@
+# Official language image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/python/tags/
+# image: python:latest
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+# Pip's cache doesn't store the python packages
+# https://pip.pypa.io/en/stable/reference/pip_install/#caching
+#
+# If you want to also cache the installed packages, you have to install
+# them in a virtualenv and cache it as well.
+# cache:
+#   paths:
+#     - .cache/pip
+#     - env/
+
+.test:
+  script:
+    - apt-get update
+    - apt-get -q -q -y install g++
+    - python -V  # Print out python version for debugging
+    - pip install virtualenv
+    - virtualenv env
+    - source env/bin/activate
+    - pip install .
+    - pip install coverage
+    - coverage run --source rumdpy -m unittest discover -s tests
+    - coverage report -m
+  artifacts:
+    paths:
+      - .coverage
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+
+# For some unexplicable reason, this fails 
+# test:3.7:
+#   image: python:3.7
+#   extends: .test
+
+test:3.8:
+  image: python:3.8
+  extends: .test
+  
+test:3.10:
+  image: python:3.10
+  extends: .test
