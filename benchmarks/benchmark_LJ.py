@@ -30,15 +30,16 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
     LJ_func = rp.apply_shifted_force_cutoff( rp.make_LJ_m_n(m=12, n=6) )
 
     params = np.zeros((1, 1), dtype="f,f,f")
-    params[0][0] = (4., -4., 2.5)
+    params[0][0] = (4., -4., cut)
+    max_cut = np.float32(cut)
     if verbose:
         print('Pairpotential paramaters:\n', params)
         print('simbox_data:', simbox_data)
+    
+    return c1, LJ_func, params, max_cut
 
-    return c1, LJ_func, params
 
-
-def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose=True):
+def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integrator='NVE', verbose=True):
     """
     Run LJ benchmark
     Could be run with other potential and/or parameters, but asserts would need to be updated
@@ -55,7 +56,8 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
     interactions = rp.make_interactions(c1, pair_potential=pair_potential, num_cscalars=num_cscalars,
                                         compute_plan=compute_plan, verbose=verbose, )
-    interaction_params = (pair_potential.d_params, compute_plan['skin'],
+    
+    interaction_params = (pair_potential.d_params, max_cut, compute_plan['skin'],
                           pair_potential.nblist.d_nblist, pair_potential.nblist.d_nbflag)
 
     # Set up the integrator
@@ -138,13 +140,13 @@ def main():
     tpss = []
     magic_number = 1e7
     for nxyz in nxyzs:
-        c1, LJ_func, params = setup_lennard_jones_system(*nxyz, verbose=False)
+        c1, LJ_func, params, max_cut = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
         while time_in_sec < 1.0:  # At least 1s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
+            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, max_cut, steps, integrator='NVE', verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)

@@ -45,7 +45,7 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
-- [ ] cut = 2.5 hardcoded - change that!
+- [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
 - [ ] Implement (FENE) spring, and settle on structure for defining interactions (beyond pair potentials)
 - [ ] Implement exlusion list
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)

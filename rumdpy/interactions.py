@@ -278,11 +278,11 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
         def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
-            params, skin, nblist, nbflag = interaction_parameters
+            params, max_cut, skin, nblist, nbflag = interaction_parameters
             #g = cuda.cg.this_grid() # Slow to do everytimestep, so added to parameters
             nblist_check(vectors, sim_box, skin, nbflag)
             g.sync()
-            nblist_update(vectors, sim_box, numba.float32(2.5)+skin, nbflag, nblist)
+            nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist)
             #g.sync() #not needed: same thread-block does nblist_update and calc_forces 
             calc_forces(vectors, scalars, ptype, sim_box, nblist, params)
             return
@@ -292,9 +292,9 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
         def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
-            params, skin, nblist, nbflag = interaction_parameters
+            params, max_cut, skin, nblist, nbflag = interaction_parameters
             nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, nbflag)
-            nblist_update[num_blocks, (pb, tp)](vectors, sim_box, numba.float32(2.5)+skin, nbflag, nblist)
+            nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist)
             calc_forces[num_blocks, (pb, tp)](vectors, scalars, ptype, sim_box, nblist, params)
             return
         return compute_interactions

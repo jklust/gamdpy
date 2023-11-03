@@ -41,7 +41,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
    
     # Make the pair potential. NOTE: params is a 2 dimensional numpy array of tuples
     params = np.zeros((1,1), dtype="f,f,f")
-    params[0][0] = (4., -4., 2.5)
+    params[0][0] = (4., -4., cut)
     if verbose:
         print('Pairpotential paramaters:\n', params)
     LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(m=12, n=6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
@@ -51,7 +51,8 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     LJ.copy_to_device()
     
     interactions = rp.make_interactions(c1, pair_potential=LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=verbose,)
-    interaction_params = (LJ.d_params, compute_plan['skin'], LJ.nblist.d_nblist,  LJ.nblist.d_nbflag)
+    max_cut = np.float32(cut)
+    interaction_params = (LJ.d_params, max_cut, compute_plan['skin'], LJ.nblist.d_nblist,  LJ.nblist.d_nbflag)
    
     # Setup the integrator
     dt = np.float32(0.005)
@@ -121,7 +122,7 @@ def get_results_from_df(df, N, D):
 def test_nve(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
-    df = LJ(nx, ny, nz, verbose=False)
+    df = LJ(nx, ny, nz, integrator='NVE', cut=2.5, verbose=False)
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     assert var_e < 0.001
