@@ -8,21 +8,29 @@ import matplotlib.pyplot as plt
 ### Stuff we haven't decided where to place yet
 #############################################################################
 
-# Define pair-potential. Option to let sympy do it should be ported from rumd4cpu
-def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
-    A12 = params[0]         #     Um(r) =    -12*A12*r**-13 -   6*A6*r**-6
-    A6 = params[1]          #     Umm(r) = 13*12*A12*r**-14 + 7*6*A6*r**-8
-    dist_sq = dist*dist     # s = -Um/r =     12*A12*r**-14 +   6*A6*r**-8, Fx = s*dx
-    invDist2 = numba.float32(1.0)/dist_sq
-    invDist6 = invDist2 * invDist2 * invDist2
-    invDist8 = invDist6 * invDist2
-    invDist12 = invDist6 * invDist6
-    invDist14 = invDist12 * invDist2
-    
-    u =   numba.float32( 0.5)*(A12*invDist12 +                     A6*invDist6) # Double-counting. Should be elsewhere
-    s =   numba.float32( 12.0)*A12*invDist14 + numba.float32( 6.0)*A6*invDist8
-    umm = numba.float32(156.0)*A12*invDist14 + numba.float32(42.0)*A6*invDist8
+# Define pair-potential. 
+def LJ_12_6(dist, params):            # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
+    A12 = params[0]                   #     Um(r) =    -12*A12*r**-13 -   6*A6*r**-6
+    A6 = params[1]                    #     Umm(r) = 13*12*A12*r**-14 + 7*6*A6*r**-8
+    invDist = numba.float32(1.0)/dist # s = -Um/r =     12*A12*r**-14 +   6*A6*r**-8, Fx = s*dx
+
+    u =   numba.float32( 0.5)*(A12*invDist**12 +                     A6*invDist**6) # Double-counting. Should be elsewhere
+    s =   numba.float32( 12.0)*A12*invDist**14 + numba.float32( 6.0)*A6*invDist**8
+    umm = numba.float32(156.0)*A12*invDist**14 + numba.float32(42.0)*A6*invDist**8
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)
+
+def make_LJ_m_n(m, n):                   
+    def LJ_m_n(dist, params):             #     U(r) =           Am*r**-m     +         An*r**-n
+        Am = params[0]                    #     Um(r) =       -m*Am*r**-(m+1) -       n*An*r**-(n+1)
+        An = params[1]                    #     Umm(r) = (m+1)*m*Am*r**-(m+2) + (n+1)*n*An*r**-(n+2)
+        invDist = numba.float32(1.0)/dist #  s = -Um/r =       m*Am*r**-(m+2) +       n*An*r**-(n+2), Fx = s*dx
+
+        u =   numba.float32( 0.5)*    (Am*invDist**m +                              An*invDist**n) # Double-counting.
+        s =   numba.float32( m ) *     Am*invDist**(m+2) + numba.float32( n ) *     An*invDist**(n+2)
+        umm = numba.float32( m*(m+1) )*Am*invDist**(m+2) + numba.float32( n*(n+1) )*An*invDist**(n+2)
+        return u, s, umm # U(r), s == -U'(r)/r, U''(r)
+    return LJ_m_n
+
 
 def get_default_compute_plan(configuration):
     """

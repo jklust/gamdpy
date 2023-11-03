@@ -44,7 +44,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     params[0][0] = (4., -4., 2.5)
     if verbose:
         print('Pairpotential paramaters:\n', params)
-    LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.LJ_12_6), params=params, max_num_nbs=1000, compute_plan=compute_plan)
+    LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(m=12, n=6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
     num_cscalars = 3
 
     c1.copy_to_device()                

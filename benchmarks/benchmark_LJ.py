@@ -27,7 +27,7 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
     c1['m'] = np.ones(N, dtype=np.float32)  # Set masses
     c1.ptype = np.zeros(N, dtype=np.int32)  # Set types
 
-    LJ_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
+    LJ_func = rp.apply_shifted_force_cutoff( rp.make_LJ_m_n(m=12, n=6) )
 
     params = np.zeros((1, 1), dtype="f,f,f")
     params[0][0] = (4., -4., 2.5)
