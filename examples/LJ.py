@@ -21,7 +21,7 @@ print('compute_plan: ', compute_plan)
 params = np.zeros((1,1), dtype="f,f,f")
 params[0][0] = (4., -4., 2.5)
 print('Pairpotential paramaters:\n', params)
-LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.LJ_12_6), params=params, max_num_nbs=1000, compute_plan=compute_plan)
+LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
 num_cscalars = 3
 
 # NOTE: following three objects are specific to system size and compute_plan for technical reasons
