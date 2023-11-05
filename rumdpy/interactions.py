@@ -298,3 +298,72 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
             calc_forces[num_blocks, (pb, tp)](vectors, scalars, ptype, sim_box, nblist, params)
             return
         return compute_interactions
+
+def add_interactions(configuration, interaction0,  interaction1, compute_plan, verbose=True,):
+    gridsync = compute_plan['gridsync']
+
+    if gridsync:
+        # A device function, calling a number of device functions, using gridsync to syncronize
+        @cuda.jit( device=gridsync )
+        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
+            interactions0(vectors, scalars, ptype, sim_box, interaction_parameters[0])
+            g.sync()
+            interactions1(vectors, scalars, ptype, sim_box, interaction_parameters[1])
+            return
+        return compute_interactions
+
+    else:
+        # A python function, making several kernel calls to syncronize  
+        #@cuda.jit( device=gridsync )
+        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
+            interactions0(vectors, scalars, ptype, sim_box, interaction_parameters[0])
+            interactions1(vectors, scalars, ptype, sim_box, interaction_parameters[1])
+            return
+        return compute_interactions
+
+def make_fixed_interactions(configuration, fixed_potential, num_cscalars, compute_plan, verbose=True,):
+    D = configuration.D
+    num_part = configuration.N
+    pb = compute_plan['pb']
+    tp = compute_plan['tp']
+    gridsync = compute_plan['gridsync']
+    num_blocks = (num_part-1)//pb + 1    
+
+    if verbose:
+        print(f'Generating fixed interactions for {num_part} particles in {D} dimensions:')
+        print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
+        print(f'\tNumber (virtual) particles: {num_blocks*pb}')
+        print(f'\tNumber of threads {num_blocks*pb*tp}')      
+
+    # Unpack indicies for vectors and scalars    
+    for key in configuration.vid:
+        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for key in configuration.sid:
+        exec(f'{key}_id = {configuration.sid[key]}', globals())
+    
+    # Prepare user-specified functions for inclusion in kernel(s)
+    # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 
+    
+    potential_calculator = numba.njit(fixed_potential.potential_calculator)
+
+    def fixed_interactions(vectors, scalars, ptype, sim_box, interaction_parameters):
+        indicies, values = interaction_parameters
+        num_interactions = indicies.shape[0]
+        num_threads = cuda.griddim[0]*cuda.blockdim[0] # only using my_t == 0 for simplicity
+        
+        my_block = cuda.blockIdx.x
+        local_id = cuda.threadIdx.x 
+        global_id = my_block*pb + local_id
+        my_t = cuda.threadIdx.y
+
+        if my_t == 0:
+            for index in range(global_id, num_interactions, num_threads):
+                potential_calculator(vectors, scalars, ptype, sim_box, indicies[index], values[index])
+        return
+    
+def make_bond_calulator(configuration):
+    dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+    dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+
+    def bond_calculator(vectors, scalars, ptype, sim_box, indicies, values):
+        pass
