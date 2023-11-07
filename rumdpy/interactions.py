@@ -19,8 +19,8 @@ class PairPotential():
                     cuda.atomic.add(f, (other_id, k), dr[k]*s)
                 my_f[k] = my_f[k] - dr[k]*s                         # Force
                 cscalars[w_id] += dr[k]*dr[k]*s                     # Virial
-            cscalars[0] += u                                        # Potential energy
-            cscalars[2] += numba.float32(1-D)*s + umm               # Laplacian 
+            cscalars[u_id] += u                                     # Potential energy
+            cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
             return
 
         def params_function(i_type, j_type, params):
@@ -277,11 +277,11 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
     if gridsync:
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
-        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
+        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             params, max_cut, skin, nblist, nbflag = interaction_parameters
             #g = cuda.cg.this_grid() # Slow to do everytimestep, so added to parameters
             nblist_check(vectors, sim_box, skin, nbflag)
-            g.sync()
+            grid.sync()
             nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist)
             #g.sync() #not needed: same thread-block does nblist_update and calc_forces 
             calc_forces(vectors, scalars, ptype, sim_box, nblist, params)
@@ -291,7 +291,7 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
     else:
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
-        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
+        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             params, max_cut, skin, nblist, nbflag = interaction_parameters
             nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, nbflag)
             nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist)
@@ -299,29 +299,29 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
             return
         return compute_interactions
 
-def add_interactions(configuration, interaction0,  interaction1, compute_plan, verbose=True,):
+def add_interactions(configuration, interactions0,  interactions1, compute_plan, verbose=True,):
     gridsync = compute_plan['gridsync']
 
     if gridsync:
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
-        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
-            interactions0(vectors, scalars, ptype, sim_box, interaction_parameters[0])
-            g.sync()
-            interactions1(vectors, scalars, ptype, sim_box, interaction_parameters[1])
+        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
+            interactions0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
+            grid.sync() # Not always necesarry !!!
+            interactions1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
         return compute_interactions
 
     else:
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
-        def compute_interactions(g, vectors, scalars, ptype, sim_box, interaction_parameters):
-            interactions0(vectors, scalars, ptype, sim_box, interaction_parameters[0])
-            interactions1(vectors, scalars, ptype, sim_box, interaction_parameters[1])
+        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
+            interactions0(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])
+            interactions1(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
         return compute_interactions
 
-def make_fixed_interactions(configuration, fixed_potential, num_cscalars, compute_plan, verbose=True,):
+def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbose=True,):
     D = configuration.D
     num_part = configuration.N
     pb = compute_plan['pb']
@@ -344,26 +344,58 @@ def make_fixed_interactions(configuration, fixed_potential, num_cscalars, comput
     # Prepare user-specified functions for inclusion in kernel(s)
     # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 
     
-    potential_calculator = numba.njit(fixed_potential.potential_calculator)
+    #potential_calculator = numba.njit(fixed_potential.potential_calculator)
+    potential_calculator = numba.njit(fixed_potential)
 
-    def fixed_interactions(vectors, scalars, ptype, sim_box, interaction_parameters):
+    @cuda.jit( device=gridsync )
+    def fixed_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
         indicies, values = interaction_parameters
         num_interactions = indicies.shape[0]
-        num_threads = cuda.griddim[0]*cuda.blockdim[0] # only using my_t == 0 for simplicity
+        #num_threads = cuda.gridDim[0]*cuda.blockDim[0] # only using my_t == 0 for simplicity
+        num_threads = num_blocks*pb
+
         
         my_block = cuda.blockIdx.x
         local_id = cuda.threadIdx.x 
         global_id = my_block*pb + local_id
         my_t = cuda.threadIdx.y
+        
+        if global_id<num_interactions and my_t==0:
+            potential_calculator(vectors, scalars, ptype, sim_box, indicies[global_id], values[global_id])
 
-        if my_t == 0:
-            for index in range(global_id, num_interactions, num_threads):
-                potential_calculator(vectors, scalars, ptype, sim_box, indicies[index], values[index])
         return
+    return fixed_interactions
+
+def make_bond_calculator(configuration, bondpotential_function):
     
-def make_bond_calulator(configuration):
+    D = configuration.D
     dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
+    # Unpack indicies for vectors and scalars    
+    for key in configuration.vid:
+        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for key in configuration.sid:
+        exec(f'{key}_id = {configuration.sid[key]}', globals())
+        
+    bondpotential_function = numba.njit(bondpotential_function)
+    
     def bond_calculator(vectors, scalars, ptype, sim_box, indicies, values):
-        pass
+        
+        dr = cuda.local.array(shape=D,dtype=numba.float32)
+        dist_sq = dist_sq_dr_function(vectors[r_id][indicies[1]], vectors[r_id][indicies[0]], sim_box, dr)
+        
+        u, s, umm = bondpotential_function(math.sqrt(dist_sq), values)
+        for k in range(D):
+            cuda.atomic.add(vectors, (f_id, indicies[0], k), -dr[k]*s)      # Force
+            cuda.atomic.add(vectors, (f_id, indicies[1], k), +dr[k]*s)                      
+            cuda.atomic.add(scalars, (indicies[0], w_id), dr[k]*dr[k]*s)    # Virial
+            cuda.atomic.add(scalars, (indicies[1], w_id), dr[k]*dr[k]*s)                      
+        cuda.atomic.add(scalars, (indicies[0], u_id), u*numba.float32(0.5)) # Potential enerrgy 
+        cuda.atomic.add(scalars, (indicies[1], u_id), u*numba.float32(0.5))
+        lap = numba.float32(1-D)*s + umm                                    # Laplacian  
+        cuda.atomic.add(scalars, (indicies[0], lap_id), lap)               
+        cuda.atomic.add(scalars, (indicies[1], lap_id), lap)                
+        return
+    return bond_calculator
+

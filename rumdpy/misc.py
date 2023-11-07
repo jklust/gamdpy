@@ -31,7 +31,15 @@ def make_LJ_m_n(m, n):
         return u, s, umm # U(r), s == -U'(r)/r, U''(r)
     return LJ_m_n
 
-
+def harmonic_bond_function(dist, params):
+    length = params[0]
+    strength = params[1]
+    
+    u = numba.float32( 0.5)*strength*(dist-length)**2
+    s = -strength*(dist-length)/dist
+    umm = strength
+    return u, s, umm # U(r), s == -U'(r)/r, U''(r)    
+    
 def get_default_compute_plan(configuration):
     """
     Return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 

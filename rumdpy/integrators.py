@@ -14,7 +14,7 @@ def make_integrator(configuration, integration_step, compute_interactions, compu
     if gridsync:
         # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
         @cuda.jit       
-        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, steps):        
+        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, steps):
             grid = cuda.cg.this_grid()
             for i in range(steps):
                 compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_params)

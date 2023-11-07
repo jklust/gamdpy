@@ -54,6 +54,14 @@ class Configuration():
         self.d_ptype = cuda.to_device(self.ptype)
         self.simbox.copy_to_device()
         return
+
+    def copy_to_host(self):
+        self.vectors = self.d_vectors.copy_to_host()
+        self.scalars = self.d_scalars.copy_to_host()
+        self.r_im = self.d_r_im.copy_to_host()
+        self.ptype = self.d_ptype.copy_to_host()
+        #self.simbox.copy_to_device()
+        return
     
     def make_ptype_function(self):
         def ptype_function(pid, ptype_array):
