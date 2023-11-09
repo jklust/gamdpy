@@ -88,11 +88,6 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
             
    
     df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-    if compute_plan['UtilizeNIII']:
-        df['u'] *= 2
-        df['w'] *= 2
-        df['lap'] *= 2
-    df['w'] *= 1/D/2
     df['t'] = np.array(tt)
 
     return df
