@@ -19,7 +19,7 @@ class PairPotential():
                     cuda.atomic.add(f, (other_id, k), dr[k]*s)
                 my_f[k] = my_f[k] - dr[k]*s                         # Force
                 cscalars[w_id] += dr[k]*dr[k]*s                     # Virial
-            cscalars[u_id] += u                                     # Potential energy
+            cscalars[u_id] += u*numba.float32( 0.5 )                # Potential energy
             cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
             return
 

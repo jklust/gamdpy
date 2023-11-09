@@ -14,7 +14,7 @@ def LJ_12_6(dist, params):            # LJ: U(r)  =        A12*r**-12 +     A6*r
     A6 = params[1]                    #     Umm(r) = 13*12*A12*r**-14 + 7*6*A6*r**-8
     invDist = numba.float32(1.0)/dist # s = -Um/r =     12*A12*r**-14 +   6*A6*r**-8, Fx = s*dx
 
-    u =   numba.float32( 0.5)*(A12*invDist**12 +                     A6*invDist**6) # Double-counting. Should be elsewhere
+    u =                        A12*invDist**12 +                     A6*invDist**6 
     s =   numba.float32( 12.0)*A12*invDist**14 + numba.float32( 6.0)*A6*invDist**8
     umm = numba.float32(156.0)*A12*invDist**14 + numba.float32(42.0)*A6*invDist**8
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)
@@ -25,7 +25,7 @@ def make_LJ_m_n(m, n):
         An = params[1]                    #     Umm(r) = (m+1)*m*Am*r**-(m+2) + (n+1)*n*An*r**-(n+2)
         invDist = numba.float32(1.0)/dist #  s = -Um/r =       m*Am*r**-(m+2) +       n*An*r**-(n+2), Fx = s*dx
 
-        u =   numba.float32( 0.5)*    (Am*invDist**m +                              An*invDist**n) # Double-counting.
+        u =                           (Am*invDist**m     +                          An*invDist**n) 
         s =   numba.float32( m ) *     Am*invDist**(m+2) + numba.float32( n ) *     An*invDist**(n+2)
         umm = numba.float32( m*(m+1) )*Am*invDist**(m+2) + numba.float32( n*(n+1) )*An*invDist**(n+2)
         return u, s, umm # U(r), s == -U'(r)/r, U''(r)
