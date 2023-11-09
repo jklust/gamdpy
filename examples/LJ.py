@@ -25,6 +25,11 @@ print('Pairpotential paramaters:\n', params)
 LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
 num_cscalars = 3
 
+
+exclusions = np.zeros((N,10), dtype=np.int32)
+#rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+d_exclusions = cuda.to_device(exclusions)
+
 # NOTE: following three objects are specific to system size and compute_plan for technical reasons
 
 interactions = rp.make_interactions(c1, pair_potential = LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=True,)
@@ -40,7 +45,7 @@ max_cut = np.float32(cut_off)
 c1.copy_to_device()           
 LJ.copy_to_device()
  
-interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag)
+interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag,  d_exclusions)
 integrator_params = (dt, )
 
 scalars_t = []

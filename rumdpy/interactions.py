@@ -178,7 +178,7 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
    
     #@cuda.jit('void(float32[:,:,:], float32[:], float32, int32[:], int32[:,:])', device=gridsync)
     @cuda.jit(device=gridsync)
-    def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist ):
+    def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist, exclusions ):
         """ N^2 Update neighbor-list using numba.cuda 
             Kernel configuration: [num_blocks, (pb, tp)]
         """
@@ -197,6 +197,7 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
             cuda.syncthreads() # nblist[global_id, max_nbs] ready
             
             if global_id < num_part:
+                my_num_exclusions = exclusions[global_id,-1]
                 for i in range(0, num_part, pb*tp): # Loop over blocks
                     for j in range(pb):             # Loop over particles the pb in block
                         other_global_id = j + i + my_t*pb   
@@ -208,9 +209,14 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
                         if flag:  
                             dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id], sim_box)
                             if dist_sq < cut_plus_skin*cut_plus_skin:
-                                my_num_nbs = cuda.atomic.add(nblist, (global_id, max_nbs), 1)   # Find next free index in nblist
-                                if my_num_nbs < max_nbs:                         
-                                    nblist[global_id, my_num_nbs] = other_global_id     # Last entry is number of neighbors
+                                not_excluded = True  # Check exclusion list
+                                for k in range(my_num_exclusions):
+                                    if exclusions[global_id, k] ==  other_global_id:
+                                        not_excluded = False
+                                if not_excluded:
+                                    my_num_nbs = cuda.atomic.add(nblist, (global_id, max_nbs), 1)   # Find next free index in nblist
+                                    if my_num_nbs < max_nbs:                         
+                                        nblist[global_id, my_num_nbs] = other_global_id     # Last entry is number of neighbors
 
             # Various house-keeping
             if global_id < num_part and my_t==0:
@@ -278,11 +284,11 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
         def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            params, max_cut, skin, nblist, nbflag = interaction_parameters
+            params, max_cut, skin, nblist, nbflag, exclusions = interaction_parameters
             #g = cuda.cg.this_grid() # Slow to do everytimestep, so added to parameters
             nblist_check(vectors, sim_box, skin, nbflag)
             grid.sync()
-            nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist)
+            nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, exclusions)
             #g.sync() #not needed: same thread-block does nblist_update and calc_forces 
             calc_forces(vectors, scalars, ptype, sim_box, nblist, params)
             return
@@ -292,9 +298,9 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
         def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            params, max_cut, skin, nblist, nbflag = interaction_parameters
+            params, max_cut, skin, nblist, nbflag, exclusions = interaction_parameters
             nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, nbflag)
-            nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist)
+            nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, exclusions)
             calc_forces[num_blocks, (pb, tp)](vectors, scalars, ptype, sim_box, nblist, params)
             return
         return compute_interactions
@@ -384,8 +390,10 @@ def make_bond_calculator(configuration, bondpotential_function):
         
         dr = cuda.local.array(shape=D,dtype=numba.float32)
         dist_sq = dist_sq_dr_function(vectors[r_id][indicies[1]], vectors[r_id][indicies[0]], sim_box, dr)
-        
+        i0 = indicies[0]
+        i1 = indicies[1]
         u, s, umm = bondpotential_function(math.sqrt(dist_sq), values)
+               
         for k in range(D):
             cuda.atomic.add(vectors, (f_id, indicies[0], k), -dr[k]*s)      # Force
             cuda.atomic.add(vectors, (f_id, indicies[1], k), +dr[k]*s)                      
@@ -396,6 +404,24 @@ def make_bond_calculator(configuration, bondpotential_function):
         lap = numba.float32(1-D)*s + umm                                    # Laplacian  
         cuda.atomic.add(scalars, (indicies[0], lap_id), lap)               
         cuda.atomic.add(scalars, (indicies[1], lap_id), lap)                
+        
         return
     return bond_calculator
 
+def add_exclusions_from_bond_indicies(exclusions, bond_indicies):
+    num_part, max_num_exclusions = exclusions.shape
+    max_num_exclusions -= 1 # Last index used for number of exclusions for given particle
+    
+    for bond in range(bond_indicies.shape[0]):
+        i = bond_indicies[bond,0]
+        j = bond_indicies[bond,1]
+        
+        if exclusions[i,-1] < max_num_exclusions:
+            exclusions[i,exclusions[i,-1]] = j
+        exclusions[i,-1] += 1
+        
+        if exclusions[j,-1] < max_num_exclusions:
+            exclusions[j,exclusions[j,-1]] = i
+        exclusions[j,-1] += 1
+
+    assert np.max(exclusions[:,-1]) <= max_num_exclusions

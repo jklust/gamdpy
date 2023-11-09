@@ -20,6 +20,25 @@ c1.copy_to_device()
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
 
+# Make bond interactions
+bond_indicies = np.zeros((N//2, 2), dtype=np.int32)
+even = np.arange(0,N,2)
+bond_indicies[:,0] = even
+bond_indicies[:,1] = even+1
+bond_params = np.zeros((N//2, 2), dtype=np.float32)
+bond_params[:,0] = 0.9
+bond_params[:,1] = 1000.0 
+bond_calculator = rp.make_bond_calculator(c1, rp.harmonic_bond_function)
+bond_interactions = rp.make_fixed_interactions(c1, bond_calculator, compute_plan, verbose=True)
+d_bond_indicies = cuda.to_device(bond_indicies)
+d_bond_params = cuda.to_device(bond_params)
+bond_interaction_params = (d_bond_indicies, d_bond_params)
+
+# Prepare exlusions from bonds
+exclusions = np.zeros((N,10), dtype=np.int32)
+rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+d_exclusions = cuda.to_device(exclusions)
+
 # Make the pair interactions
 cut_off = 2.5
 params = np.zeros((1,1), dtype="f,f,f")
@@ -31,25 +50,7 @@ LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6)), p
 num_cscalars = 3
 pair_interactions = rp.make_interactions(c1, pair_potential = LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=True,)
 LJ.copy_to_device()
-pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag)
-
-# Make bond interactions
-bond_indicies = np.zeros((N//2, 2), dtype=np.int32)
-even = np.arange(0,N,2)
-bond_indicies[:,0] = even
-bond_indicies[:,1] = even+1
-bond_params = np.zeros((N//2, 2), dtype=np.float32)
-bond_params[:,0] = 1.12
-bond_params[:,1] = 1000.0 
-bond_calculator = rp.make_bond_calculator(c1, rp.harmonic_bond_function)
-bond_interactions = rp.make_fixed_interactions(c1, bond_calculator, compute_plan, verbose=True)
-d_bond_indicies = cuda.to_device(bond_indicies)
-d_bond_params = cuda.to_device(bond_params)
-bond_interaction_params = (d_bond_indicies, d_bond_params)
-
-#for i in range(N//2):
-#    dist_sq = c1.simbox.dist_sq_function(c1['r'][bond_indicies[i,0]], c1['r'][bond_indicies[i,1]], c1.simbox.data)
-#    print(i, math.sqrt(dist_sq))
+pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
 
 # Add up interactions
 interactions = rp.add_interactions(c1, pair_interactions, bond_interactions, compute_plan, verbose=True,)
@@ -57,8 +58,6 @@ interaction_params = (pair_interaction_params, bond_interaction_params)
     
 # Make integrator
 integrator_step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=True)
-#integrate = rp.make_integrator(c1, integrator_step, pair_interactions, compute_plan=compute_plan, verbose=True)
-#integrate = rp.make_integrator(c1, integrator_step, bond_interactions, compute_plan=compute_plan, verbose=True)
 integrate = rp.make_integrator(c1, integrator_step, interactions, compute_plan=compute_plan, verbose=True)
 dt = np.float32(0.0025)
 integrator_params = (dt, )
@@ -68,7 +67,7 @@ tt = []
 
 #inner_steps = 1000
 #steps = 500
-inner_steps = 2000
+inner_steps = 1000
 steps = 500
 
 start = cuda.event()
@@ -77,9 +76,7 @@ end = cuda.event()
 for i in range(steps+1):
     if i==1:
         start.record() # Exclude first step from timing to get it more precise by excluding time for JIT compiling
-        
-    #integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pair_interaction_params, integrator_params, inner_steps)
-    #integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, bond_interaction_params, integrator_params, inner_steps)
+   
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
@@ -109,7 +106,11 @@ c1.copy_to_host()
 lengths = []
 for i in range(N//2):
     dist_sq = c1.simbox.dist_sq_function(c1['r'][bond_indicies[i,0]], c1['r'][bond_indicies[i,1]], c1.simbox.data)
-    lengths.append(math.sqrt(dist_sq))
+    dist = math.sqrt(dist_sq)
+    if dist>1.5:
+        print(i, bond_indicies[i,0], bond_indicies[i,1], dist)
+    
+    lengths.append(dist)
 
 plt.hist(lengths, bins=30)
 plt.show()

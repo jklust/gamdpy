@@ -91,6 +91,8 @@ def make_step_nve(configuration, compute_plan, verbose=True,):
                 if my_r[k]*numba.float32(2.0) < -sim_box[k]:
                     my_r[k] += sim_box[k]
                     r_im[global_id, k] -= 1
+                #if my_r[k]*numba.float32(2.0) > sim_box[k] or  my_r[k]*numba.float32(2.0) < -sim_box[k]:
+                #    print(global_id, k, my_r[0], my_r[1], my_r[2])
                 #vectors[r_id][global_id,k] = my_r[k]
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq

@@ -50,9 +50,13 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     c1.copy_to_device()                
     LJ.copy_to_device()
     
+    exclusions = np.zeros((N,10), dtype=np.int32)
+    #rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+    d_exclusions = cuda.to_device(exclusions)
+
     interactions = rp.make_interactions(c1, pair_potential=LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=verbose,)
     max_cut = np.float32(cut)
-    interaction_params = (LJ.d_params, max_cut, compute_plan['skin'], LJ.nblist.d_nblist,  LJ.nblist.d_nbflag)
+    interaction_params = (LJ.d_params, max_cut, compute_plan['skin'], LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
    
     # Setup the integrator
     dt = np.float32(0.005)

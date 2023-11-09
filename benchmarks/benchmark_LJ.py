@@ -53,12 +53,17 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integr
 
     c1.copy_to_device()
     pair_potential.copy_to_device()
+    
+    exclusions = np.zeros((c1.N,10), dtype=np.int32)
+    #rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+    d_exclusions = cuda.to_device(exclusions)
+
 
     interactions = rp.make_interactions(c1, pair_potential=pair_potential, num_cscalars=num_cscalars,
                                         compute_plan=compute_plan, verbose=verbose, )
     
     interaction_params = (pair_potential.d_params, max_cut, compute_plan['skin'],
-                          pair_potential.nblist.d_nblist, pair_potential.nblist.d_nbflag)
+                          pair_potential.nblist.d_nblist, pair_potential.nblist.d_nbflag, d_exclusions)
 
     # Set up the integrator
     dt = np.float32(0.005)
