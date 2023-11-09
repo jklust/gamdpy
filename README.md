@@ -47,9 +47,9 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
 - [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
-- [x] Implement springs, as an example of 'fixed interactions'. 
+- [x] Implement springs, as an example of 'fixed interactions' (needs testing for gridsync==False). 
 - [ ] Implement other fixed interactions: angles, dihedrals, tethered particles, smooth wall, and gravity.
-- [ ] Implement exlusion list
+- [x] Implement exlusion list (needs testing for gridsync==False)
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [x] upload to GitLab
 - [ ] Use 'colarray' for vectors and scalars in Configuration
