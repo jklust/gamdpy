@@ -21,12 +21,12 @@ compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
 
 # Make bond interactions
-bond_indicies = np.zeros((N//2, 2), dtype=np.int32)
+bond_indicies = np.zeros((N//2, 3), dtype=np.int32)
 even = np.arange(0,N,2)
 bond_indicies[:,0] = even
 bond_indicies[:,1] = even+1
 bond_params = np.zeros((N//2, 2), dtype=np.float32)
-bond_params[:,0] = 0.9
+bond_params[:,0] = 1.18
 bond_params[:,1] = 1000.0 
 bond_calculator = rp.make_bond_calculator(c1, rp.harmonic_bond_function)
 bond_interactions = rp.make_fixed_interactions(c1, bond_calculator, compute_plan, verbose=True)
@@ -67,7 +67,7 @@ tt = []
 
 #inner_steps = 1000
 #steps = 500
-inner_steps = 1000
+inner_steps = 2000
 steps = 500
 
 start = cuda.event()
@@ -93,11 +93,6 @@ print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-if compute_plan['UtilizeNIII']: # This correction should not be necesarry in user-land
-    df['u'] *= 2
-    df['w'] *= 2
-    df['lap'] *= 2
-df['w'] *= 1/D/2
 df['t'] = np.array(tt)  
     
 rp.plot_scalars(df, N, D, figsize=(15,4))

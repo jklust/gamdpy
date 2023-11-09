@@ -4,7 +4,8 @@ from numba import cuda
 import pandas as pd
 
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
-positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442)
+positions, simbox_data = rp.generate_fcc_positions(nx=4, ny=8, nz=8, rho=0.8442) # 1024
+#positions, simbox_data = rp.generate_fcc_positions(nx=16, ny=16, nz=16, rho=0.8442) # 16*1024
 N, D = positions.shape
 
 ### Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
@@ -77,11 +78,6 @@ print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-if compute_plan['UtilizeNIII']: # This correction should not be necesarry in user-land
-    df['u'] *= 2
-    df['w'] *= 2
-    df['lap'] *= 2
-df['w'] *= 1/D/2
 df['t'] = np.array(tt)  
     
 rp.plot_scalars(df, N, D, figsize=(15,4))

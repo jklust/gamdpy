@@ -110,11 +110,6 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integr
         print('\tTPS : ', tps)
 
     df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-    if compute_plan['UtilizeNIII']:
-        df['u'] *= 2
-        df['w'] *= 2
-        df['lap'] *= 2
-    df['w'] *= 1 / c1.D / 2
     df['e'] = df['u'] + df['k']  # Total energy
     df['Tkin'] = 2 * df['k'] / c1.D / (c1.N - 1)
     df['Tconf'] = df['fsq'] / df['lap']

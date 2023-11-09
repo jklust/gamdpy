@@ -10,17 +10,26 @@ class PairPotential():
     def __init__(self, configuration, pairpotential_function, params, max_num_nbs, compute_plan):
         N = configuration.N
         D = configuration.D
-        UtilizeNIII = compute_plan['UtilizeNIII']
         
+        virial_factor = numba.float32( 0.5/D )
         def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
             u, s, umm = pairpotential_function(ij_dist, ij_params)
             for k in range(D):
-                if UtilizeNIII:
-                    cuda.atomic.add(f, (other_id, k), dr[k]*s)
                 my_f[k] = my_f[k] - dr[k]*s                         # Force
-                cscalars[w_id] += dr[k]*dr[k]*s                     # Virial
+                cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
             cscalars[u_id] += u*numba.float32( 0.5 )                # Potential energy
             cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
+            return
+
+        virial_factor_NIII = numba.float32( 1.0/D )
+        def pairpotential_calculator_NIII(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
+            u, s, umm = pairpotential_function(ij_dist, ij_params)
+            for k in range(D):
+                cuda.atomic.add(f, (other_id, k), dr[k]*s)
+                my_f[k] = my_f[k] - dr[k]*s                         # Force
+                cscalars[w_id] += dr[k]*dr[k]*s*virial_factor_NIII  # Virial
+            cscalars[u_id] += u                                      # Potential energy
+            cscalars[lap_id] += (numba.float32(1-D)*s + umm)*numba.float32( 2.0 ) # Laplacian 
             return
 
         def params_function(i_type, j_type, params):
@@ -28,7 +37,10 @@ class PairPotential():
             return result
 
         self.pairpotential_function = pairpotential_function
-        self.pairpotential_calculator = pairpotential_calculator
+        if compute_plan['UtilizeNIII']:
+            self.pairpotential_calculator = pairpotential_calculator_NIII
+        else:
+            self.pairpotential_calculator = pairpotential_calculator
         self.params_function = params_function
         self.params = params
         self.nblist = NbList(N, max_num_nbs)
@@ -360,14 +372,13 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         #num_threads = cuda.gridDim[0]*cuda.blockDim[0] # only using my_t == 0 for simplicity
         num_threads = num_blocks*pb
 
-        
         my_block = cuda.blockIdx.x
         local_id = cuda.threadIdx.x 
         global_id = my_block*pb + local_id
         my_t = cuda.threadIdx.y
         
         if global_id<num_interactions and my_t==0:
-            potential_calculator(vectors, scalars, ptype, sim_box, indicies[global_id], values[global_id])
+            potential_calculator(vectors, scalars, ptype, sim_box, indicies[global_id], values)
 
         return
     return fixed_interactions
@@ -390,9 +401,7 @@ def make_bond_calculator(configuration, bondpotential_function):
         
         dr = cuda.local.array(shape=D,dtype=numba.float32)
         dist_sq = dist_sq_dr_function(vectors[r_id][indicies[1]], vectors[r_id][indicies[0]], sim_box, dr)
-        i0 = indicies[0]
-        i1 = indicies[1]
-        u, s, umm = bondpotential_function(math.sqrt(dist_sq), values)
+        u, s, umm = bondpotential_function(math.sqrt(dist_sq), values[indicies[2]])
                
         for k in range(D):
             cuda.atomic.add(vectors, (f_id, indicies[0], k), -dr[k]*s)      # Force
