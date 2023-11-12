@@ -53,8 +53,13 @@ LJ.copy_to_device()
 pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
 
 # Add up interactions
-interactions = rp.add_interactions(c1, pair_interactions, bond_interactions, compute_plan, verbose=True,)
+#interactions = rp.add_interactions(c1, pair_interactions, bond_interactions, compute_plan, verbose=True,)
+interactions = rp.add_interactions_list(c1, (pair_interactions, bond_interactions), compute_plan, verbose=True,)
 interaction_params = (pair_interaction_params, bond_interaction_params)
+
+# Test that add_interactions_list works with several interactions:
+#interactions = rp.add_interactions_list(c1, (pair_interactions, bond_interactions, bond_interactions, bond_interactions, bond_interactions), compute_plan, verbose=True,)
+#interaction_params = (pair_interaction_params, bond_interaction_params, bond_interaction_params, bond_interaction_params, bond_interaction_params)
     
 # Make integrator
 integrator_step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=True)
