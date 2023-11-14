@@ -107,7 +107,7 @@ def get_default_compute_plan(configuration):
 
     return {'pb':pb, 'tp':tp, 'skin':skin, 'UtilizeNIII':UtilizeNIII, 'gridsync':gridsync}
         
-def plot_scalars(df, N, D, figsize):
+def plot_scalars(df, N, D, figsize, block=True):
     df['e'] = df['u'] + df['k'] # Total energy
     df['Tkin'] =2*df['k']/D/(N-1)
     df['Tconf'] = df['fsq']/df['lap']
@@ -135,6 +135,6 @@ def plot_scalars(df, N, D, figsize):
     axs[2].set_xlabel('U/N')
     axs[2].set_ylabel('W/N')
     axs[2].legend()
-    plt.show()
+    plt.show(block=block)
 
     return

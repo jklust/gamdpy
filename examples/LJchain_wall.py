@@ -1,12 +1,12 @@
 import numpy as np
 import rumdpy as rp
+import numba
 from numba import cuda
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
-
-include_springs = False
+include_springs = True
 
 wall_dimension = 2 # Could use normal vector to be even more general...
 nxy, nz = 8, 4
@@ -46,7 +46,7 @@ print('Wall at +-', wall_params[0,2])
 prefactor = 4.0*math.pi/3*rho      # [Ingebrigtsen, Dyre, Soft Matter, 2014]
 wall_params[0,3] =  prefactor/15.0 # Am
 wall_params[0,4] = -prefactor/2.0  # An
-wall_params[0,5] =  2.5 # cutoff
+wall_params[0,5] =  3.0 # cutoff
 wall_function = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
 wall_calculator = rp.make_smooth_wall_calculator(c1, wall_function)
 wall_interactions = rp.make_fixed_interactions(c1, wall_calculator, compute_plan, verbose=True)
@@ -61,8 +61,8 @@ if include_springs:
     bond_indicies[:,0] = even
     bond_indicies[:,1] = even+1
     bond_params = np.zeros((N//2, 2), dtype=np.float32)
-    bond_params[:,0] = 2**(1/6)
-    bond_params[:,1] = 57.15 
+    bond_params[:,0] = 1.12 # 2**(1/6)
+    bond_params[:,1] = 1000 # 57.15 
     bond_calculator = rp.make_bond_calculator(c1, rp.harmonic_bond_function)
     bond_interactions = rp.make_fixed_interactions(c1, bond_calculator, compute_plan, verbose=True)
     d_bond_indicies = cuda.to_device(bond_indicies)
@@ -108,6 +108,7 @@ degrees = N*D - D
 thermostat_state = np.zeros(2, dtype=np.float32)
 d_thermostat_state = cuda.to_device(thermostat_state)
 integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
+integrator_params_initial =  (dt, np.float32(10.0), omega2, degrees,  d_thermostat_state)
 
 scalars_t = []
 coordinates_t = []
@@ -115,23 +116,49 @@ tt = []
 
 #inner_steps = 1000
 #steps = 500
-equil_steps = 500000
+equil_steps = 30000
 inner_steps = 1000
 steps = 500
 
 start = cuda.event()
 end = cuda.event()
 
+dr = np.zeros(3)
+dz = np.array((0., 0., 1.))
+
+@numba.njit()
+def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data):
+    bond_lengths = np.zeros(bond_indicies.shape[0], dtype=np.float32)
+    theta_z = np.zeros(bond_indicies.shape[0])
+    dr = np.zeros(3)
+
+    for j in range(bond_indicies.shape[0]):
+        dist_sq = dist_sq_dr_function(r[bond_indicies[j,0]], r[bond_indicies[j,1]], simbox_data, dr)
+        dist = math.sqrt(dist_sq)
+        bond_lengths[j] = dist
+        theta_z[j] = math.acos(abs(dr[2]/dist))/math.pi*180
+    return bond_lengths, theta_z
+
 #Equilibration
+integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params_initial, equil_steps)
 integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, equil_steps)
+bond_lengths = []
+theta_z = []
+
+f = numba.njit(c1.simbox.dist_sq_dr_function)
 
 start.record()
 for i in range(steps):
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
+    tt.append(i*inner_steps*dt)
+
     c1.copy_to_host()
     coordinates_t.append(c1['r'][:,wall_dimension])
-    tt.append(i*inner_steps*dt)
+    if include_springs:
+        lengths, theta = get_bond_lengths_theta_z(c1['r'], bond_indicies, f, c1.simbox.data)
+        bond_lengths.append(lengths)
+        theta_z.append(theta)
 
 end.record()
 end.synchronize()
@@ -147,30 +174,45 @@ print('\tTPS : ', tps )
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)  
     
-rp.plot_scalars(df, N, D, figsize=(15,4))
+rp.plot_scalars(df, N, D, figsize=(15,4), block=False)
 
 if include_springs:
-    c1.copy_to_host()
-    lengths = []
+    plt.figure() 
+    plt.hist(np.array(bond_lengths).flatten(), bins=100, density=True)
+    plt.xlabel('bond length')
+    plt.ylabel('p(bond length)')
+    plt.show(block=False)
+    
+    # what is the distribution of theta_z for random directions
+    dr = np.random.randn(steps*N, D)
+    dl = np.sum(dr*dr, axis=1)**0.5
+    dr /= np.tile(dl,(3,1)).T
+    theta_z_random = np.arccos(np.abs(dr[:,0]))/math.pi*180
+    
+    plt.figure() 
+    bins = 100
+    hist, bin_edges = np.histogram(theta_z_random, bins=bins, range=(0, 90), density=True)
+    dx = bin_edges[1] - bin_edges[0]
+    x = bin_edges[:-1]+dx/2 
+    plt.plot(x,hist, label='Random')
 
-    for i in range(N//2):
-        dist_sq = c1.simbox.dist_sq_function(c1['r'][bond_indicies[i,0]], c1['r'][bond_indicies[i,1]], c1.simbox.data)
-        dist = math.sqrt(dist_sq)
-        if dist>1.5:
-            print(i, bond_indicies[i,0], bond_indicies[i,1], dist)
-        lengths.append(dist)
+    hist, bin_edges = np.histogram(np.array(theta_z).flatten(), bins=bins, range=(0, 90), density=True)
+    plt.plot(x,hist, label='Simulation')
+    plt.xlabel('Theta (angle with z-axis)')
+    plt.ylabel('p(Theta)')
+    plt.legend()
+    plt.show(block=False)
 
-    plt.hist(lengths, bins=30)
-    plt.show()
-
+    
 bins = 300
 hist, bin_edges = np.histogram(np.array(coordinates_t).flatten(), bins=bins, range=(-Lz/2, +Lz/2))
 dx = bin_edges[1] - bin_edges[0]
 x = bin_edges[:-1]+dx/2 
 y = hist/len(coordinates_t)/Lxy**2/dx
+plt.figure()
 plt.plot(x, y)
+plt.plot(x, np.ones_like(x)*rho, '--', label=f'rho={rho}')
+plt.xlabel('z')
+plt.ylabel('rho(z)')
 plt.show()
-
-
-
 

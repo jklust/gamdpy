@@ -514,7 +514,7 @@ def make_smooth_wall_calculator(configuration, smooth_wall_function):
                
             cuda.atomic.add(vectors, (f_id, particle, dimension), -dr[dimension]*s)      # Force
             cuda.atomic.add(scalars, (particle, w_id), dr[dimension]*dr[dimension]*s)    # Virial
-            cuda.atomic.add(scalars, (particle, u_id), u*numba.float32(0.5))             # Potential enerrgy 
+            cuda.atomic.add(scalars, (particle, u_id), u*numba.float32(1.0))             # Potential enerrgy 
             lap = numba.float32(1-D)*s + umm                                             # Laplacian  
             cuda.atomic.add(scalars, (particle, lap_id), lap)               
         
