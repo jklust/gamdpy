@@ -35,18 +35,23 @@ c1.copy_to_device()
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
 
+#def setup_smooth_walls(N, )
+
 # Make smooth wall
-wall_indicies = np.zeros((N, 3), dtype=np.int32)
+wall_indicies = np.zeros((N, 2), dtype=np.int32)
 wall_indicies[:,0] = np.arange(N)    # All particles feel the wall
 wall_indicies[:,1] = 0               # Only one wall type
-wall_indicies[:,2] = wall_dimension  # plane of wall 
-wall_params = np.zeros((1, D+3), dtype=np.float32)
-wall_params[0,2] =  simbox_data[wall_dimension]/2.0 
+#wall_indicies[:,2] = wall_dimension  # plane of wall 
+wall_params = np.zeros((1, 2*D+3), dtype=np.float32)
+wall_params[0,2] =  simbox_data[wall_dimension]/2.0  # wall_params[0,0:D] point on wall
+wall_params[0,D+2] =  1.0  # wall_params[0,D:2D]: normal vector, here in z direction
 print('Wall at +-', wall_params[0,2])
 prefactor = 4.0*math.pi/3*rho      # [Ingebrigtsen, Dyre, Soft Matter, 2014]
-wall_params[0,3] =  prefactor/15.0 # Am
-wall_params[0,4] = -prefactor/2.0  # An
-wall_params[0,5] =  3.0 # cutoff
+wall_params[0,2*D] =  prefactor/15.0 # Am
+wall_params[0,2*D+1] = -prefactor/2.0  # An
+wall_params[0,2*D+2] =  3.0 # cutoff
+print(wall_indicies)
+print(wall_params)
 wall_function = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
 wall_calculator = rp.make_smooth_wall_calculator(c1, wall_function)
 wall_interactions = rp.make_fixed_interactions(c1, wall_calculator, compute_plan, verbose=True)

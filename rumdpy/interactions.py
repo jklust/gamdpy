@@ -501,21 +501,22 @@ def make_smooth_wall_calculator(configuration, smooth_wall_function):
     def smooth_wall_calculator(vectors, scalars, ptype, sim_box, indicies, values):
         particle = indicies[0]
         wall_type = indicies[1] # Wall is defined by the D-dim coordinates in values[wall_type][0:D]
-        dimension = indicies[2] # ... and the dimension in which it lies
+        normal_vector = values[wall_type][D:2*D]
         
         # Calculating full D-dim displacement vector to avoid worry about new sim_box types in future
         dr = cuda.local.array(shape=D,dtype=numba.float32)
         dist_sq = dist_sq_dr_function(values[wall_type][0:D], vectors[r_id][particle], sim_box, dr)
-        dist = abs(dr[dimension])
+        dist = numba.float32(0.0)
+        for k in range(D):
+            dist += dr[k]*normal_vector[k]
         if dist<values[wall_type][-1]: # Last index is the cut-off
-            u, s, umm = smooth_wall_function(dist, values[wall_type][D:])
+            u, s, umm = smooth_wall_function(abs(dist), values[wall_type][2*D:])
         
-            #print(particle, wall_type, dimension, vectors[r_id][particle,dimension], dr[dimension], s)
-               
-            cuda.atomic.add(vectors, (f_id, particle, dimension), -dr[dimension]*s)      # Force
-            cuda.atomic.add(scalars, (particle, w_id), dr[dimension]*dr[dimension]*s)    # Virial
-            cuda.atomic.add(scalars, (particle, u_id), u*numba.float32(1.0))             # Potential enerrgy 
-            lap = numba.float32(1-D)*s + umm                                             # Laplacian  
+            for k in range(D):
+                cuda.atomic.add(vectors, (f_id, particle, k), -normal_vector[k]*dist*s) # Force
+            cuda.atomic.add(scalars, (particle, w_id), dist**2*s)                               # Virial
+            cuda.atomic.add(scalars, (particle, u_id), u)                                       # Potential enerrgy 
+            lap = numba.float32(1-D)*s + umm                                                    # Laplacian  
             cuda.atomic.add(scalars, (particle, lap_id), lap)               
         
         return
