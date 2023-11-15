@@ -500,17 +500,18 @@ def make_smooth_wall_calculator(configuration, smooth_wall_function):
     
     def smooth_wall_calculator(vectors, scalars, ptype, sim_box, indicies, values):
         particle = indicies[0]
-        wall_type = indicies[1] # Wall is defined by the D-dim coordinates in values[wall_type][0:D]
-        normal_vector = values[wall_type][D:2*D]
+        wall_type = indicies[1] 
+        wall_point = values[wall_type][0:D]      # Point in wall
+        normal_vector = values[wall_type][D:2*D] # Normal vector defining plane of wall
         
         # Calculating full D-dim displacement vector to avoid worry about new sim_box types in future
         dr = cuda.local.array(shape=D,dtype=numba.float32)
-        dist_sq = dist_sq_dr_function(values[wall_type][0:D], vectors[r_id][particle], sim_box, dr)
+        dist_sq = dist_sq_dr_function(wall_point, vectors[r_id][particle], sim_box, dr)
         dist = numba.float32(0.0)
         for k in range(D):
             dist += dr[k]*normal_vector[k]
         if dist<values[wall_type][-1]: # Last index is the cut-off
-            u, s, umm = smooth_wall_function(abs(dist), values[wall_type][2*D:])
+            u, s, umm = smooth_wall_function(abs(dist), values[wall_type][2*D:]) # abs: potential symmetric around wall
         
             for k in range(D):
                 cuda.atomic.add(vectors, (f_id, particle, k), -normal_vector[k]*dist*s) # Force
