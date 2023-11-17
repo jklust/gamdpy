@@ -13,7 +13,8 @@ nxy, nz = 8, 4
 N = nxy*nxy*nz*4 # FCC
 
 rho = 0.85
-Lz = 6.13
+Lz = 6.31
+
 Lxy = (N/Lz/rho)**0.5
 print('Density:', N/Lxy/Lxy/Lz )
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
@@ -34,30 +35,15 @@ c1.copy_to_device()
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
-
-#def setup_smooth_walls(N, )
-
+    
 # Make smooth wall
-wall_indicies = np.zeros((N, 2), dtype=np.int32)
-wall_indicies[:,0] = np.arange(N)    # All particles feel the wall
-wall_indicies[:,1] = 0               # Only one wall type
-#wall_indicies[:,2] = wall_dimension  # plane of wall 
-wall_params = np.zeros((1, 2*D+3), dtype=np.float32)
-wall_params[0,2] =  simbox_data[wall_dimension]/2.0  # wall_params[0,0:D] point on wall
-wall_params[0,D+2] =  1.0  # wall_params[0,D:2D]: normal vector, here in z direction
-print('Wall at +-', wall_params[0,2])
-prefactor = 4.0*math.pi/3*rho      # [Ingebrigtsen, Dyre, Soft Matter, 2014]
-wall_params[0,2*D] =  prefactor/15.0 # Am
-wall_params[0,2*D+1] = -prefactor/2.0  # An
-wall_params[0,2*D+2] =  3.0 # cutoff
-print(wall_indicies)
-print(wall_params)
-wall_function = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
-wall_calculator = rp.make_smooth_wall_calculator(c1, wall_function)
-wall_interactions = rp.make_fixed_interactions(c1, wall_calculator, compute_plan, verbose=True)
-d_wall_indicies = cuda.to_device(wall_indicies)
-d_wall_params = cuda.to_device(wall_params)
-wall_interaction_params = (d_wall_indicies, d_wall_params)
+wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
+potential_params_list = [[4.0*math.pi/3*rho/15.0, -4.0*math.pi/3*rho/2.0, 3.0],] # Ingebrigtsen & Dyre (2014)
+particles_list = [np.arange(N),] # All particles feel the wall(s)
+wall_point_list = [[0, 0, simbox_data[2]/2.0],]
+normal_vector_list = [[0,0,1],]
+wall_interactions, wall_interaction_params = rp.setup_smooth_walls(c1, wall_potential, potential_params_list, 
+                                                                particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
 
 # Make bond interactions
 if include_springs:
@@ -114,6 +100,8 @@ thermostat_state = np.zeros(2, dtype=np.float32)
 d_thermostat_state = cuda.to_device(thermostat_state)
 integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
 integrator_params_initial =  (dt, np.float32(10.0), omega2, degrees,  d_thermostat_state)
+
+# move dt and T to integrator call? Performance cost?
 
 scalars_t = []
 coordinates_t = []
