@@ -464,6 +464,38 @@ def make_bond_calculator(configuration, bondpotential_function):
         return
     return bond_calculator
 
+def setup_bonds(configuration, bond_potential, potential_params_list, particles_list, compute_plan, verbose=True):
+    D = configuration.D
+    num_types = len(potential_params_list)
+    assert len(particles_list) == num_types
+
+    total_number_indicies = 0 
+    for particles in particles_list:
+        total_number_indicies += particles.shape[0]
+    print(total_number_indicies)
+
+    bond_indicies = np.zeros((total_number_indicies, 3), dtype=np.int32)    
+    bond_params = np.zeros((num_types, len(potential_params_list[0])), dtype=np.float32)
+    
+    start_index = 0  
+    for bond_type in range(num_types):
+        next_start_index = start_index + len(particles_list[bond_type])
+       
+        bond_indicies[start_index:next_start_index, 0:2] = particles_list[bond_type] 
+        bond_indicies[start_index:next_start_index, 2] = bond_type 
+        start_index = next_start_index
+        
+        bond_params[bond_type,:] = potential_params_list[bond_type] 
+    
+    bond_calculator =  make_bond_calculator(configuration, bond_potential)
+    bond_interactions = make_fixed_interactions(configuration, bond_calculator, compute_plan, verbose=verbose)
+    d_bond_indicies = cuda.to_device(bond_indicies)
+    d_bond_params = cuda.to_device(bond_params)
+    bond_interaction_params = (d_bond_indicies, d_bond_params)
+
+    return bond_interactions, bond_interaction_params
+
+
 def add_exclusions_from_bond_indicies(exclusions, bond_indicies):
     num_part, max_num_exclusions = exclusions.shape
     max_num_exclusions -= 1 # Last index used for number of exclusions for given particle

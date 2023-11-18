@@ -6,17 +6,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
-include_springs = False
+include_springs = True
 
-wall_dimension = 2 # Could use normal vector to be even more general...
+wall_dimension = 2
 nxy, nz = 8, 4
 N = nxy*nxy*nz*4 # FCC
 
 rho = 0.85
 wall_dist = 6.31
-
 Lxy = (N/wall_dist/rho)**0.5
 print('Density:', N/Lxy/Lxy/wall_dist )
+
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
 positions, simbox_data = rp.generate_fcc_positions(nx=nxy, ny=nxy, nz=nz, rho=1.5)
 print(simbox_data)
@@ -40,33 +40,25 @@ print('compute_plan: ', compute_plan)
 wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
 prefactor = 4.0*math.pi/3*rho
 potential_params_list = [[prefactor/15.0, -prefactor/2.0, 3.0], [prefactor/15.0, -prefactor/2.0, 3.0]] # Ingebrigtsen & Dyre (2014)
-particles_list =        [np.arange(N),                 np.arange(N)]                                   # All particles feel the wall(s)
-wall_point_list =       [[0, 0, wall_dist/2.0],        [0, 0, -wall_dist/2.0] ]
-normal_vector_list =    [[0,0,1],                      [0,0,1]]
+particles_list =        [np.arange(N),                           np.arange(N)]                         # All particles feel the wall(s)
+wall_point_list =       [[0, 0, wall_dist/2.0],                  [0, 0, -wall_dist/2.0] ]
+normal_vector_list =    [[0,0,1],                                [0,0,1]]
 wall_interactions, wall_interaction_params = rp.setup_smooth_walls(c1, wall_potential, potential_params_list, 
                                                                 particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
-#print(wall_interaction_params[0].copy_to_host())
-#print(wall_interaction_params[1].copy_to_host())
 
 # Make bond interactions
 if include_springs:
-    bond_indicies = np.zeros((N//2, 3), dtype=np.int32)
-    even = np.arange(0,N,2)
-    bond_indicies[:,0] = even
-    bond_indicies[:,1] = even+1
-    bond_params = np.zeros((N//2, 2), dtype=np.float32)
-    bond_params[:,0] = 1.12 # 2**(1/6)
-    bond_params[:,1] = 1000 # 57.15 
-    bond_calculator = rp.make_bond_calculator(c1, rp.harmonic_bond_function)
-    bond_interactions = rp.make_fixed_interactions(c1, bond_calculator, compute_plan, verbose=True)
-    d_bond_indicies = cuda.to_device(bond_indicies)
-    d_bond_params = cuda.to_device(bond_params)
-    bond_interaction_params = (d_bond_indicies, d_bond_params)
-
+    bond_potential = rp.harmonic_bond_function
+    potential_params_list = [[1.12, 1000.], [1.12, 1000.], [1.12, 1000.]]
+    fourth = np.arange(0,N,4)
+    bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
+    bond_interactions, bond_interaction_params = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
+    
 # Prepare exlusions from bonds
 exclusions = np.zeros((N,10), dtype=np.int32)
 if include_springs:
-    rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+    for bond_particles in bond_particles_list:
+        rp.add_exclusions_from_bond_indicies(exclusions, bond_particles)
 d_exclusions = cuda.to_device(exclusions)
 
 # Make the pair interactions
@@ -152,9 +144,10 @@ for i in range(steps):
     c1.copy_to_host()
     coordinates_t.append(c1['r'][:,wall_dimension])
     if include_springs:
-        lengths, theta = get_bond_lengths_theta_z(c1['r'], bond_indicies, f, c1.simbox.data)
-        bond_lengths.append(lengths)
-        theta_z.append(theta)
+        for bond_particles in bond_particles_list:
+            lengths, theta = get_bond_lengths_theta_z(c1['r'], bond_particles, f, c1.simbox.data)
+            bond_lengths.append(lengths)
+            theta_z.append(theta)
 
 end.record()
 end.synchronize()
