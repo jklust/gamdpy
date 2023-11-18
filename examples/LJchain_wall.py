@@ -6,22 +6,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
-include_springs = True
+include_springs = False
 
 wall_dimension = 2 # Could use normal vector to be even more general...
 nxy, nz = 8, 4
 N = nxy*nxy*nz*4 # FCC
 
 rho = 0.85
-Lz = 6.31
+wall_dist = 6.31
 
-Lxy = (N/Lz/rho)**0.5
-print('Density:', N/Lxy/Lxy/Lz )
+Lxy = (N/wall_dist/rho)**0.5
+print('Density:', N/Lxy/Lxy/wall_dist )
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
 positions, simbox_data = rp.generate_fcc_positions(nx=nxy, ny=nxy, nz=nz, rho=1.5)
 print(simbox_data)
 simbox_data[:] = Lxy
-simbox_data[wall_dimension] = Lz # Make room for walls
+simbox_data[wall_dimension] = wall_dist+2 # 
 print(simbox_data)
 N, D = positions.shape
 
@@ -36,14 +36,17 @@ c1.copy_to_device()
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
     
-# Make smooth wall
+# Make smooth two walls
 wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
-potential_params_list = [[4.0*math.pi/3*rho/15.0, -4.0*math.pi/3*rho/2.0, 3.0],] # Ingebrigtsen & Dyre (2014)
-particles_list = [np.arange(N),] # All particles feel the wall(s)
-wall_point_list = [[0, 0, simbox_data[2]/2.0],]
-normal_vector_list = [[0,0,1],]
+prefactor = 4.0*math.pi/3*rho
+potential_params_list = [[prefactor/15.0, -prefactor/2.0, 3.0], [prefactor/15.0, -prefactor/2.0, 3.0]] # Ingebrigtsen & Dyre (2014)
+particles_list =        [np.arange(N),                 np.arange(N)]                                   # All particles feel the wall(s)
+wall_point_list =       [[0, 0, wall_dist/2.0],        [0, 0, -wall_dist/2.0] ]
+normal_vector_list =    [[0,0,1],                      [0,0,1]]
 wall_interactions, wall_interaction_params = rp.setup_smooth_walls(c1, wall_potential, potential_params_list, 
                                                                 particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
+#print(wall_interaction_params[0].copy_to_host())
+#print(wall_interaction_params[1].copy_to_host())
 
 # Make bond interactions
 if include_springs:
@@ -198,7 +201,7 @@ if include_springs:
 
     
 bins = 300
-hist, bin_edges = np.histogram(np.array(coordinates_t).flatten(), bins=bins, range=(-Lz/2, +Lz/2))
+hist, bin_edges = np.histogram(np.array(coordinates_t).flatten(), bins=bins, range=(-wall_dist/2, +wall_dist/2))
 dx = bin_edges[1] - bin_edges[0]
 x = bin_edges[:-1]+dx/2 
 y = hist/len(coordinates_t)/Lxy**2/dx
