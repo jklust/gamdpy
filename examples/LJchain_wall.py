@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import math
 
 include_springs = True
+include_walls = True
 
 wall_dimension = 2
 nxy, nz = 8, 4
@@ -35,18 +36,8 @@ c1.copy_to_device()
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
-    
-# Make smooth two walls
-wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
-prefactor = 4.0*math.pi/3*rho
-potential_params_list = [[prefactor/15.0, -prefactor/2.0, 3.0], [prefactor/15.0, -prefactor/2.0, 3.0]] # Ingebrigtsen & Dyre (2014)
-particles_list =        [np.arange(N),                           np.arange(N)]                         # All particles feel the wall(s)
-wall_point_list =       [[0, 0, wall_dist/2.0],                  [0, 0, -wall_dist/2.0] ]
-normal_vector_list =    [[0,0,1],                                [0,0,1]]
-wall_interactions, wall_interaction_params = rp.setup_smooth_walls(c1, wall_potential, potential_params_list, 
-                                                                particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
-
-# Make bond interactions
+ 
+# Make bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
 if include_springs:
     bond_potential = rp.harmonic_bond_function
     potential_params_list = [[1.12, 1000.], [1.12, 1000.], [1.12, 1000.]]
@@ -54,14 +45,25 @@ if include_springs:
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bond_interactions, bond_interaction_params = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
     
-# Prepare exlusions from bonds
+# Prepare exclusions from bonds (Should be more automatic)
 exclusions = np.zeros((N,10), dtype=np.int32)
 if include_springs:
     for bond_particles in bond_particles_list:
         rp.add_exclusions_from_bond_indicies(exclusions, bond_particles)
 d_exclusions = cuda.to_device(exclusions)
-
-# Make the pair interactions
+    
+# Make two smooth walls
+if include_walls:
+    wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
+    prefactor = 4.0*math.pi/3*rho
+    potential_params_list = [[prefactor/15.0, -prefactor/2.0, 3.0], [prefactor/15.0, -prefactor/2.0, 3.0]] # Ingebrigtsen & Dyre (2014)
+    particles_list =        [np.arange(N),                           np.arange(N)]                         # All particles feel the wall(s)
+    wall_point_list =       [[0, 0, wall_dist/2.0],                  [0, 0, -wall_dist/2.0] ]
+    normal_vector_list =    [[0,0,1],                                [0,0,1]]
+    wall_interactions, wall_interaction_params = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
+                                                                       particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
+    
+# Make pair interactions
 cut_off = 2.5
 params = np.zeros((1,1), dtype="f,f,f")
 params[0][0] = (4., -4., cut_off)
@@ -74,14 +76,20 @@ pair_interactions = rp.make_interactions(c1, pair_potential = LJ, num_cscalars=n
 LJ.copy_to_device()
 pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
 
-# Add up interactions
-if include_springs:
-    interactions = rp.add_interactions_list(c1, (pair_interactions, bond_interactions, wall_interactions), compute_plan, verbose=True,)
-    interaction_params = (pair_interaction_params, bond_interaction_params, wall_interaction_params)
-else:
-    interactions = rp.add_interactions_list(c1, (pair_interactions, wall_interactions), compute_plan, verbose=True,)
-    interaction_params = (pair_interaction_params, wall_interaction_params)
 
+# Add up interactions (Needs to start with pair-interactions, and there can only be one...)
+interactions_list = [pair_interactions,]
+interaction_params_list = [pair_interaction_params, ]
+
+if include_walls:
+    interactions_list.append(wall_interactions)
+    interaction_params_list.append(wall_interaction_params)
+
+if include_springs:
+    interactions_list.append(bond_interactions)
+    interaction_params_list.append(bond_interaction_params)
+
+interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, interaction_params_list, compute_plan, verbose=True,)
     
 # Make NVT integrator
 integrator_step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=True)

@@ -339,7 +339,7 @@ def add_interactions(configuration, interactions0,  interactions1, compute_plan,
             return
         return compute_interactions
 
-def add_interactions_list(configuration, interactions_list, compute_plan, verbose=True,):
+def add_interactions_list(configuration, interactions_list, interaction_params_list, compute_plan, verbose=True,):
     gridsync = compute_plan['gridsync']
     length = len(interactions_list)
     
@@ -370,7 +370,7 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
                 grid.sync() # Not always necesarry !!!
                 i4(grid, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
-        return compute_interactions
+        return compute_interactions, tuple(interaction_params_list)
 
     else:
         # A python function, making several kernel calls to syncronize  
@@ -385,7 +385,7 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
             if length>4:
                 i4(0, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
-        return compute_interactions
+        return compute_interactions, tuple(interaction_params_list)
 
 def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbose=True,):
     D = configuration.D
@@ -554,7 +554,7 @@ def make_smooth_wall_calculator(configuration, smooth_wall_function):
         return
     return smooth_wall_calculator
 
-def setup_smooth_walls(configuration, wall_potential, potential_params_list, particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True):
+def setup_planar_interactions(configuration, wall_potential, potential_params_list, particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True):
     D = configuration.D
     num_types = len(potential_params_list)
     assert len(particles_list) == num_types
