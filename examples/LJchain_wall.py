@@ -43,15 +43,8 @@ if include_springs:
     potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
     fourth = np.arange(0,N,4)
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
-    bond_interactions, bond_interaction_params = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
-    
-# Prepare exclusions from bonds (Should be more automatic)
-exclusions = np.zeros((N,10), dtype=np.int32)
-if include_springs:
-    for bond_particles in bond_particles_list:
-        rp.add_exclusions_from_bond_indicies(exclusions, bond_particles)
-d_exclusions = cuda.to_device(exclusions)
-    
+    bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
+     
 # Make two smooth walls
 if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
@@ -60,8 +53,8 @@ if include_walls:
     particles_list =        [np.arange(N),                           np.arange(N)]                         # All particles feel the wall(s)
     wall_point_list =       [[0, 0, wall_dist/2.0],                  [0, 0, -wall_dist/2.0] ]
     normal_vector_list =    [[0,0,1],                                [0,0,1]]
-    wall_interactions, wall_interaction_params = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
-                                                                       particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
+    walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
+                                        particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
     
 # Make pair interactions
 cut_off = 2.5
@@ -74,22 +67,16 @@ LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6)), p
 num_cscalars = 3
 pair_interactions = rp.make_interactions(c1, pair_potential = LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=True,)
 LJ.copy_to_device()
-pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
+pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, bonds['exclusions'])
+pairs = {'interactions':pair_interactions, 'interaction_params':pair_interaction_params}
 
-
-# Add up interactions (Needs to start with pair-interactions, and there can only be one...)
-interactions_list = [pair_interactions,]
-interaction_params_list = [pair_interaction_params, ]
-
+# Add up interactions
+interactions_list = [pairs,]
 if include_walls:
-    interactions_list.append(wall_interactions)
-    interaction_params_list.append(wall_interaction_params)
-
+    interactions_list.append(walls)
 if include_springs:
-    interactions_list.append(bond_interactions)
-    interaction_params_list.append(bond_interaction_params)
-
-interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, interaction_params_list, compute_plan, verbose=True,)
+    interactions_list.append(bonds)
+interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
     
 # Make NVT integrator
 integrator_step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=True)

@@ -339,24 +339,38 @@ def add_interactions(configuration, interactions0,  interactions1, compute_plan,
             return
         return compute_interactions
 
-def add_interactions_list(configuration, interactions_list, interaction_params_list, compute_plan, verbose=True,):
+def add_interactions_list(configuration, interactions_list, compute_plan, verbose=True,):
     gridsync = compute_plan['gridsync']
     length = len(interactions_list)
+    assert length <= 5
     
     # Unpack interaction functions from list/tuple. Would be nice to find more elegant way!!!
-    i0 = interactions_list[0]
-    i1 = interactions_list[1]
+    #i0 = interactions_list[0][
+    #i1 = interactions_list[1]
+    #if len(interactions_list)>2:
+    #    i2 = interactions_list[2]
+    #if len(interactions_list)>3:
+    #   i3 = interactions_list[3]
+    #if len(interactions_list)>4:
+    #    i4 = interactions_list[4]
+
+    i0 = interactions_list[0]['interactions']
+    i1 = interactions_list[1]['interactions']
     if len(interactions_list)>2:
-        i2 = interactions_list[2]
+        i2 = interactions_list[2]['interactions']
     if len(interactions_list)>3:
-        i3 = interactions_list[3]
+        i3 = interactions_list[3]['interactions']
     if len(interactions_list)>4:
-        i4 = interactions_list[4]
- 
+        i4 = interactions_list[4]['interactions']
+
+    interaction_params_list = []
+    for interaction in interactions_list:
+        interaction_params_list.append(interaction['interaction_params'])
+    
     if gridsync:
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
-        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
+        def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
             grid.sync() # Not always necesarry !!!
             i1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
@@ -370,12 +384,12 @@ def add_interactions_list(configuration, interactions_list, interaction_params_l
                 grid.sync() # Not always necesarry !!!
                 i4(grid, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
-        return compute_interactions, tuple(interaction_params_list)
+        return interactions, tuple(interaction_params_list)
 
     else:
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
-        def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
+        def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])
             i1(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             if length>2:
@@ -385,7 +399,7 @@ def add_interactions_list(configuration, interactions_list, interaction_params_l
             if length>4:
                 i4(0, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
-        return compute_interactions, tuple(interaction_params_list)
+        return interactions, tuple(interaction_params_list)
 
 def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbose=True,):
     D = configuration.D
@@ -466,6 +480,7 @@ def make_bond_calculator(configuration, bondpotential_function):
 
 def setup_bonds(configuration, bond_potential, potential_params_list, particles_list, compute_plan, verbose=True):
     D = configuration.D
+    N = configuration.N
     num_types = len(potential_params_list)
     assert len(particles_list) == num_types
 
@@ -492,8 +507,16 @@ def setup_bonds(configuration, bond_potential, potential_params_list, particles_
     d_bond_indicies = cuda.to_device(bond_indicies)
     d_bond_params = cuda.to_device(bond_params)
     bond_interaction_params = (d_bond_indicies, d_bond_params)
-
-    return bond_interactions, bond_interaction_params
+    
+    # Setup exclusion 'list'
+    exclusions = np.zeros((N,10), dtype=np.int32)
+    for particles in particles_list:
+        add_exclusions_from_bond_indicies(exclusions, particles)
+    d_exclusions = cuda.to_device(exclusions)
+ 
+    return {'interactions': bond_interactions, 
+            'interaction_params': bond_interaction_params, 
+           'exclusions': d_exclusions}
 
 
 def add_exclusions_from_bond_indicies(exclusions, bond_indicies):
@@ -583,5 +606,5 @@ def setup_planar_interactions(configuration, potential_function, potential_param
     d_params = cuda.to_device(params)
     interaction_params = (d_indicies, d_params)
 
-    return interactions, interaction_params
+    return {'interactions':interactions, 'interaction_params':interaction_params}
      
