@@ -37,7 +37,7 @@ c1.copy_to_device()
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
  
-# Make bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
+# Setup bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
 if include_springs:
     bond_potential = rp.harmonic_bond_function
     potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
@@ -45,7 +45,7 @@ if include_springs:
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
      
-# Make two smooth walls
+# Setup two smooth walls
 if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
     prefactor = 4.0*math.pi/3*rho
@@ -56,7 +56,7 @@ if include_walls:
     walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
                                         particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
     
-# Make pair interactions
+# Setup pair interactions
 cut_off = 2.5
 params = np.zeros((1,1), dtype="f,f,f")
 params[0][0] = (4., -4., cut_off)

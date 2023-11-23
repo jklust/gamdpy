@@ -344,16 +344,6 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
     length = len(interactions_list)
     assert length <= 5
     
-    # Unpack interaction functions from list/tuple. Would be nice to find more elegant way!!!
-    #i0 = interactions_list[0][
-    #i1 = interactions_list[1]
-    #if len(interactions_list)>2:
-    #    i2 = interactions_list[2]
-    #if len(interactions_list)>3:
-    #   i3 = interactions_list[3]
-    #if len(interactions_list)>4:
-    #    i4 = interactions_list[4]
-
     i0 = interactions_list[0]['interactions']
     i1 = interactions_list[1]['interactions']
     if len(interactions_list)>2:
