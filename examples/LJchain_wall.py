@@ -40,7 +40,7 @@ print('compute_plan: ', compute_plan)
 # Make bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
 if include_springs:
     bond_potential = rp.harmonic_bond_function
-    potential_params_list = [[1.12, 1000.], [1.12, 1000.], [1.12, 1000.]]
+    potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
     fourth = np.arange(0,N,4)
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bond_interactions, bond_interaction_params = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
@@ -111,7 +111,7 @@ coordinates_t = []
 tt = []
 
 #inner_steps = 1000
-#steps = 500
+#steps = 500q
 equil_steps = 30000
 inner_steps = 1000
 steps = 500
