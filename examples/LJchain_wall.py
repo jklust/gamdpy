@@ -45,32 +45,30 @@ if include_springs:
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
      
-# Setup two smooth walls
+# Setup two smooth walls implemented as 'planar interactions'
 if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
-    prefactor = 4.0*math.pi/3*rho
-    potential_params_list = [[prefactor/15.0, -prefactor/2.0, 3.0], [prefactor/15.0, -prefactor/2.0, 3.0]] # Ingebrigtsen & Dyre (2014)
-    particles_list =        [np.arange(N),                           np.arange(N)]                         # All particles feel the wall(s)
-    wall_point_list =       [[0, 0, wall_dist/2.0],                  [0, 0, -wall_dist/2.0] ]
-    normal_vector_list =    [[0,0,1],                                [0,0,1]]
+    A = 4.0*math.pi/3*rho
+    potential_params_list = [[A/15.0, -A/2.0, 3.0], [A/15.0, -A/2.0, 3.0]]    # Ingebrigtsen & Dyre (2014)
+    particles_list =        [np.arange(N),          np.arange(N)]             # All particles feel the walls
+    wall_point_list =       [[0, 0, wall_dist/2.0], [0, 0, -wall_dist/2.0] ]
+    normal_vector_list =    [[0,0,1],               [0,0,1]]
     walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
                                         particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
-    
-# Setup pair interactions
-cut_off = 2.5
-params = np.zeros((1,1), dtype="f,f,f")
-params[0][0] = (4., -4., cut_off)
-print('Pairpotential paramaters:\n', params)
-skin = np.float32(compute_plan['skin'])
-max_cut = np.float32(cut_off)
-LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
-num_cscalars = 3
-pair_interactions = rp.make_interactions(c1, pair_potential = LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=True,)
-LJ.copy_to_device()
-pair_interaction_params = (LJ.d_params, max_cut, skin, LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, bonds['exclusions'])
-pairs = {'interactions':pair_interactions, 'interaction_params':pair_interaction_params}
 
-# Add up interactions
+# Other features you can setup with planar interactions, using different potential-functions include:
+# - Gravity
+# - External electrical field 
+# - Semipermeable membranes (using energy-barriers)
+# - Semi-2D simulations (eg., harmonic potential in the z-direction)
+
+# Setup pair interactions
+pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
+params = [[[4.0, -4.0, 2.5],], ]
+LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+pairs = LJ.get_interactions(c1, exclusions=bonds['exclusions'], compute_plan=compute_plan, verbose=True)
+
+# Add up interactions (For now: pair_interaction needs to be first, and there can be only one)
 interactions_list = [pairs,]
 if include_walls:
     interactions_list.append(walls)
@@ -97,8 +95,6 @@ scalars_t = []
 coordinates_t = []
 tt = []
 
-#inner_steps = 1000
-#steps = 500q
 equil_steps = 30000
 inner_steps = 1000
 steps = 500

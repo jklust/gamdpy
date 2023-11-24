@@ -22,6 +22,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
     c1['m'] =  np.ones(N, dtype=np.float32)     # Set masses
     c1.ptype = np.zeros(N, dtype=np.int32)      # Set types
+    c1.copy_to_device()    
     
     # Allow for overwriiting of the default compute_plan
     compute_plan = rp.get_default_compute_plan(c1)
@@ -39,25 +40,16 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         print('simbox_data:', simbox_data)
         print('compute_plan: ', compute_plan)
    
-    # Make the pair potential. NOTE: params is a 2 dimensional numpy array of tuples
-    params = np.zeros((1,1), dtype="f,f,f")
-    params[0][0] = (4., -4., cut)
-    if verbose:
-        print('Pairpotential paramaters:\n', params)
-    LJ = rp.PairPotential(c1, rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(m=12, n=6)), params=params, max_num_nbs=1000, compute_plan=compute_plan)
-    num_cscalars = 3
-
-    c1.copy_to_device()                
-    LJ.copy_to_device()
-    
-    exclusions = np.zeros((N,10), dtype=np.int32)
-    #rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
+    # Should not be necessarry:
+    exclusions = np.zeros((c1.N,10), dtype=np.int32)
     d_exclusions = cuda.to_device(exclusions)
 
-    interactions = rp.make_interactions(c1, pair_potential=LJ, num_cscalars=num_cscalars, compute_plan=compute_plan, verbose=verbose,)
-    max_cut = np.float32(cut)
-    interaction_params = (LJ.d_params, max_cut, compute_plan['skin'], LJ.nblist.d_nblist,  LJ.nblist.d_nbflag, d_exclusions)
-   
+    # Make the pair potential.
+    pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
+    params = [[[4.0, -4.0, 2.5],], ]
+    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+    pairs = pair_potential.get_interactions(c1, exclusions=d_exclusions, compute_plan=compute_plan, verbose=False)
+       
     # Setup the integrator
     dt = np.float32(0.005)
     steps = 250
@@ -76,16 +68,16 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
 
         step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
-    integrate = rp.make_integrator(c1, step, interactions, compute_plan=compute_plan, verbose=False) 
+    integrate = rp.make_integrator(c1, step, pairs['interactions'], compute_plan=compute_plan, verbose=False) 
      
     # Run the simulation
     scalars_t = []
     tt = []
     for i in range(steps):
-        integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, inner_steps)
+        integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, 
+                  pairs['interaction_params'], integrator_params,inner_steps)
         scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
-        tt.append(i*inner_steps*dt)
-            
+        tt.append(i*inner_steps*dt)            
    
     df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
     df['t'] = np.array(tt)

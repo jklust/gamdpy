@@ -26,20 +26,16 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
     c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
     c1['m'] = np.ones(N, dtype=np.float32)  # Set masses
     c1.ptype = np.zeros(N, dtype=np.int32)  # Set types
-
-    LJ_func = rp.apply_shifted_force_cutoff( rp.make_LJ_m_n(m=12, n=6) )
-
-    params = np.zeros((1, 1), dtype="f,f,f")
-    params[0][0] = (4., -4., cut)
-    max_cut = np.float32(cut)
-    if verbose:
-        print('Pairpotential paramaters:\n', params)
-        print('simbox_data:', simbox_data)
+ 
+    #LJ_func = rp.apply_shifted_force_cutoff( rp.make_LJ_m_n(m=12, n=6) )
+    #pairpot_func = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
+    pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
+    params = [[[4.0, -4.0, 2.5],], ]
     
-    return c1, LJ_func, params, max_cut
+    return c1, pairpot_func, params
 
 
-def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integrator='NVE', verbose=True):
+def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose=True):
     """
     Run LJ benchmark
     Could be run with other potential and/or parameters, but asserts would need to be updated
@@ -47,24 +43,16 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integr
     if verbose:
         print('compute_plan: ', compute_plan)
 
-    # Make the pair potential. NOTE: params is a 2-dimensional numpy array of tuples
-    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
-    num_cscalars = 3
-
     c1.copy_to_device()
-    pair_potential.copy_to_device()
-    
+
+    # Should not be necessarry:
     exclusions = np.zeros((c1.N,10), dtype=np.int32)
-    #rp.add_exclusions_from_bond_indicies(exclusions, bond_indicies)
     d_exclusions = cuda.to_device(exclusions)
-
-
-    interactions = rp.make_interactions(c1, pair_potential=pair_potential, num_cscalars=num_cscalars,
-                                        compute_plan=compute_plan, verbose=verbose, )
     
-    interaction_params = (pair_potential.d_params, max_cut, compute_plan['skin'],
-                          pair_potential.nblist.d_nblist, pair_potential.nblist.d_nbflag, d_exclusions)
-
+    # Make the pair potential. 
+    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+    pairs = pair_potential.get_interactions(c1, exclusions=d_exclusions, compute_plan=compute_plan, verbose=False)
+    
     # Set up the integrator
     dt = np.float32(0.005)
 
@@ -81,11 +69,12 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integr
 
         step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params = (dt, T, omega2, degrees, d_thermostat_state)
-    integrate = rp.make_integrator(c1, step, interactions, compute_plan=compute_plan, verbose=False)
+    integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
 
     # Run the simulation
 
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params,
+    # Warmup
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
               integrator_params, 10)
 
     scalars_t = [np.sum(c1.d_scalars.copy_to_host(), axis=0)]
@@ -93,7 +82,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, max_cut, steps, integr
     end = cuda.event()
 
     start.record()
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params,
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
               integrator_params, steps)
     end.record()
     end.synchronize()
@@ -140,13 +129,13 @@ def main():
     tpss = []
     magic_number = 1e7
     for nxyz in nxyzs:
-        c1, LJ_func, params, max_cut = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
+        c1, LJ_func, params = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
         while time_in_sec < 1.0:  # At least 1s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, max_cut, steps, integrator='NVE', verbose=False)
+            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)

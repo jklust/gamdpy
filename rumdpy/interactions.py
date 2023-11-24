@@ -42,14 +42,40 @@ class PairPotential():
         else:
             self.pairpotential_calculator = pairpotential_calculator
         self.params_function = params_function
-        self.params = params
+        self.params_user = np.array(params,dtype=np.float32)
         self.nblist = NbList(N, max_num_nbs)
         return
     
     def copy_to_device(self):
         self.d_params = cuda.to_device(self.params)
         self.nblist.copy_to_device()
-    
+        
+    def get_interactions(self, configuration, exclusions, compute_plan, verbose=True):
+   
+        # Setup params array in right format
+        num_types = self.params_user.shape[0]
+        assert num_types == self.params_user.shape[1]
+        num_params = len(self.params_user[0,0])
+        
+        # Make params in the right format
+        self.params = np.zeros((num_types, num_types), dtype="f,"*num_params)
+        for i in range(num_types):
+            for j in range(num_types):
+                self.params[i,j] = tuple(self.params_user[i,j])
+        self.copy_to_device()
+                
+        max_cut = np.float32(np.max(self.params_user[:,:,-1]))
+        num_cscalars = 3
+        interactions = make_interactions(configuration, self, num_cscalars=num_cscalars,
+                                         compute_plan=compute_plan, verbose=verbose,)
+        
+        # Should be able to take a list of exclusions (eg from bonds, angles, etc), and merge 
+        interaction_params = (self.d_params, max_cut, np.float32(compute_plan['skin']), 
+                              self.nblist.d_nblist,  self.nblist.d_nbflag, exclusions)
+
+        return {'interactions': interactions, 
+                'interaction_params': interaction_params}
+
 
 # Helper functions
 
@@ -338,7 +364,7 @@ def add_interactions(configuration, interactions0,  interactions1, compute_plan,
             interactions1(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
         return compute_interactions
-
+    
 def add_interactions_list(configuration, interactions_list, compute_plan, verbose=True,):
     gridsync = compute_plan['gridsync']
     length = len(interactions_list)
