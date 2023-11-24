@@ -26,6 +26,8 @@ d_exclusions = cuda.to_device(exclusions)
 # Make pair potential
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
 params = [[[4.0, -4.0, 2.5],], ]
+#pair_potential = rp.apply_shifted_force_cutoff(rp.make_IPL_n(10))
+#params = [[[1.0, 2.5],], ]
 LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
 pairs = LJ.get_interactions(c1, exclusions=d_exclusions, compute_plan=compute_plan, verbose=True)
 

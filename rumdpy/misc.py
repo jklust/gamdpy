@@ -31,6 +31,17 @@ def make_LJ_m_n(m, n):
         return u, s, umm # U(r), s == -U'(r)/r, U''(r)
     return LJ_m_n
 
+def make_IPL_n(n):                   
+    def IPL_n(dist, params):              #     U(r) =           An*r**-n
+        An = params[0]                    #     Um(r) =        n*An*r**-(n+1)
+        invDist = numba.float32(1.0)/dist # s = -Um/r =        n*An*r**-(n+2), Fx = s*dx
+
+        u =                            An*invDist**n 
+        s =   numba.float32( n ) *     An*invDist**(n+2)
+        umm = numba.float32( n*(n+1) )*An*invDist**(n+2)
+        return u, s, umm # U(r), s == -U'(r)/r, U''(r)
+    return IPL_n
+
 def harmonic_bond_function(dist, params):
     length = params[0]
     strength = params[1]
