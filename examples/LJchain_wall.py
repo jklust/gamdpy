@@ -8,6 +8,7 @@ import math
 
 include_springs = True
 include_walls = True
+include_gravity = True
 
 wall_dimension = 2
 nxy, nz = 8, 4
@@ -15,7 +16,11 @@ N = nxy*nxy*nz*4 # FCC
 
 rho = 0.85
 wall_dist = 6.31
+
 Lxy = (N/wall_dist/rho)**0.5
+if include_gravity:
+    wall_dist *= 2
+
 print('Density:', N/Lxy/Lxy/wall_dist )
 
 # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
@@ -23,6 +28,9 @@ positions, simbox_data = rp.generate_fcc_positions(nx=nxy, ny=nxy, nz=nz, rho=1.
 print(simbox_data)
 simbox_data[:] = Lxy
 simbox_data[wall_dimension] = wall_dist+2 # 
+if include_gravity:
+    simbox_data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
+
 print(simbox_data)
 N, D = positions.shape
 
@@ -52,12 +60,22 @@ if include_walls:
     potential_params_list = [[A/15.0, -A/2.0, 3.0], [A/15.0, -A/2.0, 3.0]]    # Ingebrigtsen & Dyre (2014)
     particles_list =        [np.arange(N),          np.arange(N)]             # All particles feel the walls
     wall_point_list =       [[0, 0, wall_dist/2.0], [0, 0, -wall_dist/2.0] ]
-    normal_vector_list =    [[0,0,1],               [0,0,1]]
+    normal_vector_list =    [[0,0,1],               [0,0,-1]]                 # Carefull!
     walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
                                         particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
 
+    # Add gravity. NOTE: Carefull about PBC, since planar interactions takes abs(distance)
+if include_gravity:
+    potential = numba.njit(rp.make_IPL_n(-1)) # numba.njit should not be necesarry
+    mg = 1
+    potential_params_list = [[mg, 10*wall_dist],] 
+    particles_list =        [np.arange(N),]             # All particles feel the gravity
+    point_list =       [[0, 0, -wall_dist/2.0] ]   # Defining 0 for potential energy
+    normal_vector_list =    [[0,0,1],     ]
+    gravity = rp.setup_planar_interactions(c1, potential, potential_params_list, 
+                                        particles_list, point_list, normal_vector_list, compute_plan, verbose=True)
+    
 # Other features you can setup with planar interactions, using different potential-functions include:
-# - Gravity
 # - External electrical field 
 # - Semipermeable membranes (using energy-barriers)
 # - Semi-2D simulations (eg., harmonic potential in the z-direction)
@@ -70,10 +88,13 @@ pairs = LJ.get_interactions(c1, exclusions=bonds['exclusions'], compute_plan=com
 
 # Add up interactions (For now: pair_interaction needs to be first, and there can be only one)
 interactions_list = [pairs,]
-if include_walls:
-    interactions_list.append(walls)
 if include_springs:
     interactions_list.append(bonds)
+if include_walls:
+    interactions_list.append(walls)
+if include_gravity:
+    interactions_list.append(gravity)
+
 interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
     
 # Make NVT integrator
@@ -191,7 +212,7 @@ x = bin_edges[:-1]+dx/2
 y = hist/len(coordinates_t)/Lxy**2/dx
 plt.figure()
 plt.plot(x, y)
-plt.plot(x, np.ones_like(x)*rho, '--', label=f'rho={rho}')
+plt.plot(x, np.ones_like(x)*N/Lxy/Lxy/wall_dist, '--', label=f'rho={rho}')
 plt.xlabel('z')
 plt.ylabel('rho(z)')
 plt.show()
