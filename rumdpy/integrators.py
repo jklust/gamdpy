@@ -275,3 +275,18 @@ def make_run_langevin_nvt(configuration, compute_plan, verbose=True, ):
         return cuda.jit(device=gridsync)(step_nvt)[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
 
 
+def setup_integrator_nvt(configuration, interactions, tau, dt, T, compute_plan, verbose=True):
+    integrator_step = make_step_nvt(configuration, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
+
+    dt = np.float32(dt)
+    T = np.float32(T)
+    omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
+    degrees = configuration.N*configuration.D - configuration.D
+    thermostat_state = np.zeros(2, dtype=np.float32)
+    d_thermostat_state = cuda.to_device(thermostat_state)
+    integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
+    
+    return integrate, integrator_params
+
+    

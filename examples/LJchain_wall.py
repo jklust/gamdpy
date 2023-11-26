@@ -12,12 +12,11 @@ include_gravity = False
 
 rho = 0.85
 wall_dist = 6.31
-
-nxy, nz = 8, 4
 wall_dimension = 2
+nxy, nz = 8, 4
 
 # Generate configuration with a FCC lattice (higher rho, to make room for walls)
-c1 = rp.make_configuration_fcc(nx=nxy, ny=nxy, nz=nz, rho=1.5, T=1.44) # 1024
+c1 = rp.make_configuration_fcc(nx=nxy, ny=nxy, nz=nz, rho=1.5, T=1.44) 
 
 # Adjust the simbox according to the desired setup
 Lxy = (c1.N/wall_dist/rho)**0.5
@@ -25,7 +24,7 @@ c1.simbox.data[:] = Lxy
 if include_gravity:
     wall_dist *= 2  # Double wall distance, so effect of gravity can be seen 
 if include_walls:
-    c1.simbox.data[wall_dimension] = wall_dist+2 #
+    c1.simbox.data[wall_dimension] = wall_dist+4 # Make box bigger to avoid walls working through PBC
 else:
     c1.simbox.data[wall_dimension] = wall_dist #
 if include_gravity:
@@ -48,7 +47,7 @@ if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
     A = 4.0*math.pi/3*rho
     potential_params_list = [[A/15.0, -A/2.0, 3.0], [A/15.0, -A/2.0, 3.0]]    # Ingebrigtsen & Dyre (2014)
-    particles_list =        [np.arange(c1.N),       np.arange(c1.N)]             # All particles feel the walls
+    particles_list =        [np.arange(c1.N),       np.arange(c1.N)]          # All particles feel the walls
     wall_point_list =       [[0, 0, wall_dist/2.0], [0, 0, -wall_dist/2.0] ]
     normal_vector_list =    [[0,0,1],               [0,0,-1]]                 # Carefull!
     walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
@@ -91,21 +90,11 @@ if include_gravity:
     interactions_list.append(gravity)
 
 interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
-    
-# Make NVT integrator
-integrator_step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=True)
-integrate = rp.make_integrator(c1, integrator_step, interactions, compute_plan=compute_plan, verbose=True)
-dt = np.float32(0.0025)
-T = np.float32(1.8)
-tau=0.2
-omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
-degrees = c1.N*c1.D - c1.D
-thermostat_state = np.zeros(2, dtype=np.float32)
-d_thermostat_state = cuda.to_device(thermostat_state)
-integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
-integrator_params_initial =  (dt, np.float32(10.0), omega2, degrees,  d_thermostat_state)
 
-# move dt and T to integrator call? Performance cost?
+# Setup NVT intergrator(s)
+dt = 0.0025
+integrate,  integrator_params  = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt,   T= 1.8, compute_plan=compute_plan)
+integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt/2, T=10.0, compute_plan=compute_plan)
 
 scalars_t = []
 coordinates_t = []
@@ -135,8 +124,8 @@ def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data)
     return bond_lengths, theta_z
 
 #Equilibration
-integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params_initial, equil_steps)
-integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, equil_steps)
+integrate0(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, equil_steps)
+integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  interaction_params, integrator_params,  equil_steps)
 bond_lengths = []
 theta_z = []
 
@@ -198,7 +187,6 @@ if include_springs:
     plt.ylabel('p(Theta)')
     plt.legend()
     plt.show(block=False)
-
     
 bins = 300
 hist, bin_edges = np.histogram(np.array(coordinates_t).flatten(), bins=bins, range=(-wall_dist/2, +wall_dist/2))
