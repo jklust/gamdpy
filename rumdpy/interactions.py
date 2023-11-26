@@ -52,6 +52,9 @@ class PairPotential():
         
     def get_interactions(self, configuration, exclusions, compute_plan, verbose=True):
    
+        if exclusions == None:
+            exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
+
         # Setup params array in right format
         num_types = self.params_user.shape[0]
         assert num_types == self.params_user.shape[1]
@@ -371,7 +374,8 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
     assert length <= 5
     
     i0 = interactions_list[0]['interactions']
-    i1 = interactions_list[1]['interactions']
+    if len(interactions_list)>1:
+        i1 = interactions_list[1]['interactions']
     if len(interactions_list)>2:
         i2 = interactions_list[2]['interactions']
     if len(interactions_list)>3:
@@ -388,8 +392,9 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
         @cuda.jit( device=gridsync )
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
-            grid.sync() # Not always necesarry !!!
-            i1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
+            if length>1:
+                grid.sync() # Not always necesarry !!!
+                i1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             if length>2:
                 grid.sync() # Not always necesarry !!!
                 i2(grid, vectors, scalars, ptype, sim_box, interaction_parameters[2])
@@ -407,7 +412,8 @@ def add_interactions_list(configuration, interactions_list, compute_plan, verbos
         #@cuda.jit( device=gridsync )
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])
-            i1(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
+            if length>1:
+                i1(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             if length>2:
                 i2(0, vectors, scalars, ptype, sim_box, interaction_parameters[2])
             if length>3:

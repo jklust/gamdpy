@@ -8,39 +8,29 @@ import math
 
 include_springs = True
 include_walls = True
-include_gravity = True
-
-wall_dimension = 2
-nxy, nz = 8, 4
-N = nxy*nxy*nz*4 # FCC
+include_gravity = False
 
 rho = 0.85
 wall_dist = 6.31
 
-Lxy = (N/wall_dist/rho)**0.5
+nxy, nz = 8, 4
+wall_dimension = 2
+
+# Generate configuration with a FCC lattice (higher rho, to make room for walls)
+c1 = rp.make_configuration_fcc(nx=nxy, ny=nxy, nz=nz, rho=1.5, T=1.44) # 1024
+
+# Adjust the simbox according to the desired setup
+Lxy = (c1.N/wall_dist/rho)**0.5
+c1.simbox.data[:] = Lxy
 if include_gravity:
-    wall_dist *= 2
-
-print('Density:', N/Lxy/Lxy/wall_dist )
-
-# Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density 
-positions, simbox_data = rp.generate_fcc_positions(nx=nxy, ny=nxy, nz=nz, rho=1.5)
-print(simbox_data)
-simbox_data[:] = Lxy
-simbox_data[wall_dimension] = wall_dist+2 # 
+    wall_dist *= 2  # Double wall distance, so effect of gravity can be seen 
+if include_walls:
+    c1.simbox.data[wall_dimension] = wall_dist+2 #
+else:
+    c1.simbox.data[wall_dimension] = wall_dist #
 if include_gravity:
-    simbox_data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
-
-print(simbox_data)
-N, D = positions.shape
-
-### Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
-c1 = rp.Configuration(N, D, simbox_data)
-c1['r'] = positions
-c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
-c1['m'] =  np.ones(N, dtype=np.float32)     # Set masses
-c1.ptype = np.zeros(N, dtype=np.int32)      # Set types
-c1.copy_to_device()           
+    c1.simbox.data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
+c1.copy_to_device()  
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
@@ -49,7 +39,7 @@ print('compute_plan: ', compute_plan)
 if include_springs:
     bond_potential = rp.harmonic_bond_function
     potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
-    fourth = np.arange(0,N,4)
+    fourth = np.arange(0,c1.N,4)
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
      
@@ -58,19 +48,19 @@ if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
     A = 4.0*math.pi/3*rho
     potential_params_list = [[A/15.0, -A/2.0, 3.0], [A/15.0, -A/2.0, 3.0]]    # Ingebrigtsen & Dyre (2014)
-    particles_list =        [np.arange(N),          np.arange(N)]             # All particles feel the walls
+    particles_list =        [np.arange(c1.N),       np.arange(c1.N)]             # All particles feel the walls
     wall_point_list =       [[0, 0, wall_dist/2.0], [0, 0, -wall_dist/2.0] ]
     normal_vector_list =    [[0,0,1],               [0,0,-1]]                 # Carefull!
     walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
                                         particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
 
-    # Add gravity. NOTE: Carefull about PBC, since planar interactions takes abs(distance)
+# Add gravity. NOTE: Carefull about PBC, since planar interactions takes abs(distance)
 if include_gravity:
     potential = numba.njit(rp.make_IPL_n(-1)) # numba.njit should not be necesarry
-    mg = 1
-    potential_params_list = [[mg, 10*wall_dist],] 
-    particles_list =        [np.arange(N),]             # All particles feel the gravity
-    point_list =       [[0, 0, -wall_dist/2.0] ]   # Defining 0 for potential energy
+    mg = 2
+    potential_params_list = [[mg, 10*wall_dist],]       # Big cutoff, to avoid weird PBC effects
+    particles_list =        [np.arange(c1.N),]          # All particles feel the gravity
+    point_list =            [[0, 0, -wall_dist/2.0] ]   # Defining 0 for potential energy
     normal_vector_list =    [[0,0,1],     ]
     gravity = rp.setup_planar_interactions(c1, potential, potential_params_list, 
                                         particles_list, point_list, normal_vector_list, compute_plan, verbose=True)
@@ -80,11 +70,16 @@ if include_gravity:
 # - Semipermeable membranes (using energy-barriers)
 # - Semi-2D simulations (eg., harmonic potential in the z-direction)
 
+if include_springs:
+    exclusions = bonds['exclusions']
+else:
+    exclusions = None
+
 # Setup pair interactions
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
 params = [[[4.0, -4.0, 2.5],], ]
 LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
-pairs = LJ.get_interactions(c1, exclusions=bonds['exclusions'], compute_plan=compute_plan, verbose=True)
+pairs = LJ.get_interactions(c1, exclusions=exclusions, compute_plan=compute_plan, verbose=True)
 
 # Add up interactions (For now: pair_interaction needs to be first, and there can be only one)
 interactions_list = [pairs,]
@@ -104,7 +99,7 @@ dt = np.float32(0.0025)
 T = np.float32(1.8)
 tau=0.2
 omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
-degrees = N*D - D
+degrees = c1.N*c1.D - c1.D
 thermostat_state = np.zeros(2, dtype=np.float32)
 d_thermostat_state = cuda.to_device(thermostat_state)
 integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
@@ -175,7 +170,7 @@ print('\tTPS : ', tps )
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)  
     
-rp.plot_scalars(df, N, D, figsize=(15,4), block=False)
+rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4), block=False)
 
 if include_springs:
     plt.figure() 
@@ -185,7 +180,7 @@ if include_springs:
     plt.show(block=False)
     
     # what is the distribution of theta_z for random directions
-    dr = np.random.randn(steps*N, D)
+    dr = np.random.randn(steps*c1.N, c1.D)
     dl = np.sum(dr*dr, axis=1)**0.5
     dr /= np.tile(dl,(3,1)).T
     theta_z_random = np.arccos(np.abs(dr[:,0]))/math.pi*180
@@ -212,7 +207,7 @@ x = bin_edges[:-1]+dx/2
 y = hist/len(coordinates_t)/Lxy**2/dx
 plt.figure()
 plt.plot(x, y)
-plt.plot(x, np.ones_like(x)*N/Lxy/Lxy/wall_dist, '--', label=f'rho={rho}')
+plt.plot(x, np.ones_like(x)*c1.N/Lxy/Lxy/wall_dist, '--', label=f'rho={rho}')
 plt.xlabel('z')
 plt.ylabel('rho(z)')
 plt.show()

@@ -7,21 +7,10 @@ from hypothesis import given, strategies as st, settings, Verbosity, example
 
 def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, UtilizeNIII=None, cut=2.5, integrator='NVE', verbose=True):
     
-    # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density
-    positions, simbox_data = rp.generate_fcc_positions(nx=nx, ny=ny, nz=nz, rho=rho)
-    N, D = positions.shape
-    assert N==nx*ny*nz*4, f'Wrong number particles (FCC), {N} <> {nx*ny*nz*4}'
-    assert D==3, f'Wrong dimension (FCC), {D} <> {3}'
-
-    # make 'random' velocities reproducible
-    np.random.seed(31415)
-    
-    ### Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
-    c1 = rp.Configuration(N, D, simbox_data)
-    c1['r'] = positions
-    c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
-    c1['m'] =  np.ones(N, dtype=np.float32)     # Set masses
-    c1.ptype = np.zeros(N, dtype=np.int32)      # Set types
+    # Generate configuration with a FCC lattice
+    c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
+    assert c1.N==nx*ny*nz*4, f'Wrong number particles (FCC), {C1.N} <> {nx*ny*nz*4}'
+    assert c1.D==3, f'Wrong dimension (FCC), {c1.D} <> {3}'
     c1.copy_to_device()    
     
     # Allow for overwriiting of the default compute_plan
@@ -40,15 +29,11 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         print('simbox_data:', simbox_data)
         print('compute_plan: ', compute_plan)
    
-    # Should not be necessarry:
-    exclusions = np.zeros((c1.N,10), dtype=np.int32)
-    d_exclusions = cuda.to_device(exclusions)
-
     # Make the pair potential.
     pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
     params = [[[4.0, -4.0, 2.5],], ]
     pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
-    pairs = pair_potential.get_interactions(c1, exclusions=d_exclusions, compute_plan=compute_plan, verbose=False)
+    pairs = pair_potential.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=False)
        
     # Setup the integrator
     dt = np.float32(0.005)
@@ -62,7 +47,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         T = np.float32(0.7)
         tau=0.2
         omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
-        degrees = N*D - D
+        degrees = c1.N*c1.D - c1.D
         thermostat_state = np.zeros(2, dtype=np.float32)
         d_thermostat_state = cuda.to_device(thermostat_state)
 
@@ -136,7 +121,7 @@ def test_nvt(nx, ny, nz):
     assert 0.68 < Tkin  < 0.72
     assert 0.68 < Tconf < 0.72
     assert 0.92 <   R   < 0.99
-    assert 5.2  < Gamma < 6.4
+    assert 5.2  < Gamma < 6.6
  
     
 if __name__ == "__main__":

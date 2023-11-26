@@ -7,28 +7,15 @@ from numba import cuda, config
 
 import rumdpy as rp
 
-
 def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
     """
     Setup and return configuration, potential function, and potential parameters for the LJ benchmark
     """
 
-    # Generate numpy arrays for particle positions and simbox of a FCC lattice with a given density
-    positions, simbox_data = rp.generate_fcc_positions(nx=nx, ny=ny, nz=nz, rho=rho)
-    N, D = positions.shape
+    # Generate configuration with a FCC lattice
+    c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
+    c1.copy_to_device() 
 
-    # make 'random' velocities reproducible
-    np.random.seed(31415)
-
-    # Make configuration. Could be read from file or generated from single convenience function, but this shows flexibility
-    c1 = rp.Configuration(N, D, simbox_data)
-    c1['r'] = positions
-    c1['v'] = rp.generate_random_velocities(N, D, T=1.44)
-    c1['m'] = np.ones(N, dtype=np.float32)  # Set masses
-    c1.ptype = np.zeros(N, dtype=np.int32)  # Set types
- 
-    #LJ_func = rp.apply_shifted_force_cutoff( rp.make_LJ_m_n(m=12, n=6) )
-    #pairpot_func = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
     pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
     params = [[[4.0, -4.0, 2.5],], ]
     
@@ -44,14 +31,10 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
         print('compute_plan: ', compute_plan)
 
     c1.copy_to_device()
-
-    # Should not be necessarry:
-    exclusions = np.zeros((c1.N,10), dtype=np.int32)
-    d_exclusions = cuda.to_device(exclusions)
     
     # Make the pair potential. 
     pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
-    pairs = pair_potential.get_interactions(c1, exclusions=d_exclusions, compute_plan=compute_plan, verbose=False)
+    pairs = pair_potential.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=False)
     
     # Set up the integrator
     dt = np.float32(0.005)

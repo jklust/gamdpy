@@ -135,3 +135,21 @@ def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
     
     return conf*scale_factor, sim_box*scale_factor
 
+
+def make_configuration_fcc(nx, ny, nz, rho, T):
+    """
+    Generate Configuration for particle positions and simbox of a FCC lattice with a given density
+    (nx x ny x nz unit cells), 
+    and assign velocities corresponding to the temperature T, and default types ('0') and masses ('1.')
+    """
+
+    positions, simbox_data = generate_fcc_positions(nx, ny, nz, rho) 
+    N, D = positions.shape
+
+    configuration = Configuration(N, D, simbox_data)
+    configuration['r'] = positions
+    configuration['v'] = generate_random_velocities(N, D, T=1.44)
+    configuration['m'] =  np.ones(N, dtype=np.float32)     # Set masses
+    configuration.ptype = np.zeros(N, dtype=np.int32)      # Set types
+    
+    return configuration
