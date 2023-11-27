@@ -2,17 +2,20 @@ import numpy as np
 import numba
 import math
 from numba import cuda
+from rumdpy.colarray import colarray
 
 class Configuration():
-    
-    vid = {'r':0, 'v':1, 'f':2, 'r_ref':3}
+        
+    #vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
     sid = {'u':0, 'w':1, 'lap':2, 'm':3, 'k':4, 'fsq':5}
     num_cscalars = 3 # Number of scalars to be updated by force calculator
     
     def __init__(self, N, D, simbox_data, ftype=np.float32, itype=np.int32):
         self.N = N
         self.D = D
-        self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
+        self.vector_columns = ['r', 'v', 'f', 'r_ref'] # Should be user modifyable
+        #self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
+        self.vectors = colarray(self.vector_columns, size=(N,D), dtype=ftype)
         self.scalars = np.zeros((N, len(self.sid)), dtype=ftype)
         self.r_im = np.zeros((N, D), dtype=itype)
         self.ptype = np.zeros(N, dtype=itype)
@@ -25,7 +28,8 @@ class Configuration():
         assert N==self.N, f'Inconsistent number of particles, {N} <> {self.N}'
         assert D==self.D, f'Inconsistent number of dimensions, {D} <> {self.D}'
         # assert key exists
-        self.vectors[self.vid[key], :, :] = data
+        #self.vectors[self.vid[key], :, :] = data
+        self.vectors[key] = data
         return
 
     def set_scalar(self, key, data):
@@ -36,19 +40,21 @@ class Configuration():
         return
         
     def __setitem__(self, key, data):
-        if key in self.vid.keys():
+        if key in self.vectors.column_names:
             self.set_vector(key, data)
         else:
             self.set_scalar(key, data) # Improve error handling if key in neither
         return 
     
     def __getitem__(self, key):
-        if key in self.vid.keys():
-            return self.vectors[self.vid[key]]
+        if key in self.vectors.column_names:
+            #return self.vectors[self.vid[key]]
+            return self.vectors[key]
         return self.scalars[self.sid[key]] # Improve error handling if key in neither
     
     def copy_to_device(self):
-        self.d_vectors = cuda.to_device(self.vectors)
+        #self.d_vectors = cuda.to_device(self.vectors)
+        self.d_vectors = cuda.to_device(self.vectors.array)
         self.d_scalars = cuda.to_device(self.scalars)
         self.d_r_im = cuda.to_device(self.r_im)
         self.d_ptype = cuda.to_device(self.ptype)
@@ -56,7 +62,8 @@ class Configuration():
         return
 
     def copy_to_host(self):
-        self.vectors = self.d_vectors.copy_to_host()
+        #self.vectors = self.d_vectors.copy_to_host()
+        self.vectors.array = self.d_vectors.copy_to_host()
         self.scalars = self.d_scalars.copy_to_host()
         self.r_im = self.d_r_im.copy_to_host()
         self.ptype = self.d_ptype.copy_to_host()

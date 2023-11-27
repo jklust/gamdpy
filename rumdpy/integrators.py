@@ -52,8 +52,10 @@ def make_step_nve(configuration, compute_plan, verbose=True,):
         print(f'\tNumber of threads {num_blocks*pb*tp}')      
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
         
@@ -120,8 +122,10 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
         print(f'\tNumber of threads {num_blocks*pb*tp}')
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
         
@@ -223,8 +227,10 @@ def make_run_langevin_nvt(configuration, compute_plan, verbose=True, ):
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
     # Unpack indices for vectors and scalars
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 

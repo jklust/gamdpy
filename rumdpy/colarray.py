@@ -52,7 +52,7 @@ class colarray():
         self.column_names = column_names
         self.dtype = dtype
         self.indicies = {key:index for index,key in enumerate(column_names)}
-        if type(array)==np.ndarray:
+        if type(array)==np.ndarray: # Used, e.g.,  when loading from file
             self.array = array
         else:
             self.array = np.zeros((len(column_names), *size), dtype=dtype) 

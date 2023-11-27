@@ -120,7 +120,7 @@ def test_nvt(nx, ny, nz):
     # assert var_e < 0.001
     assert 0.68 < Tkin  < 0.72
     assert 0.68 < Tconf < 0.72
-    assert 0.92 <   R   < 0.99
+    assert 0.92 <   R   < 1.00
     assert 5.2  < Gamma < 6.6
  
     

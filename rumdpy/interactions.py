@@ -172,8 +172,10 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         print(f'\tNumber of threads {num_blocks*pb*tp}')      
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+            exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
     
@@ -438,8 +440,10 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         print(f'\tNumber of threads {num_blocks*pb*tp}')      
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
     
@@ -473,8 +477,10 @@ def make_bond_calculator(configuration, bondpotential_function):
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
         
@@ -567,8 +573,10 @@ def make_planar_calculator(configuration, potential_function):
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
     # Unpack indicies for vectors and scalars    
-    for key in configuration.vid:
-        exec(f'{key}_id = {configuration.vid[key]}', globals())
+    #for key in configuration.vid:
+    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    for col in configuration.vectors.column_names:
+        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
     

@@ -56,7 +56,8 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [x] Implement exlusion list (needs testing for gridsync==False)
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [x] upload to GitLab
-- [ ] Use 'colarray' for vectors and scalars in Configuration
+- [x] Use 'colarray' for vectors in Configuration
+- [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
 - [ ] Use colarray to introduce output-array from integrator
 - [ ] Configuration: include r_im in vectors
 - [ ] Move r_ref from Configuration to nblist
