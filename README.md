@@ -23,7 +23,10 @@ A function (or kernel) that takes a configuration as input and takes a number of
 ### 2. Interactions
 A function (or kernel) that takes a configuration as input and computes forces and other properties as requested during its construction (make_interactions()). The interaction function/kernel is responsible for keeping any internal datastructures up to date (in particular: nblist). 
 - pairpotential (parameters, nblist, ...)
-- fixed interactions: bonds (angles, dihedrals to be implemented)
+- fixed interactions (interactions known beforehand): 
+  - bonds (angles, dihedrals to be implemented)
+  - planar interactions: smooth walls, gravity, electric fields, ...
+  - point interactions, e.g. tethering (to be implemented)
 
 ### 4. Evaluator
 Takes a configuration and an interactions function/kernel, and evaluates properties as specified at its construction (make_evaluator)
@@ -48,7 +51,8 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - [x] Make it into a python package that can be installed locally by pip
 - [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
 - [x] Implement springs, as an example of 'fixed interactions' (needs testing for gridsync==False). 
-- [ ] Implement other fixed interactions: angles, dihedrals, tethered particles, smooth wall, and gravity.
+- [x] Implement (fixed) planar interactions, eg. smooth walls, gravity, and electric fields.
+- [ ] Implement other fixed interactions: angles, dihedrals, point interactions (tethered particles).
 - [x] Implement exlusion list (needs testing for gridsync==False)
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [x] upload to GitLab
