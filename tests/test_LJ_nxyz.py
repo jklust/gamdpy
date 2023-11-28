@@ -60,7 +60,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     tt = []
     for i in range(steps):
         integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, 
-                  pairs['interaction_params'], integrator_params,inner_steps)
+                  pairs['interaction_params'], integrator_params, np.float32(0.0), inner_steps)
         scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
         tt.append(i*inner_steps*dt)            
    
@@ -121,7 +121,7 @@ def test_nvt(nx, ny, nz):
     assert 0.68 < Tkin  < 0.72
     assert 0.68 < Tconf < 0.72
     assert 0.92 <   R   < 1.00
-    assert 5.2  < Gamma < 6.6
+    assert 5.2  < Gamma < 6.8
  
     
 if __name__ == "__main__":

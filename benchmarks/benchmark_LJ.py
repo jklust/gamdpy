@@ -55,10 +55,10 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
 
     # Run the simulation
-
+    zero = np.float32(0.0)
     # Warmup
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
-              integrator_params, 10)
+              integrator_params, zero, 10)
 
     scalars_t = [np.sum(c1.d_scalars.copy_to_host(), axis=0)]
     start = cuda.event()
@@ -66,7 +66,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
     start.record()
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
-              integrator_params, steps)
+              integrator_params, zero, steps)
     end.record()
     end.synchronize()
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))

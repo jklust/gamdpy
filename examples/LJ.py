@@ -31,12 +31,13 @@ steps = 500
 
 start = cuda.event()
 end = cuda.event()
+zero = np.float32(0.0)
 
 for i in range(steps+1):
     if i==1:
         start.record() # Exclude first step from timing to get it more precise by excluding time for JIT compiling
         
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  pairs['interaction_params'], integrator_params, inner_steps)
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  pairs['interaction_params'], integrator_params, zero, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
 

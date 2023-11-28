@@ -14,23 +14,27 @@ def make_integrator(configuration, integration_step, compute_interactions, compu
     if gridsync:
         # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
         @cuda.jit       
-        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, steps):
+        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, time_zero, steps):
             grid = cuda.cg.this_grid()
+            time = time_zero
             for i in range(steps):
                 compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_params)
                 grid.sync()
-                integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params)
+                integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 grid.sync()
+                time += integrator_params[0] # dt. Should be more specific
             return
         return integrator[num_blocks, (pb, tp)]
          
     else:
         
         # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
-        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, steps):
+        def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, time_zero, steps):
+            time = time_zero
             for i in range(steps):
                 compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
-                integration_step(0, vectors, scalars, r_im, sim_box, integrator_params)
+                integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
+                time += integrator_params[0] # dt. Should be more specific
             return
         return integrator
     
@@ -61,7 +65,7 @@ def make_step_nve(configuration, compute_plan, verbose=True,):
         
     #@cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync) 
     #@cuda.jit(device=gridsync) 
-    def step_nve(grid, vectors, scalars, r_im, sim_box, integrator_params):
+    def step_nve(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
         """ Make one NVE timestep using Leap-frog
             Kernel configuration: [num_blocks, (pb, tp)]        
         """
@@ -131,9 +135,9 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
         
     #@cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync) 
     #@cuda.jit(device=gridsync) 
-    def step_nvt(grid, vectors, scalars, r_im, sim_box, integrator_params):
+    def step_nvt(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
         """ Make one NVT timestep using Leap-frog
-            Kernel configuration: [num_blocks, (pb, tp)]        
+            Kernel configuration: [num_blocks, (pb, tp)]
         """
         
         dt, target_temperature, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
@@ -162,7 +166,7 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
                 my_k += numba.float32(0.5)*my_m*my_v[k]*my_v[k]
                 #my_v[k] += numba.float32(0.5)*my_f[k]/my_m*dt
                 my_r[k] += my_v[k]*dt 
-                if my_r[k]*numba.float32(2.0) > sim_box[k]:
+                if my_r[k]*numba.float32(2.0) > sim_box[k]: # Should be controled by function in simbox
                     my_r[k] -= sim_box[k]
                     r_im[global_id, k] += 1
                 if my_r[k]*numba.float32(2.0) < -sim_box[k]:
@@ -174,7 +178,7 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
             scalars[global_id][fsq_id] = my_fsq
         return
     
-    def update_thermostat_state(integrator_params):
+    def update_thermostat_state(integrator_params, time):
         dt, target_temperature, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
         # Some of these can be compiled in, but will be less flexible
         
@@ -194,18 +198,18 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
     
     if gridsync:
 
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params):
-            step_nvt(grid, vectors, scalars, r_im, sim_box, integrator_params)
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            step_nvt(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
             grid.sync()
-            update_thermostat_state(integrator_params)
+            update_thermostat_state(integrator_params, time)
             return
         return cuda.jit(device=gridsync)(step)
     
     else:
         
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params):
-            step_nvt[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params)
-            update_thermostat_state[1, (1, 1)](integrator_params)
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            step_nvt[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+            update_thermostat_state[1, (1, 1)](integrator_params, time)
             return
         return step
 

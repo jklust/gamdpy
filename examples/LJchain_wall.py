@@ -124,8 +124,9 @@ def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data)
     return bond_lengths, theta_z
 
 #Equilibration
-integrate0(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, equil_steps)
-integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  interaction_params, integrator_params,  equil_steps)
+zero = np.float32(0.0)
+integrate0(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, zero, equil_steps)
+integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  interaction_params, integrator_params, zero, equil_steps)
 bond_lengths = []
 theta_z = []
 
@@ -133,7 +134,7 @@ f = numba.njit(c1.simbox.dist_sq_dr_function)
 
 start.record()
 for i in range(steps):
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, inner_steps)
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, zero, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
 
