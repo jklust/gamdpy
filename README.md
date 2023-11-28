@@ -17,7 +17,7 @@ A class containing all relevant information about a configuration. Methods are k
 ### 2. Integrator
 A function (or kernel) that takes a configuration as input and takes a number of timesteps. Interactions to be used are compiled in when contructed (make_integrator()).
 - NVE, 
-- NVT, 
+- NVT (Temperature controled by user-supplied function, see examples/LJchain_wall.py), 
 - ...
 
 ### 2. Interactions
