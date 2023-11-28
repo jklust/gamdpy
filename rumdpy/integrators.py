@@ -284,7 +284,7 @@ def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
                 a = numba.float32(numerator / denominator)
                 b = numba.float32(1 / denominator)
                 my_fsq += my_f[k] * my_f[k]
-                my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # On step kinetic energy
+                my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
                 # Eq. (16) in https://arxiv.org/pdf/1303.7011.pdf
                 my_v[k] = a * my_v[k] + b * my_f[k] / my_m * dt + b*beta/my_m
                 my_r[k] += my_v[k] * dt
