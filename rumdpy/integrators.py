@@ -111,7 +111,7 @@ def make_step_nve(configuration, compute_plan, verbose=True,):
 
     
     
-def make_step_nvt(configuration, compute_plan, verbose=True,):
+def make_step_nvt(configuration, temperature_function, compute_plan, verbose=True,):
     pb = compute_plan['pb']
     tp = compute_plan['tp']
     gridsync = compute_plan['gridsync']   
@@ -133,6 +133,8 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
         
+    temperature_function = numba.njit(temperature_function)
+    
     #@cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync) 
     #@cuda.jit(device=gridsync) 
     def step_nvt(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
@@ -140,7 +142,7 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
             Kernel configuration: [num_blocks, (pb, tp)]
         """
         
-        dt, target_temperature, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
+        dt, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
 
         my_block = cuda.blockIdx.x
         local_id = cuda.threadIdx.x
@@ -179,7 +181,7 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
         return
     
     def update_thermostat_state(integrator_params, time):
-        dt, target_temperature, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
+        dt, omega2, degrees, thermostat_state = integrator_params # Put more in thermostat_state?
         # Some of these can be compiled in, but will be less flexible
         
         my_block = cuda.blockIdx.x
@@ -188,6 +190,7 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
         my_t = cuda.threadIdx.y
 
         if global_id==0 and my_t==0:
+            target_temperature = temperature_function(time)
             ke_deviation = np.float32(2.0) * thermostat_state[1] / (degrees*target_temperature) - np.float32(1.0)
             thermostat_state[0] += dt * omega2 * ke_deviation
             thermostat_state[1] = np.float32(0.)
@@ -213,6 +216,20 @@ def make_step_nvt(configuration, compute_plan, verbose=True,):
             return
         return step
 
+def setup_integrator_nvt(configuration, interactions, temperature_function, tau, dt, compute_plan, verbose=True):
+    integrator_step = make_step_nvt(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
+
+    dt = np.float32(dt)
+    omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
+    degrees = configuration.N*configuration.D - configuration.D
+    thermostat_state = np.zeros(2, dtype=np.float32)
+    d_thermostat_state = cuda.to_device(thermostat_state)
+    integrator_params =  (dt, omega2, degrees,  d_thermostat_state)
+    
+    return integrate, integrator_params
+
+  
 
 def make_run_langevin_nvt(configuration, compute_plan, verbose=True, ):
     raise NotImplementedError('make_run_langevin_nvt is not implemented yet')
@@ -285,18 +302,4 @@ def make_run_langevin_nvt(configuration, compute_plan, verbose=True, ):
         return cuda.jit(device=gridsync)(step_nvt)[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
 
 
-def setup_integrator_nvt(configuration, interactions, tau, dt, T, compute_plan, verbose=True):
-    integrator_step = make_step_nvt(configuration, compute_plan=compute_plan, verbose=verbose)
-    integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
-
-    dt = np.float32(dt)
-    T = np.float32(T)
-    omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
-    degrees = configuration.N*configuration.D - configuration.D
-    thermostat_state = np.zeros(2, dtype=np.float32)
-    d_thermostat_state = cuda.to_device(thermostat_state)
-    integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
-    
-    return integrate, integrator_params
-
-    
+  

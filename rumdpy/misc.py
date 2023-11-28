@@ -51,6 +51,24 @@ def harmonic_bond_function(dist, params):
     umm = strength
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)    
     
+def make_function_constant(value):
+    value = np.float32(value)
+    def function(x):
+        return value
+    return function
+
+def make_function_ramp(value0, x0, value1, x1):
+    value0, x0, value1, x1 = np.float32(value0), np.float32(x0), np.float32(value1), np.float32(x1)
+    alpha = (value1 - value0)/(x1 - x0)
+    def function(x):
+        if x<x0:
+            return value0
+        if x<x1:
+            return value0 + (x-x0)*alpha
+        return value1
+    return function
+        
+
 def get_default_compute_plan(configuration):
     """
     Return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 

@@ -91,10 +91,15 @@ if include_gravity:
 
 interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
 
+T0 = rp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
+#T1 = rp.make_function_constant(value= 1.8)
+T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
+
 # Setup NVT intergrator(s)
+integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
+
 dt = 0.0025
-integrate,  integrator_params  = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt,   T= 1.8, compute_plan=compute_plan)
-integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt/2, T=10.0, compute_plan=compute_plan)
+integrate1,  integrator_params1  = rp.setup_integrator_nvt(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
 
 scalars_t = []
 coordinates_t = []
@@ -123,10 +128,10 @@ def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data)
         theta_z[j] = math.acos(abs(dr[2]/dist))/math.pi*180
     return bond_lengths, theta_z
 
+
 #Equilibration
 zero = np.float32(0.0)
 integrate0(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, zero, equil_steps)
-integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  interaction_params, integrator_params, zero, equil_steps)
 bond_lengths = []
 theta_z = []
 
@@ -134,7 +139,8 @@ f = numba.njit(c1.simbox.dist_sq_dr_function)
 
 start.record()
 for i in range(steps):
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, zero, inner_steps)
+    time_zero = np.float32(i*inner_steps*dt)
+    integrate1(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, time_zero, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
 
@@ -158,8 +164,8 @@ print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-df['t'] = np.array(tt)  
-    
+df['t'] = np.array(tt)
+   
 rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4), block=False)
 
 if include_springs:

@@ -43,17 +43,10 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     if integrator=='NVE':
         step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params =  (dt, )
+        integrate = rp.make_integrator(c1, step, pairs['interactions'], compute_plan=compute_plan, verbose=False)
     if integrator=='NVT':
-        T = np.float32(0.7)
-        tau=0.2
-        omega2 = np.float32(4.0*np.pi*np.pi/tau/tau)
-        degrees = c1.N*c1.D - c1.D
-        thermostat_state = np.zeros(2, dtype=np.float32)
-        d_thermostat_state = cuda.to_device(thermostat_state)
-
-        step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=False, )
-        integrator_params =  (dt, T, omega2, degrees,  d_thermostat_state)
-    integrate = rp.make_integrator(c1, step, pairs['interactions'], compute_plan=compute_plan, verbose=False) 
+        T0 = rp.make_function_constant(value= 0.7)
+        integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) # 
      
     # Run the simulation
     scalars_t = []
