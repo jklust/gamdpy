@@ -10,6 +10,14 @@ c1.copy_to_device()
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
 
+
+# g(r) parameters 
+num_bins = 100
+full_range = False
+gr_bins = np.zeros(num_bins, dtype=np.float64)
+d_gr_bins = cuda.to_device(gr_bins)
+host_array_zeros = np.zeros(d_gr_bins.shape, dtype=d_gr_bins.dtype)
+
 # Make pair potential
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
 params = [[[4.0, -4.0, 2.5],], ]
@@ -19,6 +27,9 @@ pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verb
 # Make integrator
 integrator_step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=True)
 integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=True)
+
+# Make rdf calculator
+rdf_calculator = rp.make_rdf_calculator(c1, pair_potential = LJ, compute_plan=compute_plan, full_range = full_range, verbose=True)  
 
 dt = np.float32(0.005)
 integrator_params = (dt, )
@@ -41,6 +52,11 @@ for i in range(steps+1):
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
 
+    rdf_calculator(c1.d_vectors, c1.simbox.d_data, c1.d_ptype, pairs['interaction_params'], d_gr_bins)
+    temp_host_array = d_gr_bins.copy_to_host()           # offloading data from device and resetting decive array to zero. (prevents overflow errors for longer runs)  
+    gr_bins += temp_host_array 
+    d_gr_bins = cuda.to_device(host_array_zeros)
+
 end.record()
 end.synchronize()
 timing_numba = cuda.event_elapsed_time(start, end)
@@ -51,7 +67,8 @@ print('\tsteps :', steps*inner_steps)
 print('\tnbflag : ', nbflag)
 print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
-   
+
+rp.normalize_and_save_gr(gr_bins, c1, pairs['interaction_params'], full_range, steps)
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)      
 rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4))
