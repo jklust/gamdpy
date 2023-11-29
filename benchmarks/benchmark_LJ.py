@@ -42,17 +42,10 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     if integrator == 'NVE':
         step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params = (dt,)
+        integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
-        T = np.float32(0.7)
-        tau = 0.2
-        omega2 = np.float32(4.0 * np.pi * np.pi / tau / tau)
-        degrees = c1.N * c1.D - c1.D
-        thermostat_state = np.zeros(2, dtype=np.float32)
-        d_thermostat_state = cuda.to_device(thermostat_state)
-
-        step = rp.make_step_nvt(c1, compute_plan=compute_plan, verbose=False, )
-        integrator_params = (dt, T, omega2, degrees, d_thermostat_state)
-    integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
+        T0 = rp.make_function_constant(value= 0.7)
+        integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
 
     # Run the simulation
     zero = np.float32(0.0)
@@ -104,7 +97,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
 def main():
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
-    print('Benchmarking LJ NVE:')
+    print('Benchmarking LJ:')
     nxyzs = (
         (4, 4, 8), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
         (32, 32, 32))
@@ -118,7 +111,7 @@ def main():
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
+            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVT', verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)

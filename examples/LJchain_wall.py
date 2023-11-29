@@ -9,9 +9,10 @@ import math
 include_springs = True
 include_walls = True
 include_gravity = False
+include_KABLJ = False
 
 rho = 0.85
-wall_dist = 6.31
+wall_dist = 6.31 # Ingebrigtsen & Dyre (2014)
 wall_dimension = 2
 nxy, nz = 8, 4
 
@@ -29,7 +30,9 @@ else:
     c1.simbox.data[wall_dimension] = wall_dist #
 if include_gravity:
     c1.simbox.data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
-c1.copy_to_device()  
+if include_KABLJ:
+    c1.ptype[np.arange(0,c1.N,4)] = 1.0    # 3:1 mixture
+c1.copy_to_device()
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
@@ -69,14 +72,17 @@ if include_gravity:
 # - Semipermeable membranes (using energy-barriers)
 # - Semi-2D simulations (eg., harmonic potential in the z-direction)
 
+exclusions = None
 if include_springs:
-    exclusions = bonds['exclusions']
-else:
-    exclusions = None
+    exclusions = bonds['exclusions'] # Should be a list, which could be empty
 
 # Setup pair interactions
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
-params = [[[4.0, -4.0, 2.5],], ]
+sigma =   [[1.0, 0.88], [0.88, 0.80]] # Setting up KABLJ. If all particles are type 0, 
+epsilon = [[1.0, 0.50], [0.50, 1.50]] # ... this reverts to single componant LJ
+cutoff = np.array(sigma)*2.5
+params = rp.LJ_12_6_params_from_sigma_epsilon_cutoff(sigma, epsilon, cutoff)
+print(params)
 LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
 pairs = LJ.get_interactions(c1, exclusions=exclusions, compute_plan=compute_plan, verbose=True)
 
@@ -91,10 +97,15 @@ if include_gravity:
 
 interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
 
+T0 = rp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
+#T1 = rp.make_function_constant(value= 1.8)
+T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
+
 # Setup NVT intergrator(s)
+integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
+
 dt = 0.0025
-integrate,  integrator_params  = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt,   T= 1.8, compute_plan=compute_plan)
-integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, tau=0.2, dt=dt/2, T=10.0, compute_plan=compute_plan)
+integrate1,  integrator_params1  = rp.setup_integrator_nvt(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
 
 scalars_t = []
 coordinates_t = []
@@ -123,10 +134,10 @@ def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data)
         theta_z[j] = math.acos(abs(dr[2]/dist))/math.pi*180
     return bond_lengths, theta_z
 
+
 #Equilibration
 zero = np.float32(0.0)
 integrate0(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, zero, equil_steps)
-integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  interaction_params, integrator_params, zero, equil_steps)
 bond_lengths = []
 theta_z = []
 
@@ -134,7 +145,8 @@ f = numba.njit(c1.simbox.dist_sq_dr_function)
 
 start.record()
 for i in range(steps):
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params, zero, inner_steps)
+    time_zero = np.float32(i*inner_steps*dt)
+    integrate1(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, interaction_params, integrator_params0, time_zero, inner_steps)
     scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
     tt.append(i*inner_steps*dt)
 
@@ -158,8 +170,8 @@ print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-df['t'] = np.array(tt)  
-    
+df['t'] = np.array(tt)
+   
 rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4), block=False)
 
 if include_springs:
@@ -188,16 +200,29 @@ if include_springs:
     plt.ylabel('p(Theta)')
     plt.legend()
     plt.show(block=False)
-    
+
+plt.figure()    
 bins = 300
-hist, bin_edges = np.histogram(np.array(coordinates_t).flatten(), bins=bins, range=(-wall_dist/2, +wall_dist/2))
+subset = np.array(coordinates_t)[:,c1.ptype==0].flatten()
+hist, bin_edges = np.histogram(subset, bins=bins, range=(-wall_dist/2, +wall_dist/2))
 dx = bin_edges[1] - bin_edges[0]
 x = bin_edges[:-1]+dx/2 
 y = hist/len(coordinates_t)/Lxy**2/dx
-plt.figure()
-plt.plot(x, y)
-plt.plot(x, np.ones_like(x)*c1.N/Lxy/Lxy/wall_dist, '--', label=f'rho={rho}')
+plt.plot(x, y, 'b-', label='A')
+rhoA = np.sum(c1.ptype==0)/Lxy/Lxy/wall_dist
+plt.plot(x, np.ones_like(x)*rhoA, 'b--', label=f'rhoA={rhoA:.3}')
+
+rhoB = np.sum(c1.ptype==1)/Lxy/Lxy/wall_dist
+if rhoB>0: # We got some B-particles
+    subset = np.array(coordinates_t)[:,c1.ptype==1].flatten()
+    hist, bin_edges = np.histogram(subset, bins=bins, range=(-wall_dist/2, +wall_dist/2))
+    y = hist/len(coordinates_t)/Lxy**2/dx
+    plt.plot(x, y, 'g-', label='B')
+    plt.plot(x, np.ones_like(x)*rhoB, 'g--', label=f'rhoB={rhoB:.3}')
+    plt.plot(x, y*3, 'r--', label='3*B')
+
 plt.xlabel('z')
 plt.ylabel('rho(z)')
+plt.legend()
 plt.show()
 

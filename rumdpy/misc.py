@@ -19,6 +19,23 @@ def LJ_12_6(dist, params):            # LJ: U(r)  =        A12*r**-12 +     A6*r
     umm = numba.float32(156.0)*A12*invDist**14 + numba.float32(42.0)*A6*invDist**8
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)
 
+def LJ_12_6_params_from_sigma_epsilon_cutoff(sigma, epsilon, cutoff):
+    """
+    Get 'params' array for LJ_12_6 from sigma, epsilon, and cutoff arrays (num_types, num_types)
+    LJ = 4*epsilon*( (sigma/r)**12 - (sigma/r)**6) = 4*epsilon*sigma**12*r**-12 - 4*epsilon*sigma**6*r**-6
+    """
+    sigma = np.array(sigma, dtype=np.float32)
+    epsilon = np.array(epsilon, dtype=np.float32)
+    cutoff = np.array(cutoff, dtype=np.float32)
+    
+    A12 = 4*epsilon*sigma**12
+    A6 = -4*epsilon*sigma**6
+    
+    params = np.array([A12, A6, cutoff])
+    params = np.moveaxis(params, source=0, destination=2)
+    
+    return params
+
 def make_LJ_m_n(m, n):                   
     def LJ_m_n(dist, params):             #     U(r) =           Am*r**-m     +         An*r**-n
         Am = params[0]                    #     Um(r) =       -m*Am*r**-(m+1) -       n*An*r**-(n+1)
@@ -51,6 +68,24 @@ def harmonic_bond_function(dist, params):
     umm = strength
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)    
     
+def make_function_constant(value):
+    value = np.float32(value)
+    def function(x):
+        return value
+    return function
+
+def make_function_ramp(value0, x0, value1, x1):
+    value0, x0, value1, x1 = np.float32(value0), np.float32(x0), np.float32(value1), np.float32(x1)
+    alpha = (value1 - value0)/(x1 - x0)
+    def function(x):
+        if x<x0:
+            return value0
+        if x<x1:
+            return value0 + (x-x0)*alpha
+        return value1
+    return function
+        
+
 def get_default_compute_plan(configuration):
     """
     Return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 
