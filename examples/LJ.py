@@ -2,7 +2,9 @@ import numpy as np
 import rumdpy as rp
 from numba import cuda
 import pandas as pd
-import matplotlib.pyplot as plt
+import pickle
+import json
+#import matplotlib.pyplot as plt
 
 include_rdf = True
 
@@ -10,6 +12,11 @@ include_rdf = True
 c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442, T=1.44)      # N =  2*1024
 #c1 = rp.make_configuration_fcc(nx=16,  ny=16,  nz=16,  rho=0.8442, T=1.44)  # N = 16*1024
 c1.copy_to_device() 
+
+pdict = {'N':c1.N, 'D':c1.D, 'simbox':c1.simbox.data, 'rdf':include_rdf}
+print(pdict)
+with open('Data/LJ_pdict.pkl', 'wb') as f:
+    pickle.dump(pdict, f)
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
@@ -33,7 +40,8 @@ if include_rdf:
     gr_bins = np.zeros(num_bins, dtype=np.float64)
     d_gr_bins = cuda.to_device(gr_bins)
     host_array_zeros = np.zeros(d_gr_bins.shape, dtype=d_gr_bins.dtype)
-    rdf_calculator = rp.make_rdf_calculator(c1, pair_potential = LJ, compute_plan=compute_plan, full_range = full_range, verbose=True)  
+    rdf_calculator = rp.make_rdf_calculator(c1, pair_potential = LJ, compute_plan=compute_plan, 
+                                            full_range=full_range, verbose=True)  
 
 #  Run Simulation 
 scalars_t = []
@@ -71,16 +79,17 @@ print('\tnbflag : ', nbflag)
 print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
 
-if include_rdf:
-    data = rp.normalize_and_save_gr(gr_bins, c1, pairs['interaction_params'], full_range, steps)
-    plt.figure()
-    plt.plot(data[:,0], data[:,1], '-')
-    plt.xlabel('distance')
-    plt.ylabel('Radial distribution function')
-    plt.show(block=False)
-
+# Save data
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-df['t'] = np.array(tt)      
-rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4))
+df['t'] = np.array(tt)
+df.to_csv('Data/LJ_scalars.csv')
+
+if include_rdf:
+    data = rp.normalize_and_save_gr(gr_bins, c1, pairs['interaction_params'], 
+                                    full_range, steps, filename='Data/LJ_rdf.dat')
+
+# Plot results
+import analyze_LJ
+
 
 

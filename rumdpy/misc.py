@@ -187,7 +187,7 @@ def plot_scalars(df, N, D, figsize, block=True):
 
 
 
-def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps):
+def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps, filename):
 
     max_cut = interaction_params[1]
     num_bins = gr_bins.shape[0]
@@ -212,7 +212,7 @@ def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps):
     # Save data to file
     distances = np.arange(0, len(gr_bins)) * bin_width
     data_to_save = np.column_stack((distances, gr_bins))
-    np.savetxt('gr_data.dat', data_to_save, comments='', fmt='%f')
+    np.savetxt(filename, data_to_save, comments='', fmt='%f')
  
     return data_to_save
 
