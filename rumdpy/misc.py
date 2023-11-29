@@ -214,6 +214,6 @@ def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps):
     data_to_save = np.column_stack((distances, gr_bins))
     np.savetxt('gr_data.dat', data_to_save, comments='', fmt='%f')
  
-    return 
+    return data_to_save
 
 
