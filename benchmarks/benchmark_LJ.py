@@ -111,7 +111,7 @@ def main():
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVT', verbose=False)
+            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
