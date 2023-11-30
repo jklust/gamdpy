@@ -117,7 +117,7 @@ def main():
         tpss.append(tps)
 
     df = pd.DataFrame({'N': Ns, 'TPS': tpss})
-    files_with_benchmark_data = glob.glob('Data/benchmark_LJ_*.csv')
+    files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
 
     plt.figure()
     plt.title('LJ benchmark, NVE, rho=0.8442')
@@ -134,7 +134,7 @@ def main():
     plt.show()
 
     # Save this run to csv file
-    df.to_csv('Data/benchmark_LJ_This_run.csv', index=False)
+    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
 
 
 if __name__ == "__main__":
