@@ -77,7 +77,7 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 ## Various tools/strategies we will use:
 - Git ( https://git-scm.com/doc ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
-- ... to be hosted on readthedocs ( https://about.readthedocs.com/ ).
+- ... to be hosted on readthedocs ( https://about.readthedocs.com/ ). Model: https://numba.readthedocs.io.
 - Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
 - doctest (no more failing examples in examples/docs!, see colaaray.py for example).
 - Jupyter notebooks for tutorials. Testing: nbmake?, testbook?
