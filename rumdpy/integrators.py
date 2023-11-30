@@ -229,8 +229,7 @@ def setup_integrator_nvt(configuration, interactions, temperature_function, tau,
     
     return integrate, integrator_params
 
-
-def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
+def make_step_nvt_langevin(configuration, temperature_function, compute_plan, verbose=True):
     pb = compute_plan['pb']
     tp = compute_plan['tp']
     gridsync = compute_plan['gridsync']
@@ -252,6 +251,8 @@ def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 
+    temperature_function = numba.njit(temperature_function)
+
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
     def step_nvt_langevin(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
@@ -260,7 +261,8 @@ def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
             REF: https://arxiv.org/pdf/1303.7011.pdf
         """
 
-        dt, temperature, alpha, rng_states = integrator_params
+        dt, alpha, rng_states = integrator_params
+        temperature = temperature_function(time)
 
         my_block = cuda.blockIdx.x
         local_id = cuda.threadIdx.x
@@ -277,8 +279,8 @@ def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
 
             for k in range(D):
                 # REF: https://arxiv.org/pdf/1303.7011.pdf sec. 2.C.
-                rng = xoroshiro128p_normal_float32(rng_states, local_id)
-                beta = numba.float32((2*alpha*temperature*dt)**0.5)*rng
+                random_number = xoroshiro128p_normal_float32(rng_states, local_id)
+                beta = numba.float32((2.0*alpha*temperature*dt)**0.5)*random_number
                 numerator = 1 - alpha * dt / 2 / my_m
                 denominator = 1 + alpha * dt / 2 / my_m
                 a = numba.float32(numerator / denominator)
@@ -309,25 +311,34 @@ def make_step_nvt_langevin(configuration, compute_plan, verbose=True):
 def test_step_langevin():
 
     import rumdpy as rp
+    # Setup configuration
     configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.85, T=0.8)
     configuration.copy_to_device()
-    compute_plan = {'pb': 128, 'tp': 2, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': False}
+
+    # Setup compute plan
+    compute_plan = rp.get_default_compute_plan(configuration)
     print('compute_plan: ', compute_plan)
 
-    threads_per_block = 2
-    blocks = 128
-    rng_states = create_xoroshiro128p_states(threads_per_block * blocks, seed=2023)
+    # Setup pseudo-random number generator
+    number_of_particles = configuration.N
+    dimension_of_space = configuration.D
+    random_numbers_per_particle = dimension_of_space
+    number_of_random_numbers = number_of_particles * random_numbers_per_particle
+    rng_states = create_xoroshiro128p_states(number_of_random_numbers, seed=2023)
 
+    # Setup interactions
     pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
     params = [[[4.0, -4.0, 2.5],], ]
     lennard_jones = rp.PairPotential(configuration, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
     pairs = lennard_jones.get_interactions(configuration, exclusions=None, compute_plan=compute_plan, verbose=True)
-    integrator_step = make_step_nvt_langevin(configuration, compute_plan=compute_plan, verbose=True)
-    integrate = make_integrator(configuration, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=True)
+
+    # Setup integrator
     dt = np.float32(0.005)
-    temperature = np.float32(1.20)
     alpha = np.float32(0.1)
-    integrator_params = dt, temperature, alpha, rng_states
+    temperature = np.float32(1.20)
+    integrator_step = make_step_nvt_langevin(configuration, lambda t: temperature, compute_plan=compute_plan, verbose=True)
+    integrate = make_integrator(configuration, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=True)
+    integrator_params = dt, alpha, rng_states
     inner_steps = 2
     outer_steps = 4
 
