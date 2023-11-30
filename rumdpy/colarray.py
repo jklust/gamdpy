@@ -1,5 +1,9 @@
 import numpy as np
 
+# Can be doctested: https://docs.python.org/3/library/doctest.html
+# python3 -m doctest    colarray.py  # No output == No problem!
+# python3 -m doctest -v colarray.py  # The verbose version
+
 class colarray():
     """
     A class storing several sets ('columns') of data with identical dimensions in a single numpy array. Strings are used as indicies along the zeroth dimension corresponding to different columns of data. 
@@ -76,7 +80,7 @@ def save(file, colarray):
     >>> save('test_colarray', ca)
     """
     np.save(f'{file}.npy', colarray.array)
-    with open(f'{file}.col', 'w') as f:
+    with open(f'{file}.col', 'w') as f:    # Use pickle / json
         f.write(str(len(colarray.column_names)) + '\n')
         for key in colarray.column_names:
             f.write(key + '\n')

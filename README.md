@@ -17,7 +17,7 @@ A class containing all relevant information about a configuration. Methods are k
 ### 2. Integrator
 A function (or kernel) that takes a configuration as input and takes a number of timesteps. Interactions to be used are compiled in when contructed (make_integrator()).
 - NVE, 
-- NVT (Temperature controled by user-supplied function, see examples/LJchain_wall.py), 
+- NVT, Nose-Hoover (Temperature controled by user-supplied function, see examples/LJchain_wall.py), 
 - ...
 
 ### 2. Interactions
@@ -78,9 +78,10 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - Git ( https://git-scm.com/doc ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
 - ... to be hosted on readthedocs ( https://about.readthedocs.com/ ).
-- doctest (no more failing examples in examples/docs because it was not updated!).
 - Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
-- Automatic testing upon uploading (CI). How to get acces to GPU's.
+- doctest (no more failing examples in examples/docs!, see colaaray.py for example).
+- Jupyter notebooks for tutorials. Testing: nbmake?, testbook?
+- Automatic testing upon uploading (CI). How to get acces to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
 
