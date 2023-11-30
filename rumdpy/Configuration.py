@@ -155,7 +155,7 @@ def make_configuration_fcc(nx, ny, nz, rho, T):
 
     configuration = Configuration(N, D, simbox_data)
     configuration['r'] = positions
-    configuration['v'] = generate_random_velocities(N, D, T=1.44)
+    configuration['v'] = generate_random_velocities(N, D, T=T)
     configuration['m'] =  np.ones(N, dtype=np.float32)     # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)      # Set types
     
