@@ -1,7 +1,6 @@
 import numpy as np
 import numba
 from numba import cuda
-from numba.cuda.random import create_xoroshiro128p_states, xoroshiro128p_normal_float32
 
 def make_integrator(configuration, integration_step, compute_interactions, compute_plan, verbose=True,):
     pb = compute_plan['pb']
@@ -230,6 +229,8 @@ def setup_integrator_nvt(configuration, interactions, temperature_function, tau,
     return integrate, integrator_params
 
 def make_step_nvt_langevin(configuration, temperature_function, compute_plan, verbose=True):
+    from numba.cuda.random import xoroshiro128p_normal_float32
+
     pb = compute_plan['pb']
     tp = compute_plan['tp']
     gridsync = compute_plan['gridsync']
@@ -309,6 +310,7 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
         return cuda.jit(device=gridsync)(step_nvt_langevin)[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
 
 def test_step_langevin():
+    from numba.cuda.random import create_xoroshiro128p_states
 
     import rumdpy as rp
     # Setup configuration
