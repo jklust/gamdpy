@@ -1,4 +1,4 @@
-def test_step_langevin(verbose=True, plot_figures=True) -> None:
+def test_step_langevin(verbose=False, plot_figures=False) -> None:
     """ Test NVT langevin thermostat
     Test temperature T=1.2 (r_c=2.5) fcc-liquid coexistence state-point in https://doi.org/10.1063/1.4818747 """
     import pandas as pd
