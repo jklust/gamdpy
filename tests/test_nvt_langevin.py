@@ -1,4 +1,4 @@
-def test_step_langevin(verbose=False, plot_figures=False) -> None:
+def test_step_langevin(verbose=True, plot_figures=True) -> None:
     """ Test NVT langevin thermostat
     Test temperature T=1.2 (r_c=2.5) fcc-liquid coexistence state-point in https://doi.org/10.1063/1.4818747 """
     import pandas as pd
@@ -18,8 +18,8 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     expected_total_energy = -4.020
     expected_potential_energy = expected_total_energy - expected_kinetic_energy
 
-    # Setup configuration
-    conf = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=temperature)
+    # Setup configuration (give temperature kick to particles to get closer to equilibrium)
+    conf = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=2*temperature)
     conf.copy_to_device()
 
     # Setup compute plan
@@ -85,10 +85,12 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     if plot_figures:
         plt.subplot(2, 1, 1)
         plt.plot(df['u'] / conf.N, label='u (last half)')
+        plt.plot([0, 2*len(df)], [expected_potential_energy, expected_potential_energy], 'k--', label='expected')
         plt.ylabel(r'Potential energy, $u$')
         plt.legend()
         plt.subplot(2, 1, 2)
         plt.plot(df['k'] / conf.N, label='k (last half)')
+        plt.plot([0, 2*len(df)], [expected_kinetic_energy, expected_kinetic_energy], 'k--', label='expected')
         plt.ylabel(r'Kinetic energy, $k$')
         plt.xlabel('Outer loop step')
         plt.legend()
