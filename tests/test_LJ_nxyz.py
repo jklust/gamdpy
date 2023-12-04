@@ -1,6 +1,8 @@
+import sys
 import numpy as np
 import rumdpy as rp
 from numba import cuda, config
+from numba.cuda.random import create_xoroshiro128p_states
 import pandas as pd
 
 from hypothesis import given, strategies as st, settings, Verbosity, example
@@ -47,7 +49,15 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     if integrator=='NVT':
         T0 = rp.make_function_constant(value= 0.7)
         integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) # 
-     
+    if integrator=='NVT_Langevin':
+        T0 = rp.make_function_constant(value= 0.7)
+        alpha=0.1
+        integrator_step = rp.make_step_nvt_langevin(c1, T0, compute_plan=compute_plan, verbose=verbose)
+        integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'],
+                                       compute_plan=compute_plan, verbose=verbose)
+        rng_states = create_xoroshiro128p_states(c1.N*c1.D, seed=2023)
+        integrator_params = np.float32(dt), np.float32(alpha), rng_states
+                
     # Run the simulation
     scalars_t = []
     tt = []
@@ -99,6 +109,8 @@ def test_nve(nx, ny, nz):
     assert 0.68 < Tconf < 0.71
     assert 0.89 <   R   < 0.97
     assert 5.2  < Gamma < 6.5
+    
+    return
 
 @settings(deadline=200_000, max_examples = 15)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
@@ -115,12 +127,39 @@ def test_nvt(nx, ny, nz):
     assert 0.68 < Tconf < 0.72
     assert 0.92 <   R   < 1.00
     assert 5.2  < Gamma < 6.8
+    
+    return 
  
+@settings(deadline=200_000, max_examples = 15)
+@given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
+@example(nx=4,  ny=4,  nz=4)
+@example(nx=16, ny=16, nz=32)
+def test_nvt_langevin(nx, ny, nz):
+    N = nx*ny*nz*4
+    D = 3
+    df = LJ(nx, ny, nz, integrator='NVT_Langevin', verbose=False)
+    var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
+    print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
+    # assert var_e < 0.001
+    assert 0.62 < Tkin  < 0.83
+    assert 0.57 < Tconf < 0.75
+    assert 0.92 <   R   < 1.00
+    assert 5.2  < Gamma < 6.8
+    
+    return
     
 if __name__ == "__main__":
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
-    print('Testing LJ NVE:')
-    test_nve()
-    print('Testing LJ NVT:')
-    test_nvt()
+    if len(sys.argv)==1 or 'NVE' in sys.argv:
+        print('Testing LJ NVE:')
+        test_nve()
+        print('Passed: LJ NVE!')
+    if len(sys.argv)==1 or 'NVT' in sys.argv:
+        print('Testing LJ NVT:')
+        test_nvt()
+        print('Passed: LJ NVT!')
+    if len(sys.argv)==1 or 'NVT_Langevin' in sys.argv:
+        print('Testing LJ NVT Langevin:')
+        test_nvt_langevin()
+        print('Passed: LJ NVT Langevin!')
 
