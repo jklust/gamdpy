@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 from numba import cuda
+import math
 
 
 def make_integrator(configuration, integration_step, compute_interactions, compute_plan, verbose=True, ):
@@ -289,11 +290,16 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
                 # REF: https://arxiv.org/pdf/1303.7011.pdf sec. 2.C.
                 #random_number = xoroshiro128p_normal_float32(rng_states, local_id)
                 random_number = xoroshiro128p_normal_float32(rng_states, global_id)
-                beta = numba.float32((2.0 * alpha * temperature * dt) ** 0.5) * random_number
-                numerator = 1 - alpha * dt / 2 / my_m
-                denominator = 1 + alpha * dt / 2 / my_m
-                a = numba.float32(numerator / denominator)
-                b = numba.float32(1 / denominator)
+                #beta = numba.float32((2.0 * alpha * temperature * dt) ** 0.5) * random_number
+                beta = math.sqrt(numba.float32(2.0) * alpha * temperature * dt) * random_number
+                #numerator = 1 - alpha * dt / 2 / my_m
+                #denominator = 1 + alpha * dt / 2 / my_m
+                numerator =   numba.float32(1.0) - alpha * dt * numba.float32(0.5) / my_m
+                denominator = numba.float32(1.0) + alpha * dt * numba.float32(0.5) / my_m
+                #a = numba.float32(numerator / denominator)
+                #b = numba.float32(1 / denominator)
+                a = numerator / denominator
+                b = numba.float32(1.0) / denominator
                 my_fsq += my_f[k] * my_f[k]
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
                 # Eq. (16) in https://arxiv.org/pdf/1303.7011.pdf
