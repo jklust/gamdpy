@@ -285,25 +285,20 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
             my_m = scalars[global_id][m_id]
             my_k = numba.float32(0.0)  # Kinetic energy
             my_fsq = numba.float32(0.0)  # force squared energy
+            
 
             for k in range(D):
                 # REF: https://arxiv.org/pdf/1303.7011.pdf sec. 2.C.
-                #random_number = xoroshiro128p_normal_float32(rng_states, local_id)
                 random_number = xoroshiro128p_normal_float32(rng_states, global_id)
-                #beta = numba.float32((2.0 * alpha * temperature * dt) ** 0.5) * random_number
                 beta = math.sqrt(numba.float32(2.0) * alpha * temperature * dt) * random_number
-                #numerator = 1 - alpha * dt / 2 / my_m
-                #denominator = 1 + alpha * dt / 2 / my_m
-                numerator =   numba.float32(1.0) - alpha * dt * numba.float32(0.5) / my_m
-                denominator = numba.float32(1.0) + alpha * dt * numba.float32(0.5) / my_m
-                #a = numba.float32(numerator / denominator)
-                #b = numba.float32(1 / denominator)
-                a = numerator / denominator
-                b = numba.float32(1.0) / denominator
-                my_fsq += my_f[k] * my_f[k]
-                my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
                 # Eq. (16) in https://arxiv.org/pdf/1303.7011.pdf
-                my_v[k] = a * my_v[k] + b * my_f[k] / my_m * dt + b * beta / my_m
+                numerator =   numba.float32(2.0)*my_m - alpha * dt
+                denominator = numba.float32(2.0)*my_m + alpha * dt
+                a = numerator / denominator
+                b_over_m = numba.float32(2.0) / denominator
+                my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
+                my_fsq += my_f[k] * my_f[k]
+                my_v[k] = a * my_v[k] + b_over_m * my_f[k]  * dt + b_over_m * beta
                 my_r[k] += my_v[k] * dt
                 if my_r[k] * numba.float32(2.0) > sim_box[k]:
                     my_r[k] -= sim_box[k]
