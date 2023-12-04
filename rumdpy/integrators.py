@@ -287,7 +287,8 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
 
             for k in range(D):
                 # REF: https://arxiv.org/pdf/1303.7011.pdf sec. 2.C.
-                random_number = xoroshiro128p_normal_float32(rng_states, local_id)
+                #random_number = xoroshiro128p_normal_float32(rng_states, local_id)
+                random_number = xoroshiro128p_normal_float32(rng_states, global_id)
                 beta = numba.float32((2.0 * alpha * temperature * dt) ** 0.5) * random_number
                 numerator = 1 - alpha * dt / 2 / my_m
                 denominator = 1 + alpha * dt / 2 / my_m

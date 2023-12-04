@@ -42,21 +42,20 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     steps = 250
     inner_steps = 40
 
+    T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     if integrator=='NVE':
         step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params =  (dt, )
         integrate = rp.make_integrator(c1, step, pairs['interactions'], compute_plan=compute_plan, verbose=False)
     if integrator=='NVT':
-        T0 = rp.make_function_constant(value= 0.7)
         integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) # 
     if integrator=='NVT_Langevin':
-        T0 = rp.make_function_constant(value= 0.7)
         alpha=0.1
         integrator_step = rp.make_step_nvt_langevin(c1, T0, compute_plan=compute_plan, verbose=verbose)
-        integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'],
-                                       compute_plan=compute_plan, verbose=verbose)
-        rng_states = create_xoroshiro128p_states(c1.N*c1.D, seed=2023)
-        integrator_params = np.float32(dt), np.float32(alpha), rng_states
+        integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=verbose)
+        rng_states = create_xoroshiro128p_states(c1.N, seed=2023)
+        #rng_states = create_xoroshiro128p_states(c1.N*c1.D, seed=2023)
+        integrator_params = (np.float32(dt), np.float32(alpha), rng_states)
                 
     # Run the simulation
     scalars_t = []
@@ -141,10 +140,10 @@ def test_nvt_langevin(nx, ny, nz):
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     # assert var_e < 0.001
-    assert 0.62 < Tkin  < 0.83
-    assert 0.57 < Tconf < 0.75
-    assert 0.92 <   R   < 1.00
-    assert 5.2  < Gamma < 6.8
+    assert 0.65 < Tkin  < 0.73, print(f'{Tkin=}')
+    assert 0.65 < Tconf < 0.73, print(f'{Tconf=}')
+    assert 0.92 <   R   < 1.00, print(f'{R=}')
+    assert 5.2  < Gamma < 6.8,  print(f'{Gamma=}')
     
     return
     

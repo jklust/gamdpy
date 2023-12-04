@@ -31,7 +31,8 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     number_of_particles = conf.N
     dimension_of_space = conf.D
     random_numbers_per_particle = dimension_of_space
-    number_of_random_numbers = number_of_particles * random_numbers_per_particle
+    #number_of_random_numbers = number_of_particles * random_numbers_per_particle
+    number_of_random_numbers = number_of_particles 
     rng_states = create_xoroshiro128p_states(number_of_random_numbers, seed=2023)
 
     # Setup interactions
