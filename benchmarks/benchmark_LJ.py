@@ -1,9 +1,12 @@
 import glob
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from numba import cuda, config
+from numba.cuda.random import create_xoroshiro128p_states
+
 
 import rumdpy as rp
 
@@ -39,13 +42,20 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     # Set up the integrator
     dt = np.float32(0.005)
 
+    T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     if integrator == 'NVE':
         step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
         integrator_params = (dt,)
         integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
-        T0 = rp.make_function_constant(value= 0.7)
         integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+    if integrator=='NVT_Langevin':
+        alpha=0.1
+        integrator_step = rp.make_step_nvt_langevin(c1, T0, compute_plan=compute_plan, verbose=verbose)
+        integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=verbose)
+        rng_states = create_xoroshiro128p_states(c1.N, seed=2023)
+        #rng_states = create_xoroshiro128p_states(c1.N*c1.D, seed=2023)
+        integrator_params = (np.float32(dt), np.float32(alpha), rng_states)
 
     # Run the simulation
     zero = np.float32(0.0)
@@ -95,9 +105,9 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     return tps, time_in_sec
 
 
-def main():
+def main(integrator):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
-    print('Benchmarking LJ:')
+    print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
         (4, 4, 8), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
         (32, 32, 32))
@@ -111,7 +121,7 @@ def main():
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator='NVE', verbose=False)
+            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator=integrator, verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
@@ -138,4 +148,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv)==1 or 'NVE' in sys.argv:
+        main(integrator='NVE')
+    if 'NVT' in sys.argv:
+        main(integrator='NVT')
+    if 'NVT_Langevin' in sys.argv:
+        main(integrator='NVT_Langevin')
+        
+
