@@ -4,9 +4,12 @@ from numba import cuda
 import pandas as pd
 import pickle
 import json
+import sys
 #import matplotlib.pyplot as plt
 
 include_rdf = True
+if 'NoRDF' in sys.argv:
+    include_rdf = False
 
 # Generate configuration with a FCC lattice
 c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442, T=1.44)      # N =  2*1024
@@ -28,10 +31,8 @@ LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compu
 pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=True)
 
 # Make integrator
-integrator_step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=True)
-integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=True)
-dt = np.float32(0.005)
-integrator_params = (dt, )
+dt = 0.005
+integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
 
 # Make rdf calculator
 if include_rdf:

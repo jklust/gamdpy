@@ -112,6 +112,15 @@ def make_step_nve(configuration, compute_plan, verbose=True, ):
     else:
         return cuda.jit(device=gridsync)(step_nve)[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
 
+def setup_integrator_nve(configuration, interactions, dt, compute_plan, verbose=True):
+   
+    integrator_step = make_step_nve(configuration, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
+        
+    integrator_params = (np.float32(dt), )  
+
+    return integrate, integrator_params    
+
 
 def make_step_nvt(configuration, temperature_function, compute_plan, verbose=True, ):
     pb = compute_plan['pb']

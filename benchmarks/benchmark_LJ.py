@@ -44,9 +44,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
     T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     if integrator == 'NVE':
-        step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
-        integrator_params = (dt,)
-        integrate = rp.make_integrator(c1, step,  pairs['interactions'], compute_plan=compute_plan, verbose=False)
+        integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
         integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
     if integrator=='NVT_Langevin':

@@ -43,12 +43,13 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     inner_steps = 40
 
     T0 = rp.make_function_constant(value=0.7) # Not used for NVE
+
     if integrator=='NVE':
-        step = rp.make_step_nve(c1, compute_plan=compute_plan, verbose=False, )
-        integrator_params =  (dt, )
-        integrate = rp.make_integrator(c1, step, pairs['interactions'], compute_plan=compute_plan, verbose=False)
+        integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+        
     if integrator=='NVT':
-        integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) # 
+        integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+        
     if integrator=='NVT_Langevin':
         integrate, integrator_params = rp.setup_integrator_nvt_langevin(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
  
