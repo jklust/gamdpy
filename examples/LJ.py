@@ -10,13 +10,20 @@ import sys
 include_rdf = True
 if 'NoRDF' in sys.argv:
     include_rdf = False
+    
+integrator = 'NVE'
+if 'NVT' in sys.argv:
+    integrator = 'NVT'
+if 'NVT_Langevin' in sys.argv:
+    integrator = 'NVT_Langevin'
+
 
 # Generate configuration with a FCC lattice
 c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442, T=1.44)      # N =  2*1024
 #c1 = rp.make_configuration_fcc(nx=16,  ny=16,  nz=16,  rho=0.8442, T=1.44)  # N = 16*1024
 c1.copy_to_device() 
 
-pdict = {'N':c1.N, 'D':c1.D, 'simbox':c1.simbox.data, 'rdf':include_rdf}
+pdict = {'N':c1.N, 'D':c1.D, 'simbox':c1.simbox.data, 'integrator':integrator, 'rdf':include_rdf}
 print(pdict)
 with open('Data/LJ_pdict.pkl', 'wb') as f:
     pickle.dump(pdict, f)
@@ -32,7 +39,16 @@ pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verb
 
 # Make integrator
 dt = 0.005
-integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+T0 = rp.make_function_constant(value=0.7) # Not used for NVE
+
+if integrator=='NVE':
+    integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+        
+if integrator=='NVT':
+    integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+        
+if integrator=='NVT_Langevin':
+    integrate, integrator_params = rp.setup_integrator_nvt_langevin(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
 
 # Make rdf calculator
 if include_rdf:
@@ -60,10 +76,12 @@ for i in range(steps+1):
         start.record() # Exclude first step from timing to get it more precise by excluding time for JIT compiling
         
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  pairs['interaction_params'], integrator_params, zero, inner_steps)
-    scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
-    tt.append(i*inner_steps*dt)
+    
+    if i>0:
+        scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
+        tt.append(i*inner_steps*dt)
 
-    if include_rdf:
+    if i>0 and include_rdf:
         rdf_calculator(c1.d_vectors, c1.simbox.d_data, c1.d_ptype, pairs['interaction_params'], d_gr_bins)
         temp_host_array = d_gr_bins.copy_to_host()       # offloading data from device and resetting decive array to zero. 
         gr_bins += temp_host_array                       # ... (prevents overflow errors for longer runs)  
