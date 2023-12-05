@@ -50,12 +50,8 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     if integrator=='NVT':
         integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) # 
     if integrator=='NVT_Langevin':
-        alpha=0.1
-        integrator_step = rp.make_step_nvt_langevin(c1, T0, compute_plan=compute_plan, verbose=verbose)
-        integrate = rp.make_integrator(c1, integrator_step, pairs['interactions'], compute_plan=compute_plan, verbose=verbose)
-        rng_states = create_xoroshiro128p_states(c1.N, seed=2023)
-        #rng_states = create_xoroshiro128p_states(c1.N*c1.D, seed=2023)
-        integrator_params = (np.float32(dt), np.float32(alpha), rng_states)
+        integrate, integrator_params = rp.setup_integrator_nvt_langevin(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
+ 
                 
     # Run the simulation
     scalars_t = []

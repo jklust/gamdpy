@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import cuda
 import math
-
+from numba.cuda.random import create_xoroshiro128p_states
 
 def make_integrator(configuration, integration_step, compute_interactions, compute_plan, verbose=True, ):
     pb = compute_plan['pb']
@@ -136,6 +136,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 
     temperature_function = numba.njit(temperature_function)
+    # Could accept float and convert to function ourselves, to increase user friendliness
 
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
@@ -222,6 +223,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
 
 def setup_integrator_nvt(configuration, interactions, temperature_function, tau, dt, compute_plan, verbose=True):
+    
     integrator_step = make_step_nvt(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
     integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan,
                                 verbose=verbose)
@@ -318,3 +320,14 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
     else:
         return cuda.jit(device=gridsync)(step_nvt_langevin)[
             num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
+
+def setup_integrator_nvt_langevin(configuration, interactions, temperature_function, alpha, dt, seed, compute_plan, verbose=True):
+   
+    integrator_step = make_step_nvt_langevin(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
+        
+    rng_states = create_xoroshiro128p_states(configuration.N, seed=seed)
+    integrator_params = (np.float32(dt), np.float32(alpha), rng_states)  
+    
+    return integrate, integrator_params
+
