@@ -281,7 +281,7 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
             REF: https://arxiv.org/pdf/1303.7011.pdf
         """
 
-        dt, alpha, rng_states = integrator_params
+        dt, alpha, rng_states, old_beta = integrator_params
         temperature = temperature_function(time)
 
         my_block = cuda.blockIdx.x
@@ -309,17 +309,17 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
                 b_over_m = numba.float32(2.0) / denominator
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
                 my_fsq += my_f[k] * my_f[k]
-                my_v[k] = a * my_v[k] + b_over_m * my_f[k]  * dt + b_over_m * beta
+                my_v[k] = a * my_v[k] + b_over_m * my_f[k] * dt + b_over_m * np.float32(0.5)*(beta+old_beta[global_id,k])
+                old_beta[global_id,k] = beta
                 my_r[k] += my_v[k] * dt
+
+                # Apply PBC. Should be function compiled in from simbox
                 if my_r[k] * numba.float32(2.0) > sim_box[k]:
                     my_r[k] -= sim_box[k]
                     r_im[global_id, k] += 1
                 if my_r[k] * numba.float32(2.0) < -sim_box[k]:
                     my_r[k] += sim_box[k]
                     r_im[global_id, k] -= 1
-                # if my_r[k]*numba.float32(2.0) > sim_box[k] or  my_r[k]*numba.float32(2.0) < -sim_box[k]:
-                #    print(global_id, k, my_r[0], my_r[1], my_r[2])
-                # vectors[r_id][global_id,k] = my_r[k]
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq
         return
@@ -336,7 +336,9 @@ def setup_integrator_nvt_langevin(configuration, interactions, temperature_funct
     integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
         
     rng_states = create_xoroshiro128p_states(configuration.N, seed=seed)
-    integrator_params = (np.float32(dt), np.float32(alpha), rng_states)  
+    old_beta = np.zeros((configuration.N, configuration.D), dtype=np.float32)
+    d_old_beta = cuda.to_device(old_beta)
+    integrator_params = (np.float32(dt), np.float32(alpha), rng_states, d_old_beta)  
     
     return integrate, integrator_params
 

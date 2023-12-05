@@ -101,10 +101,10 @@ def test_nve(nx, ny, nz):
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     assert var_e < 0.001
-    assert 0.68 < Tkin  < 0.71
-    assert 0.68 < Tconf < 0.71
-    assert 0.89 <   R   < 0.97
-    assert 5.2  < Gamma < 6.5
+    assert 0.68 < Tkin  < 0.71, print(f'{Tkin=}')
+    assert 0.68 < Tconf < 0.71, print(f'{Tkin=}')
+    assert 0.89 <   R   < 0.97, print(f'{R=}')
+    assert 5.2  < Gamma < 6.5,  print(f'{Gamma=}')
     
     return
 
@@ -119,10 +119,10 @@ def test_nvt(nx, ny, nz):
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     # assert var_e < 0.001
-    assert 0.68 < Tkin  < 0.72
-    assert 0.68 < Tconf < 0.72
-    assert 0.92 <   R   < 1.00
-    assert 5.2  < Gamma < 6.8
+    assert 0.68 < Tkin  < 0.72, print(f'{Tkin=}')
+    assert 0.68 < Tconf < 0.72, print(f'{Tkin=}')
+    assert 0.92 <   R   < 1.00, print(f'{R=}')
+    assert 5.2  < Gamma < 6.8,  print(f'{Gamma=}')
     
     return 
  
@@ -137,10 +137,10 @@ def test_nvt_langevin(nx, ny, nz):
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     # assert var_e < 0.001
-    assert 0.65 < Tkin  < 0.73, print(f'{Tkin=}')
-    assert 0.65 < Tconf < 0.73, print(f'{Tconf=}')
-    assert 0.92 <   R   < 1.00, print(f'{R=}')
-    assert 5.2  < Gamma < 6.8,  print(f'{Gamma=}')
+    assert 0.65 < Tkin  < 0.74, print(f'{Tkin=}')
+    assert 0.65 < Tconf < 0.74, print(f'{Tconf=}')
+    assert 0.92 <   R   < 0.99, print(f'{R=}')
+    assert 5.0  < Gamma < 6.3,  print(f'{Gamma=}')
     
     return
     
