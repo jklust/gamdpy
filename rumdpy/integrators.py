@@ -58,13 +58,14 @@ def make_step_nve(configuration, compute_plan, verbose=True, ):
         print(f'\tNumber (virtual) particles: {num_blocks * pb}')
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
-        # Unpack indicies for vectors and scalars
-    # for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    # Unpack indicies for vectors and scalars
     for col in configuration.vectors.column_names:
         exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
+        
+    apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+
 
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
@@ -94,15 +95,8 @@ def make_step_nve(configuration, compute_plan, verbose=True, ):
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
                 my_v[k] += numba.float32(0.5) * my_f[k] / my_m * dt
                 my_r[k] += my_v[k] * dt
-                if my_r[k] * numba.float32(2.0) > sim_box[k]:
-                    my_r[k] -= sim_box[k]
-                    r_im[global_id, k] += 1
-                if my_r[k] * numba.float32(2.0) < -sim_box[k]:
-                    my_r[k] += sim_box[k]
-                    r_im[global_id, k] -= 1
-                # if my_r[k]*numba.float32(2.0) > sim_box[k] or  my_r[k]*numba.float32(2.0) < -sim_box[k]:
-                #    print(global_id, k, my_r[0], my_r[1], my_r[2])
-                # vectors[r_id][global_id,k] = my_r[k]
+                
+                apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq
         return
@@ -137,8 +131,6 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
     # Unpack indicies for vectors and scalars    
-    # for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
     for col in configuration.vectors.column_names:
         exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
@@ -146,6 +138,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
     temperature_function = numba.njit(temperature_function)
     # Could accept float and convert to function ourselves, to increase user friendliness
+    apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
 
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
@@ -175,19 +168,13 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
             for k in range(D):
                 my_fsq += my_f[k] * my_f[k]
-                # my_v[k] += numba.float32(0.5)*my_f[k]/my_m*dt
                 my_v[k] = plus * (minus * my_v[k] + my_f[k] / my_m * dt)
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
-                # my_v[k] += numba.float32(0.5)*my_f[k]/my_m*dt
                 my_r[k] += my_v[k] * dt
-                if my_r[k] * numba.float32(2.0) > sim_box[k]:  # Should be controled by function in simbox
-                    my_r[k] -= sim_box[k]
-                    r_im[global_id, k] += 1
-                if my_r[k] * numba.float32(2.0) < -sim_box[k]:
-                    my_r[k] += sim_box[k]
-                    r_im[global_id, k] -= 1
-                # vectors[r_id][global_id,k] = my_r[k]
-            cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow! Spread out over num_blocks terms?
+                
+                apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+
+            cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow! Not really
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq
         return
@@ -263,20 +250,18 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
         print(f'\tNumber (virtual) particles: {num_blocks * pb}')
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
-        # Unpack indicies for vectors and scalars
-    # for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
+    # Unpack indicies for vectors and scalars
     for col in configuration.vectors.column_names:
         exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 
     temperature_function = numba.njit(temperature_function)
-
+    apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
     def step_nvt_langevin(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
-        """ Make one NVT timestep using Leap-frog
+        """ Make one NVT Langevin timestep using Leap-frog
             Kernel configuration: [num_blocks, (pb, tp)]
             REF: https://arxiv.org/pdf/1303.7011.pdf
         """
@@ -313,13 +298,8 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
                 old_beta[global_id,k] = beta
                 my_r[k] += my_v[k] * dt
 
-                # Apply PBC. Should be function compiled in from simbox
-                if my_r[k] * numba.float32(2.0) > sim_box[k]:
-                    my_r[k] -= sim_box[k]
-                    r_im[global_id, k] += 1
-                if my_r[k] * numba.float32(2.0) < -sim_box[k]:
-                    my_r[k] += sim_box[k]
-                    r_im[global_id, k] -= 1
+                apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq
         return

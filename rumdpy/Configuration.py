@@ -92,7 +92,7 @@ class simbox():
     def __init__(self, D, data):
         self.D = D
         self.data = data.copy()
-        self.dist_sq_dr_function, self.dist_sq_function = self.make_simbox_functions()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension = self.make_simbox_functions()
         return
 
     def copy_to_device(self):
@@ -101,7 +101,7 @@ class simbox():
     def make_simbox_functions(self):
         D = self.D
 
-        def dist_sq_dr_function(ri, rj, sim_box, dr):  # simbox could be compiled in, but not so flexible e.g for NpT
+        def dist_sq_dr_function(ri, rj, sim_box, dr):  
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr[k] = ri[k] - rj[k]
@@ -111,7 +111,7 @@ class simbox():
                 dist_sq = dist_sq + dr[k] * dr[k]
             return dist_sq
 
-        def dist_sq_function(ri, rj, sim_box):  # simbox could be compiled in, but not so flexible e.g for NpT
+        def dist_sq_function(ri, rj, sim_box):  
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr_k = ri[k] - rj[k]
@@ -120,8 +120,17 @@ class simbox():
                          (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
+        
+        def apply_PBC_dimension(r, image, sim_box, dimension):
+            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
+                r[dimension] -= sim_box[dimension]
+                image[dimension] += 1
+            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
+                r[dimension] += sim_box[dimension]
+                image[dimension] -= 1
 
-        return dist_sq_dr_function, dist_sq_function
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension
 
 
 # Helper functions
