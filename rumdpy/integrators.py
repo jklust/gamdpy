@@ -295,7 +295,7 @@ def make_step_nvt_langevin(configuration, temperature_function, compute_plan, ve
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
                 my_fsq += my_f[k] * my_f[k]
                 my_v[k] = a * my_v[k] + b_over_m * my_f[k] * dt + b_over_m * np.float32(0.5)*(beta+old_beta[global_id,k])
-                old_beta[global_id,k] = beta
+                old_beta[global_id,k] = beta # Store beta for next step
                 my_r[k] += my_v[k] * dt
 
                 apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)

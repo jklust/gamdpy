@@ -1,12 +1,11 @@
 import glob
 import sys
+from rumdpy.integrators import nve, nvt, nvt_langevin
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from numba import cuda, config
-from numba.cuda.random import create_xoroshiro128p_states
-
 
 import rumdpy as rp
 
@@ -44,11 +43,11 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
     T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     if integrator == 'NVE':
-        integrate, integrator_params = rp.setup_integrator_nve(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+        integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
-        integrate, integrator_params = rp.setup_integrator_nvt(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+        integrate, integrator_params = nvt.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
     if integrator=='NVT_Langevin':
-        integrate, integrator_params = rp.setup_integrator_nvt_langevin(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
+        integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
 
     # Run the simulation
     zero = np.float32(0.0)

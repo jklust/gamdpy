@@ -1,5 +1,6 @@
 import numpy as np
 import rumdpy as rp
+from rumdpy.integrators import nvt
 import numba
 from numba import cuda
 import pandas as pd
@@ -8,8 +9,8 @@ import math
 
 include_springs = True
 include_walls = True
-include_gravity = False
-include_KABLJ = False
+include_gravity = True
+include_KABLJ = True
 
 rho = 0.85
 wall_dist = 6.31 # Ingebrigtsen & Dyre (2014)
@@ -102,10 +103,10 @@ T0 = rp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
 T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
 
 # Setup NVT intergrator(s)
-integrate0, integrator_params0 = rp.setup_integrator_nvt(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
+integrate0, integrator_params0 = nvt.setup(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
 
 dt = 0.0025
-integrate1,  integrator_params1  = rp.setup_integrator_nvt(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
+integrate1,  integrator_params1 = nvt.setup(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
 
 scalars_t = []
 coordinates_t = []
