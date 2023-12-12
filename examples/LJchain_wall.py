@@ -220,7 +220,7 @@ if rhoB>0: # We got some B-particles
     y = hist/len(coordinates_t)/Lxy**2/dx
     plt.plot(x, y, 'g-', label='B')
     plt.plot(x, np.ones_like(x)*rhoB, 'g--', label=f'rhoB={rhoB:.3}')
-    plt.plot(x, y*3, 'r--', label='3*B')
+    plt.plot(x, y*rhoA/rhoB, 'r--', label='B*(rhoA/rhoB)')
 
 plt.xlabel('z')
 plt.ylabel('rho(z)')
