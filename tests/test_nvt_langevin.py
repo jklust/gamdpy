@@ -6,6 +6,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     import matplotlib.pyplot as plt
     import time
     from numba.cuda.random import create_xoroshiro128p_states
+    from rumdpy.integrators import nvt_langevin
 
     import rumdpy as rp
 
@@ -45,11 +46,9 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     # Setup integrator
     dt = 0.005
     alpha = 0.1
-    integrator_step = rp.make_step_nvt_langevin(conf, lambda t: np.float32(temperature),
-                                                compute_plan=compute_plan, verbose=verbose)
-    integrate = rp.make_integrator(conf, integrator_step, pairs['interactions'],
-                                   compute_plan=compute_plan, verbose=verbose)
-    integrator_params = np.float32(dt), np.float32(alpha), rng_states
+    integrate, integrator_params = nvt_langevin.setup(conf, pairs['interactions'], lambda _: temperature,
+                                                      alpha=alpha, dt=dt, seed=0,
+                                                      compute_plan=compute_plan, verbose=False)
     inner_steps = 32
     outer_steps = 512
 
