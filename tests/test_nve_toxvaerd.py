@@ -1,8 +1,14 @@
-def test_nve_toxvaerd(verbose = True):
-    import numpy as np
-    from rumdpy.integrators import nve_toxvaerd
-    import rumdpy as rp
-    import time
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+import rumdpy as rp
+from rumdpy.integrators import nve, nve_toxvaerd
+
+
+def test_nve_toxvaerd(verbose=True, plot_figures=True):
 
     density: float = 0.9
     dt: float = 0.010
@@ -50,4 +56,59 @@ def test_nve_toxvaerd(verbose = True):
     if verbose:
         print(f"Time spent: {toc - tic:0.4f} seconds")
         print(f"Steps per second: {steps_per_second:0.1f}")
+
+    # Check that the energy is conserved
+    df_toxverd = pd.DataFrame(np.array(scalars), columns=conf.sid.keys())
+
+
+    # Run standard NVE simulation
+    integrate, integrator_params = nve.setup(conf, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=verbose)
+    scalars = []
+    for i in range(outer_steps):
+        integrate(conf.d_vectors, conf.d_scalars, conf.d_ptype, conf.d_r_im, conf.simbox.d_data,
+                  pairs['interaction_params'], integrator_params, np.float32(0.0), inner_steps)
+        scalars.append(np.sum(conf.d_scalars.copy_to_host(), axis=0))
+    df_nve = pd.DataFrame(np.array(scalars), columns=conf.sid.keys())
+
+
+    def compute_T_conf(df):
+        N = conf.N
+        D = conf.D
+        df['T_kin'] = 2 * df['k'] / D / (N - 1)
+        df['T_conf'] = df['fsq'] / df['lap']
+        return df
+
+    df_toxverd = compute_T_conf(df_toxverd)
+    df_nve = compute_T_conf(df_nve)
+
+    # Check that the temperatures are the same
+    T_kin_toxvaerd = df_toxverd['T_kin'].mean()
+    T_kin_nve = df_nve['T_kin'].mean()
+    T_conf_toxvaerd = df_toxverd['T_conf'].mean()
+    T_conf_nve = df_nve['T_conf'].mean()
+    if verbose:
+        print(f'T_kin (Toxvaerd): {T_kin_toxvaerd: 8.4f}')
+        print(f'T_kin (NVE):      {T_kin_nve: 8.4f}')
+        print(f'T_conf (Toxvaerd): {T_conf_toxvaerd: 8.4f}')
+        print(f'T_conf (NVE):      {T_conf_nve: 8.4f}')
+
+    # Plot temperatures
+    if plot_figures:
+        plt.figure(figsize=(6, 8))
+        plt.subplot(2, 1, 1)
+        plt.plot(df_toxverd['T_conf'], 'r-', label='Toxvaerd (T_conf)')
+        plt.plot(df_toxverd['T_kin'], 'b-', label='Toxvaerd (T_kin)')
+        plt.plot([0, len(df_toxverd)], [T_conf_toxvaerd, T_conf_toxvaerd], 'k-', lw=4, label='T_conf (avg)')
+        plt.plot([0, len(df_toxverd)], [T_kin_toxvaerd, T_kin_toxvaerd], 'y--', lw=4, label='T_kin (avg)')
+        plt.legend()
+        plt.subplot(2, 1, 2)
+        plt.plot(df_nve['T_conf'], 'r-', label='NVE (T_conf)')
+        plt.plot(df_nve['T_kin'], 'b-', label='NVE (T_kin)')
+        plt.plot([0, len(df_nve)], [T_conf_nve, T_conf_nve], 'k-', lw=4, label='T_conf (avg)')
+        plt.plot([0, len(df_nve)], [T_kin_nve, T_kin_nve], 'y--', lw=4, label='T_kin (avg)')
+        plt.legend()
+        plt.show()
+
+    assert np.isclose(T_kin_toxvaerd, T_conf_toxvaerd, atol=0.01)  # T_kin and T_conf should be the same
+
 

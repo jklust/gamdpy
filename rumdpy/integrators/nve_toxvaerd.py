@@ -51,12 +51,14 @@ def make_step_nve_toxvaerd(configuration, compute_plan, verbose=True):
 
             for k in range(D):
                 my_fsq += my_f[k] * my_f[k]
-                v_squared = numba.float32(0.0)
-                v_squared += numba.float32(0.5) * my_v[k] * my_v[k]
-                v_squared -= numba.float32(0.25) * my_f[k] * my_f[k] / (my_m * my_m) * dt * dt
+                v_mean = numba.float32(0.0)
+                v_mean += my_v[k]  # v(t-dt/2)
                 my_v[k] += my_f[k] / my_m * dt
-                v_squared += numba.float32(0.25) * my_v[k] * my_v[k]
-                my_k += numba.float32(0.5) * my_m * v_squared
+                v_mean += my_v[k]  # v(t+dt/2)
+                v_mean /= numba.float32(2.0)  # v(t) = (v(t-dt/2) + v(t+dt/2))/2
+                my_k += numba.float32(0.5) * my_m * v_mean * v_mean
+                # Toxvaerd correction to kinetic energy:  - 1/8 f(t)^2 dt^2 / m
+                my_k += numba.float32(1/8) * my_f[k] * my_f[k] * dt * dt / my_m
                 my_r[k] += my_v[k] * dt
 
                 apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
