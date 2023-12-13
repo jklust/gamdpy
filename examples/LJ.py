@@ -22,7 +22,7 @@ if 'NPT_Langevin' in sys.argv:            # use with NoRDF since box size is var
 
 
 # Generate configuration with a FCC lattice
-c1 = rp.make_configuration_fcc(nx=4,  ny=3,  nz=2,  rho=1./0.9672,  T=1.44)  # N =  2*1024
+c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=1./0.9672,  T=1.44)  # N =  2*1024
 #c1 = rp.make_configuration_fcc(nx=16,  ny=16,  nz=16,  rho=0.8442, T=1.44)  # N = 16*1024
 c1.copy_to_device() 
 
