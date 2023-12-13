@@ -17,5 +17,5 @@ if pdict['rdf']:
     plt.show(block=False)
 
 df = pd.read_csv('Data/LJ_scalars.csv')
-rp.plot_scalars(df, pdict['N'],  pdict['D'], figsize=(15,4), block=True)
+rp.plot_scalars(df, pdict['N'],  pdict['D'], figsize=(10,8), block=True)
 

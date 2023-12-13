@@ -157,30 +157,36 @@ def plot_scalars(df, N, D, figsize, block=True):
     df['e'] = df['u'] + df['k'] # Total energy
     df['Tkin'] =2*df['k']/D/(N-1)
     df['Tconf'] = df['fsq']/df['lap']
+    df['press'] =  2*df['k']/D/(N-1) * N / df['vol'] + df['w'] / df['vol']
     df['du'] = df['u'] - np.mean(df['u'])
     df['de'] = df['e'] - np.mean(df['e'])
     df['dw'] = df['w'] - np.mean(df['w'])
     
-    fig, axs = plt.subplots(1, 3, figsize=figsize)
-    axs[0].plot(df['t'], df['du']/N, '.-', label=f"du/N, var(u)/N={np.var(df['u'])/N:.4}")
-    axs[0].plot(df['t'], df['de']/N,  '-', label=f"de/N, var(e)/N={np.var(df['e'])/N:.4}")
-    axs[0].set_xlabel('Time')
-    axs[0].legend()
+    fig, axs = plt.subplots(2, 2, figsize=figsize)
+    axs[0, 0].plot(df['t'], df['du']/N, '.-', label=f"du/N, var(u)/N={np.var(df['u'])/N:.4}")
+    axs[0, 0].plot(df['t'], df['de']/N,  '-', label=f"de/N, var(e)/N={np.var(df['e'])/N:.4}")
+    axs[0, 0].set_xlabel('Time')
+    axs[0, 0].legend()
     
-    axs[1].plot(df['t'], df['Tconf'], '.-', label=f"Tconf, mean={np.mean(df['Tconf']):.3f}")    
-    axs[1].plot(df['t'], df['Tkin'], '.-', label=f"Tkin, mean={np.mean(df['Tkin']):.3f}")   
-    axs[1].set_xlabel('Time')
-    axs[1].set_ylabel('Temperature')
-    axs[1].legend()
+    axs[0, 1].plot(df['t'], df['Tconf'], '.-', label=f"Tconf, mean={np.mean(df['Tconf']):.3f}")    
+    axs[0, 1].plot(df['t'], df['Tkin'], '.-', label=f"Tkin, mean={np.mean(df['Tkin']):.3f}")   
+    axs[0, 1].set_xlabel('Time')
+    axs[0, 1].set_ylabel('Temperature')
+    axs[0, 1].legend()
  
+    axs[1, 0].plot(df['t'], df['press'], '.-', label=f"press, mean={np.mean(df['press']):.3f}")   
+    axs[1, 0].set_xlabel('Time')
+    axs[1, 0].set_ylabel('Pressure')
+    axs[1, 0].legend()
+   
     R = np.dot(df['dw'], df['du'])/(np.dot(df['dw'], df['dw'])*np.dot(df['du'], df['du']))**0.5
     Gamma = np.dot(df['dw'], df['du'])/(np.dot(df['du'], df['du']))
  
-    axs[2].plot(df['u']/N, df['w']/N, '.', label=f"R = {R:.3}")
-    axs[2].plot(sorted(df['u']/N), sorted(df['du']/N*Gamma + np.mean(df['w']/N)), 'r--', label=f"Gamma = {Gamma:.3}")
-    axs[2].set_xlabel('U/N')
-    axs[2].set_ylabel('W/N')
-    axs[2].legend()
+    axs[1, 1].plot(df['u']/N, df['w']/N, '.', label=f"R = {R:.3}")
+    axs[1, 1].plot(sorted(df['u']/N), sorted(df['du']/N*Gamma + np.mean(df['w']/N)), 'r--', label=f"Gamma = {Gamma:.3}")
+    axs[1, 1].set_xlabel('U/N')
+    axs[1, 1].set_ylabel('W/N')
+    axs[1, 1].legend()
     plt.show(block=block)
 
     return
