@@ -1,6 +1,6 @@
 import numpy as np
 import rumdpy as rp
-from rumdpy.integrators import nve, nvt, nvt_langevin
+from rumdpy.integrators import nve, nve_toxvaerd, nvt, nvt_langevin
 from numba import cuda
 import pandas as pd
 import pickle
@@ -13,6 +13,8 @@ if 'NoRDF' in sys.argv:
     include_rdf = False
     
 integrator = 'NVE'
+if 'NVE_Toxvaerd' in sys.argv:
+    integrator = 'NVE_Toxvaerd'
 if 'NVT' in sys.argv:
     integrator = 'NVT'
 if 'NVT_Langevin' in sys.argv:
@@ -44,6 +46,9 @@ T0 = rp.make_function_constant(value=0.7) # Not used for NVE
 
 if integrator=='NVE':
     integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+
+if integrator=='NVE_Toxvaerd':
+    integrate, integrator_params = nve_toxvaerd.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
 
 if integrator=='NVT':
     integrate, integrator_params =nvt.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
