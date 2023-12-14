@@ -1,16 +1,21 @@
+import sys
 import numpy as np
 import rumdpy as rp
 from rumdpy.integrators import nvt
+# from rumdpy.interactions import pair, bond, planar
 import numba
 from numba import cuda
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
-include_springs = True
-include_walls = True
-include_gravity = True
-include_KABLJ = True
+include_springs = 'springs' in sys.argv
+include_walls = 'walls' in sys.argv
+include_gravity = 'gravity' in sys.argv
+include_KABLJ = 'KABLJ' in sys.argv
+
+if include_gravity:
+    assert include_walls, 'Do not do gravity without walls!!!'
 
 rho = 0.85
 wall_dist = 6.31 # Ingebrigtsen & Dyre (2014)
@@ -32,8 +37,12 @@ else:
 if include_gravity:
     c1.simbox.data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
 if include_KABLJ:
-    c1.ptype[np.arange(0,c1.N,4)] = 1.0    # 3:1 mixture
+    c1.ptype[np.arange(0,c1.N,4)] = 1    # 3:1 mixture
 c1.copy_to_device()
+
+print('simbox: ', c1.simbox.data)
+if include_walls:
+    print('wall_distance: ', wall_dist)
 
 compute_plan = rp.get_default_compute_plan(c1)
 print('compute_plan: ', compute_plan)
@@ -45,7 +54,7 @@ if include_springs:
     fourth = np.arange(0,c1.N,4)
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
     bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
-     
+    
 # Setup two smooth walls implemented as 'planar interactions'
 if include_walls:
     wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
