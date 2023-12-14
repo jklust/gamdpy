@@ -55,6 +55,11 @@ class PairPotential():
         if exclusions == None:
             exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
 
+        if verbose:
+            print(f'Setting up pair interactions for {configuration.N} particles in {configuration.D} dimensions:')
+            print(f'\tcompute_plan: {compute_plan}')   
+            print(f'\tparameters:\n{self.params_user}')   
+
         # Setup params array in right format
         num_types = self.params_user.shape[0]
         assert num_types == self.params_user.shape[1]
@@ -282,7 +287,6 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
     num_blocks = (num_part-1)//pb + 1    
 
     if verbose:
-        print(f'Generating interactions for {num_part} particles in {D} dimensions:')
         print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
         print(f'\tNumber (virtual) particles: {num_blocks*pb}')
         print(f'\tNumber of threads {num_blocks*pb*tp}')      
@@ -586,6 +590,11 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         return
     return fixed_interactions
 
+
+##################################################################
+#### Bonds
+##################################################################
+
 def make_bond_calculator(configuration, bondpotential_function):
     
     D = configuration.D
@@ -631,7 +640,9 @@ def setup_bonds(configuration, bond_potential, potential_params_list, particles_
     total_number_indicies = 0 
     for particles in particles_list:
         total_number_indicies += particles.shape[0]
-    print(total_number_indicies)
+    
+    if verbose:
+        print(f'Setting up bond interactions: {N} particles, {num_types} bond types, {total_number_indicies} bonds in total.')
 
     bond_indicies = np.zeros((total_number_indicies, 3), dtype=np.int32)    
     bond_params = np.zeros((num_types, len(potential_params_list[0])), dtype=np.float32)
@@ -647,7 +658,7 @@ def setup_bonds(configuration, bond_potential, potential_params_list, particles_
         bond_params[bond_type,:] = potential_params_list[bond_type] 
     
     bond_calculator =  make_bond_calculator(configuration, bond_potential)
-    bond_interactions = make_fixed_interactions(configuration, bond_calculator, compute_plan, verbose=verbose)
+    bond_interactions = make_fixed_interactions(configuration, bond_calculator, compute_plan, verbose=False)
     d_bond_indicies = cuda.to_device(bond_indicies)
     d_bond_params = cuda.to_device(bond_params)
     bond_interaction_params = (d_bond_indicies, d_bond_params)
@@ -680,7 +691,11 @@ def add_exclusions_from_bond_indicies(exclusions, bond_indicies):
         exclusions[j,-1] += 1
 
     assert np.max(exclusions[:,-1]) <= max_num_exclusions
-
+    
+    
+#########################################################################
+######## Planar interactions (smmoth walls, gravity, electric field)
+#########################################################################
 
 def make_planar_calculator(configuration, potential_function):
     
@@ -727,10 +742,14 @@ def setup_planar_interactions(configuration, potential_function, potential_param
     assert len(particles_list) == num_types
     assert len(point_list) == num_types
     assert len(normal_vector_list) == num_types
-
+    
     total_number_indicies = 0 
     for particles in particles_list:
         total_number_indicies += particles.shape[0] 
+
+    if verbose:
+        print(f'Setting up planar interactions: {num_types} types, {total_number_indicies} particle-plane interactions in total.')
+
 
     indicies = np.zeros((total_number_indicies, 2), dtype=np.int32)    
     params = np.zeros((num_types, 2*D+len(potential_params_list[0])), dtype=np.float32)
@@ -747,7 +766,7 @@ def setup_planar_interactions(configuration, potential_function, potential_param
         params[interaction_type,2*D:] = potential_params_list[interaction_type] 
     
     calculator = make_planar_calculator(configuration, potential_function)
-    interactions = make_fixed_interactions(configuration, calculator, compute_plan, verbose=verbose)
+    interactions = make_fixed_interactions(configuration, calculator, compute_plan, verbose=False)
     d_indicies = cuda.to_device(indicies)
     d_params = cuda.to_device(params)
     interaction_params = (d_indicies, d_params)

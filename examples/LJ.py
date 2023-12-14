@@ -32,7 +32,6 @@ with open('Data/LJ_pdict.pkl', 'wb') as f:
     pickle.dump(pdict, f)
 
 compute_plan = rp.get_default_compute_plan(c1)
-print('compute_plan: ', compute_plan)
 
 # Make pair potential
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))

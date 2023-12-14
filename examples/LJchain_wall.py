@@ -45,7 +45,6 @@ if include_walls:
     print('wall_distance: ', wall_dist)
 
 compute_plan = rp.get_default_compute_plan(c1)
-print('compute_plan: ', compute_plan)
  
 # Setup bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
 if include_springs:
@@ -92,7 +91,6 @@ sigma =   [[1.0, 0.88], [0.88, 0.80]] # Setting up KABLJ. If all particles are t
 epsilon = [[1.0, 0.50], [0.50, 1.50]] # ... this reverts to single componant LJ
 cutoff = np.array(sigma)*2.5
 params = rp.LJ_12_6_params_from_sigma_epsilon_cutoff(sigma, epsilon, cutoff)
-print(params)
 LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
 pairs = LJ.get_interactions(c1, exclusions=exclusions, compute_plan=compute_plan, verbose=True)
 
