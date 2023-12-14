@@ -24,7 +24,8 @@ if 'NPT_Langevin' in sys.argv:            # use with NoRDF since box size is var
 
 
 # Generate configuration with a FCC lattice
-c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=1./0.9672,  T=1.44)  # N =  2*1024
+c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442,  T=1.44)  # N =  2*1024
+#c1 = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=1./0.9672,  T=1.44)  # N =  2*1024
 #c1 = rp.make_configuration_fcc(nx=16,  ny=16,  nz=16,  rho=0.8442, T=1.44)  # N = 16*1024
 c1.copy_to_device() 
 
@@ -43,8 +44,10 @@ pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verb
 
 # Make integrator
 dt = 0.005
-T0 = rp.make_function_constant(value=1.20) # Not used for NVE
-P0 = rp.make_function_constant(value=6.859) # Not used for NVE
+T0 = rp.make_function_constant(value=0.7) # Not used for NVE
+#T0 = rp.make_function_constant(value=1.20) # Not used for NVE
+P0 = rp.make_function_constant(value=1.2) # Not used for NV*
+#P0 = rp.make_function_constant(value=2.2) # Not used for NV*
 
 if integrator=='NVE':
     integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
