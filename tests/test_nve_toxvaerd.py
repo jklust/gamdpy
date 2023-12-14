@@ -1,14 +1,16 @@
-import time
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
+def test_nve_toxvaerd(verbose=False, plot_figures=False):
+    """ Compare the Toxvaerd NVE integrator with the standard NVE integrator.
+    Assert that the kinetic and configurational temperatures are (almost) the same.
+    """
+    import time
 
-import rumdpy as rp
-from rumdpy.integrators import nve, nve_toxvaerd
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
 
-
-def test_nve_toxvaerd(verbose=True, plot_figures=True):
+    import rumdpy as rp
+    from rumdpy.integrators import nve, nve_toxvaerd
 
     density: float = 0.9
     dt: float = 0.010
@@ -87,8 +89,8 @@ def test_nve_toxvaerd(verbose=True, plot_figures=True):
     T_conf_toxvaerd = df_toxverd['T_conf'].mean()
     T_conf_nve = df_nve['T_conf'].mean()
     if verbose:
-        print(f'T_kin (Toxvaerd): {T_kin_toxvaerd: 8.4f}')
-        print(f'T_kin (NVE):      {T_kin_nve: 8.4f}')
+        print(f'T_kin (Toxvaerd):  {T_kin_toxvaerd: 8.4f}')
+        print(f'T_kin (NVE):       {T_kin_nve: 8.4f}')
         print(f'T_conf (Toxvaerd): {T_conf_toxvaerd: 8.4f}')
         print(f'T_conf (NVE):      {T_conf_nve: 8.4f}')
 
@@ -112,3 +114,5 @@ def test_nve_toxvaerd(verbose=True, plot_figures=True):
     assert np.isclose(T_kin_toxvaerd, T_conf_toxvaerd, atol=0.01)  # T_kin and T_conf should be the same
 
 
+if __name__ == '__main__':
+    test_nve_toxvaerd(verbose=True, plot_figures=True)

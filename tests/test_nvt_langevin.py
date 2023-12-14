@@ -113,3 +113,6 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     assert steps_per_second > 1000
 
     return
+
+if __name__ == '__main__':
+    test_step_langevin(verbose=True, plot_figures=True)
