@@ -170,11 +170,16 @@ def plot_scalars(df, N, D, figsize, block=True):
     
     axs[0, 1].plot(df['t'], df['Tconf'], '.-', label=f"Tconf, mean={np.mean(df['Tconf']):.3f}")    
     axs[0, 1].plot(df['t'], df['Tkin'], '.-', label=f"Tkin, mean={np.mean(df['Tkin']):.3f}")   
+    if 'Ttarget' in df.columns:
+        axs[0, 1].plot(df['t'], df['Ttarget'], 'k--', linewidth=3, label=f"Ttarget,  mean={np.mean(df['Ttarget']):.3f}") 
     axs[0, 1].set_xlabel('Time')
     axs[0, 1].set_ylabel('Temperature')
     axs[0, 1].legend()
  
     axs[1, 0].plot(df['t'], df['press'], '.-', label=f"press, mean={np.mean(df['press']):.3f}")   
+    if 'Ptarget' in df.columns:
+        axs[1, 0].plot(df['t'], df['Ptarget'], 'k--', linewidth=3, label=f"Ptarget,  mean={np.mean(df['Ptarget']):.3f}") 
+
     axs[1, 0].set_xlabel('Time')
     axs[1, 0].set_ylabel('Pressure')
     axs[1, 0].legend()

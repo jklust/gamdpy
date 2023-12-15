@@ -179,8 +179,12 @@ print('\tTPS : ', tps )
    
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)
+df['Ttarget'] = numba.vectorize(T1)(np.array(tt))
+df['vol'] = np.prod(c1.simbox.data)
+if include_walls:
+    df['vol'] /= c1.simbox.data[wall_dimension]*wall_dist
    
-rp.plot_scalars(df, c1.N, c1.D, figsize=(15,4), block=False)
+rp.plot_scalars(df, c1.N, c1.D, figsize=(10,8), block=False)
 
 if include_springs:
     plt.figure() 

@@ -1,6 +1,7 @@
 import numpy as np
 import rumdpy as rp
 from rumdpy.integrators import nve, nve_toxvaerd, nvt, nvt_langevin, npt_langevin
+import numba
 from numba import cuda
 import pandas as pd
 import pickle
@@ -44,10 +45,13 @@ pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verb
 
 # Make integrator
 dt = 0.005
+#dt = 0.01
 T0 = rp.make_function_constant(value=0.7) # Not used for NVE
 #T0 = rp.make_function_constant(value=1.20) # Not used for NVE
 P0 = rp.make_function_constant(value=1.2) # Not used for NV*
 #P0 = rp.make_function_constant(value=2.2) # Not used for NV*
+#P0 = rp.make_function_ramp(value0=1.2, x0=500.0, value1=3.2, x1=1500.0)
+#T0 = rp.make_function_ramp(value0=0.7, x0=1000.0, value1=1.7, x1=2000.0)
 
 if integrator=='NVE':
     integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
@@ -91,7 +95,7 @@ for i in range(steps+1):
     if i==1:
         start.record() # Exclude first step from timing to get it more precise by excluding time for JIT compiling
         
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  pairs['interaction_params'], integrator_params, zero, inner_steps)
+    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data,  pairs['interaction_params'], integrator_params, np.float32(i*inner_steps*dt), inner_steps)
     
     if i>0:
         scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
@@ -121,6 +125,10 @@ print('\tfinal box dims : ', c1.simbox.data[0], c1.simbox.data[1], c1.simbox.dat
 # Save data
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)
+if integrator!='NVE':
+    df['Ttarget'] = numba.vectorize(T0)(np.array(tt))
+if integrator=='NPT_Langevin':
+    df['Ptarget'] = numba.vectorize(P0)(np.array(tt)) 
 df['vol'] = np.array(vol_t)
 print(df.mean())
 df.to_csv('Data/LJ_scalars.csv')
