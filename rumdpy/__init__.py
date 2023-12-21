@@ -1,7 +1,9 @@
 #from .integrators import *
 from .interactions import *
+from .potential_functions import *
 from .Configuration import *
 from .colarray import *
+from .calculators import *
 from .misc import *
 
 
