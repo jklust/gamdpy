@@ -108,6 +108,7 @@ interactions, interaction_params = rp.add_interactions_list(c1, interactions_lis
 T0 = rp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
 #T1 = rp.make_function_constant(value= 1.8)
 T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
+#T1 = rp.make_function_sin(offset=0.45, period=200, amplitude=0.1)
 
 # Setup NVT intergrator(s)
 integrate0, integrator_params0 = nvt.setup(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
@@ -212,6 +213,12 @@ if include_springs:
     plt.ylabel('p(Theta)')
     plt.legend()
     plt.show(block=False)
+
+plt.figure()
+plt.plot(df['Ttarget'], df['u'])
+plt.xlabel('Ttarget')
+plt.xlabel('Potential energy')
+plt.show(block=False)
 
 plt.figure()    
 bins = 300

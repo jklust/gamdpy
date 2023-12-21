@@ -85,7 +85,14 @@ def make_function_ramp(value0, x0, value1, x1):
         return value1
     return function
         
-
+def make_function_sin(period, amplitude, offset):
+    from math import sin, pi
+    period, amplitude, offset = np.float32(period), np.float32(amplitude), np.float32(offset)
+    def function(x):
+        return offset + amplitude*sin(2*pi*x/period)
+    return function
+        
+    
 def get_default_compute_plan(configuration):
     """
     Return a default compute_plan (dictionary with a set of parameters specifying how computations are done on the GPU). 
