@@ -50,8 +50,8 @@ T0 = rp.make_function_constant(value=0.7) # Not used for NVE
 #T0 = rp.make_function_constant(value=1.20) # Not used for NVE
 P0 = rp.make_function_constant(value=1.2) # Not used for NV*
 #P0 = rp.make_function_constant(value=2.2) # Not used for NV*
-#P0 = rp.make_function_ramp(value0=1.2, x0=500.0, value1=3.2, x1=1500.0)
-#T0 = rp.make_function_ramp(value0=0.7, x0=1000.0, value1=1.7, x1=2000.0)
+#P0 = rp.make_function_ramp(value0=1.2, x0=500.0, value1=3.2, x1=1250.0)
+#T0 = rp.make_function_ramp(value0=0.7, x0=750.0, value1=1.7, x1=1500.0)
 
 if integrator=='NVE':
     integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
@@ -90,6 +90,7 @@ steps = 500
 start = cuda.event()
 end = cuda.event()
 zero = np.float32(0.0)
+rdf_count = 0
 
 for i in range(steps+1):
     if i==1:
@@ -104,7 +105,8 @@ for i in range(steps+1):
         vol = (c1.simbox.data[0] * c1.simbox.data[1] * c1.simbox.data[2])
         vol_t.append(vol)
 
-    if i>0 and include_rdf:
+    if i>steps//2 and include_rdf:
+        rdf_count += 1
         rdf_calculator(c1.d_vectors, c1.simbox.d_data, c1.d_ptype, pairs['interaction_params'], d_gr_bins)
         temp_host_array = d_gr_bins.copy_to_host()       # offloading data from device and resetting decive array to zero. 
         gr_bins += temp_host_array                       # ... (prevents overflow errors for longer runs)  
@@ -135,7 +137,7 @@ df.to_csv('Data/LJ_scalars.csv')
 
 if include_rdf:
     data = rp.normalize_and_save_gr(gr_bins, c1, pairs['interaction_params'], 
-                                    full_range, steps, filename='Data/LJ_rdf.dat')
+                                    full_range, rdf_count, filename='Data/LJ_rdf.dat')
 
 # Plot results
 import analyze_LJ
