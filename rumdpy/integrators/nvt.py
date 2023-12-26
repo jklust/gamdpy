@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import cuda
 import math
-from rumdpy.integrators.make_integrator import make_integrator
+from rumdpy.integrators.make_integrator import make_integrator, make_integrator_with_output
 
 def make_step_nvt(configuration, temperature_function, compute_plan, verbose=True, ):
     pb = compute_plan['pb']
@@ -78,6 +78,8 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
         if global_id == 0 and my_t == 0:
             target_temperature = temperature_function(time)
+            #if time>99499.:
+            #    print(time, target_temperature, dt)
             ke_deviation = np.float32(2.0) * thermostat_state[1] / (degrees * target_temperature) - np.float32(1.0)
             thermostat_state[0] += dt * omega2 * ke_deviation
             thermostat_state[1] = np.float32(0.)
@@ -110,6 +112,21 @@ def setup(configuration, interactions, temperature_function, tau, dt, compute_pl
     
     integrator_step = make_step_nvt(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
     integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan,
+                                verbose=verbose)
+
+    dt = np.float32(dt)
+    omega2 = np.float32(4.0 * np.pi * np.pi / tau / tau)
+    degrees = configuration.N * configuration.D - configuration.D
+    thermostat_state = np.zeros(2, dtype=np.float32)
+    d_thermostat_state = cuda.to_device(thermostat_state)
+    integrator_params = (dt, omega2, degrees, d_thermostat_state)   # Needs to be compatible with unpacking in
+                                                                    # step_nvt(), and update_thermostat_state()
+    return integrate, integrator_params
+
+def setup_output(configuration, interactions, output_calculator, temperature_function, tau, dt, compute_plan, verbose=True):
+    
+    integrator_step = make_step_nvt(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator_with_output(configuration, integrator_step, interactions, output_calculator, compute_plan=compute_plan,
                                 verbose=verbose)
 
     dt = np.float32(dt)

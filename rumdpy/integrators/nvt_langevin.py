@@ -8,7 +8,7 @@ import numba
 from numba import cuda
 import math
 from numba.cuda.random import create_xoroshiro128p_states
-from rumdpy.integrators.make_integrator import make_integrator
+from rumdpy.integrators.make_integrator import make_integrator, make_integrator_with_output
 
 def _make_step_nvt_langevin(configuration, temperature_function, compute_plan, verbose=True):
     from numba.cuda.random import xoroshiro128p_normal_float32
@@ -93,7 +93,21 @@ def setup(configuration, interactions, temperature_function, alpha, dt, seed, co
    
     integrator_step = _make_step_nvt_langevin(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
     integrate = make_integrator(configuration, integrator_step, interactions, compute_plan=compute_plan, verbose=verbose)
-        
+    
+    rng_states = create_xoroshiro128p_states(configuration.N, seed=seed)
+    old_beta = np.zeros((configuration.N, configuration.D), dtype=np.float32)
+    d_old_beta = cuda.to_device(old_beta)
+    integrator_params = (np.float32(dt), np.float32(alpha), rng_states, d_old_beta) # Needs to be compatible with unpacking in
+                                                                                    # step_nvt_langevin()
+    return integrate, integrator_params
+
+
+def setup_output(configuration, interactions, output_calculator, temperature_function, alpha, dt, seed, compute_plan, verbose=True):
+    
+    integrator_step = _make_step_nvt_langevin(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator_with_output(configuration, integrator_step, interactions, output_calculator, compute_plan=compute_plan,
+                                verbose=verbose)
+
     rng_states = create_xoroshiro128p_states(configuration.N, seed=seed)
     old_beta = np.zeros((configuration.N, configuration.D), dtype=np.float32)
     d_old_beta = cuda.to_device(old_beta)

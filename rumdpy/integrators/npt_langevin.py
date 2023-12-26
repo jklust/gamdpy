@@ -9,7 +9,7 @@ import numba
 from numba import cuda
 import math
 from numba.cuda.random import create_xoroshiro128p_states
-from rumdpy.integrators.make_integrator import make_integrator
+from rumdpy.integrators.make_integrator import make_integrator, make_integrator_with_output
 
 def make_step_npt_langevin(configuration, temperature_function, pressure_function, compute_plan, verbose=True):
     from numba.cuda.random import xoroshiro128p_normal_float32
@@ -204,3 +204,20 @@ def setup(configuration, interactions, temperature_function, pressure_function, 
     
     return integrate, integrator_params
 
+def setup_output(configuration, interactions,  output_calculator, temperature_function, pressure_function, alpha, alpha_baro, mass_baro,
+           volume_velocity, barostatModeISO, boxFlucCoord, dt, seed, compute_plan, verbose=True):
+   
+    integrator_step = make_step_npt_langevin(configuration, temperature_function, pressure_function, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator_with_output(configuration, integrator_step, interactions, output_calculator, compute_plan=compute_plan, verbose=verbose) 
+   
+    rng_states = create_xoroshiro128p_states(configuration.N + 1, seed=seed)  # +1 for barostat dynamics 
+    barostat_state = np.array([1.0, volume_velocity], dtype=np.float64)       # [0] = new_vol / old_vol , [1] = vol velocity
+    d_barostat_state = cuda.to_device(barostat_state)
+    barostatVirial = np.array([0.0], dtype=np.float32)
+    d_barostatVirial = cuda.to_device(barostatVirial)
+    d_length_ratio = cuda.to_device(np.ones(3, dtype=np.float32))  
+    integrator_params = (np.float32(dt), np.float32(alpha), np.float32(alpha_baro), np.float32(mass_baro), 
+                         barostatModeISO, np.int32(boxFlucCoord), rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)  # Needs to be compatible with unpacking in
+                                                                                                                                # step_npt_langevin()
+    
+    return integrate, integrator_params

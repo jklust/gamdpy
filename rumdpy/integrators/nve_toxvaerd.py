@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import cuda
 import math
-from rumdpy.integrators.make_integrator import make_integrator
+from rumdpy.integrators.make_integrator import make_integrator, make_integrator_with_output
 
 
 def make_step_nve_toxvaerd(configuration, compute_plan, verbose=True):
@@ -81,4 +81,10 @@ def setup(configuration, interactions, dt, compute_plan, verbose=True):
 
     return integrate, integrator_params
 
+def setup_output(configuration, interactions, output_calculator, dt, compute_plan, verbose=True):
+    integrator_step = make_step_nve_toxvaerd(configuration, compute_plan=compute_plan, verbose=verbose)
+    integrate = make_integrator_with_output(configuration, integrator_step, interactions,  output_calculator, compute_plan=compute_plan,
+                                verbose=verbose)
+    integrator_params = (np.float32(dt),)  # Needs to be compatible with unpacking in step_nve()
 
+    return integrate, integrator_params
