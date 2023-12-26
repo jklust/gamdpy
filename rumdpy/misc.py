@@ -110,6 +110,14 @@ def plot_scalars(df, N, D, figsize, block=True):
     df['de'] = df['e'] - np.mean(df['e'])
     df['dw'] = df['w'] - np.mean(df['w'])
     
+    if 'Ttarget' in df.columns: # Is it a ramp?
+        if np.std(df['Ttarget'])>0.01*np.mean(df['Ttarget']):
+            plt.figure()
+            plt.plot(df['Ttarget'], df['u']/N, '.-')
+            plt.xlabel('Temperature')
+            plt.ylabel('Potenital energy per particle')
+            plt.show(block=False)
+
     fig, axs = plt.subplots(2, 2, figsize=figsize)
     axs[0, 0].plot(df['t'], df['du']/N, '.-', label=f"du/N, var(u)/N={np.var(df['u'])/N:.4}")
     axs[0, 0].plot(df['t'], df['de']/N,  '-', label=f"de/N, var(e)/N={np.var(df['e'])/N:.4}")
