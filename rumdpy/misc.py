@@ -110,13 +110,6 @@ def plot_scalars(df, N, D, figsize, block=True):
     df['de'] = df['e'] - np.mean(df['e'])
     df['dw'] = df['w'] - np.mean(df['w'])
     
-    if 'Ttarget' in df.columns: # Is it a ramp?
-        if np.std(df['Ttarget'])>0.01*np.mean(df['Ttarget']):
-            plt.figure()
-            plt.plot(df['Ttarget'], df['u']/N, '.-')
-            plt.xlabel('Temperature')
-            plt.ylabel('Potenital energy per particle')
-            plt.show(block=False)
 
     fig, axs = plt.subplots(2, 2, figsize=figsize)
     axs[0, 0].plot(df['t'], df['du']/N, '.-', label=f"du/N, var(u)/N={np.var(df['u'])/N:.4}")
@@ -140,14 +133,24 @@ def plot_scalars(df, N, D, figsize, block=True):
     axs[1, 0].set_ylabel('Pressure')
     axs[1, 0].legend()
    
-    R = np.dot(df['dw'], df['du'])/(np.dot(df['dw'], df['dw'])*np.dot(df['du'], df['du']))**0.5
-    Gamma = np.dot(df['dw'], df['du'])/(np.dot(df['du'], df['du']))
+    ramp = False
+    if 'Ttarget' in df.columns: # Is it a ramp?
+        if np.std(df['Ttarget'])>0.01*np.mean(df['Ttarget']):
+            ramp = True
+            axs[1, 1].plot(df['Ttarget'], df['u']/N, '.-')
+            axs[1, 1].set_xlabel('Temperature')
+            axs[1, 1].set_ylabel('Potenital energy per particle')
+
+    if ramp==False:
+        R = np.dot(df['dw'], df['du'])/(np.dot(df['dw'], df['dw'])*np.dot(df['du'], df['du']))**0.5
+        Gamma = np.dot(df['dw'], df['du'])/(np.dot(df['du'], df['du']))
  
-    axs[1, 1].plot(df['u']/N, df['w']/N, '.', label=f"R = {R:.3}")
-    axs[1, 1].plot(sorted(df['u']/N), sorted(df['du']/N*Gamma + np.mean(df['w']/N)), 'r--', label=f"Gamma = {Gamma:.3}")
-    axs[1, 1].set_xlabel('U/N')
-    axs[1, 1].set_ylabel('W/N')
-    axs[1, 1].legend()
+        axs[1, 1].plot(df['u']/N, df['w']/N, '.', label=f"R = {R:.3}")
+        axs[1, 1].plot(sorted(df['u']/N), sorted(df['du']/N*Gamma + np.mean(df['w']/N)), 'r--', label=f"Gamma = {Gamma:.3}")
+        axs[1, 1].set_xlabel('U/N')
+        axs[1, 1].set_ylabel('W/N')
+        axs[1, 1].legend()
+        
     plt.show(block=block)
 
     return
