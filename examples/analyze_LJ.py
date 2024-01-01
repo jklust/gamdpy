@@ -4,18 +4,22 @@ import pandas as pd
 import pickle 
 import matplotlib.pyplot as plt
 
-with open('Data/LJ_pdict.pkl', 'rb') as f:
-    pdict = pickle.load(f)
-print('pdict: ', pdict)
+def analyze_LJ():
 
-if pdict['rdf']:
-    rdf = np.loadtxt('Data/LJ_rdf.dat')
-    plt.figure()
-    plt.plot(rdf[:,0], rdf[:,1], '-')
-    plt.xlabel('distance')
-    plt.ylabel('Radial distribution function')
-    plt.show(block=False)
+    with open('Data/LJ_pdict.pkl', 'rb') as f:
+        pdict = pickle.load(f)
+    print('pdict: ', pdict)
 
-df = pd.read_csv('Data/LJ_scalars.csv')
-rp.plot_scalars(df, pdict['N'],  pdict['D'], figsize=(10,8), block=True)
+    if pdict['rdf']:
+        rdf = np.loadtxt('Data/LJ_rdf.dat')
+        plt.figure()
+        plt.plot(rdf[:,0], rdf[:,1], '-')
+        plt.xlabel('distance')
+        plt.ylabel('Radial distribution function')
+        plt.show(block=False)
 
+    df = pd.read_csv('Data/LJ_scalars.csv')
+    rp.plot_scalars(df, pdict['N'],  pdict['D'], figsize=(10,8), block=True)
+
+if __name__ == "__main__":
+     analyze_LJ()
