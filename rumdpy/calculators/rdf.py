@@ -31,7 +31,6 @@ def make_rdf_calculator(configuration, pair_potential, compute_plan, full_range,
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
 
-
     #@cuda.jit(device=gridsync)
     def rdf_calculator_full(vectors, sim_box, ptype, interaction_parameters, d_gr_bins):
         """ Calculate g(r) fresh
@@ -118,3 +117,62 @@ def make_rdf_calculator(configuration, pair_potential, compute_plan, full_range,
         return cuda.jit(device=0)(rdf_calculator_full)[num_blocks, (pb, tp)]
     else:
         return cuda.jit(device=0)(rdf_calculator_from_nblist)[num_blocks, (pb, tp)]
+
+def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps, filename):
+
+    max_cut = interaction_params[1]
+    num_bins = gr_bins.shape[0]
+    min_box_dim = min(c1.simbox.data[0], c1.simbox.data[1], c1.simbox.data[2])
+    num_gr_updates = steps
+
+    if full_range:
+        bin_width = (min_box_dim / 2) / num_bins
+    else:
+        bin_width = max_cut / num_bins
+
+    # Normalize the g(r) data
+    rho = c1.N / (c1.simbox.data[0] * c1.simbox.data[1] * c1.simbox.data[2])
+    for i in range(len(gr_bins)):
+        r_outer = (i + 1) * bin_width
+        r_inner = i * bin_width
+        shell_volume = (4.0 / 3.0) * np.pi * (r_outer**3 - r_inner**3)
+        expected_num = rho * shell_volume
+        gr_bins[i] /= (expected_num * num_gr_updates * c1.N)
+
+  
+    # Save data to file
+    distances = np.arange(0, len(gr_bins)) * bin_width
+    data_to_save = np.column_stack((distances, gr_bins))
+    np.savetxt(filename, data_to_save, comments='', fmt='%f')
+ 
+    return data_to_save
+
+
+def normalize_and_save_gr_multi(gr_bins, c1, interaction_params, full_range, filename):
+
+    max_cut = interaction_params[1]
+    num_bins = gr_bins.shape[1]
+    min_box_dim = min(c1.simbox.data[0], c1.simbox.data[1], c1.simbox.data[2])
+    print(min_box_dim)
+
+    if full_range:
+        bin_width = (min_box_dim / 2) / num_bins
+    else:
+        bin_width = max_cut / num_bins
+
+    # Normalize the g(r) data
+    rho = c1.N / np.prod(c1.simbox.data)
+    print(rho, bin_width)
+    for i in range(gr_bins.shape[1]): # Normalize one bin/distance at a time
+        r_outer = (i + 1) * bin_width
+        r_inner = i * bin_width
+        shell_volume = (4.0 / 3.0) * np.pi * (r_outer**3 - r_inner**3)
+        expected_num = rho * shell_volume
+        gr_bins[:,i] /= (expected_num * c1.N)
+  
+    # Save data to file
+    distances = np.arange(0, gr_bins.shape[1]) * bin_width
+    data_to_save = np.column_stack((distances, gr_bins.T))
+    np.savetxt(filename, data_to_save, comments='', fmt='%f')
+ 
+    return data_to_save

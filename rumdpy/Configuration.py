@@ -8,17 +8,17 @@ from rumdpy.colarray import colarray
 class Configuration():
     # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
     sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
-    num_cscalars = 3  # Number of scalars to be updated by force calculator
+    num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
 
     def __init__(self, N, D, simbox_data, ftype=np.float32, itype=np.int32):
         self.N = N
         self.D = D
-        self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifyable
+        self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifyable. Move r_ref to nblist
         # self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
         self.vectors = colarray(self.vector_columns, size=(N, D), dtype=ftype)
         self.scalars = np.zeros((N, len(self.sid)), dtype=ftype)
-        self.r_im = np.zeros((N, D), dtype=itype)
-        self.ptype = np.zeros(N, dtype=itype)
+        self.r_im = np.zeros((N, D), dtype=itype) # Move to vectors
+        self.ptype = np.zeros(N, dtype=itype)     # Move to scalars
         self.ptype_function = self.make_ptype_function()
         self.simbox = simbox(D, simbox_data)
         return
@@ -32,7 +32,7 @@ class Configuration():
         self.vectors[key] = data
         return
 
-    def get_vector(self, key: str) -> np.ndarray:
+    def get_vector(self, key: str) -> np.ndarray: # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the vector data """
         idx = self.vector_columns.index(key)
         return self.vectors[self.vector_columns[idx]].copy()
@@ -44,7 +44,7 @@ class Configuration():
         self.scalars[:, self.sid[key]] = data
         return
 
-    def get_scalar(self, key: str):
+    def get_scalar(self, key: str): # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the scalar data """
         idx = self.sid[key]
         return self.scalars[:, idx].copy()
@@ -77,7 +77,7 @@ class Configuration():
         self.scalars = self.d_scalars.copy_to_host()
         self.r_im = self.d_r_im.copy_to_host()
         self.ptype = self.d_ptype.copy_to_host()
-        # self.simbox.copy_to_device()
+        self.simbox.copy_to_host()
         return
 
     def make_ptype_function(self):
@@ -97,6 +97,9 @@ class simbox():
 
     def copy_to_device(self):
         self.d_data = cuda.to_device(self.data)
+
+    def copy_to_host(self):
+        self.data = self.d_data.copy_to_host()
 
     def make_simbox_functions(self):
         D = self.D

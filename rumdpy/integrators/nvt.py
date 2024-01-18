@@ -123,10 +123,10 @@ def setup(configuration, interactions, temperature_function, tau, dt, compute_pl
                                                                     # step_nvt(), and update_thermostat_state()
     return integrate, integrator_params
 
-def setup_output(configuration, interactions, output_calculator, temperature_function, tau, dt, compute_plan, verbose=True):
+def setup_output(configuration, interactions, output_calculator, conf_saver, temperature_function, tau, dt, compute_plan, verbose=True):
     
     integrator_step = make_step_nvt(configuration, temperature_function, compute_plan=compute_plan, verbose=verbose)
-    integrate = make_integrator_with_output(configuration, integrator_step, interactions, output_calculator, compute_plan=compute_plan,
+    integrate = make_integrator_with_output(configuration, integrator_step, interactions, output_calculator, conf_saver, compute_plan=compute_plan,
                                 verbose=verbose)
 
     dt = np.float32(dt)
