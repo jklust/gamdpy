@@ -5,4 +5,5 @@ __pycache__
 benchmark_*_This_run.csv
 examples/Data/LJ_trajectory/*
 examples/Data/*
+*.h5
 
