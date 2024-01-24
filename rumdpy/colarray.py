@@ -71,6 +71,9 @@ class colarray():
    
     def __repr__(self):
         return 'colarray('+str(tuple(self.indicies.keys()))+', '+self.array.shape[1:].__repr__()+')\n'+self.array.__repr__()
+    
+    def copy(self):
+        return colarray(self.column_names, self.shape, self.dtype, self.array.copy())
 
 
 def save(file, colarray):
