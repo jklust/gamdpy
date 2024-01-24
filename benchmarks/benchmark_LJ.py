@@ -101,7 +101,7 @@ def main(integrator):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
     print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
-        (4, 4, 8), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
+        (4, 4, 8), (6, 6, 6), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
         (32, 32, 32))
     Ns = []
     tpss = []
