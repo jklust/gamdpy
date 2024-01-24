@@ -2,6 +2,7 @@ import numpy as np
 import numba
 import math
 from numba import cuda
+import matplotlib.pyplot as plt
 
 
 class PairPotential():
@@ -49,6 +50,22 @@ class PairPotential():
     def copy_to_device(self):
         self.d_params = cuda.to_device(self.params)
         self.nblist.copy_to_device()
+        
+    def plot(self, ylim=(-3,6), figsize=(8,4), names=None):
+        num_types = self.params.shape[0]
+        if names==None:
+            names = np.arange(num_types)
+        plt.figure(figsize=figsize)
+        for i in range(num_types):
+            for j in range(num_types):
+                r = np.linspace(0, self.params[i,j][-1], 1000)
+                u, s, lap = self.pairpotential_function(r, self.params[i,j])
+                plt.plot(r, u, label=f'{names[i]} - {names[j]}')
+        plt.ylim(ylim)
+        plt.xlabel('Pair distance')
+        plt.ylabel('Pair potential')
+        plt.legend()
+        plt.show()
         
     def get_interactions(self, configuration, exclusions, compute_plan, verbose=True):
    
