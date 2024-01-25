@@ -91,7 +91,7 @@ class simulation():
             elif self.storage=='memory':
                 self.conf_blocks[block] = self.d_conf_array.copy_to_host()
                 
-            #vol = (c1.simbox.data[0] * c1.simbox.data[1] * c1.simbox.data[2])
+            #vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
             #vol_t.append(vol)
 
             if self.include_rdf:
@@ -103,7 +103,7 @@ class simulation():
             self.conf.copy_to_host()
             self.vectors_list.append(self.conf.vectors.copy())
             self.scalars_list.append(self.conf.scalars.copy())
-            self.simbox_data_list.append(self.conf.simbox.data.copy())
+            self.simbox_data_list.append(self.conf.simbox.lengths.copy())
 
             yield block
     

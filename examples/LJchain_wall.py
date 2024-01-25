@@ -27,20 +27,20 @@ c1 = rp.make_configuration_fcc(nx=nxy, ny=nxy, nz=nz, rho=1.5, T=1.44)
 
 # Adjust the simbox according to the desired setup
 Lxy = (c1.N/wall_dist/rho)**0.5
-c1.simbox.data[:] = Lxy
+c1.simbox.lengths[:] = Lxy
 if include_gravity:
     wall_dist *= 2  # Double wall distance, so effect of gravity can be seen 
 if include_walls:
-    c1.simbox.data[wall_dimension] = wall_dist+4 # Make box bigger to avoid walls working through PBC
+    c1.simbox.lengths[wall_dimension] = wall_dist + 4 # Make box bigger to avoid walls working through PBC
 else:
-    c1.simbox.data[wall_dimension] = wall_dist #
+    c1.simbox.lengths[wall_dimension] = wall_dist #
 if include_gravity:
-    c1.simbox.data[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects 
+    c1.simbox.lengths[wall_dimension] *= 10.  # Make box even bigger to avoid weird PBC effects
 if include_KABLJ:
     c1.ptype[np.arange(0,c1.N,4)] = 1    # 3:1 mixture
 c1.copy_to_device()
 
-print('simbox: ', c1.simbox.data)
+print('simbox: ', c1.simbox.lengths)
 if include_walls:
     print('wall_distance: ', wall_dist)
 
@@ -163,7 +163,7 @@ for i in range(steps):
     coordinates_t.append(c1['r'][:,wall_dimension])
     if include_springs:
         for bond_particles in bond_particles_list:
-            lengths, theta = get_bond_lengths_theta_z(c1['r'], bond_particles, f, c1.simbox.data)
+            lengths, theta = get_bond_lengths_theta_z(c1['r'], bond_particles, f, c1.simbox.lengths)
             bond_lengths.append(lengths)
             theta_z.append(theta)
 
@@ -181,9 +181,9 @@ print('\tTPS : ', tps )
 df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
 df['t'] = np.array(tt)
 df['Ttarget'] = numba.vectorize(T1)(np.array(tt))
-df['vol'] = np.prod(c1.simbox.data)
+df['vol'] = np.prod(c1.simbox.lengths)
 if include_walls:
-    df['vol'] /= c1.simbox.data[wall_dimension]*wall_dist
+    df['vol'] /= c1.simbox.lengths[wall_dimension] * wall_dist
    
 rp.plot_scalars(df, c1.N, c1.D, figsize=(10,8), block=False)
 

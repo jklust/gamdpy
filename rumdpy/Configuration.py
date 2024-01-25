@@ -28,12 +28,12 @@ class Configuration():
         assert N == self.N, f'Inconsistent number of particles, {N} <> {self.N}'
         assert D == self.D, f'Inconsistent number of dimensions, {D} <> {self.D}'
         # assert key exists
-        # self.vectors[self.vid[key], :, :] = data
+        # self.vectors[self.vid[key], :, :] = lengths
         self.vectors[key] = data
         return
 
     def get_vector(self, key: str) -> np.ndarray: # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the vector data """
+        """ Returns a copy of the vector lengths """
         idx = self.vector_columns.index(key)
         return self.vectors[self.vector_columns[idx]].copy()
 
@@ -45,7 +45,7 @@ class Configuration():
         return
 
     def get_scalar(self, key: str): # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the scalar data """
+        """ Returns a copy of the scalar lengths """
         idx = self.sid[key]
         return self.scalars[:, idx].copy()
 
@@ -89,17 +89,17 @@ class Configuration():
 
 
 class simbox():
-    def __init__(self, D, data):
+    def __init__(self, D, lengths):
         self.D = D
-        self.data = data.copy()
+        self.lengths = lengths.copy()
         self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension = self.make_simbox_functions()
         return
 
     def copy_to_device(self):
-        self.d_data = cuda.to_device(self.data)
+        self.d_data = cuda.to_device(self.lengths)
 
     def copy_to_host(self):
-        self.data = self.d_data.copy_to_host()
+        self.lengths = self.d_data.copy_to_host()
 
     def make_simbox_functions(self):
         D = self.D
@@ -201,7 +201,7 @@ def configuration_to_lammps(conf, timestep=0) -> str:
     forces = conf.get_vector('f')
     velocities = conf.get_vector('v')
     ptypes = conf.ptype
-    simulation_box = conf.simbox.data
+    simulation_box = conf.simbox.lengths
 
     # Header
     header = f'ITEM: TIMESTEP\n{timestep:d}\n'
@@ -223,6 +223,6 @@ def configuration_to_lammps(conf, timestep=0) -> str:
         for k in range(3):
             atom_data += f'{forces[i, k]:f} '
         atom_data += '\n'
-    # Combine header and atom data
+    # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump

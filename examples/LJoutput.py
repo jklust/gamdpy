@@ -36,7 +36,7 @@ c1 = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=0.60,  T=3.44)  # N =  2
 #c1 = rp.make_configuration_fcc(nx=16,  ny=16,  nz=16,  rho=0.8442, T=1.44)  # N = 16*1024
 c1.copy_to_device() 
 
-pdict = {'N':c1.N, 'D':c1.D, 'simbox':c1.simbox.data, 'integrator':integrator, 'rdf':include_rdf}
+pdict = {'N':c1.N, 'D':c1.D, 'simbox':c1.simbox.lengths, 'integrator':integrator, 'rdf':include_rdf}
 print(pdict)
 with open('Data/LJ_pdict.pkl', 'wb') as f:
     pickle.dump(pdict, f)
@@ -160,14 +160,14 @@ for i in range(outer_steps):
     
     scalars_t.append(d_output_array.copy_to_host())        
     
-    c1.simbox.data = c1.simbox.d_data.copy_to_host()
-    vol = (c1.simbox.data[0] * c1.simbox.data[1] * c1.simbox.data[2])
+    c1.simbox.lengths = c1.simbox.d_data.copy_to_host()
+    vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
     vol_t.append(vol)
 
     if i>outer_steps//2 and include_rdf:
         rdf_count += 1
         rdf_calculator(c1.d_vectors, c1.simbox.d_data, c1.d_ptype, pairs['interaction_params'], d_gr_bins)
-        temp_host_array = d_gr_bins.copy_to_host()       # offloading data from device and resetting decive array to zero. 
+        temp_host_array = d_gr_bins.copy_to_host()       # offloading lengths from device and resetting decive array to zero.
         gr_bins += temp_host_array                       # ... (prevents overflow errors for longer runs)  
         d_gr_bins = cuda.to_device(host_array_zeros)
 
@@ -184,11 +184,11 @@ print('\tsteps :', outer_steps*inner_steps)
 print('\tnbflag : ', nbflag)
 print('\ttime :', timing_numba/1000, 's')
 print('\tTPS : ', tps )
-print('\tfinal box dims : ', c1.simbox.data[0], c1.simbox.data[1], c1.simbox.data[2])
+print('\tfinal box dims : ', c1.simbox.lengths[0], c1.simbox.lengths[1], c1.simbox.lengths[2])
 
 scalars_t = np.concatenate(scalars_t)
 
-# Save data
+# Save lengths
 df = pd.DataFrame(scalars_t, columns=['u', 'w', 'lap', 'fsq', 'k', 'x0', 'y0', 'z0', 'd', 'd'])
 df['t'] = np.array(np.arange(scalars_t.shape[0])*dt*steps_between_output)
 df['vol'] = vol_t[0]

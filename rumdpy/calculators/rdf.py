@@ -122,7 +122,7 @@ def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps, fi
 
     max_cut = interaction_params[1]
     num_bins = gr_bins.shape[0]
-    min_box_dim = min(c1.simbox.data[0], c1.simbox.data[1], c1.simbox.data[2])
+    min_box_dim = min(c1.simbox.lengths[0], c1.simbox.lengths[1], c1.simbox.lengths[2])
     num_gr_updates = steps
 
     if full_range:
@@ -130,8 +130,8 @@ def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps, fi
     else:
         bin_width = max_cut / num_bins
 
-    # Normalize the g(r) data
-    rho = c1.N / (c1.simbox.data[0] * c1.simbox.data[1] * c1.simbox.data[2])
+    # Normalize the g(r) lengths
+    rho = c1.N / (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
     for i in range(len(gr_bins)):
         r_outer = (i + 1) * bin_width
         r_inner = i * bin_width
@@ -140,7 +140,7 @@ def normalize_and_save_gr(gr_bins, c1, interaction_params, full_range, steps, fi
         gr_bins[i] /= (expected_num * num_gr_updates * c1.N)
 
   
-    # Save data to file
+    # Save lengths to file
     distances = np.arange(0, len(gr_bins)) * bin_width
     data_to_save = np.column_stack((distances, gr_bins))
     np.savetxt(filename, data_to_save, comments='', fmt='%f')
@@ -152,7 +152,7 @@ def normalize_and_save_gr_multi(gr_bins, c1, interaction_params, full_range, fil
 
     max_cut = interaction_params[1]
     num_bins = gr_bins.shape[1]
-    min_box_dim = min(c1.simbox.data[0], c1.simbox.data[1], c1.simbox.data[2])
+    min_box_dim = min(c1.simbox.lengths[0], c1.simbox.lengths[1], c1.simbox.lengths[2])
     print(min_box_dim)
 
     if full_range:
@@ -160,8 +160,8 @@ def normalize_and_save_gr_multi(gr_bins, c1, interaction_params, full_range, fil
     else:
         bin_width = max_cut / num_bins
 
-    # Normalize the g(r) data
-    rho = c1.N / np.prod(c1.simbox.data)
+    # Normalize the g(r) lengths
+    rho = c1.N / np.prod(c1.simbox.lengths)
     print(rho, bin_width)
     for i in range(gr_bins.shape[1]): # Normalize one bin/distance at a time
         r_outer = (i + 1) * bin_width
@@ -170,7 +170,7 @@ def normalize_and_save_gr_multi(gr_bins, c1, interaction_params, full_range, fil
         expected_num = rho * shell_volume
         gr_bins[:,i] /= (expected_num * c1.N)
   
-    # Save data to file
+    # Save lengths to file
     distances = np.arange(0, gr_bins.shape[1]) * bin_width
     data_to_save = np.column_stack((distances, gr_bins.T))
     np.savetxt(filename, data_to_save, comments='', fmt='%f')

@@ -16,7 +16,7 @@ class k3d_Visualization():
                             color_range=[-6, 0],
                             name='Atoms'
                            )
-        Lx, Ly, Lz = self.conf.simbox.data
+        Lx, Ly, Lz = self.conf.simbox.lengths
    
         self.plt_box = k3d.lines(vertices=[ [-Lx/2, -Ly/2, -Lz/2], [-Lx/2, -Ly/2, +Lz/2], 
                                             [-Lx/2, +Ly/2, -Lz/2], [+Lx/2, -Ly/2, -Lz/2], 

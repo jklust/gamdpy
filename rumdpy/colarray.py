@@ -6,7 +6,7 @@ import numpy as np
 
 class colarray():
     """
-    A class storing several sets ('columns') of data with identical dimensions in a single numpy array. Strings are used as indicies along the zeroth dimension corresponding to different columns of data. 
+    A class storing several sets ('columns') of lengths with identical dimensions in a single numpy array. Strings are used as indicies along the zeroth dimension corresponding to different columns of lengths.
     
     Storage for positions, velocities, and forces, for 1000 particles in 2 dimensions:
     >>> ca = colarray(('r', 'v', 'f'), size=(1000,2))
