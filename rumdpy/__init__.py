@@ -6,7 +6,7 @@ from .Simulation import *
 from .colarray import *
 from .calculators import *
 from .misc import *
-from .visualization import *
+#from .visualization import *
 
 # Trying to make eg. rp.integrators.nve available in user code, 
 # without further imports than 'import rumdpy as rp'
