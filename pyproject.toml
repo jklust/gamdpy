@@ -17,6 +17,7 @@ dependencies = [
 	     "matplotlib",
 	     "numba",
 	     "pandas",
+       "h5py",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
