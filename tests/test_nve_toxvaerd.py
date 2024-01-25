@@ -46,7 +46,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     if verbose:
         print(f"Time spent (JIT): {toc - tic:0.4f} seconds")
 
-    # Run equilibration simulation
+    # Run equilibration Simulation
     scalars = []
     tic = time.perf_counter()
     for i in range(outer_steps):
@@ -63,7 +63,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     df_toxverd = pd.DataFrame(np.array(scalars), columns=conf.sid.keys())
 
 
-    # Run standard NVE simulation
+    # Run standard NVE Simulation
     integrate, integrator_params = nve.setup(conf, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=verbose)
     scalars = []
     for i in range(outer_steps):

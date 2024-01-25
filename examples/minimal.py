@@ -1,4 +1,4 @@
-""" Minimal example of a simulation using rumdpy.
+""" Minimal example of a Simulation using rumdpy.
 
 Simulation of a Lennard-Jones crystal in the NVT ensemble.
 
@@ -27,7 +27,7 @@ integrate, integrator_params = nvt.setup(configuration, pairs['interactions'], t
                                          tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False)
 
 
-# Run simulation
+# Run Simulation
 outer_steps = 10
 inner_steps = 100
 for outer_step in range(outer_steps):

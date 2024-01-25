@@ -49,7 +49,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     if integrator=='NVT_Langevin':
         integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
 
-    # Run the simulation
+    # Run the Simulation
     zero = np.float32(0.0)
     # Warmup
     integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],

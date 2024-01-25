@@ -14,7 +14,7 @@ import pickle
 import sys
 import h5py
 
-class simulation():
+class Simulation():
     def __init__(self, conf, integrator, dt, interactions, num_blocks, steps_per_block, steps_between_output, include_rdf=False, storage='hdf5', filename='output'):
         self.conf = conf
         self.integrator = integrator

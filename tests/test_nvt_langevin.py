@@ -60,7 +60,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     if verbose:
         print(f"Time spent (JIT): {toc - tic:0.4f} seconds")
 
-    # Run simulation
+    # Run Simulation
     scalars = []
     tic = time.perf_counter()
     for i in range(outer_steps):

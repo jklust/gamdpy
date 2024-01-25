@@ -54,7 +54,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
  
                 
-    # Run the simulation
+    # Run the Simulation
     scalars_t = []
     tt = []
     for i in range(steps):
