@@ -20,7 +20,7 @@ class Configuration():
         self.r_im = np.zeros((N, D), dtype=itype) # Move to vectors
         self.ptype = np.zeros(N, dtype=itype)     # Move to scalars
         self.ptype_function = self.make_ptype_function()
-        self.simbox = simbox(D, simbox_data)
+        self.simbox = Simbox(D, simbox_data)
         return
 
     def set_vector(self, key, data):
@@ -88,7 +88,7 @@ class Configuration():
         return ptype_function
 
 
-class simbox():
+class Simbox():
     def __init__(self, D, lengths):
         self.D = D
         self.lengths = lengths.copy()
