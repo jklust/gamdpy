@@ -15,6 +15,7 @@ requires-python = ">=3.7"
 dependencies = [
 	     "hypothesis",
 	     "matplotlib",
+       "numpy",
 	     "numba",
 	     "pandas",
        "h5py",
