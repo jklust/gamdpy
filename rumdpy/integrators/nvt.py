@@ -1,5 +1,6 @@
 import numpy as np
 import numba
+import rumdpy as rp
 from numba import cuda
 import math
 from rumdpy.integrators.make_integrator import make_integrator, make_integrator_with_output
@@ -107,6 +108,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
         return step
 
+# Move the seup to Simulation?
 
 def setup(configuration, interactions, temperature_function, tau, dt, compute_plan, verbose=True):
     
@@ -137,3 +139,20 @@ def setup_output(configuration, interactions, output_calculator, conf_saver, tem
     integrator_params = (dt, omega2, degrees, d_thermostat_state)   # Needs to be compatible with unpacking in
                                                                     # step_nvt(), and update_thermostat_state()
     return integrate, integrator_params
+
+# Delay stuff in make_integrator_with_output to class Simulation
+def setup_new(configuration, temperature, tau, dt, compute_plan, verbose=True):
+
+    if not callable(temperature):
+        temperature = rp.make_function_constant(value=temperature) # better be a number...
+    
+    integrator_step = make_step_nvt(configuration, temperature, compute_plan=compute_plan, verbose=verbose)
+
+    dt = np.float32(dt)
+    omega2 = np.float32(4.0 * np.pi * np.pi / tau / tau)
+    degrees = configuration.N * configuration.D - configuration.D
+    thermostat_state = np.zeros(2, dtype=np.float32)
+    d_thermostat_state = cuda.to_device(thermostat_state)
+    integrator_params = (dt, omega2, degrees, d_thermostat_state)   # Needs to be compatible with unpacking in
+                                                                    # step_nvt(), and update_thermostat_state()
+    return integrator_step, integrator_params
