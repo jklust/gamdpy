@@ -22,7 +22,7 @@ steps_per_block = 1024*2
 temperatures = ['0.70', '1.10', '1.50', '1.90']
 
 for temperature in temperatures:
-    print('\n\nTemperature:' + temperature)
+    print('\n\nTemperature: ' + temperature)
     
     # Setup integrator
     integrator = nvt.setup_new(configuration, temperature=float(temperature), tau=0.2, dt=0.005, 
@@ -33,11 +33,12 @@ for temperature in temperatures:
                             compute_plan, include_rdf=False, 
                             storage='hdf5', filename='Data/LJ_r0.973_T'+temperature) 
 
-    # Equilibrate
+    print('Equilibration:')
     for block in sim.run_blocks():
-        pass
+        sim.print_status(per_particle=True)
+    sim.print_summary()
     
-    # Production
+    print('Production:')
     for block in sim.run_blocks():
         sim.print_status(per_particle=True)
     sim.print_summary()

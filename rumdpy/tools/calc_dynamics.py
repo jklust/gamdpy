@@ -2,20 +2,25 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-def calc_dynamics_(trajectory, block0, conf_index0, block1, conf_index1, time_index, msd, m4d):
-    dR =   trajectory['block'][block1,conf_index1,0,:,:] - trajectory['block'][block0,conf_index0,0,:,:]
-    dR += (trajectory['block'][block1,conf_index1,1,:,:] - trajectory['block'][block0,conf_index0,1,:,:])*trajectory.attrs['simbox_initial']
-    for i in range(np.max(trajectory['ptype'][:]) + 1):
-        msd[time_index,i] += np.mean(np.sum(dR[trajectory['ptype'][:]==i,:]**2, axis=1))
-        m4d[time_index,i] += np.mean(np.sum(dR[trajectory['ptype'][:]==i,:]**2, axis=1)**2)
+def calc_dynamics_(blocks, ptype, simbox, block0, conf_index0, block1, conf_index1, time_index, msd, m4d):
+    dR =   blocks[block1,conf_index1,0,:,:] - blocks[block0,conf_index0,0,:,:]
+    dR += (blocks[block1,conf_index1,1,:,:] - blocks[block0,conf_index0,1,:,:])*simbox
+    for i in range(np.max(ptype) + 1):
+        dR_i_sq = np.sum(dR[ptype==i,:]**2, axis=1)
+        #msd[time_index,i] += np.mean(np.sum(dR[ptype==i,:]**2, axis=1))
+        #m4d[time_index,i] += np.mean(np.sum(dR[ptype==i,:]**2, axis=1)**2)
+        msd[time_index,i] += np.mean(dR_i_sq)
+        m4d[time_index,i] += np.mean(dR_i_sq**2)
 
     return msd, m4d
 
 def calc_dynamics(trajectory, first_block):
     
-    ptype = trajectory['ptype'][:]
+    ptype = trajectory['ptype'][:].copy()
+    simbox = trajectory.attrs['simbox_initial'].copy()
     num_types = np.max(ptype) + 1
     num_blocks, conf_per_block, _, N, D = trajectory['block'].shape
+    blocks = trajectory['block'] # If picking out dataset in inner loop: Very slow!
 
     print(num_types, first_block, num_blocks, conf_per_block, _, N, D)
     
@@ -30,16 +35,17 @@ def calc_dynamics(trajectory, first_block):
     for block in range(first_block, num_blocks):
         for i in range(conf_per_block-1):
             count[i] += 1
-            calc_dynamics_(trajectory, block, i+1, block, 0, i, msd, m4d)
+            calc_dynamics_(blocks, ptype, simbox, block, i+1, block, 0, i, msd, m4d)
             
     # Compute times longer than blocks
     for block in range(first_block, num_blocks):
         for i in range(extra_times):
             index = conf_per_block-1 + i 
-            other_block = block + 2**(i+1)            
+            other_block = block + 2**(i+1)
+            #print(other_block, end=' ')
             if other_block < num_blocks:
                 count[index] += 1
-                calc_dynamics_(trajectory, other_block, 0, block, 0, index, msd, m4d)
+                calc_dynamics_(blocks, ptype, simbox, other_block, 0, block, 0, index, msd, m4d)
  
     msd /= count
     m4d /= count
@@ -74,7 +80,7 @@ if __name__ == '__main__':
     
     # The rest should be filenames...
     dynamics = []
-    for filename in sys.argv:
+    for filename in argv:
         print(filename, ':', end=' ')
         with h5py.File(filename, "r") as f:
             dynamics.append(calc_dynamics(f, first_block))
