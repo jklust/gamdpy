@@ -64,7 +64,7 @@ def create_msd_plot(dynamics, figsize=(8, 6)):
     return fig, axs
 
 
-def main(argv: list[str] = None) -> None:
+def main(argv: list = None) -> None:
     import sys
     import h5py
 
