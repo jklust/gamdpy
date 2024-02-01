@@ -127,7 +127,8 @@ class Simulation():
             
 
 class Simulation_new():
-    def __init__(self, conf, interactions, integrator_step, num_blocks, steps_per_block, compute_plan, storage='output.h5', output_manager='default'):
+    def __init__(self, conf, interactions, integrator_step, num_blocks, steps_per_block, 
+                 compute_plan=None, storage='output.h5', output_manager='default'):
         
 # output_calculator, steps_between_output, conf_saver
 
@@ -140,10 +141,10 @@ class Simulation_new():
         self.num_blocks = num_blocks
         self.current_block = -1
         self.steps_per_block = steps_per_block
-        #self.steps_between_output = steps_between_output
         self.storage = storage
-        #self.filename = filename
         self.compute_plan = compute_plan
+        if compute_plan==None:
+            self.compute_plan = rp.get_default_compute_plan(self.conf)
         
         if output_manager=='default':
             self.steps_between_output = 16
