@@ -145,6 +145,7 @@ class Simulation_new():
         self.compute_plan = compute_plan
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.conf)
+        print(compute_plan)
         
         if output_manager=='default':
             self.steps_between_output = 16
@@ -240,12 +241,18 @@ class Simulation_new():
         else:
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, time_zero, steps):
                 time = time_zero
-                for i in range(steps):
+                for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
+                    if conf_saver != None:
+                        conf_saver[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_array, step)
                     time = time_zero + step*integrator_params[0]
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
+                    if output_calculator != None:
+                        output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
+                if conf_saver != None:
+                        conf_saver[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_array, steps) # Save final configuration (if conditions fullfiled)
                 return
             return integrator
         return            

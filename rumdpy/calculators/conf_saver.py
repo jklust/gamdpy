@@ -33,6 +33,16 @@ def make_conf_saver(configuration, compute_plan, verbose=False):
             if step==c:
                 Flag = True
                 save_index = b+1
+            
+        #my_block = cuda.blockIdx.x
+        #local_id = cuda.threadIdx.x
+        #global_id = my_block * pb + local_id
+        #my_t = cuda.threadIdx.y
+        #if global_id == 0 and my_t == 0:
+        #    if Flag:
+        #        print(step, save_index, 'True')
+            #else:
+            #    print(step, save_index, 'False')
         
         if Flag:
             my_block = cuda.blockIdx.x
