@@ -29,8 +29,8 @@ for temperature in temperatures:
                                compute_plan=compute_plan, verbose=False)
 
     # Setup Simulation
-    sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, 
-                            compute_plan, storage='Data/LJ_r0.973_T'+temperature+'.h5') 
+    sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block,
+                            storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')
     for block in sim.run_blocks():

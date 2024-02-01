@@ -23,8 +23,7 @@ integrator = nvt.setup_new(configuration, temperature=0.70, tau=0.2, dt=0.005, c
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 num_blocks = 16
 steps_per_block = 1024*2
-sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, 
-                        compute_plan, storage='LJ_T0.70.h5') 
+sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, storage='LJ_T0.70.h5') 
 
 # Run Simulation
 for block in sim.run_blocks():
