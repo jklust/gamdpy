@@ -20,11 +20,11 @@ pairs = pair_potential.get_interactions(configuration, exclusions=None, compute_
 # Setup integrator
 integrator = nvt.setup_new(configuration, temperature=0.70, tau=0.2, dt=0.005, compute_plan=compute_plan, verbose=False)
 
-# Setup Simulation
+# Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 num_blocks = 16
 steps_per_block = 1024*2
 sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, 
-                        compute_plan, include_rdf=False, storage='hdf5', filename='LJ_T0.70') 
+                        compute_plan, storage='LJ_T0.70.h5') 
 
 # Run Simulation
 for block in sim.run_blocks():
@@ -32,6 +32,4 @@ for block in sim.run_blocks():
 sim.print_summary()
 
 # To get a plot of the MSD do something like this:
-# python3 -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ*.h5
-# To get help:
-# python3 -m rumdpy.tools.calc_dynamics --help
+# python3 ../rumdpy/tools/calc_dynamics.py -f 4 -o msd.pdf LJ_T*.h5

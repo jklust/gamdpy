@@ -1,6 +1,6 @@
 """ Simple example of performing several simulation in one go using rumdpy.
 
-Simulation of heating a Lennard-Jones crystal in the NVT ensemble.
+Simulation of heating a Lennard-Jones crystal on an isochore in the NVT ensemble.
 
 """
 
@@ -30,8 +30,7 @@ for temperature in temperatures:
 
     # Setup Simulation
     sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, 
-                            compute_plan, include_rdf=False, 
-                            storage='hdf5', filename='Data/LJ_r0.973_T'+temperature) 
+                            compute_plan, storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')
     for block in sim.run_blocks():
