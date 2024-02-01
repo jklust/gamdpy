@@ -31,4 +31,4 @@ for block in sim.run_blocks():
 sim.print_summary()
 
 # To get a plot of the MSD do something like this:
-# python3 ../rumdpy/tools/calc_dynamics.py -f 4 -o msd.pdf LJ_T*.h5
+# python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
