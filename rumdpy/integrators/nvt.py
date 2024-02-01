@@ -144,7 +144,7 @@ def setup_output(configuration, interactions, output_calculator, conf_saver, tem
 def setup_new(configuration, temperature, tau, dt, compute_plan, verbose=True):
 
     if not callable(temperature):
-        temperature = rp.make_function_constant(value=temperature) # better be a number...
+        temperature = rp.make_function_constant(value=float(temperature)) # better be a number...
     
     integrator_step = make_step_nvt(configuration, temperature, compute_plan=compute_plan, verbose=verbose)
 

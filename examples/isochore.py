@@ -19,13 +19,12 @@ pairs = pair_potential.get_interactions(configuration, exclusions=None, compute_
 
 num_blocks = 16
 steps_per_block = 1024*2
-temperatures = ['0.70', '1.10', '1.50', '1.90']
 
-for temperature in temperatures:
+for temperature in ['0.70', '1.10', '1.50', '1.90']:
     print('\n\nTemperature: ' + temperature)
     
     # Setup integrator
-    integrator = nvt.setup_new(configuration, temperature=float(temperature), tau=0.2, dt=0.005, 
+    integrator = nvt.setup_new(configuration, temperature=temperature, tau=0.2, dt=0.005, 
                                compute_plan=compute_plan, verbose=False)
 
     # Setup Simulation
@@ -43,4 +42,4 @@ for temperature in temperatures:
     sim.print_summary()
 
 # To get a plot of the MSD do something like this:
-# python3 ../rumdpy/tools/calc_dynamics.py -o Data/msd_r0.973.pdf Data/LJ_r0.973_T*.h5
+# python3 -m rumdpy.tools.calc_dynamics -o Data/msd_r0.973.pdf Data/LJ_r0.973_T*.h5
