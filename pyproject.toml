@@ -6,26 +6,38 @@ build-backend = "hatchling.build"
 name = "rumdpy"
 version = "0.0.1"
 authors = [
-  { name="Thomas Schrøder", email="tbs@ruc.dk" },
+    {name="Thomas Schrøder", email="tbs@ruc.dk" },
+    {name="Ulf R. Pedersen"},
+    {name="Rishabh Sharma"},
+]
+maintainers = [
+  { name="Thomas Schrøder", email="tbs@ruc.dk" }
 ]
 description = "Roskilde University Molecular Dynamics Python Package"
 readme = "README.md"
 requires-python = ">=3.8"
-# TODO: drop matplotlib, pandas
 dependencies = [
-	     "hypothesis",
-	     "matplotlib",
-       "numpy",
-	     "numba",
-	     "pandas",
-       "h5py",
+    "hypothesis",
+    "matplotlib",
+    "numpy",
+    "numba",
+    "pandas",
+    "h5py",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
+    "Development Status :: 1 - Planning",
     "Operating System :: OS Independent",
+    "Environment :: GPU",
+    "Framework :: Jupyter",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Chemistry',
+    'Topic :: Scientific/Engineering :: Physics',
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+Repository = "https://gitlab.com/tbs.cph/rumdpy-dev"
+Issues = "https://gitlab.com/tbs.cph/rumdpy-dev/-/issues"

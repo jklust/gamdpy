@@ -8,7 +8,7 @@ import rumdpy as rp
 from rumdpy.integrators import nvt
 
 # Setup fcc configuration
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=0.8 * 2)
+configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=0.973, T=0.8 * 2)
 
 # Setup pair potential.
 compute_plan = rp.get_default_compute_plan(configuration) # avoid
