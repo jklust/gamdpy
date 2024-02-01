@@ -127,7 +127,7 @@ class Simulation():
             
 
 class Simulation_new():
-    def __init__(self, conf, interactions, integrator_step, num_blocks, steps_per_block, compute_plan, include_rdf=False, storage='hdf5', filename='output', output_manager='default'):
+    def __init__(self, conf, interactions, integrator_step, num_blocks, steps_per_block, compute_plan, storage='output.h5', output_manager='default'):
         
 # output_calculator, steps_between_output, conf_saver
 
@@ -138,11 +138,11 @@ class Simulation_new():
         self.dt = integrator_step[1][0] # Should be less cryptic
         self.interactions = interactions
         self.num_blocks = num_blocks
+        self.current_block = -1
         self.steps_per_block = steps_per_block
         #self.steps_between_output = steps_between_output
-        self.include_rdf = include_rdf
         self.storage = storage
-        self.filename = filename
+        #self.filename = filename
         self.compute_plan = compute_plan
         
         if output_manager=='default':
@@ -169,9 +169,9 @@ class Simulation_new():
         self.zero_output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.d_output_array = cuda.to_device(self.zero_output_array) 
             
-        if self.storage=='hdf5':
-            print('Saving results in hdf5 format. Filename:', filename+'.h5')
-            with h5py.File(filename+'.h5', "w") as f:
+        if self.storage[-3:]=='.h5': # Saving in hdf5 format
+            print('Saving results in hdf5 format. Filename:', self.storage)
+            with h5py.File(self.storage, "w") as f:
                 # Attributes for simulation (maybe save full configurations)
                 f.attrs['dt'] = self.dt
                 f.attrs['simbox_initial'] = self.conf.simbox.lengths
@@ -191,7 +191,7 @@ class Simulation_new():
             print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.conf.N*self.conf.D*4/1024/1024:.2f} MB.')
             # allocation delayed until beginning of run to let user reconsider
         else:
-            print("WARNING: Results will not be stored. To change this use storage='hdf5' or 'memory'")
+            print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
             
         self.vectors_list = []
         self.scalars_list = []
@@ -284,8 +284,8 @@ class Simulation_new():
             self.simbox_data_list.append(self.conf.simbox.lengths.copy()) # save to memory/hdf5
             #self.scalars_t.append(self.d_output_array.copy_to_host())     # save to memory/hdf5   
             
-            if self.storage=='hdf5':
-                with h5py.File(self.filename+".h5", "a") as f:
+            if self.storage[-3:]=='.h5':
+                with h5py.File(self.storage, "a") as f:
                     f['block'][block,:] = self.d_conf_array.copy_to_host()
                     f['scalars'][block,:] = self.d_output_array.copy_to_host()
             elif self.storage=='memory':
@@ -293,11 +293,6 @@ class Simulation_new():
                 
             #vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
             #vol_t.append(vol)
-
-            if self.include_rdf:
-                rdf_calculator(c1.d_vectors, c1.simbox.d_data, c1.d_ptype, pairs['interaction_params'], d_gr_bins)
-                gr_bins.append(d_gr_bins.copy_to_host())
-                d_gr_bins = cuda.to_device(gr_bins_zeros)
 
             yield block
     
