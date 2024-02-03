@@ -5,10 +5,9 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 """
 
 import rumdpy as rp
-from rumdpy.integrators import nvt
 
 # Setup fcc configuration
-configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=0.973, T=0.8 * 2)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=0.8 * 2)
 
 # Setup pair potential.
 compute_plan = rp.get_default_compute_plan(configuration) # avoid
@@ -18,12 +17,12 @@ pair_potential = rp.PairPotential(configuration, pairpot_func, params=params, ma
 pairs = pair_potential.get_interactions(configuration, exclusions=None, compute_plan=compute_plan, verbose=False) # move to Sim
 
 # Setup integrator
-integrator = nvt.setup_new(configuration, temperature=0.70, tau=0.2, dt=0.005, compute_plan=compute_plan, verbose=False)
+integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 num_blocks = 16
 steps_per_block = 1024*2
-sim = rp.Simulation_new(configuration, pairs, integrator, num_blocks, steps_per_block, storage='LJ_T0.70.h5') 
+sim = rp.Simulation(configuration, pairs, integrator, num_blocks, steps_per_block, storage='LJ_T0.70.h5') 
 
 # Run Simulation
 for block in sim.run_blocks():

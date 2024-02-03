@@ -6,8 +6,7 @@ import ipywidgets as widgets
 class k3d_Visualization():
     def __init__(self, simulation):
         self.simulation = simulation
-        self.conf = simulation.conf
-    
+        self.conf = simulation.configuration
         self.plt_points = k3d.points(positions=self.conf['r'],
                             point_sizes=np.ones((self.conf.N),dtype=np.float32),
                             shader='mesh',

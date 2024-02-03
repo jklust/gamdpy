@@ -6,6 +6,7 @@ from numba import cuda
 def make_scalar_calculator(configuration, steps_between_output, compute_plan, verbose=False):
     D = configuration.D
     num_part = configuration.N
+    print(compute_plan)
     pb = compute_plan['pb']
     tp = compute_plan['tp']
     gridsync = compute_plan['gridsync']
