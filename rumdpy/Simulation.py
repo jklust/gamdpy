@@ -20,12 +20,10 @@ class Simulation():
         self.configuration = configuration
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
-        print(self.compute_plan)
         self.interactions = interactions
 
         self.integrator = integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
-        print(self.integrator_params)
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
         
