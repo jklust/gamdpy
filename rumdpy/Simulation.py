@@ -20,7 +20,10 @@ class Simulation():
         self.configuration = configuration
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
+
         self.interactions = interactions
+        self.interactions_params = self.interactions.get_params(self.configuration, self.compute_plan, verbose)
+        self.interactions_kernel = self.interactions.get_kernel(self.configuration, self.compute_plan, verbose)
 
         self.integrator = integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
@@ -83,7 +86,7 @@ class Simulation():
         self.scalars_list = []
         self.simbox_data_list = []
                   
-        self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions['interactions'], self.output_calculator, self.conf_saver, self.compute_plan, True)
+        self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel, self.output_calculator, self.conf_saver, self.compute_plan, True)
         
     def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, compute_plan, verbose=True ):
         pb = compute_plan['pb']
@@ -167,7 +170,7 @@ class Simulation():
                             self.configuration.d_ptype, 
                             self.configuration.d_r_im, 
                             self.configuration.simbox.d_data,       
-                            self.interactions['interaction_params'], 
+                            self.interactions_params, 
                             self.integrator_params, 
                             self.d_output_array, 
                             self.d_conf_array, 
@@ -198,9 +201,7 @@ class Simulation():
         print()
     
         self.timing_numba = cuda.event_elapsed_time(start, end)
-        #self.nbflag = LJ.nblist.d_nbflag.copy_to_host()    
-        self.nbflag = self.interactions['interaction_params'][4].copy_to_host() # HACK!
-        
+        self.nbflag = self.interactions.nblist.d_nbflag.copy_to_host()    
         self.scalars_list = np.array(self.scalars_list)
 
     def print_status(self, per_particle=False):

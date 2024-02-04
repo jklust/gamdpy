@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 class PairPotential():
     """ Pair potential """
 
-    def __init__(self, configuration, pairpotential_function, params, max_num_nbs, compute_plan):
+    def __init__(self, configuration, pairpotential_function, params, exclusions, max_num_nbs, compute_plan):
         N = configuration.N
         D = configuration.D
+        self.exclusions = exclusions 
         
         virial_factor = numba.float32( 0.5/D )
         def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
@@ -101,7 +102,35 @@ class PairPotential():
         return {'interactions': interactions, 
                 'interaction_params': interaction_params}
 
+    def get_params(self, configuration, compute_plan, verbose=True):
+        exclusions = self.exclusions # Don't change user-set propertys
+        if exclusions == None:
+            d_exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
+        else:
+            d_exclusions = cuda.to_device(exclusions)
+            
+        # Setup params array in right format
+        num_types = self.params_user.shape[0]
+        assert num_types == self.params_user.shape[1]
+        num_params = len(self.params_user[0,0])
+        
+        # Make params in the right format
+        self.params = np.zeros((num_types, num_types), dtype="f,"*num_params)
+        for i in range(num_types):
+            for j in range(num_types):
+                self.params[i,j] = tuple(self.params_user[i,j])
+        self.copy_to_device()
+                
+        max_cut = np.float32(np.max(self.params_user[:,:,-1]))
+        
+        # Should be able to take a list of exclusions (eg from bonds, angles, etc), and merge 
+        return (self.d_params, max_cut, np.float32(compute_plan['skin']), 
+                              self.nblist.d_nblist,  self.nblist.d_nbflag, d_exclusions)
 
+    def get_kernel(self, configuration, compute_plan, verbose=True):
+        num_cscalars = 3
+        return make_interactions(configuration, self, num_cscalars=num_cscalars,
+                                         compute_plan=compute_plan, verbose=verbose,)
 
 ####################################################
 ### NBlist
