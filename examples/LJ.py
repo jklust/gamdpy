@@ -40,7 +40,7 @@ compute_plan = rp.get_default_compute_plan(c1)
 # Make pair potential
 pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
 params = [[[4.0, -4.0, 2.5],], ]
-LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+LJ = rp.PairPotential(c1, pair_potential, params=params, exclusions=None, max_num_nbs=1000, compute_plan=compute_plan)
 pairs = LJ.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=True)
 
 # Make integrator
