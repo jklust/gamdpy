@@ -47,17 +47,25 @@ def get_default_compute_plan(configuration):
     N = configuration.N
     
     # Get relevant info about the device. At some point we should be able to deal with no device (GPU) available
-    device = cuda.get_current_device()
+    if os.getenv("NUMBA_ENABLE_CUDASIM")!="1": 
+        # Trying to handle no device (GPU) case
+        # NUMBA_ENABLE_CUDASIM environment variable is set to "1" if the cuda simulator is used.
+        # See: https://numba.pydata.org/numba-doc/dev/cuda/simulator.html
+        device = cuda.get_current_device()
         
-    # Apperently we can't ask the device about how many cores it has, neither in total or per SM (Streaming Processor),
-    # so we read the latter from a stored dictionary dependent on the compute capability.
-    from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
-    if device.compute_capability in cc_cores_per_SM_dict:
-        cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
-    else:
-        print('RUMDPY WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
-        cc_cores_per_SM=128
-    
+        # Apperently we can't ask the device about how many cores it has, neither in total or per SM (Streaming Processor),
+        # so we read the latter from a stored dictionary dependent on the compute capability.
+        from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
+        if device.compute_capability in cc_cores_per_SM_dict:
+            cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
+        else:
+            print('RUMDPY WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
+            cc_cores_per_SM=128
+    else: # Sets up the behaviour in case the GPU simulator is active and set num_cc_cores = number of threads
+        num_SM = 1
+        num_cc_cores = numba.get_num_threads()
+        warpsize = 1
+
     num_SM = device.MULTIPROCESSOR_COUNT
     num_cc_cores = cc_cores_per_SM*num_SM
     warpsize = device.WARP_SIZE
