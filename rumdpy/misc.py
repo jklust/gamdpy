@@ -62,14 +62,13 @@ def get_default_compute_plan(configuration):
         else:
             print('RUMDPY WARNING: Could not find cc_cores_per_SM for this compute_capability. Guessing: 128')
             cc_cores_per_SM=128
+        num_SM = device.MULTIPROCESSOR_COUNT
+        num_cc_cores = cc_cores_per_SM*num_SM
+        warpsize = device.WARP_SIZE
     else: # Sets up the behaviour in case the GPU simulator is active and set num_cc_cores = number of threads
         num_SM = 1
         num_cc_cores = numba.get_num_threads()
         warpsize = 1
-
-    num_SM = device.MULTIPROCESSOR_COUNT
-    num_cc_cores = cc_cores_per_SM*num_SM
-    warpsize = device.WARP_SIZE
 
     # pb: particle per (thread) block
     pb = 512
