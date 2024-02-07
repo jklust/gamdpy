@@ -29,7 +29,8 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     pair_potential = rp.apply_shifted_potential_cutoff(rp.make_LJ_m_n(12, 6))
     params = [[[4.0, -4.0, 2.5], ], ]
     lennard_jones = rp.PairPotential(conf, pair_potential,
-                                     params=params, max_num_nbs=1000, compute_plan=compute_plan)
+                                     params=params, exclusions=None,
+                                     max_num_nbs=1000, compute_plan=compute_plan)
     pairs = lennard_jones.get_interactions(conf, exclusions=None, compute_plan=compute_plan, verbose=verbose)
 
     integrate, integrator_params = nve_toxvaerd.setup(conf, pairs['interactions'], dt=dt,
