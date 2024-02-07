@@ -35,7 +35,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     c1.copy_to_device()
     
     # Make the pair potential. 
-    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, exclusions=None, max_num_nbs=1000, compute_plan=compute_plan)
     pairs = pair_potential.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=False)
     
     # Set up the integrator
