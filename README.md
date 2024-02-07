@@ -87,4 +87,13 @@ There is a limit to how many thread blocks can be used with grid syncronization,
 - Automatic testing upon uploading (CI). How to get acces to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
+## Known issues:
 
+### LinkerError: libcudadevrt.a not found
+A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
+is to make a symbolic link to the missing file. 
+This can be done by running the somthing like the below in the terminal:
+```bash
+ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
+```
+in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.
