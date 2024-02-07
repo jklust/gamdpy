@@ -40,8 +40,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     pair_potential = rp.apply_shifted_potential_cutoff(rp.make_LJ_m_n(12, 6))
     params = [[[4.0, -4.0, 2.5], ], ]
     lennard_jones = rp.PairPotential(conf, pair_potential,
-                                     params=params, exclusions=None,
-                                     max_num_nbs=1000, compute_plan=compute_plan)
+                                     params=params, max_num_nbs=1000, compute_plan=compute_plan)
     pairs = lennard_jones.get_interactions(conf, exclusions=None, compute_plan=compute_plan, verbose=verbose)
 
     # Setup integrator
