@@ -3,6 +3,7 @@ import numba
 from numba import cuda
 import math
 import matplotlib.pyplot as plt
+import os
 
 ##############################################################################
 ### Stuff we haven't decided where to place yet
