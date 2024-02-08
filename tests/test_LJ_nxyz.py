@@ -34,7 +34,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     # Make the pair potential.
     pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
     params = [[[4.0, -4.0, 2.5],], ]
-    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, exclusions=None, max_num_nbs=1000, compute_plan=compute_plan)
     pairs = pair_potential.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=False)
        
     # Setup the integrator
