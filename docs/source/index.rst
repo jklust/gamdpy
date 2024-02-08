@@ -12,6 +12,7 @@ Welcome to rumdpy's documentation!
 
    installation
    quick_start
+   examples
    api
 
 Indices and tables
