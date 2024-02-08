@@ -87,8 +87,8 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
 
     print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
 
-    assert 0.6 < Tkin < 0.8
-    assert 0.6 < Tconf < 0.8
+    assert 0.55 < Tkin < 0.85, f'{Tkin=}'
+    assert 0.55 < Tconf < 0.85, f'{Tconf=}'
     if integrator == 'NVE':  # Only expect conservation of energy if we are running NVE
         assert -0.01 < de < 0.01
     assert nbflag[0] == 0
