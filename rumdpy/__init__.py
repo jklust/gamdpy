@@ -1,3 +1,4 @@
+""" The rumdpy main module """
 #from .integrators import *
 from .interactions import *
 from .potential_functions import *
@@ -15,6 +16,7 @@ from . import tools
 
 import rumdpy.integrators as integrators
 __all_ = list("integrators")
+__version__ = "0.0.1"
 def __getattr__(attr):
     if attr == "integrators":
         import numpy.integrators as integrators

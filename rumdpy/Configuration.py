@@ -6,8 +6,14 @@ from rumdpy.colarray import colarray
 
 
 class Configuration:
-    """ Store particle vectors (positions, velocities, forces) and scalars (energy, virial, ...).
-        Also store particle type and mass, simulation box dimensions, and image coordinates.
+    """ The configuration class
+
+    Store particle vectors (positions, velocities, forces) and scalars (energy, virial, ...).
+    Also store particle type and mass, simulation box dimensions, and image coordinates.
+
+    Examples
+    --------
+
     >>> import rumdpy as rp
     >>> conf = rp.Configuration(10, 3, np.array([10, 10, 10]))
     >>> print(conf.vector_columns)  # Print names of vector columns
@@ -56,6 +62,10 @@ class Configuration:
 
     def set_vector(self, key: str, data: np.ndarray) -> None:
         """ Set new vector data
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> conf.set_vector('r', np.ones((10, 3)))
@@ -74,6 +84,10 @@ class Configuration:
 
     def get_vector(self, key: str) -> np.ndarray: # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the vector lengths
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> print(conf.get_vector('r')[0])
@@ -86,6 +100,10 @@ class Configuration:
 
     def set_scalar(self, key: str, data) -> None:
         """ Set new scalar data
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> print(conf['m'][0])
@@ -104,6 +122,10 @@ class Configuration:
 
     def get_scalar(self, key: str): # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the scalar lengths
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> print(conf.get_scalar('m')[0])
@@ -117,6 +139,10 @@ class Configuration:
 
     def copy_to_device(self):
         """ Copy all data to device memory
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> conf.copy_to_device()
@@ -131,6 +157,10 @@ class Configuration:
 
     def copy_to_host(self):
         """ Copy all data to host memory
+
+        Examples
+        --------
+
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
         >>> conf.copy_to_device()
