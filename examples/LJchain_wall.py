@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import rumdpy as rp
-from rumdpy.integrators import nvt
+from rumdpy.integrators import nvt_nh
 # from rumdpy.interactions import pair, bond, planar
 import numba
 from numba import cuda
@@ -111,10 +111,10 @@ T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
 #T1 = rp.make_function_sin(offset=0.45, period=200, amplitude=0.1)
 
 # Setup NVT intergrator(s)
-integrate0, integrator_params0 = nvt.setup(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
+integrate0, integrator_params0 = nvt_nh.setup(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
 
 dt = 0.0025
-integrate1,  integrator_params1 = nvt.setup(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
+integrate1,  integrator_params1 = nvt_nh.setup(c1, interactions, T1, tau=0.2, dt=dt, compute_plan=compute_plan) # Production
 
 scalars_t = []
 coordinates_t = []

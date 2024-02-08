@@ -5,7 +5,7 @@ from numba import cuda
 
 # rumdpy
 import rumdpy as rp
-from rumdpy.integrators import nve, nve_toxvaerd, nvt, nvt_langevin, npt_langevin
+from rumdpy.integrators import nve, nve_toxvaerd, nvt_nh, nvt_langevin, npt_langevin
 
 # IO
 import pandas as pd

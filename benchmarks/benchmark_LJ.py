@@ -1,6 +1,6 @@
 import glob
 import sys
-from rumdpy.integrators import nve, nvt, nvt_langevin
+from rumdpy.integrators import nve, nvt_nh, nvt_langevin
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,7 +45,7 @@ def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE
     if integrator == 'NVE':
         integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
-        integrate, integrator_params = nvt.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+        integrate, integrator_params = nvt_nh.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator=='NVT_Langevin':
         integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
 

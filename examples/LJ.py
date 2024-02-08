@@ -1,6 +1,6 @@
 import numpy as np
 import rumdpy as rp
-from rumdpy.integrators import nve, nve_toxvaerd, nvt, nvt_langevin, npt_langevin
+from rumdpy.integrators import nve, nve_toxvaerd, nvt_nh, nvt_langevin, npt_langevin
 import numba
 from numba import cuda
 import pandas as pd
@@ -60,7 +60,7 @@ if integrator=='NVE_Toxvaerd':
     integrate, integrator_params = nve_toxvaerd.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
 
 if integrator=='NVT':
-    integrate, integrator_params =nvt.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False) 
+    integrate, integrator_params =nvt_nh.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False)
         
 if integrator=='NVT_Langevin':
     integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
