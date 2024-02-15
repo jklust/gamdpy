@@ -142,8 +142,9 @@ class Simulation():
                 return
             return integrator
         return            
-            
-    def run_blocks(self, num_blocks=-1):
+
+    # generator for running simulation one block at a time
+    def blocks(self, num_blocks=-1):
         if num_blocks==-1:
             num_blocks=self.num_blocks
         self.last_num_blocks = num_blocks
@@ -204,22 +205,21 @@ class Simulation():
         self.nbflag = self.interactions.nblist.d_nbflag.copy_to_host()    
         self.scalars_list = np.array(self.scalars_list)
 
-    def print_status(self, per_particle=False):
+    def status(self, per_particle=False):
         scalars = np.sum(self.configuration.scalars, axis=0)
         if per_particle:
             scalars /= self.configuration.N
         time = self.current_block * self.steps_per_block * self.dt
-        print(f'\n{time= :<10.3f}', end=' ')
+        st = f'{time= :<10.3f}'
         for name in self.configuration.sid:
             idx = self.configuration.sid[name]
-            print(f'{name}= {scalars[idx]:<10.3f}', end=' ')
+            st += f'{name}= {scalars[idx]:<10.3f}'
+        return st
 
-        
-    def print_summary(self):
+    def summary(self):
         tps = self.last_num_blocks*self.steps_per_block/self.timing_numba*1000
-        print('')
-        print('steps :', self.last_num_blocks*self.steps_per_block)
-        print('nbflag : ', self.nbflag)
-        print('time :', self.timing_numba/1000, 's')
-        print('TPS : ', tps )
-            
+        st  = f'steps : {self.last_num_blocks*self.steps_per_block} \n'
+        st += f'nbflag : {self.nbflag} \n'
+        st += f'time : {self.timing_numba/1000:.2f} s \n'
+        st += f'TPS : {tps:.2e}'
+        return st

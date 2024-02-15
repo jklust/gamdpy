@@ -132,13 +132,78 @@ class PairPotential():
         return make_interactions(configuration, self, num_cscalars=num_cscalars,
                                          compute_plan=compute_plan, verbose=verbose,)
 
+class PairPotential2():
+    """ Pair potential """
+
+    def __init__(self, pairpotential_function, params, max_num_nbs, exclusions=None):
+        def params_function(i_type, j_type, params):
+            result = params[i_type, j_type]            # default: read from params array
+            return result            
+    
+        self.pairpotential_function = pairpotential_function
+        self.params_function = params_function
+        self.params_user = np.array(params,dtype=np.float32)
+        self.exclusions = exclusions 
+        self.max_num_nbs = max_num_nbs
+        #self.nblist = NbList(N, max_num_nbs) #### moved to get_params()
+                
+    def plot(self, ylim=(-3,6), figsize=(8,4), names=None):
+        num_types = self.params.shape[0]
+        if names==None:
+            names = np.arange(num_types)
+        plt.figure(figsize=figsize)
+        for i in range(num_types):
+            for j in range(num_types):
+                r = np.linspace(0, self.params[i,j][-1], 1000)
+                u, s, lap = self.pairpotential_function(r, self.params[i,j])
+                plt.plot(r, u, label=f'{names[i]} - {names[j]}')
+        plt.ylim(ylim)
+        plt.xlabel('Pair distance')
+        plt.ylabel('Pair potential')
+        plt.legend()
+        plt.show()
+        
+  
+    def get_params(self, configuration, compute_plan, verbose=True):
+        exclusions = self.exclusions # Don't change user-set propertys
+        if exclusions == None:
+            d_exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
+        else:
+            d_exclusions = cuda.to_device(exclusions)
+            
+        # Setup params array in right format
+        num_types = self.params_user.shape[0]
+        assert num_types == self.params_user.shape[1]
+        num_params = len(self.params_user[0,0])
+        
+        # Make params in the right format
+        self.params = np.zeros((num_types, num_types), dtype="f,"*num_params)
+        for i in range(num_types):
+            for j in range(num_types):
+                self.params[i,j] = tuple(self.params_user[i,j])
+        max_cut = np.float32(np.max(self.params_user[:,:,-1]))
+
+        self.nblist = NbList(configuration.N, self.max_num_nbs)        
+        
+        self.d_params = cuda.to_device(self.params)
+        self.nblist.copy_to_device()
+                        
+        # Should be able to take a list of exclusions (eg from bonds, angles, etc), and merge 
+        return (self.d_params, max_cut, np.float32(compute_plan['skin']), 
+                              self.nblist.d_nblist,  self.nblist.d_nbflag, d_exclusions)
+
+    def get_kernel(self, configuration, compute_plan, verbose=True):
+        num_cscalars = 3
+        return make_interactions(configuration, self, num_cscalars=num_cscalars,
+                                         compute_plan=compute_plan, verbose=verbose,)
+
 ####################################################
 ### NBlist
 ####################################################'
 
 class NbList():
     def __init__(self, num_part, max_num_nbs):
-        self.nblist = np.zeros((num_part, max_num_nbs+1), dtype=np.int32)
+        self.nblist = np.zeros((num_part, max_num_nbs+1), dtype=np.int32) # Might skip this to save memory on host
         self.nbflag = np.zeros(3, dtype=np.int32)
 
     def copy_to_device(self):
@@ -160,21 +225,46 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
         print(f'\tNumber of threads {num_blocks*pb*tp}')      
 
     # Unpack indicies for vectors and scalars    
-    #for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
     for col in configuration.vectors.column_names:
             exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
-    
+
     # Prepare user-specified functions for inclusion in kernel(s)
     # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 
+
+    pairpotential_function = pair_potential.pairpotential_function
+    
+    if compute_plan['UtilizeNIII']:
+        virial_factor_NIII = numba.float32( 1.0/configuration.D)
+        def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
+            u, s, umm = pairpotential_function(ij_dist, ij_params)
+            for k in range(D):
+                cuda.atomic.add(f, (other_id, k), dr[k]*s)
+                my_f[k] = my_f[k] - dr[k]*s                         # Force
+                cscalars[w_id] += dr[k]*dr[k]*s*virial_factor_NIII  # Virial
+            cscalars[u_id] += u                                      # Potential energy
+            cscalars[lap_id] += (numba.float32(1-D)*s + umm)*numba.float32( 2.0 ) # Laplacian 
+            return
+            
+    else:
+            
+        virial_factor = numba.float32( 0.5/configuration.D )
+        def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
+            u, s, umm = pairpotential_function(ij_dist, ij_params)
+            for k in range(D):
+                my_f[k] = my_f[k] - dr[k]*s                         # Force
+                cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
+            cscalars[u_id] += u*numba.float32( 0.5 )                # Potential energy
+            cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
+            return
+
     ptype_function = numba.njit(configuration.ptype_function)
     params_function = numba.njit(pair_potential.params_function)
-    pairpotential_calculator = numba.njit(pair_potential.pairpotential_calculator)
+    pairpotential_calculator = numba.njit(pairpotential_calculator)
     dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
-
+   
     #@cuda.jit('void(float32[:,:,:], float32[:], float32, int32[:])', device=gridsync)
     @cuda.jit( device=gridsync)
     def nblist_check(vectors, sim_box, skin, nbflag):
