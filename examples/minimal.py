@@ -23,7 +23,7 @@ steps_per_block = 1024*2
 sim = rp.Simulation(configuration, pair_potential, integrator, 
                     num_blocks, steps_per_block, storage='LJ_T0.70.h5') 
 
-# Run simulation at a time
+# Run simulation one block at a time
 for block in sim.blocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
