@@ -25,8 +25,8 @@ sim = rp.Simulation(configuration, pair_potential, integrator,
 
 # Run simulation at a time
 for block in sim.blocks():
-    print(sim.status(per_particle=True))  # print(sim.status())
-print(sim.summary())                      # print(sim.summary())
+    print(sim.status(per_particle=True))
+print(sim.summary())
 
 # To get a plot of the MSD do something like this:
 # python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
