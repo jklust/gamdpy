@@ -108,7 +108,7 @@ class PairPotential():
             d_exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
         else:
             d_exclusions = cuda.to_device(exclusions)
-            
+
         # Setup params array in right format
         num_types = self.params_user.shape[0]
         assert num_types == self.params_user.shape[1]
@@ -142,7 +142,7 @@ class PairPotential2():
     
         self.pairpotential_function = pairpotential_function
         self.params_function = params_function
-        self.params_user = np.array(params,dtype=np.float32)
+        self.params_user = params
         self.exclusions = exclusions 
         self.max_num_nbs = max_num_nbs
         #self.nblist = NbList(N, max_num_nbs) #### moved to get_params()
@@ -170,18 +170,32 @@ class PairPotential2():
             d_exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
         else:
             d_exclusions = cuda.to_device(exclusions)
-            
-        # Setup params array in right format
-        num_types = self.params_user.shape[0]
-        assert num_types == self.params_user.shape[1]
-        num_params = len(self.params_user[0,0])
         
-        # Make params in the right format
+        # Upgrade any scalar parameters to 1x1 numpy array
+        num_params = len(self.params_user)
+        self.params_list = []
+        for parameter in self.params_user:
+            if np.isscalar(parameter):
+                self.params_list.append(np.ones((1,1))*parameter)
+            else:
+                self.params_list.append(np.array(parameter, dtype=np.float32))
+
+        # Ensure all parameters are the right format (num_types x num_types) numpy arrays
+        num_types = self.params_list[0].shape[0]
+        for parameter in self.params_list:
+            assert len(parameter.shape) == 2
+            assert parameter.shape[0] == num_types
+            assert parameter.shape[1] == num_types
+
+        # Convert params to the format required by kernels (num_types x num_types) array of tuples (p0, p1, ..., cutoff)
         self.params = np.zeros((num_types, num_types), dtype="f,"*num_params)
         for i in range(num_types):
             for j in range(num_types):
-                self.params[i,j] = tuple(self.params_user[i,j])
-        max_cut = np.float32(np.max(self.params_user[:,:,-1]))
+                plist = []
+                for parameter in self.params_list:
+                    plist.append(parameter[i,j])
+                self.params[i,j] = tuple(plist)
+        max_cut = np.float32(np.max(self.params_list[-1]))
 
         self.nblist = NbList(configuration.N, self.max_num_nbs)        
         
