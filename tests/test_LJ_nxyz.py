@@ -11,7 +11,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     
     # Generate configuration with a FCC lattice
     c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
-    assert c1.N==nx*ny*nz*4, f'Wrong number particles (FCC), {C1.N} <> {nx*ny*nz*4}'
+    assert c1.N==nx*ny*nz*4, f'Wrong number particles (FCC), {c1.N} <> {nx*ny*nz*4}'
     assert c1.D==3, f'Wrong dimension (FCC), {c1.D} <> {3}'
     c1.copy_to_device()    
     
@@ -28,7 +28,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     if UtilizeNIII!=None:
         compute_plan['UtilizeNb'] = UtilizeNIII
     if verbose:
-        print('simbox_data:', simbox_data)
+        print('simbox lengths:', c1.simbox.lengths)
         print('compute_plan: ', compute_plan)
    
     # Make the pair potential.
