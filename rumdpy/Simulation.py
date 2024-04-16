@@ -15,7 +15,7 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_blocks, steps_per_block, 
-                 compute_plan=None, storage='output.h5', output_manager='default', verbose=False):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', verbose=True):
                 
         self.configuration = configuration
         if compute_plan==None:
@@ -35,31 +35,48 @@ class Simulation():
         self.steps_per_block = steps_per_block
         self.storage = storage
          
-        if output_manager=='default':
-            self.steps_between_output = 16
+        if scalar_output == 'default':
+            scalar_output = 16
+        if type(scalar_output)==int and scalar_output>0:
+            self.steps_between_output = scalar_output
             self.output_calculator = rp.make_scalar_calculator(self.configuration, self.steps_between_output, self.compute_plan)
-            self.conf_saver = rp.make_conf_saver(self.configuration, self.compute_plan)
-        elif output_manager==None or output_manager=='none':
+        elif scalar_output==None or scalar_output =='none' or scalar_output < 1:
             self.output_calculator = None
+            self.steps_between_output = scalar_output
+        else:
+            print('Did not understand scalar_output = ', scalar_output)
+
+        if conf_output=='default':
+            self.conf_saver = rp.make_conf_saver(self.configuration, self.compute_plan)
+        elif conf_output==None or conf_output=='none':
             self.conf_saver = None
         else:
-            print('Did not understand output_manager = ', output_manager)
+            print('Did not understand conf_output = ', conf_output)
 
         # per block storage of configuration
-        self.conf_per_block = int(math.log2(steps_per_block))+2 # Should be user controlable
+        if self.conf_saver != None:
+            self.conf_per_block = int(math.log2(steps_per_block))+2 # Should be user controlable
+            if verbose:
+                print('Configurations per block (log2-storing):', self.conf_per_block)
+        else:
+            self.conf_per_block = 1
         self.num_vectors = 2 # 'r' and 'r_im'
-        print('Configurations per block (log2-storing):', self.conf_per_block)
         self.zero_conf_array = np.zeros((self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
         self.d_conf_array = cuda.to_device(self.zero_conf_array)
         
         # per block storage of scalars
         self.num_scalars = 5
-        self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
+        if self.output_calculator != None:
+            self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
+        else:
+            self.scalar_saves_per_block = 1
+
         self.zero_output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.d_output_array = cuda.to_device(self.zero_output_array) 
             
         if self.storage[-3:]=='.h5': # Saving in hdf5 format
-            print('Saving results in hdf5 format. Filename:', self.storage)
+            if verbose:
+                print('Saving results in hdf5 format. Filename:', self.storage)
             with h5py.File(self.storage, "w") as f:
                 # Attributes for simulation (maybe save full configurations)
                 f.attrs['dt'] = self.dt
@@ -68,17 +85,28 @@ class Simulation():
                 ds[:] = configuration.ptype
                 #f.create_dataset("block", shape=(self.num_blocks, self.conf_per_block, self.num_vectors, self.conf.N, self.conf.D), 
                 #                chunks=(1, 1, self.num_vectors, self.conf.N, self.conf.D), dtype=np.float32, compression="gzip")
-                ds = f.create_dataset("block", shape=(self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), 
-                                    chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
-                ds.attrs['dummy'] = 1
-                ds = f.create_dataset("scalars", shape=(self.num_blocks, self.scalar_saves_per_block, self.num_scalars), 
-                                chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-                ds.attrs['steps_between_output'] = self.steps_between_output
+                if self.conf_saver != None:
+                    ds = f.create_dataset("block", shape=(self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
+                                          chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
+
+                if self.output_calculator != None:
+                    ds = f.create_dataset("scalars", shape=(self.num_blocks, self.scalar_saves_per_block, self.num_scalars),
+                                          chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+                    f.attrs['steps_between_output'] = self.steps_between_output
 
         elif self.storage=='memory':
-            # Should setup a dictionary, that exactly mirrors hdf5 file, so analysis programs can be the same 
-            print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.configuration.N*self.configuration.D*4/1024/1024:.2f} MB.')
+            # Setup a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
+            self.output = {}
+            self.output['attrs'] = {'dt':self.dt, 'simbox_initial':self.configuration.simbox.lengths.copy() }
+            self.output['ptype'] = configuration.ptype.copy()
+            if self.conf_saver != None:
+                self.output['block'] = 0
+            if verbose:
+                print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.configuration.N*self.configuration.D*4/1024/1024:.2f} MB.')
             # allocation delayed until beginning of run to let user reconsider
+            if self.output_calculator != None:
+                self.output['scalars'] = 0
+                self.output['attrs']['steps_between_output'] = self.steps_between_output
         else:
             print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
             
@@ -150,9 +178,12 @@ class Simulation():
         self.last_num_blocks = num_blocks
         assert(num_blocks<=self.num_blocks) # Could be made OK with more blocks
         if self.storage=='memory':
-            self.conf_blocks = np.zeros((self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
-        
-        self.configuration.copy_to_device() 
+            if self.conf_saver != None:
+                self.output['block'] = np.zeros((self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
+            if self.output_calculator != None:
+                self.output['scalars'] = np.zeros((self.num_blocks, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+
+        self.configuration.copy_to_device()
         self.vectors_list = []
         self.scalars_list = []
         self.simbox_data_list = []
@@ -186,10 +217,15 @@ class Simulation():
             
             if self.storage[-3:]=='.h5':
                 with h5py.File(self.storage, "a") as f:
-                    f['block'][block,:] = self.d_conf_array.copy_to_host()
-                    f['scalars'][block,:] = self.d_output_array.copy_to_host()
+                    if self.conf_saver != None:
+                        f['block'][block,:] = self.d_conf_array.copy_to_host()
+                    if self.output_calculator != None:
+                        f['scalars'][block,:] = self.d_output_array.copy_to_host()
             elif self.storage=='memory':
-                self.conf_blocks[block] = self.d_conf_array.copy_to_host()
+                if self.conf_saver != None:
+                    self.output['block'][block,:] = self.d_conf_array.copy_to_host()
+                if self.output_calculator != None:
+                    self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
                 
             #vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
             #vol_t.append(vol)
@@ -199,7 +235,7 @@ class Simulation():
         # Finalizing run
         end.record()
         end.synchronize()
-        print()
+        #print()
     
         self.timing_numba = cuda.event_elapsed_time(start, end)
         self.nbflag = self.interactions.nblist.d_nbflag.copy_to_host()    
@@ -218,7 +254,8 @@ class Simulation():
 
     def summary(self):
         tps = self.last_num_blocks*self.steps_per_block/self.timing_numba*1000
-        st  = f'steps : {self.last_num_blocks*self.steps_per_block} \n'
+        st  = f'particles : {self.configuration.N} \n'
+        st += f'steps : {self.last_num_blocks*self.steps_per_block} \n'
         st += f'nbflag : {self.nbflag} \n'
         st += f'time : {self.timing_numba/1000:.2f} s \n'
         st += f'TPS : {tps:.2e}'
