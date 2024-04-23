@@ -1,4 +1,4 @@
-""" Minimal example of a Simulation using rumdpy.
+""" Example of a Simulation using rumdpy, using explicit blocks.
 
 Simulation of a Lennard-Jones crystal in the NVT ensemble.
 

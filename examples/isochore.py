@@ -15,10 +15,10 @@ pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
-num_blocks = 16
+num_blocks = 8
 steps_per_block = 1024*2
 
-for temperature in ['0.70', '1.10', '1.50', '1.90']:
+for temperature in ['0.70', '1.10', '1.50']:
     print('\n\nTemperature: ' + temperature)
     
     # Setup integrator
@@ -26,7 +26,7 @@ for temperature in ['0.70', '1.10', '1.50', '1.90']:
 
     # Setup Simulation
     sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks, steps_per_block,
+                        num_blocks=num_blocks, steps_per_block=steps_per_block,
                         storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')
