@@ -16,12 +16,12 @@ def LJ_12_6(dist, params):            # LJ: U(r)  =        A12*r**-12 +     A6*r
     return u, s, umm # U(r), s == -U'(r)/r, U''(r)
 
 
-def LJ_12_6_sigma_epsilon(dist, params):  # LJ:  U(r)  =     4*epsilon(   (r/sigma)**-12 +   (r/sigma)**-6 )
+def LJ_12_6_sigma_epsilon(dist, params):  
     """
     The 12-6 Lennard-Jones potential:
     U(r)  =     4*epsilon(   (r/sigma)**-12 -   (r/sigma)**-6 )
     Order of parameters: sigma, epsilon, cutoff
-    """
+    """                                   # LJ:  U(r)  =     4*epsilon(   (r/sigma)**-12 +   (r/sigma)**-6 )
     sigma = params[0]                     #      Um(r) =   -24*epsilon( 2*(r/sigma)**-13 +   (r/sigma)**-7 )/sigma
     epsilon = params[1]                   #      Umm(r) =   24*epsilon(26*(r/sigma)**-14 + 7*(r/sigma)**-8 )/sigma**2
     OneOdist = numba.float32(1.0)/dist    # s = -Um/r =     24*epsilon( 2*(r/sigma)**-14 +   (r/sigma)**-8 )/sigma**2,  Fx = s*dx
