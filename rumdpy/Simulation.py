@@ -14,7 +14,7 @@ import sys
 import h5py
 
 class Simulation():
-    def __init__(self, configuration, interactions, integrator, num_blocks, steps_per_block, 
+    def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
                  compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', verbose=True):
                 
         self.configuration = configuration
@@ -30,6 +30,14 @@ class Simulation():
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
         
+        if num_blocks==0:
+            num_blocks = 32
+            steps_per_block = 2**int( math.log2( math.ceil(num_steps / num_blocks )))
+            num_blocks = math.ceil(num_steps / steps_per_block) 
+            print('num_steps: ', num_steps)
+            print('num_blocks: ', num_blocks)
+            print('steps_per_block: ', steps_per_block)
+             
         self.num_blocks = num_blocks
         self.current_block = -1
         self.steps_per_block = steps_per_block
@@ -170,6 +178,12 @@ class Simulation():
                 return
             return integrator
         return            
+
+    # simple run function
+    def run(self):
+        for block in self.blocks():
+            print(self.status(per_particle=True))
+        print(self.summary())
 
     # generator for running simulation one block at a time
     def blocks(self, num_blocks=-1):

@@ -17,17 +17,12 @@ pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
 
-# Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-num_blocks = 16
-steps_per_block = 1024*2
+# Setup Simulation. 
 sim = rp.Simulation(configuration, pairpot, integrator,
-                    num_blocks, steps_per_block,
-                    storage='LJ_T0.70.h5')
+                    num_steps = 32*1024, storage='LJ_T0.70.h5')
 
-# Run simulation one block at a time
-for block in sim.blocks():
-    print(sim.status(per_particle=True))
-print(sim.summary())
+# Run simulation
+sim.run()
 
 # To get a plot of the MSD do something like this:
 # python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
