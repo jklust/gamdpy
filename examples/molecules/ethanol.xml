@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This XML file is designed for use with Foyer in the Molecular Simulation and Design Framework (github.com/mosdef-hub).-->
+<ForceField model="TraPPE-UA 19 ethanol">
+  <!--XML units: kJ/mol for energies, nm for lengths, and radians for angles.-->
+  <!--For conversion from K to kJ/mol, we use: 1.38064852E-23*6.022140857E23/1000.-->
+  <AtomTypes>
+    <Type name="TrUA_CH3_2" class="sp3(C) CH3" element="_CH3" mass="15.0347" def="[_CH3;X1][_CH2]" desc="UA general CH3" doi="10.1021/jp972543+"/>
+    <Type name="TrUA_O_6" class="sp3(O) O" element="O" mass="16.000" def="[O;X2]([_CH2;%TrUA_CH2_9])[H;%TrUA_H_7]" desc="UA alcohol O" doi="10.1021/jp003882x"/>
+    <Type name="TrUA_H_7" class="s(H) H" element="H" mass="1.0079" def="[H;X1][O;%TrUA_O_6]" desc="UA alcohol H" doi="10.1021/jp003882x"/>
+    <Type name="TrUA_CH2_9" class="sp3(C) CH2" element="_CH2" mass="14.0268" def="[_CH2;X2]([O;%TrUA_O_6])[_CH3]" desc="UA alcohol CH2" doi="10.1021/jp972543+,10.1021/jp003882x"/>
+  </AtomTypes>
+  <HarmonicBondForce>
+    <!--TraPPE uses fixed bond lengths. Force constants shown here come from GAFF, limited to three significant figures.-->
+    <Bond class1="sp3(C) CH3" class2="sp3(C) CH2" length="0.154" k="250000" doi="10.1021/jp972543+, 10.1002/jcc.20035"/>
+    <Bond class1="sp3(O) O" class2="sp3(C) CH2" length="0.143" k="259000" doi="10.1021/jp003882x, 10.1002/jcc.20035"/>
+    <Bond class1="sp3(O) O" class2="s(H) H" length="0.0945" k="354000" doi="10.1021/jp003882x, 10.1002/jcc.20035"/>
+  </HarmonicBondForce>
+  <HarmonicAngleForce>
+    <Angle class1="sp3(O) O" class2="sp3(C) CH2" class3="sp3(C) CH3" angle="1.9106" k="419.05" doi="10.1021/jp003882x"/>
+    <Angle class1="sp3(C) CH2" class2="sp3(O) O" class3="s(H) H" angle="1.8937" k="460.62" doi="10.1021/jp003882x"/>
+  </HarmonicAngleForce>
+  <RBTorsionForce>
+    <!--OPLS style torsions have been converted to Ryckaert-Bellemans style.-->
+    <Proper class1="sp3(C) CH3" class2="sp3(O) O" class3="sp3(C) CH2" class4="s(H) H" c0="2.82201" c1="2.94307" c2="0.48507" c3="-6.25015" c4="0" c5="0" doi="10.1021/jp003882x"/>
+  </RBTorsionForce>
+  <NonbondedForce coulomb14scale="0.0" lj14scale="0.0">
+    <Atom type="TrUA_CH3_2" charge="0" sigma="0.375" epsilon="0.81482"/>
+    <Atom type="TrUA_CH2_9" charge="0.265" sigma="0.395" epsilon="0.38247"/>
+    <Atom type="TrUA_O_6" charge="-0.7" sigma="0.302" epsilon="0.77324"/>
+    <Atom type="TrUA_H_7" charge="0.435" sigma="0" epsilon="0"/>
+  </NonbondedForce>
+</ForceField>
