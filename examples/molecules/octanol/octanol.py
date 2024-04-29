@@ -9,6 +9,8 @@ It is assumed that atoms are listed in the same order as in the two files.
 
 from pprint import pprint
 import numpy as np
+import csv
+
 
 def load_pdb(filename: str) -> dict:
     """ Load a PDB file and return a lists of Atom name, Residue name and coordinates
@@ -33,18 +35,16 @@ def load_pdb(filename: str) -> dict:
         "coordinates": coordinates
     }
 
+
 def plot_molecule(molecule: dict):
     import matplotlib.pyplot as plt
 
     xyx = np.array(molecule["coordinates"])
     plt.figure()
-    plt.plot(xyx[:,0], xyx[:,1], '--o')
+    plt.plot(xyx[:, 0], xyx[:, 1], '--o')
     for i, txt in enumerate(molecule["atom_name"]):
-        plt.annotate(f'{i}: {txt}', (xyx[i,0], xyx[i,1]))
+        plt.annotate(f'{i}: {txt}', (xyx[i, 0], xyx[i, 1]))
     plt.show()
-
-
-import csv
 
 
 def read_parameters(file_path: str) -> dict:
@@ -86,7 +86,6 @@ def read_parameters(file_path: str) -> dict:
     return data
 
 
-
 def main():
     octanol = load_pdb("octanol.pdb")
     pprint(octanol)
@@ -94,7 +93,6 @@ def main():
     ff_parameters = read_parameters("trappe_parameters_35.csv")
     pprint(ff_parameters)
 
+
 if __name__ == "__main__":
     main()
-
-
