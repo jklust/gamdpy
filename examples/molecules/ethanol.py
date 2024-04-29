@@ -1,9 +1,14 @@
 # Load parameters for a simulation of ethanol
+#
 # TraPPE force-field parameters for ethanol is downloaded at, http://trappe.oit.umn.edu/
+#
+# The pdf file is from https://github.com/wesbarnett/OPLS-molecules/tree/master/pdb/alcohols
+#
 # wget https://raw.githubusercontent.com/wesbarnett/OPLS-molecules/master/pdb/alcohols/ethanol.pdb
 
 import xml.etree.ElementTree as ET
 from pprint import pprint
+
 
 def load_pdb(filename: str) -> dict:
     """ Load a PDB file and return a lists of Atom name, Residue name and coordinates"""
@@ -23,10 +28,44 @@ def load_pdb(filename: str) -> dict:
     }
 
 
-def strip_hydrogens_on_carbons(molecule: dict) -> dict:
-    ...
+def strip_hydrogen_on_carbons(molecule: dict) -> dict:
+    """ Return a molecule dictionary without hydrogen atoms on carbons
+    The dictionary should have atom_name, residue_name and coordinates.
 
+    A carbon is identified as C* and a hydrogen is identified as H*.
+    A connecting hydrogen should be below the carbon atom before next non-hydrogen atom.
+    The resulting dictionary have a count of hydrogens attaced to a carbon atom """
 
+    # Count hydrogens attached to a carbon atom. Break if atom is non-hydrogen
+    carbon_hydrogens = {}
+    hydrogen_to_be_stripped = [False] * len(molecule["atom_name"])
+    for i, atom in enumerate(molecule["atom_name"]):
+        if atom.startswith("C"):
+            carbon_hydrogens.update({molecule["atom_name"][i]: 0})
+            for j in range(i + 1, len(molecule["atom_name"])):
+                if molecule["atom_name"][j].startswith("H") and molecule["residue_name"][j] == molecule["residue_name"][
+                    i]:
+                    carbon_hydrogens[molecule["atom_name"][i]] += 1
+                    hydrogen_to_be_stripped[j] = True
+                else:
+                    break
+
+    # Remove hydrogens attached to a carbon atom, but not to other atoms
+    atom_name = []
+    residue_name = []
+    coordinates = []
+    for i, atom in enumerate(molecule["atom_name"]):
+        if not hydrogen_to_be_stripped[i]:
+            atom_name.append(atom)
+            residue_name.append(molecule["residue_name"][i])
+            coordinates.append(molecule["coordinates"][i])
+
+    return {
+        "atom_name": atom_name,
+        "residue_name": residue_name,
+        "coordinates": coordinates,
+        "carbon_hydrogens": carbon_hydrogens
+    }
 
 
 def load_parameters(filename: str) -> dict:
@@ -103,9 +142,10 @@ def load_parameters(filename: str) -> dict:
 
     return data
 
+
 def main():
     ethanol = load_pdb("ethanol.pdb")
-    ethanol = strip_hydrogens_on_carbons(ethanol)
+    ethanol = strip_hydrogen_on_carbons(ethanol)
     parameters = load_parameters("ethanol.xml")
     pprint(ethanol)
     pprint(parameters)
