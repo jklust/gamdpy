@@ -34,7 +34,7 @@ def strip_hydrogen_on_carbons(molecule: dict) -> dict:
 
     A carbon is identified as C* and a hydrogen is identified as H*.
     A connecting hydrogen should be below the carbon atom before next non-hydrogen atom.
-    The resulting dictionary have a count of hydrogens attaced to a carbon atom """
+    The resulting dictionary have a count of hydrogen's attacked to a carbon atom """
 
     # Count hydrogens attached to a carbon atom. Break if atom is non-hydrogen
     carbon_hydrogens = {}
@@ -43,14 +43,13 @@ def strip_hydrogen_on_carbons(molecule: dict) -> dict:
         if atom.startswith("C"):
             carbon_hydrogens.update({molecule["atom_name"][i]: 0})
             for j in range(i + 1, len(molecule["atom_name"])):
-                if molecule["atom_name"][j].startswith("H") and molecule["residue_name"][j] == molecule["residue_name"][
-                    i]:
+                if molecule["atom_name"][j].startswith("H"):
                     carbon_hydrogens[molecule["atom_name"][i]] += 1
                     hydrogen_to_be_stripped[j] = True
                 else:
                     break
 
-    # Remove hydrogens attached to a carbon atom, but not to other atoms
+    # Remove hydrogen's attached to a carbon atom, but not to other atoms
     atom_name = []
     residue_name = []
     coordinates = []
