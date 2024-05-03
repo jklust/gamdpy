@@ -4,6 +4,7 @@ from .interactions import *
 from .potential_functions import *
 from .Configuration import *
 from .Simulation import *
+from .Evaluater import *
 from .colarray import *
 from .calculators import *
 from .misc import *
