@@ -1,7 +1,10 @@
-""" Simple example of performing several simulation in one go using rumdpy.
+""" Example of performing several simulation in one go using rumdpy.
 
-Simulation of heating a Lennard-Jones crystal on an isochore in the NVT ensemble.
-For an even simpler script, see minimal.py
+An isomorph is traced out using the gamma method. The script demomstrates
+the possibility of keeping the output of the simulation in memory (storage='memory'),
+usefull when a lot of short simulations are performed.
+
+For a simpler script perfoming multiple simulations, see isochore.py
 
 """
 
@@ -25,9 +28,11 @@ old_rho = 1.00
 old_T = 2.00
 gamma = 1.0
 
-for rho in [1.00, 1.05, 1.10, 1.15, 1.20]:
+for index, rho in enumerate([1.00, 1.05, 1.10, 1.15, 1.20, 1.20]):
 
     T = (rho/old_rho)**gamma*old_T
+    if index==5:
+        T=2.00
     print(f'\n\n rho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
@@ -51,7 +56,7 @@ for rho in [1.00, 1.05, 1.10, 1.15, 1.20]:
         pass
     print(sim.status(per_particle=True))
 
-    u = sim.output['scalars'][:,:,0].flatten()/configuration.N
+    u = sim.output['scalars'][:,:,0].flatten()/configuration.N # Remove magic indicies...
     w = sim.output['scalars'][:,:,1].flatten()/configuration.N
     print(np.mean(u), np.mean(w))
     
@@ -69,11 +74,8 @@ for rho in [1.00, 1.05, 1.10, 1.15, 1.20]:
     old_rho = rho
     old_T = T
 
+plt.loglog(dynamics['times'][:8], 3*dynamics['times'][:8]**2,
+           'k-', label=f'Ballistic', alpha=0.5)
 plt.legend()
 plt.savefig('isomorph.pdf')
-plt.show()
-
-
-
-# To get a plot of the MSD do something like this:
-# python3 -m rumdpy.tools.calc_dynamics -o Data/msd_r0.973.pdf Data/LJ_r0.973_T*.h5
+#plt.show()
