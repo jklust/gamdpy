@@ -18,8 +18,12 @@ def calc_dynamics_(blocks, ptype, simbox, block0, conf_index0, block1, conf_inde
 
 def calc_dynamics(trajectory, first_block):
     ptype = trajectory['ptype'][:].copy()
-    #simbox = trajectory['attrs']['simbox_initial'].copy()
-    simbox = trajectory.attrs['simbox_initial'].copy()
+    if type(trajectory)==dict:
+        attributes = trajectory['attrs'] # Data stored in dictionary in memory
+    else:
+        attributes = trajectory.attrs    # Data stored in hdf5 file
+    
+    simbox = attributes['simbox_initial'].copy()
     num_types = np.max(ptype) + 1
     num_blocks, conf_per_block, _, N, D = trajectory['block'].shape
     blocks = trajectory['block']  # If picking out dataset in inner loop: Very slow!
@@ -32,8 +36,7 @@ def calc_dynamics(trajectory, first_block):
     msd = np.zeros((total_times, num_types))
     m4d = np.zeros((total_times, num_types))
 
-    #times = trajectory['attrs']['dt'] * 2 ** np.arange(total_times)
-    times = trajectory.attrs['dt'] * 2 ** np.arange(total_times)
+    times = attributes['dt'] * 2 ** np.arange(total_times)
 
     for block in range(first_block, num_blocks):
         for i in range(conf_per_block - 1):
