@@ -5,17 +5,20 @@ import numpy as np
 # python3 -m doctest -v colarray.py  # The verbose version
 
 class colarray():
-    """
+    """ The Column array Class
+
     A class storing several sets ('columns') of lengths with identical dimensions in a single numpy array. Strings are used as indicies along the zeroth dimension corresponding to different columns of lengths.
     
+    Examples
+    --------
+
     Storage for positions, velocities, and forces, for 1000 particles in 2 dimensions:
+
     >>> ca = colarray(('r', 'v', 'f'), size=(1000,2))
     >>> ca.shape
     (3, 1000, 2)
-    
     >>> ca.column_names
     ('r', 'v', 'f')
-    
     Data is accesed via string indicies (similar to dataframes in pandas):
     >>> ca['r'] = np.ones((1000,2))
     >>> ca['v'] = 2   # Broadcastet by numpy to correct shape
@@ -27,20 +30,23 @@ class colarray():
      [1.02 1.02]
      [1.02 1.02]
      [1.02 1.02]]
-     
-    Assignment have to use an existing key (as opposed to eg. pandas): 
+    
+    Assignment have to use an existing key (as opposed to eg. pandas):
+    
     >>> ca['c'] = 1
     Traceback (most recent call last):
         ...
     KeyError: 'c'
     
     On assignment the right hand side needs to be a numpy array compatible with size of columns originaly specified (possibly after broadcasting by numpy):
+    
     >>> ca['f'] =  np.ones((100,2))
     Traceback (most recent call last):
         ...
     ValueError: could not broadcast input array from shape (100,2) into shape (1000,2)
 
     To assign indicies to variable names (say to use on a GPU):
+    
     >>> ca = colarray(('r', 'v', 'f'), size=(1000,2))
     >>> for col in ca.column_names:
     ...    exec(f'ca_{col}_id = {ca.indicies[col]}', globals())

@@ -20,3 +20,9 @@ The Configuration Class
 
 .. autoclass:: rumdpy.Configuration
    :members:
+
+The Column array Class
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: rumdpy.colarray
+   :members:
