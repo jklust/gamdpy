@@ -3,20 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calc_dynamics_(blocks, ptype, simbox, block0, conf_index0, block1, conf_index1, time_index, msd, m4d):
+def calc_dynamics_(blocks, ptype, simbox, block0, conf_index0, block1, conf_index1, time_index,  msd, m4d, qvalues=None, Fs=None):
+    """
+    Calculate contribution to dynamical properties from conf_index1 in block1 using conf_index0 in block0
+    as initial time, and add it at time_index in appropiate arrays.
+
+    TODO: Allow more than one q-value per type
+    """
     dR = blocks[block1, conf_index1, 0, :, :] - blocks[block0, conf_index0, 0, :, :]
     dR += (blocks[block1, conf_index1, 1, :, :] - blocks[block0, conf_index0, 1, :, :]) * simbox
     for i in range(np.max(ptype) + 1):
-        dR_i_sq = np.sum(dR[ptype == i, :] ** 2, axis=1)
-        # msd[time_index,i] += np.mean(np.sum(dR[ptype==i,:]**2, axis=1))
-        # m4d[time_index,i] += np.mean(np.sum(dR[ptype==i,:]**2, axis=1)**2)
+        dR_type = dR[ptype == i, :]
+        dR_i_sq = np.sum( dR_type**2, axis=1)
         msd[time_index, i] += np.mean(dR_i_sq)
         m4d[time_index, i] += np.mean(dR_i_sq ** 2)
+        if qvalues!=None:
+            Fs[time_index, i] += np.mean(np.cos(dR_type*qvalues[i]))
 
-    return msd, m4d
+    return msd, m4d, Fs
 
 
-def calc_dynamics(trajectory, first_block):
+def calc_dynamics(trajectory, first_block, qvalues=None):
+    if qvalues!=None and type(qvalues)==float:
+        qvalues = np.ones(1)*qvalues # Accept scalar (for single component systems) and upgrade to numpy array 
+    
     ptype = trajectory['ptype'][:].copy()
     if type(trajectory)==dict:
         attributes = trajectory['attrs'] # Data stored in dictionary in memory
@@ -28,20 +38,21 @@ def calc_dynamics(trajectory, first_block):
     num_blocks, conf_per_block, _, N, D = trajectory['block'].shape
     blocks = trajectory['block']  # If picking out dataset in inner loop: Very slow!
 
-    print(num_types, first_block, num_blocks, conf_per_block, _, N, D)
+    #print(num_types, first_block, num_blocks, conf_per_block, _, N, D, qvalues)
 
     extra_times = int(math.log2(num_blocks - first_block)) - 1
     total_times = conf_per_block - 1 + extra_times
     count = np.zeros((total_times, 1), dtype=np.int32)
     msd = np.zeros((total_times, num_types))
     m4d = np.zeros((total_times, num_types))
+    Fs = np.zeros((total_times, num_types))
 
     times = attributes['dt'] * 2 ** np.arange(total_times)
 
     for block in range(first_block, num_blocks):
         for i in range(conf_per_block - 1):
             count[i] += 1
-            calc_dynamics_(blocks, ptype, simbox, block, i + 1, block, 0, i, msd, m4d)
+            calc_dynamics_(blocks, ptype, simbox, block, i + 1, block, 0, i, msd, m4d, qvalues, Fs)
 
     # Compute times longer than blocks
     for block in range(first_block, num_blocks):
@@ -51,12 +62,13 @@ def calc_dynamics(trajectory, first_block):
             # print(other_block, end=' ')
             if other_block < num_blocks:
                 count[index] += 1
-                calc_dynamics_(blocks, ptype, simbox, other_block, 0, block, 0, index, msd, m4d)
+                calc_dynamics_(blocks, ptype, simbox, other_block, 0, block, 0, index, msd, m4d, qvalues, Fs)
 
     msd /= count
     m4d /= count
+    Fs  /= count
     alpha2 = 3 * m4d / (5 * msd ** 2) - 1
-    return {'times': times, 'msd': msd, 'alpha2': alpha2, 'count': count}
+    return {'times': times, 'msd': msd, 'alpha2': alpha2, 'qvalues':qvalues, 'Fs':Fs, 'count': count}
 
 
 def create_msd_plot(dynamics, figsize=(8, 6)):
@@ -65,6 +77,15 @@ def create_msd_plot(dynamics, figsize=(8, 6)):
         axs.loglog(dyn['times'], dyn['msd'], '.-', label=dyn['name'])
     axs.set_xlabel('Time')
     axs.set_ylabel('MSD')
+    axs.legend()
+    return fig, axs
+
+def create_alpha2_plot(dynamics, figsize=(8, 6)):
+    fig, axs = plt.subplots(1, 1, figsize=figsize)
+    for dyn in dynamics:
+        axs.semilogx(dyn['times'], dyn['alpha2'], '.-', label=dyn['name'])
+    axs.set_xlabel('Time')
+    axs.set_ylabel('alpha2')
     axs.legend()
     return fig, axs
 
