@@ -15,7 +15,7 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', verbose=True):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', verbose=False):
                 
         self.configuration = configuration
         if compute_plan==None:
@@ -109,8 +109,7 @@ class Simulation():
             self.output['ptype'] = configuration.ptype.copy()
             if self.conf_saver != None:
                 self.output['block'] = 0
-            if verbose:
-                print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.configuration.N*self.configuration.D*4/1024/1024:.2f} MB.')
+            print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.configuration.N*self.configuration.D*4/1024/1024:.2f} MB.')
             # allocation delayed until beginning of run to let user reconsider
             if self.output_calculator != None:
                 self.output['scalars'] = 0
