@@ -40,3 +40,11 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
                 cuda.atomic.add(output_array, (save_index, 4), scalars[global_id][k_id])   # Kinetic energy
         return
     return scalar_calculator
+
+def extract_scalars(data, column_list, first_block=0):
+    # Indcies hardcoded for now (see scalar_calculator above)
+    column_indicies = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4}
+    output_list = []
+    for column in column_list:
+        output_list.append(data['scalars'][first_block:,:,column_indicies[column]].flatten())
+    return tuple(output_list)
