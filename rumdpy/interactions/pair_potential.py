@@ -53,14 +53,14 @@ class PairPotential():
         self.nblist.copy_to_device()
         
     def plot(self, ylim=(-3,6), figsize=(8,4), names=None):
-        num_types = self.params.shape[0]
+        num_types = self.params_user.shape[0]
         if names==None:
             names = np.arange(num_types)
         plt.figure(figsize=figsize)
         for i in range(num_types):
             for j in range(num_types):
-                r = np.linspace(0, self.params[i,j][-1], 1000)
-                u, s, lap = self.pairpotential_function(r, self.params[i,j])
+                r = np.linspace(0, self.params_user[i,j][-1], 1000)
+                u, s, lap = self.pairpotential_function(r, self.params_user[i,j])
                 plt.plot(r, u, label=f'{names[i]} - {names[j]}')
         plt.ylim(ylim)
         plt.xlabel('Pair distance')
@@ -146,17 +146,50 @@ class PairPotential2():
         self.exclusions = exclusions 
         self.max_num_nbs = max_num_nbs
         #self.nblist = NbList(N, max_num_nbs) #### moved to get_params()
-                
-    def plot(self, ylim=(-3,6), figsize=(8,4), names=None):
-        num_types = self.params.shape[0]
+
+    def convert_user_params(self):
+        # Upgrade any scalar parameters to 1x1 numpy array
+        num_params = len(self.params_user)
+        params_list = []
+        for parameter in self.params_user:
+            if np.isscalar(parameter):
+                params_list.append(np.ones((1,1))*parameter)
+            else:
+                params_list.append(np.array(parameter, dtype=np.float32))
+
+        # Ensure all parameters are the right format (num_types x num_types) numpy arrays
+        num_types = params_list[0].shape[0]
+        for parameter in params_list:
+            assert len(parameter.shape) == 2
+            assert parameter.shape[0] == num_types
+            assert parameter.shape[1] == num_types
+
+        # Convert params to the format required by kernels (num_types x num_types) array of tuples (p0, p1, ..., cutoff)
+        params = np.zeros((num_types, num_types), dtype="f,"*num_params)
+        for i in range(num_types):
+            for j in range(num_types):
+                plist = []
+                for parameter in params_list:
+                    plist.append(parameter[i,j])
+                params[i,j] = tuple(plist)
+
+        max_cut = np.float32(np.max(params_list[-1]))
+
+        return params, max_cut
+               
+    def plot(self, xlim=None, ylim=(-3,6), figsize=(8,4), names=None):
+        params, max_cut = self.convert_user_params()
+        num_types = len(params[0])
         if names==None:
             names = np.arange(num_types)
         plt.figure(figsize=figsize)
         for i in range(num_types):
             for j in range(num_types):
-                r = np.linspace(0, self.params[i,j][-1], 1000)
-                u, s, lap = self.pairpotential_function(r, self.params[i,j])
+                r = np.linspace(0, params[i,j][-1], 1000)
+                u, s, lap = self.pairpotential_function(r, params[i,j])
                 plt.plot(r, u, label=f'{names[i]} - {names[j]}')
+        if xlim!=None:
+            plt.xlim(xlim)
         plt.ylim(ylim)
         plt.xlabel('Pair distance')
         plt.ylabel('Pair potential')
@@ -171,35 +204,10 @@ class PairPotential2():
         else:
             d_exclusions = cuda.to_device(exclusions)
         
-        # Upgrade any scalar parameters to 1x1 numpy array
-        num_params = len(self.params_user)
-        self.params_list = []
-        for parameter in self.params_user:
-            if np.isscalar(parameter):
-                self.params_list.append(np.ones((1,1))*parameter)
-            else:
-                self.params_list.append(np.array(parameter, dtype=np.float32))
-
-        # Ensure all parameters are the right format (num_types x num_types) numpy arrays
-        num_types = self.params_list[0].shape[0]
-        for parameter in self.params_list:
-            assert len(parameter.shape) == 2
-            assert parameter.shape[0] == num_types
-            assert parameter.shape[1] == num_types
-
-        # Convert params to the format required by kernels (num_types x num_types) array of tuples (p0, p1, ..., cutoff)
-        self.params = np.zeros((num_types, num_types), dtype="f,"*num_params)
-        for i in range(num_types):
-            for j in range(num_types):
-                plist = []
-                for parameter in self.params_list:
-                    plist.append(parameter[i,j])
-                self.params[i,j] = tuple(plist)
-        max_cut = np.float32(np.max(self.params_list[-1]))
+        self.params, max_cut = self.convert_user_params()
+        self.d_params = cuda.to_device(self.params)
 
         self.nblist = NbList(configuration.N, self.max_num_nbs)        
-        
-        self.d_params = cuda.to_device(self.params)
         self.nblist.copy_to_device()
                         
         # Should be able to take a list of exclusions (eg from bonds, angles, etc), and merge 
