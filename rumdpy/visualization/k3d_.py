@@ -68,7 +68,7 @@ class k3d_Visualization():
         self.plt_points.positions = self.simulation.vectors_list[block]['r']
         model_time = (block+1)*self.simulation.dt*self.simulation.steps_per_block
         self.plt_time_text.text = f'Time: {model_time:.2f}'
-        #self.plt_temp_text.text = f'Temp: {Ttarget_function(model_time):.3f}'
+        self.plt_temp_text.text = f'Temp: {self.simulation.integrator.temperature(model_time):.3f}'
         if choice==6:
             self.plt_points.attribute = np.float32(self.conf.ptype)
         else:
