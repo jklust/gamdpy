@@ -18,7 +18,7 @@ Contents
 
    features
    installation
-   quick_start
+   tutorials
    examples
    api
 

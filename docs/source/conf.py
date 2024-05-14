@@ -27,6 +27,7 @@ release = rumdpy.__version__
 
 extensions = [
     'myst_nb',  # enable markdown files (*.md), and Jupyter Notebooks (*.ipynb)
+    'sphinx.ext.mathjax',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
 ]
