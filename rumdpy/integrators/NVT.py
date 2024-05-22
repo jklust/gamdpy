@@ -1,16 +1,20 @@
 import numpy as np
 import numba
-import rumdpy as rp
 from numba import cuda
-import math
+import rumdpy as rp
 
 class NVT():
-    def __init__(self, temperature, tau, dt):
+    """
+        Integrator keeping N (number of particles), V (volume), and T (temperature) constant, 
+        using the leapfrog algorithm and a Nose-Hoover thermostat.
+    """
+
+    def __init__(self, temperature, tau: float, dt: float) -> None: 
         self.temperature = temperature
         self.tau = tau 
         self.dt = dt
         self.thermostat_state = np.zeros(2, dtype=np.float32)
-        self.d_thermostat_state = cuda.to_device(self.thermostat_state)
+        self.d_thermostat_state = cuda.to_device(self.thermostat_state) # When is the right time?
   
     def get_params(self, configuration, verbose=False):
         dt = np.float32(self.dt)
@@ -21,31 +25,26 @@ class NVT():
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
 
+        # Unpack parameters from configuration and compute_plan
+        D, num_part = configuration.D, configuration.N
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
+        num_blocks = (num_part - 1) // pb + 1
+
         # Convert temperature to a function if isn't allready (better be a number then...)
         if callable(self.temperature):
             temperature_function = self.temperature
         else:
             temperature_function = rp.make_function_constant(value=float(self.temperature))
-        
-        # Unpack parameters from configuration and compute_plan
-        D = configuration.D
-        num_part = configuration.N
-        pb = compute_plan['pb']
-        tp = compute_plan['tp']
-        gridsync = compute_plan['gridsync']
-        num_blocks = (num_part - 1) // pb + 1
-
+    
         if verbose:
             print(f'Generating NVT kernel for {num_part} particles in {D} dimensions:')
             print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
             print(f'\tNumber (virtual) particles: {num_blocks * pb}')
             print(f'\tNumber of threads {num_blocks * pb * tp}')
 
-        # Unpack indicies for vectors and scalars    
-        for col in configuration.vectors.column_names:
-            exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
-        for key in configuration.sid:
-            exec(f'{key}_id = {configuration.sid[key]}', globals())
+        # Unpack indicies for vectors and scalars to be compiled into kernel
+        r_id, v_id, f_id = [configuration.vectors.indicies[key] for key in ['r', 'v', 'f']]
+        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]     
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
@@ -56,7 +55,7 @@ class NVT():
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
             
-            # Unpack parameters. MUST be compatible with get_parameters()
+            # Unpack parameters. MUST be compatible with get_params() above
             dt, omega2, degrees, thermostat_state = integrator_params  
 
             my_block = cuda.blockIdx.x
@@ -73,7 +72,7 @@ class NVT():
                 my_v = vectors[v_id][global_id]
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
-                my_k = numba.float32(0.0)  # Kinetic energy
+                my_k = numba.float32(0.0)    # Kinetic energy
                 my_fsq = numba.float32(0.0)  # force squared
 
                 for k in range(D):
@@ -81,16 +80,15 @@ class NVT():
                     my_v[k] = plus * (minus * my_v[k] + my_f[k] / my_m * dt)
                     my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
                     my_r[k] += my_v[k] * dt
-                
                     apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
 
-                cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow! Not really
+                cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow? Not really!
                 scalars[global_id][k_id] = my_k
                 scalars[global_id][fsq_id] = my_fsq
             return
 
         def update_thermostat_state(integrator_params, time):
-            # Unpack parameters. MUST be compatible with get_parameters()
+            # Unpack parameters. MUST be compatible with get_params() above
             dt, omega2, degrees, thermostat_state = integrator_params 
 
             my_block = cuda.blockIdx.x
