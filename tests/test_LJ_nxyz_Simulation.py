@@ -50,8 +50,9 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     num_blocks = 1
     steps_per_block = 1024*4
     sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks, steps_per_block,
-                        scalar_output=8, conf_output=None, 
+                        num_blocks=2, steps_per_block=1024*4,
+                        scalar_output=8, 
+                        conf_output=None, 
                         storage='memory', verbose=False)
 
     # Run simulation one block at a time
@@ -59,32 +60,31 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         pass 
 
     # Make conversion to dataframe a method at some point...
-    scalar_shape = sim.output['scalars'].shape
-    new_shape = (scalar_shape[0]*scalar_shape[1], scalar_shape[2])
-    df = pd.DataFrame((sim.output['scalars'].reshape(new_shape)), 
-                      columns=['u', 'w', 'lap', 'fsq', 'k'])
-
+    columns = ['U', 'W', 'lapU', 'Fsq', 'K']
+    data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
+    df = pd.DataFrame(data.T, columns=columns)
+#                      columns=['u', 'w', 'lap', 'fsq', 'k'])
     return df
 
 def get_results_from_df(df, N, D):
-    df['e'] = df['u'] + df['k'] # Total energy
-    df['Tkin'] =2*df['k']/D/(N-1)
-    df['Tconf'] = df['fsq']/df['lap']
-    df['du'] = df['u'] - np.mean(df['u'])
-    df['de'] = df['e'] - np.mean(df['e'])
-    df['dw'] = df['w'] - np.mean(df['w'])
+    df['E'] = df['U'] + df['K'] # Total energy
+    df['Tkin'] =2*df['K']/D/(N-1)
+    df['Tconf'] = df['Fsq']/df['lapU']
+    df['dU'] = df['U'] - np.mean(df['U'])
+    df['dE'] = df['E'] - np.mean(df['E'])
+    df['dW'] = df['W'] - np.mean(df['W'])
 
     df2 = df.drop(range(len(df)//2))
 
-    df2['du'] = df2['u'] - np.mean(df2['u'])
-    df2['de'] = df2['e'] - np.mean(df2['e'])
-    df2['dw'] = df2['w'] - np.mean(df2['w'])
+    df2['dU'] = df2['U'] - np.mean(df2['U'])
+    df2['dE'] = df2['E'] - np.mean(df2['E'])
+    df2['dW'] = df2['W'] - np.mean(df2['W'])
 
-    var_e = np.var(df['e'])/N
+    var_e = np.var(df['E'])/N
     Tkin = np.mean(df2['Tkin'])
     Tconf = np.mean(df2['Tconf'])        
-    R = np.dot(df2['dw'], df2['du'])/(np.dot(df2['dw'], df2['dw'])*np.dot(df2['du'], df2['du']))**0.5
-    Gamma = np.dot(df2['dw'], df2['du'])/(np.dot(df2['du'], df2['du']))
+    R = np.dot(df2['dW'], df2['dU'])/(np.dot(df2['dW'], df2['dW'])*np.dot(df2['dU'], df2['dU']))**0.5
+    Gamma = np.dot(df2['dW'], df2['dU'])/(np.dot(df2['dU'], df2['dU']))
 
     #import matplotlib.pyplot as plt
     #plt.plot(df2['u']/N, df2['w']/N, '.-')
