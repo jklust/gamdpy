@@ -13,8 +13,8 @@ class NVT():
         self.temperature = temperature
         self.tau = tau 
         self.dt = dt
-        self.thermostat_state = np.zeros(2, dtype=np.float32)
-        self.d_thermostat_state = cuda.to_device(self.thermostat_state) # When is the right time?
+        self.thermostat_state = np.zeros(2, dtype=np.float32)           # Right time to allocate and copy to device?
+        self.d_thermostat_state = cuda.to_device(self.thermostat_state) # - or in get_params
   
     def get_params(self, configuration, verbose=False):
         dt = np.float32(self.dt)
