@@ -6,7 +6,7 @@ from numba import cuda
 # Define pair-potentials.
 
 def LJ_12_6(dist, params):            # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
-    A12 = params[0]                   #     Um(r) =    -12*A12*r**-13 -   6*A6*r**-6
+    A12 = params[0]                   #     Um(r) =    -12*A12*r**-13 -   6*A6*r**-7
     A6 = params[1]                    #     Umm(r) = 13*12*A12*r**-14 + 7*6*A6*r**-8
     invDist = numba.float32(1.0)/dist # s = -Um/r =     12*A12*r**-14 +   6*A6*r**-8, Fx = s*dx
 
@@ -136,7 +136,8 @@ def apply_shifted_force_cutoff(pairpotential):  # Cut-off by computing potential
         cut = params[-1]
         u,     s,     umm =     pairpotential(dist, params)
         u_cut, s_cut, umm_cut = pairpotential(cut,  params)
-        u -= u_cut - s_cut*dist*(dist-cut) 
+        u -= u_cut - s_cut*cut*(dist-cut)
+        #u -= u_cut - s_cut*dist*(dist-cut)
         s -= s_cut
         return u, s, umm
     return potential
