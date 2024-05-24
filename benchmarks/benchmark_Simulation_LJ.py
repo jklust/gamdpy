@@ -32,15 +32,15 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     """
     
     # Set up the integrator
-    dt = np.float32(0.005)
+    dt = 0.005
 
     #if integrator == 'NVE':
     #    integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
-        integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
-    #if integrator=='NVT_Langevin':
-    #    integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
-
+        integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
+    if integrator == 'NVT_Langevin':
+        integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
+    
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
     sim = rp.Simulation(c1, pairpot, integrator, 
                     num_blocks=1, steps_per_block=steps, 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     #    main(integrator='NVE')
     if 'NVT' in sys.argv:
         main(integrator='NVT')
-    #if 'NVT_Langevin' in sys.argv:
-    #    main(integrator='NVT_Langevin')
+    if 'NVT_Langevin' in sys.argv:
+        main(integrator='NVT_Langevin')
         
 
