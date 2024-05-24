@@ -226,7 +226,7 @@ class Simulation():
             self.vectors_list.append(self.configuration.vectors.copy())
             self.scalars_list.append(self.configuration.scalars.copy())
             self.simbox_data_list.append(self.configuration.simbox.lengths.copy()) # save to memory/hdf5
-            #self.scalars_t.append(self.d_output_array.copy_to_host())     # save to memory/hdf5   
+            self.scalars_t.append(self.d_output_array.copy_to_host())     # save to memory/hdf5   
             
             if self.storage[-3:]=='.h5':
                 with h5py.File(self.storage, "a") as f:

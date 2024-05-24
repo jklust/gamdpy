@@ -132,93 +132,6 @@ class PairPotential():
         return make_interactions(configuration, self, num_cscalars=num_cscalars,
                                          compute_plan=compute_plan, verbose=verbose,)
 
-class PairPotential2():
-    """ Pair potential """
-
-    def __init__(self, pairpotential_function, params, max_num_nbs, exclusions=None):
-        def params_function(i_type, j_type, params):
-            result = params[i_type, j_type]            # default: read from params array
-            return result            
-    
-        self.pairpotential_function = pairpotential_function
-        self.params_function = params_function
-        self.params_user = params
-        self.exclusions = exclusions 
-        self.max_num_nbs = max_num_nbs
-        #self.nblist = NbList(N, max_num_nbs) #### moved to get_params()
-
-    def convert_user_params(self):
-        # Upgrade any scalar parameters to 1x1 numpy array
-        num_params = len(self.params_user)
-        params_list = []
-        for parameter in self.params_user:
-            if np.isscalar(parameter):
-                params_list.append(np.ones((1,1))*parameter)
-            else:
-                params_list.append(np.array(parameter, dtype=np.float32))
-
-        # Ensure all parameters are the right format (num_types x num_types) numpy arrays
-        num_types = params_list[0].shape[0]
-        for parameter in params_list:
-            assert len(parameter.shape) == 2
-            assert parameter.shape[0] == num_types
-            assert parameter.shape[1] == num_types
-
-        # Convert params to the format required by kernels (num_types x num_types) array of tuples (p0, p1, ..., cutoff)
-        params = np.zeros((num_types, num_types), dtype="f,"*num_params)
-        for i in range(num_types):
-            for j in range(num_types):
-                plist = []
-                for parameter in params_list:
-                    plist.append(parameter[i,j])
-                params[i,j] = tuple(plist)
-
-        max_cut = np.float32(np.max(params_list[-1]))
-
-        return params, max_cut
-               
-    def plot(self, xlim=None, ylim=(-3,6), figsize=(8,4), names=None):
-        params, max_cut = self.convert_user_params()
-        num_types = len(params[0])
-        if names==None:
-            names = np.arange(num_types)
-        plt.figure(figsize=figsize)
-        for i in range(num_types):
-            for j in range(num_types):
-                r = np.linspace(0, params[i,j][-1], 1000)
-                u, s, lap = self.pairpotential_function(r, params[i,j])
-                plt.plot(r, u, label=f'{names[i]} - {names[j]}')
-        if xlim!=None:
-            plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel('Pair distance')
-        plt.ylabel('Pair potential')
-        plt.legend()
-        plt.show()
-        
-  
-    def get_params(self, configuration, compute_plan, verbose=True):
-        exclusions = self.exclusions # Don't change user-set propertys
-        if exclusions == None:
-            d_exclusions = cuda.to_device(np.zeros((configuration.N, 2), dtype=np.int32))
-        else:
-            d_exclusions = cuda.to_device(exclusions)
-        
-        self.params, max_cut = self.convert_user_params()
-        self.d_params = cuda.to_device(self.params)
-
-        self.nblist = NbList(configuration.N, self.max_num_nbs)        
-        self.nblist.copy_to_device()
-                        
-        # Should be able to take a list of exclusions (eg from bonds, angles, etc), and merge 
-        return (self.d_params, max_cut, np.float32(compute_plan['skin']), 
-                              self.nblist.d_nblist,  self.nblist.d_nbflag, d_exclusions)
-
-    def get_kernel(self, configuration, compute_plan, verbose=True):
-        num_cscalars = 3
-        return make_interactions(configuration, self, num_cscalars=num_cscalars,
-                                         compute_plan=compute_plan, verbose=verbose,)
-
 ####################################################
 ### NBlist
 ####################################################'
@@ -231,7 +144,7 @@ class NbList():
     def copy_to_device(self):
         self.d_nblist = cuda.to_device(self.nblist)
         self.d_nbflag = cuda.to_device(self.nbflag)
-    
+
 def make_interactions(configuration, pair_potential, num_cscalars, compute_plan, verbose=True,):
     D = configuration.D
     num_part = configuration.N

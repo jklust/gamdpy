@@ -34,7 +34,6 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     # Set up the integrator
     dt = np.float32(0.005)
 
-    T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     #if integrator == 'NVE':
     #    integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
     if integrator == 'NVT':
@@ -43,10 +42,8 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     #    integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
 
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    num_blocks = 1
-    steps_per_block = steps
     sim = rp.Simulation(c1, pairpot, integrator, 
-                    num_blocks, steps_per_block, 
+                    num_blocks=1, steps_per_block=steps, 
                     conf_output=None, scalar_output=None, 
                     storage='memory', verbose=False)
 
@@ -55,7 +52,7 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
         pass
     for block in sim.blocks():
         pass
-    
+
     #print(sim.summary())
     
     #assert 0.55 < Tkin < 0.85, f'{Tkin=}'
