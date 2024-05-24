@@ -44,35 +44,32 @@ sim2 = rp.Simulation(configuration, pairpot, integrator2,
     
 
 print(configuration['r'][1])
-print('Equilibration:', end='\t')
+print('Integrator1, Equilibration:', end='\t')
 for block in sim1.blocks():
     pass
 print(sim1.status(per_particle=True))
 U1, K1 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E1 = U1 + K1
-print(configuration['r'][1])
 
-print('Production1:', end='\t')
+print('Integrator1, Production:', end='\t')
 for block in sim1.blocks():
     pass
 print(sim1.status(per_particle=True))
 U2, K2 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E2 = U2 + K2 
 
-print(configuration['r'][1])
-print('Production2:', end='\t')
+print('Integrator2, Production:', end='\t')
 for block in sim2.blocks():
     pass
 print(sim2.status(per_particle=True))
 
-print(configuration['r'][1])
 U3, K3 = rp.extract_scalars(sim2.output, ['U', 'K'], first_block=0)
 E3 = U3 + K3 
 
 import matplotlib.pyplot as plt
 
-plt.plot(U1, '.-', label='1')
-plt.plot(U2, '.-', label='2')
-plt.plot(U3, '.-', label='3')
+plt.plot(U1, '.-', label='Integrator1, Equilibration')
+plt.plot(U2, '.-', label='Integrator1, Production')
+plt.plot(U3, '.-', label='Integrator2, Production')
 plt.legend()
 plt.show()
