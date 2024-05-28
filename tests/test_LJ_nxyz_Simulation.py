@@ -46,7 +46,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     if integrator=='NVT_Langevin':
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.1, dt=dt, seed=213)
                        
-    # Run the Simulation
+    # Setup the Simulation
     num_blocks = 1
     steps_per_block = 1024*4
     sim = rp.Simulation(configuration, pairpot, integrator, 
@@ -63,7 +63,6 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     columns = ['U', 'W', 'lapU', 'Fsq', 'K']
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
     df = pd.DataFrame(data.T, columns=columns)
-#                      columns=['u', 'w', 'lap', 'fsq', 'k'])
     return df
 
 def get_results_from_df(df, N, D):
