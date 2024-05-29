@@ -1,0 +1,102 @@
+import numpy as np
+import numba
+import rumdpy as rp
+from numba import cuda
+import math
+
+class NVE():
+    def __init__(self, dt):
+        self.dt = dt
+  
+    def get_params(self, configuration, verbose=False):
+        dt = np.float32(self.dt)
+        return (dt,)
+
+    def get_kernel(self, configuration, compute_plan, verbose=False):
+
+        # Unpack parameters from configuration and compute_plan
+        D = configuration.D
+        num_part = configuration.N
+        pb = compute_plan['pb']
+        tp = compute_plan['tp']
+        gridsync = compute_plan['gridsync']
+        num_blocks = (num_part - 1) // pb + 1
+
+        if verbose:
+            print(f'Generating NVE kernel for {num_part} particles in {D} dimensions:')
+            print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
+            print(f'\tNumber (virtual) particles: {num_blocks * pb}')
+            print(f'\tNumber of threads {num_blocks * pb * tp}')
+
+        # Unpack indices for vectors and scalars
+        r_id, v_id, f_id = [configuration.vectors.indicies[key] for key in ['r', 'v', 'f']]
+        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]     
+        
+        # JIT compile functions to be compiled into kernel
+        apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+   
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            """ Make one NVE timestep using Leap-frog
+                Kernel configuration: [num_blocks, (pb, tp)]
+            """
+            dt, = integrator_params
+
+            my_block = cuda.blockIdx.x
+            local_id = cuda.threadIdx.x
+            global_id = my_block * pb + local_id
+            my_t = cuda.threadIdx.y
+
+
+            if global_id < num_part and my_t == 0:
+                my_r = vectors[r_id][global_id]
+                my_v = vectors[v_id][global_id]
+                my_f = vectors[f_id][global_id]
+                my_m = scalars[global_id][m_id]
+                my_k = numba.float32(0.0)  # Kinetic energy
+                my_fsq = numba.float32(0.0)  # force squared
+
+                for k in range(D):
+                    my_fsq += my_f[k] * my_f[k]
+                    v_mean = numba.float32(0.0)
+
+                    # square before mean to get KE, part 1
+                    #my_k += numba.float32(0.25) * my_m * my_v[k] * my_v[k]
+
+                    v_mean += my_v[k]  # v(t-dt/2)
+                    my_v[k] += my_f[k] / my_m * dt
+                    v_mean += my_v[k]  # v(t+dt/2)
+                    v_mean /= numba.float32(2.0)  # v(t) = (v(t-dt/2) + v(t+dt/2))/2
+                    # square before mean,part 2
+                    #my_k += numba.float32(0.25) * my_m * my_v[k] * my_v[k]
+
+                    #  Basic: square the mean velocity
+                    my_k += numba.float32(0.5) * my_m * v_mean * v_mean
+
+
+
+                    my_r[k] += my_v[k] * dt
+                
+                    apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+
+                
+                scalars[global_id][k_id] = my_k
+                scalars[global_id][fsq_id] = my_fsq
+            return
+
+        
+
+        step = cuda.jit(device=gridsync)(step)
+
+
+        if gridsync:
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+                step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                grid.sync()
+                return
+            return cuda.jit(device=gridsync)(kernel)
+        else:
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+                step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                return
+            return kernel
+
