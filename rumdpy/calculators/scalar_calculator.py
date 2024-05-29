@@ -43,8 +43,8 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
 
 def extract_scalars(data, column_list, first_block=0):
     # Indcies hardcoded for now (see scalar_calculator above)
-    column_indicies = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4}
+    column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4}
     output_list = []
     for column in column_list:
-        output_list.append(data['scalars'][first_block:,:,column_indicies[column]].flatten())
+        output_list.append(data['scalars'][first_block:,:,column_indices[column]].flatten())
     return tuple(output_list)
