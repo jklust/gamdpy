@@ -54,14 +54,15 @@ There is a limit to how many thread blocks can be used with grid synchronization
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
 ## TODO, before summer interns arrive:
-- [] SLLOD (shear stress, LEBC)
-- [] Molecules (angles, dihedrals, interface)
-- [] Finish Atomic interface
-- [] Read rumd3 configurations
-- [] Testing (Framework, doctest)
-- [] Settle on io format
-- [] Documentation/Tutorials/Best practices
-- [] Reserve name on pipy, conda?
+- [ ] SLLOD (shear stress, LEBC)
+- [ ] Molecules (angles, dihedrals, interface)
+- [ ] Finish Atomic interface
+- [ ] Momentum resetting
+- [ ] Read rumd3 configurations
+- [ ] Testing (Framework, doctest)
+- [ ] Settle on io format
+- [ ] Documentation/Tutorials/Best practices
+- [ ] Reserve name on pipy, conda?
 
 ## TODO, short term:
 - [x] Break single file into several files/modules 
