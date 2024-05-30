@@ -15,11 +15,8 @@ class NVE():
     def get_kernel(self, configuration, compute_plan, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
-        D = configuration.D
-        num_part = configuration.N
-        pb = compute_plan['pb']
-        tp = compute_plan['tp']
-        gridsync = compute_plan['gridsync']
+        D, num_part = configuration.D, configuration.N
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
         num_blocks = (num_part - 1) // pb + 1
 
         if verbose:
@@ -46,7 +43,6 @@ class NVE():
             global_id = my_block * pb + local_id
             my_t = cuda.threadIdx.y
 
-
             if global_id < num_part and my_t == 0:
                 my_r = vectors[r_id][global_id]
                 my_v = vectors[v_id][global_id]
@@ -72,8 +68,6 @@ class NVE():
                     #  Basic: square the mean velocity
                     my_k += numba.float32(0.5) * my_m * v_mean * v_mean
 
-
-
                     my_r[k] += my_v[k] * dt
                 
                     apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
@@ -83,20 +77,10 @@ class NVE():
                 scalars[global_id][fsq_id] = my_fsq
             return
 
-        
-
         step = cuda.jit(device=gridsync)(step)
 
-
         if gridsync:
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
-                step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                grid.sync()
-                return
-            return cuda.jit(device=gridsync)(kernel)
+            return step  # return device function
         else:
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
-                step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                return
-            return kernel
-
+            return step[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
+        
