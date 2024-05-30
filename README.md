@@ -53,6 +53,19 @@ A rough estimate is that the maximum number of time steps per second (TPS) that 
 There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
+
+ ## TODO, short term:
+- [x] Break single file into several files/modules 
+- [x] Start using GIT
+- [x] Make it into a python package that can be installed locally by pip
+- [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
+- [x] Implement springs, as an example of 'fixed interactions' (needs testing for gridsync==False). 
+- [x] Implement (fixed) planar interactions, eg. smooth walls, gravity, and electric fields.
+- [x] Implement exclusion list 
+- [x] upload to GitLab
+- [x] Use 'colarray' for vectors in Configuration
+- [x] Move r_ref from Configuration to nblist
+
 ## TODO, before summer interns arrive:
 - [ ] SLLOD (shear stress, LEBC)
 - [ ] Molecules (angles, dihedrals, interface)
@@ -64,33 +77,18 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pipy, conda?
 
-## TODO, short term:
-- [x] Break single file into several files/modules 
-- [x] Start using GIT
-- [x] Make it into a python package that can be installed locally by pip
-- [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
-- [x] Implement springs, as an example of 'fixed interactions' (needs testing for gridsync==False). 
-- [x] Implement (fixed) planar interactions, eg. smooth walls, gravity, and electric fields.
-- [ ] Implement other fixed interactions: angles, dihedrals, point interactions (tethered particles).
-- [x] Implement exclusion list (needs testing for gridsync==False)
+## TODO, long term:
+- [ ] Implement other fixed interactions: point interactions (tethered particles).
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
-- [x] upload to GitLab
-- [x] Use 'colarray' for vectors in Configuration
+- [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
+- [ ] make installable by pip for all, by uploading to pypi
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
-- [ ] Use colarray to introduce output-array from integrator
 - [ ] Configuration: include r_im in vectors
-- [ ] Move r_ref from Configuration to nblist
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Auto-tuner
 - [ ] Add CPU support (can it be done as a decorator?)
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-
-
-## TODO, long term:
-- [ ] Add convenience functions/classes for non-expert users
-- [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
-- [ ] make installable by pip for all, by uploading to pypi
 
 
 ## Various tools/strategies we will use:
