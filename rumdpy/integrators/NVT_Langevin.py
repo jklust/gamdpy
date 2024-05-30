@@ -99,8 +99,9 @@ class NVT_Langevin():
                 scalars[global_id][fsq_id] = my_fsq
             return
 
+        step = cuda.jit(device=gridsync)(step)
+
         if gridsync:
-            return cuda.jit(device=gridsync)(step)  # return device function
+            return step  # return device function
         else:
-            return cuda.jit(device=gridsync)(step)[
-                num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
+            return step[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters 
