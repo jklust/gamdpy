@@ -85,10 +85,6 @@ def get_results_from_df(df, N, D):
     R = np.dot(df2['dW'], df2['dU'])/(np.dot(df2['dW'], df2['dW'])*np.dot(df2['dU'], df2['dU']))**0.5
     Gamma = np.dot(df2['dW'], df2['dU'])/(np.dot(df2['dU'], df2['dU']))
 
-    #import matplotlib.pyplot as plt
-    #plt.plot(df2['u']/N, df2['w']/N, '.-')
-    #plt.show()
-
     return var_e, Tkin, Tconf, R, Gamma
 
 @settings(deadline=200_000, max_examples = 15)
@@ -101,7 +97,7 @@ def test_nve(nx, ny, nz):
     df = LJ(nx, ny, nz, integrator='NVE', cut=2.5, verbose=False)
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
-    assert var_e < 0.001
+    assert var_e < 1e-4
     assert 0.68 < Tkin  < 0.71, print(f'{Tkin=}')
     assert 0.68 < Tconf < 0.71, print(f'{Tkin=}')
     assert 0.89 <   R   < 0.97, print(f'{R=}')
