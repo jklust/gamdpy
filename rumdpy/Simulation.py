@@ -204,10 +204,14 @@ class Simulation():
         
         start = cuda.event()
         end = cuda.event()
+        start_block = cuda.event()
+        end_block = cuda.event()
         zero = np.float32(0.0)
-        start.record()
-        
+        block_times = []
+
+        start.record()    
         for block in range(num_blocks):
+            start_block.record()
             self.current_block = block
             self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
             self.integrate(self.configuration.d_vectors, 
@@ -242,7 +246,9 @@ class Simulation():
                 
             #vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
             #vol_t.append(vol)
-
+            end_block.record()
+            end_block.synchronize()
+            block_times.append(cuda.event_elapsed_time(start_block, end_block))
             yield block
     
         # Finalizing run
@@ -251,6 +257,7 @@ class Simulation():
         #print()
     
         self.timing_numba = cuda.event_elapsed_time(start, end)
+        self.timing_numba_blocks = np.array(block_times)
         self.nbflag = self.interactions.nblist.d_nbflag.copy_to_host()    
         self.scalars_list = np.array(self.scalars_list)
 
@@ -266,10 +273,25 @@ class Simulation():
         return st
 
     def summary(self):
-        tps = self.last_num_blocks*self.steps_per_block/self.timing_numba*1000
-        st  = f'particles : {self.configuration.N} \n'
-        st += f'steps : {self.last_num_blocks*self.steps_per_block} \n'
+        time_total = self.timing_numba/1000
+        tps_total = self.last_num_blocks*self.steps_per_block/time_total
+        time_sim = np.sum(self.timing_numba_blocks)/1000
+        tps_sim = self.last_num_blocks*self.steps_per_block/time_sim
+
+        if self.timing_numba_blocks.shape[0]>1:
+            extratime_firstblock = (self.timing_numba_blocks[0] 
+                                    - np.mean(self.timing_numba_blocks[1:]))/1000
+            time_sim_minus_extra = time_sim - extratime_firstblock
+            tps_sim_minus_extra = self.last_num_blocks*self.steps_per_block/time_sim_minus_extra
+
+        st  = f'Particles : {self.configuration.N} \n'
+        st += f'Steps : {self.last_num_blocks*self.steps_per_block} \n'
         st += f'nbflag : {self.nbflag} \n'
-        st += f'time : {self.timing_numba/1000:.2f} s \n'
-        st += f'TPS : {tps:.2e}'
+        st += f'Total time (incl. time spent between blocks): {time_sim:.2f} s \n'
+        st += f'Simulation time : {time_total:.2f} s \n'
+        st += f'Extra time 1.st block (presumably JIT): {extratime_firstblock:.2f} s \n'
+        st += f'TPS_total : {tps_total:.2e} \n'
+        st += f'TPS_sim : {tps_sim:.2e} \n'
+        if self.timing_numba_blocks.shape[0]>1:
+            st += f'TPS_sim_minus_extra : {tps_sim_minus_extra:.2e} \n'    
         return st
