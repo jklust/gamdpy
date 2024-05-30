@@ -37,9 +37,9 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     # Setup the integrator
     dt = 0.005
 
-    #if integrator=='NVE':
-    #    integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
-        
+    if integrator=='NVE':
+        integrator = rp.integrators.NVE(dt=dt)
+
     if integrator=='NVT':
         integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
         
@@ -147,10 +147,10 @@ def test_nvt_langevin(nx, ny, nz):
     
 if __name__ == "__main__":
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
-    #if len(sys.argv)==1 or 'NVE' in sys.argv:
-    #    print('Testing LJ NVE:')
-    #    test_nve()
-    #    print('Passed: LJ NVE!')
+    if len(sys.argv)==1 or 'NVE' in sys.argv:
+        print('Testing LJ NVE:')
+        test_nve()
+        print('Passed: LJ NVE!')
     if len(sys.argv)==1 or 'NVT' in sys.argv:
         print('Testing LJ NVT:')
         test_nvt()
