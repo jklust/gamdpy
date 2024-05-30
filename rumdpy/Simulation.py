@@ -15,7 +15,7 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', verbose=False):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', verbose=False):
                 
         self.configuration = configuration
         if compute_plan==None:
@@ -63,6 +63,19 @@ class Simulation():
         else:
             print('Did not understand conf_output = ', conf_output)
 
+        if runtime_action == 'default':
+            runtime_action = 100
+        if type(runtime_action)==int and runtime_action>0:
+            self.steps_between_runtime_action = runtime_action
+            self.runtime_action_executor = rp.make_runtime_action_executor(self.configuration, self.steps_between_runtime_action, self.compute_plan)
+        elif runtime_action == None or runtime_action == 'none' or runtime_action <= 0:
+            self.runtime_action_executor = None
+            #self.steps_between_runtime_action = 0
+        else:
+            print('Did not understand runtime_action = ', runtime_action)
+
+
+            
         # per block storage of configuration
         if self.conf_saver != None:
             self.conf_per_block = int(math.log2(steps_per_block))+2 # Should be user controlable
@@ -125,7 +138,7 @@ class Simulation():
                   
         self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel, self.output_calculator, self.conf_saver, self.compute_plan, True)
         
-    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, compute_plan, verbose=True ):
+    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, runtime_action, compute_plan, verbose=True ):
         pb = compute_plan['pb']
         tp = compute_plan['tp']
         gridsync = compute_plan['gridsync']
@@ -137,7 +150,10 @@ class Simulation():
             output_calculator = cuda.jit(device=gridsync)(numba.njit(output_calculator))
         if conf_saver != None:
             conf_saver = cuda.jit(device=gridsync)(numba.njit(conf_saver))
+        if runtume_action != None:
+            runtume_action = cuda.jit(device=gridsync)(numba.njit(runtume_action))
 
+            
         if gridsync:
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
@@ -151,8 +167,12 @@ class Simulation():
                     grid.sync()
                     time = time_zero + step*integrator_params[0]
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                    if runtime_action != None:
+                        runtime_action(grid, vectors, scalars, r_im, sim_box, time)
+
                     if output_calculator != None:
                         output_calculator(grid, vectors, scalars, r_im, sim_box, output_array, step)
+                    
                     grid.sync()
                     #time += integrator_params[0]  # dt. ! Dont do many additions like this
                 if conf_saver != None:
@@ -174,6 +194,10 @@ class Simulation():
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if output_calculator != None:
                         output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
+                    if runtime_action != None:
+                        runtime_action[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, time)
+
+                        
                 if conf_saver != None:
                         conf_saver[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_array, steps) # Save final configuration (if conditions fullfiled)
                 return
