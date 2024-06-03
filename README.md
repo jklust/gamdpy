@@ -53,7 +53,6 @@ A rough estimate is that the maximum number of time steps per second (TPS) that 
 There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
-
  ## TODO, short term:
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
@@ -67,15 +66,15 @@ A good place to see how this is done without implementing all functions twice is
 - [x] Move r_ref from Configuration to nblist
 
 ## TODO, before summer interns arrive:
-- [ ] SLLOD (shear stress, LEBC)
-- [ ] Molecules (angles, dihedrals, interface)
+- [ ] SLLOD (stress, LEBC), Nick
+- [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Finish Atomic interface
-- [ ] Momentum resetting
-- [ ] Read rumd3 configurations
-- [ ] Testing (Framework, doctest)
+- [ ] Momentum resetting (remove default) Nick
+- [ ] Read rumd3 & others configurations Thomas
+- [ ] Testing (Framework, doctest), Ulf & Thomas 
 - [ ] Settle on io format
 - [ ] Documentation/Tutorials/Best practices
-- [ ] Reserve name on pipy, conda?
+- [ ] Reserve name on pypi, conda?
 
 ## TODO, long term:
 - [ ] Implement other fixed interactions: point interactions (tethered particles).
@@ -89,6 +88,8 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Auto-tuner
 - [ ] Add CPU support (can it be done as a decorator?)
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
+- [ ] Constraints
+- [ ] Define hdf5 'template'
 
 
 ## Various tools/strategies we will use:
