@@ -11,32 +11,38 @@ This is the developers version of the rumdpy package, NOT for general consumptio
 ## Overall structure of the package:
 
 ### 1. Configuration
-A class containing all relevant information about a configuration. Methods are kept to a minimum, relying instead on stand-alone functions taking configurations as input.
+A class containing all relevant information about a configuration, including the simulation box (class sim_box). 
 - Vectors (r, v, f, etc): (N,D) float array storing D-dimensional vector for each particle 
 - Scalars (mass, kinetic energy, etc) (N,) float array storing scalar each particle 
-- sim_box (data + functions)
+- sim_box (data describing box + functions implementing how to calculate distances and how to implement BC). For now: only Cuboid box.  
 
-### 2. Integrator
-A function (or kernel) that takes a configuration as input and takes a number of time steps. Interactions to be used are compiled in when constructed (make_integrator()).
-- NVE, 
-- NVE_Toxvaerd
-- NVT, Nose-Hoover (Temperature controlled by user-supplied function, see examples/LJchain_wall.py), 
-- NVT_Langevin
-- NPT_Langevin
-- ...
+### 2. Integrators
+Classes implementing a simulation algorithm. Currently implemented: 
+- class NVE 
+- class NVE_Toxvaerd
+- class NVT : Nose-Hoover thermostat 
+- NVT_Langevin (not converted to class yet)
+- NPT_Langevin (not converted to class yet)
 
-### 2. Interactions
-A function (or kernel) that takes a configuration as input and computes forces and other properties as requested during its construction (make_interactions()). 
-The interaction function/kernel is responsible for keeping any internal datastructures up to date (in particular: nblist). 
-- pairpotential (parameters, nblist, ...)
+Temperature can be controlled by a user-supplied function, see examples/kablj.py
+
+### 3. Interactions
+Classes implementing interactions that can be applied to particles in the system:  
+- class PairPotential (stores potential parameters and the neighbour list to use (class NbList)
 - fixed interactions (interactions known beforehand): 
   - bonds (angles, dihedrals to be implemented)
   - planar interactions: smooth walls, gravity, electric fields, ...
   - point interactions, e.g. tethering (to be implemented)
 
-### 4. Evaluator
-Takes a configuration and an interactions function/kernel, and evaluates properties as specified at its construction (make_evaluator)
-- not implemented yet
+An interaction is responsible for keeping any internal datastructures up to date (in particular: nblist). 
+
+### 4. class Simulation
+Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up a simulation. Also controls when momentum-resetting and output is performed. 
+
+### 5. Evaluator
+Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
+
+# Info for developers
 
 ## Implementing on GPU using numba.cuda
 
