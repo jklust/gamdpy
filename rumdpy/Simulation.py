@@ -32,6 +32,8 @@ class Simulation():
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
         
+        
+        
         if num_blocks==0:
             num_blocks = 32
             steps_per_block = 2**int( math.log2( math.ceil(num_steps / num_blocks )))
@@ -96,6 +98,10 @@ class Simulation():
 
         self.zero_output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.d_output_array = cuda.to_device(self.zero_output_array) 
+        
+        # Storage for momentum resetting
+        self.cm_velocity = np.zeros(self.configuration.D+1, dtype=np.float32) # Total mass summed in last index of cm_velocity
+        self.d_cm_velocity = cuda.to_device(self.cm_velocity)
             
         if self.storage[-3:]=='.h5': # Saving in hdf5 format
             if verbose:
@@ -136,9 +142,10 @@ class Simulation():
         self.scalars_list = []
         self.simbox_data_list = []
                   
-        self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel, self.output_calculator, self.conf_saver, self.compute_plan, True)
+        self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
+                                              self.output_calculator, self.conf_saver, self.runtime_action_executor, self.compute_plan, True)
         
-    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, runtime_action, compute_plan, verbose=True ):
+    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, runtime_action_executor, compute_plan, verbose=True ):
         pb = compute_plan['pb']
         tp = compute_plan['tp']
         gridsync = compute_plan['gridsync']
@@ -150,14 +157,14 @@ class Simulation():
             output_calculator = cuda.jit(device=gridsync)(numba.njit(output_calculator))
         if conf_saver != None:
             conf_saver = cuda.jit(device=gridsync)(numba.njit(conf_saver))
-        if runtume_action != None:
-            runtume_action = cuda.jit(device=gridsync)(numba.njit(runtume_action))
+        #if runtime_action_executor != None:
+        #    runtime_action_executor = cuda.jit(device=gridsync)(numba.njit(runtime_action_executor))
 
             
         if gridsync:
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, cm_velocity, time_zero, steps):
                 grid = cuda.cg.this_grid()
                 time = time_zero
                 for step in range(steps):
@@ -167,8 +174,8 @@ class Simulation():
                     grid.sync()
                     time = time_zero + step*integrator_params[0]
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                    if runtime_action != None:
-                        runtime_action(grid, vectors, scalars, r_im, sim_box, time)
+                    if runtime_action_executor != None:
+                        runtime_action_executor(grid, vectors, scalars, r_im, sim_box, time, cm_velocity)
 
                     if output_calculator != None:
                         output_calculator(grid, vectors, scalars, r_im, sim_box, output_array, step)
@@ -184,7 +191,7 @@ class Simulation():
         else:
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, cm_velocity, time_zero, steps):
                 time = time_zero
                 for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
@@ -194,8 +201,8 @@ class Simulation():
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if output_calculator != None:
                         output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
-                    if runtime_action != None:
-                        runtime_action[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, time)
+                    if runtime_action_executor != None:
+                        runtime_action_executor[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, time, cm_velocity)
 
                         
                 if conf_saver != None:
@@ -249,6 +256,7 @@ class Simulation():
                             self.integrator_params, 
                             self.d_output_array, 
                             self.d_conf_array, 
+                            self.d_cm_velocity,
                             np.float32(block*self.steps_per_block*self.dt), 
                             self.steps_per_block)
 
