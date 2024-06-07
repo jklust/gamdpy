@@ -77,7 +77,6 @@ class Simulation():
             print('Did not understand runtime_action = ', runtime_action)
 
 
-            
         # per block storage of configuration
         if self.conf_saver != None:
             self.conf_per_block = int(math.log2(steps_per_block))+2 # Should be user controlable
@@ -90,7 +89,8 @@ class Simulation():
         self.d_conf_array = cuda.to_device(self.zero_conf_array)
         
         # per block storage of scalars
-        self.num_scalars = 6
+        self.num_scalars = 9
+
         if self.output_calculator != None:
             self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
         else:
@@ -175,7 +175,7 @@ class Simulation():
                     time = time_zero + step*integrator_params[0]
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if runtime_action_executor != None:
-                        runtime_action_executor(grid, vectors, scalars, r_im, sim_box, time, cm_velocity)
+                        runtime_action_executor(grid, vectors, scalars, r_im, sim_box, step, cm_velocity)
 
                     if output_calculator != None:
                         output_calculator(grid, vectors, scalars, r_im, sim_box, output_array, step)
@@ -202,7 +202,7 @@ class Simulation():
                     if output_calculator != None:
                         output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
                     if runtime_action_executor != None:
-                        runtime_action_executor[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, time, cm_velocity)
+                        runtime_action_executor[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, step, cm_velocity)
 
                         
                 if conf_saver != None:

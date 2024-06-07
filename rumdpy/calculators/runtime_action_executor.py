@@ -14,7 +14,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
     # Unpack indices for vectors and scalars to be compiled into kernel
     v_id = configuration.vectors.indicies['v']
     m_id = configuration.sid['m']
-    
+
     
     def zero_momentum(cm_velocity):
         my_block = cuda.blockIdx.x
@@ -22,7 +22,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
         global_id = my_block * pb + local_id
         my_t = cuda.threadIdx.y
         if global_id == 0 and my_t == 0:
-            for k in range(D):
+            for k in range(D+1):
                 cm_velocity[k] = np.float32(0.)
         return
     
@@ -43,6 +43,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
         local_id = cuda.threadIdx.x
         global_id = my_block * pb + local_id
         my_t = cuda.threadIdx.y
+
         if my_t == 0:
             for k in range(D):
                 vectors[v_id][global_id,k] -= cm_velocity[k] / cm_velocity[D] 
@@ -55,19 +56,23 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
     shift_velocities = cuda.jit(device=gridsync)(shift_velocities)
 
     if gridsync:
-        def kernel(grid, vectors, scalars, r_im, sim_box, time, cm_velocity):
-            zero_momentum(cm_velocity)
-            grid.sync()
-            sum_momentum(vectors, scalars, cm_velocity)
-            grid.sync()
-            shift_velocities(vectors, cm_velocity)
+        def kernel(grid, vectors, scalars, r_im, sim_box, step, cm_velocity):
+
+            if step%steps_between_action == 0:
+
+                zero_momentum(cm_velocity)
+                grid.sync()
+                sum_momentum(vectors, scalars, cm_velocity)
+                grid.sync()
+                shift_velocities(vectors, cm_velocity)
             return
         return cuda.jit(device=gridsync)(kernel)
     else:
-        def kernel(grid, vectors, scalars, r_im, sim_box, time, cm_velocity):
-            zero_momentum[1, 1](cm_velocity)
-            sum_momentum[num_blocks, (pb, 1)](vectors, cm_velocity)
-            shift_velocities[num_blocks, (pb, 1)](vectors, cm_velocity)
+        def kernel(grid, vectors, scalars, r_im, sim_box, step, cm_velocity):
+            if step%steps_between_action == 0:
+                zero_momentum[1, 1](cm_velocity)
+                sum_momentum[num_blocks, (pb, 1)](vectors, cm_velocity)
+                shift_velocities[num_blocks, (pb, 1)](vectors, cm_velocity)
             return
         return kernel
 
