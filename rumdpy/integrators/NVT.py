@@ -58,15 +58,11 @@ class NVT():
             # Unpack parameters. MUST be compatible with get_params() above
             dt, omega2, degrees, thermostat_state = integrator_params  
 
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x
-            global_id = my_block * pb + local_id
-            my_t = cuda.threadIdx.y
-
             factor = np.float32(0.5) * thermostat_state[0] * dt
             plus = np.float32(1.) / (np.float32(1.) + factor)  # Possibly change to exp(...)
             minus = np.float32(1.) - factor  # Possibly change to exp(...)
 
+            global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 my_r = vectors[r_id][global_id]
                 my_v = vectors[v_id][global_id]
@@ -91,11 +87,7 @@ class NVT():
             # Unpack parameters. MUST be compatible with get_params() above
             dt, omega2, degrees, thermostat_state = integrator_params 
 
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x
-            global_id = my_block * pb + local_id
-            my_t = cuda.threadIdx.y
-
+            global_id, my_t = cuda.grid(2)
             if global_id == 0 and my_t == 0:
                 target_temperature = temperature_function(time)
 
@@ -120,4 +112,3 @@ class NVT():
                 update_thermostat_state[1, (1, 1)](integrator_params, time)
                 return
             return kernel
-
