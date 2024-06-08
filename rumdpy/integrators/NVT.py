@@ -99,14 +99,14 @@ class NVT():
         step = cuda.jit(device=gridsync)(step)
         update_thermostat_state = cuda.jit(device=gridsync)(update_thermostat_state)
 
-        if gridsync:
+        if gridsync: # construct and return device function
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 grid.sync()
                 update_thermostat_state(integrator_params, time)
                 return
             return cuda.jit(device=gridsync)(kernel)
-        else:
+        else: # return python function, which makes kernel-calls
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 update_thermostat_state[1, (1, 1)](integrator_params, time)
