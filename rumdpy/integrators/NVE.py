@@ -36,13 +36,11 @@ class NVE():
             """ Make one NVE timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
+            
+            # Unpack parameters. MUST be compatible with get_params() above
             dt, = integrator_params
 
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x
-            global_id = my_block * pb + local_id
-            my_t = cuda.threadIdx.y
-
+            global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 my_r = vectors[r_id][global_id]
                 my_v = vectors[v_id][global_id]
