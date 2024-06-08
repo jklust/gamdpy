@@ -64,11 +64,7 @@ class NVT_Langevin():
             dt, alpha, rng_states, old_beta = integrator_params
             temperature = temperature_function(time)
 
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x
-            global_id = my_block * pb + local_id
-            my_t = cuda.threadIdx.y
-
+            global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 my_r = vectors[r_id][global_id]
                 my_v = vectors[v_id][global_id]
