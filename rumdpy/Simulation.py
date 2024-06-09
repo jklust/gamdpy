@@ -20,6 +20,8 @@ class Simulation():
         self.configuration = configuration
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
+        else:
+            self.compute_plan = compute_plan
 
         self.interactions = interactions
         self.interactions_params = self.interactions.get_params(self.configuration, self.compute_plan, verbose)
@@ -73,7 +75,7 @@ class Simulation():
         self.d_conf_array = cuda.to_device(self.zero_conf_array)
         
         # per block storage of scalars
-        self.num_scalars = 5
+        self.num_scalars = 6
         if self.output_calculator != None:
             self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
         else:
