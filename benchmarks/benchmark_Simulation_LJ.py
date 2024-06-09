@@ -34,8 +34,8 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     # Set up the integrator
     dt = 0.005
 
-    #if integrator == 'NVE':
-    #    integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+    if integrator == 'NVE':
+        integrator = rp.integrators.NVE(dt=dt)
     if integrator == 'NVT':
         integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
     if integrator == 'NVT_Langevin':
@@ -45,7 +45,7 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     sim = rp.Simulation(c1, pairpot, integrator, 
                     num_blocks=1, steps_per_block=steps, 
                     conf_output=None, scalar_output=None, 
-                    storage='memory', verbose=False)
+                    storage='None', verbose=False)
 
     # Run simulation one block at a time
     for block in sim.blocks():
@@ -114,8 +114,8 @@ def main(integrator):
 
 
 if __name__ == "__main__":
-    #if len(sys.argv)==1 or 'NVE' in sys.argv:
-    #    main(integrator='NVE')
+    if len(sys.argv)==1 or 'NVE' in sys.argv:
+        main(integrator='NVE')
     if 'NVT' in sys.argv:
         main(integrator='NVT')
     if 'NVT_Langevin' in sys.argv:
