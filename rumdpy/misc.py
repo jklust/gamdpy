@@ -109,7 +109,7 @@ def get_default_compute_plan(configuration):
 
     return {'pb':pb, 'tp':tp, 'skin':skin, 'UtilizeNIII':UtilizeNIII, 'gridsync':gridsync}
         
-def plot_scalars(df, N, D, figsize, block=True):
+def plot_scalars_old(df, N, D, figsize, block=True):
     df['e'] = df['u'] + df['k'] # Total energy
     df['Tkin'] =2*df['k']/D/(N-1)
     df['Tconf'] = df['fsq']/df['lap']
@@ -162,6 +162,63 @@ def plot_scalars(df, N, D, figsize, block=True):
     plt.show(block=block)
 
     return
+
+def plot_scalars(df, N, D, figsize, block=True):
+    df['E'] = df['U'] + df['K'] # Total energy
+    df['Tkin'] =2*df['K']/D/(N-1)
+    df['Tconf'] = df['Fsq']/df['lapU']
+    df['press'] =  2*df['K']/D/(N-1) * N / df['Vol'] + df['W'] / df['Vol']
+    df['dU'] = df['U'] - np.mean(df['U'])
+    df['dE'] = df['E'] - np.mean(df['E'])
+    df['dW'] = df['W'] - np.mean(df['W'])
+
+    fig, axs = plt.subplots(2, 2, figsize=figsize)
+    axs[0, 0].plot(df['t'], df['dU']/N, '.-', label=f"dU/N, var(U)/N={np.var(df['U'])/N:.4}")
+    axs[0, 0].plot(df['t'], df['dE']/N,  '-', label=f"dE/N, var(E)/N={np.var(df['E'])/N:.4}")
+    axs[0, 0].set_xlabel('Time')
+    axs[0, 0].legend()
+    
+    axs[0, 1].plot(df['t'], df['Tconf'], '.-', label=f"Tconf, mean={np.mean(df['Tconf']):.3f}")    
+    axs[0, 1].plot(df['t'], df['Tkin'], '.-', label=f"Tkin, mean={np.mean(df['Tkin']):.3f}")   
+    if 'Ttarget' in df.columns:
+        axs[0, 1].plot(df['t'], df['Ttarget'], 'k--', linewidth=3, label=f"Ttarget,  mean={np.mean(df['Ttarget']):.3f}") 
+    axs[0, 1].set_xlabel('Time')
+    axs[0, 1].set_ylabel('Temperature')
+    axs[0, 1].legend()
+ 
+    axs[1, 0].plot(df['t'], df['press'], '.-', label=f"press, mean={np.mean(df['press']):.3f}")   
+    if 'Ptarget' in df.columns:
+        axs[1, 0].plot(df['t'], df['Ptarget'], 'k--', linewidth=3, label=f"Ptarget,  mean={np.mean(df['Ptarget']):.3f}") 
+
+    axs[1, 0].set_xlabel('Time')
+    axs[1, 0].set_ylabel('Pressure')
+    axs[1, 0].legend()
+   
+    ramp = False
+    if 'Ttarget' in df.columns: # 
+        if np.std(df['Ttarget'])>0.01*np.mean(df['Ttarget']):
+            ramp = True
+            axs[1, 1].plot(df['Ttarget'], df['U']/N, '.-')
+            axs[1, 1].set_xlabel('Temperature')
+            axs[1, 1].set_ylabel('Potenital energy per particle')
+
+    if ramp==False:
+        R = np.dot(df['dW'], df['dU'])/(np.dot(df['dW'], df['dW'])*np.dot(df['dU'], df['dU']))**0.5
+        Gamma = np.dot(df['dW'], df['dU'])/(np.dot(df['dU'], df['dU']))
+ 
+        axs[1, 1].plot(df['U']/N, df['W']/N, '.', label=f"R = {R:.3}")
+        axs[1, 1].plot(sorted(df['U']/N), sorted(df['dU']/N*Gamma + np.mean(df['W']/N)), 'r--', label=f"Gamma = {Gamma:.3}")
+        axs[1, 1].set_xlabel('U/N')
+        axs[1, 1].set_ylabel('W/N')
+        axs[1, 1].legend()
+        
+    plt.show(block=block)
+
+    return
+
+
+
+
 
 
 

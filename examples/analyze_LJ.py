@@ -19,7 +19,7 @@ def analyze_LJ():
         plt.show(block=False)
 
     df = pd.read_csv('Data/LJ_scalars.csv')
-    rp.plot_scalars(df, pdict['N'],  pdict['D'], figsize=(10,8), block=True)
+    rp.plot_scalars_old(df, pdict['N'],  pdict['D'], figsize=(10,8), block=True)
 
 if __name__ == "__main__":
      analyze_LJ()
