@@ -189,7 +189,7 @@ class Simbox():
     def __init__(self, D, lengths):
         self.D = D
         self.lengths = lengths.copy()
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension = self.make_simbox_functions()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension, self.volume = self.make_simbox_functions()
         return
 
     def copy_to_device(self):
@@ -229,8 +229,13 @@ class Simbox():
                 r[dimension] += sim_box[dimension]
                 image[dimension] -= 1
 
+        def volume(sim_box):
+            vol = sim_box[0]
+            for i in range(1,D):
+                vol *= sim_box[i]
+            return vol
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension, volume
 
 
 # Helper functions
