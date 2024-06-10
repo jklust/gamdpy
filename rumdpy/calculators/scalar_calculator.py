@@ -11,7 +11,7 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
     
     # Unpack indices for scalars to be compiled into kernel  
     u_id, k_id, w_id, fsq_id, lap_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap']]     
-    v_id = configuration.vectors.indicies['v']
+    v_id = configuration.vectors.indices['v']
     
     volume_function = numba.njit(configuration.simbox.volume)
 

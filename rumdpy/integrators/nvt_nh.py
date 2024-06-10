@@ -19,9 +19,9 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
         print(f'\tNumber (virtual) particles: {num_blocks * pb}')
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
-    # Unpack indicies for vectors and scalars    
+    # Unpack indices for vectors and scalars
     for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 

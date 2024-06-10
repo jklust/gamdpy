@@ -65,7 +65,7 @@ class NPT_Langevin():
             print(f'\tNumber of threads {num_blocks * pb * tp}')
         
         # Unpack indices for vectors and scalars to be compiled into kernel
-        r_id, v_id, f_id = [configuration.vectors.indicies[key] for key in ['r', 'v', 'f']]
+        r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
         m_id, k_id, w_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'w', 'fsq']]     
 
         # JIT compile functions to be compiled into kernel

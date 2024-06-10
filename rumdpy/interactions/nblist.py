@@ -32,8 +32,8 @@ class NbList2():
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (num_part - 1) // pb + 1  
 
-        # Unpack indicies for vectors and scalars to be compiled into kernel
-        r_id, f_id = [configuration.vectors.indicies[key] for key in ['r', 'f']]  
+        # Unpack indices for vectors and scalars to be compiled into kernel
+        r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)

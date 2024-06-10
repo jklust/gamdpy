@@ -7,7 +7,7 @@ import numpy as np
 class colarray():
     """ The Column array Class
 
-    A class storing several sets ('columns') of lengths with identical dimensions in a single numpy array. Strings are used as indicies along the zeroth dimension corresponding to different columns of lengths.
+    A class storing several sets ('columns') of lengths with identical dimensions in a single numpy array. Strings are used as indices along the zeroth dimension corresponding to different columns of lengths.
     
     Examples
     --------
@@ -19,7 +19,7 @@ class colarray():
     (3, 1000, 2)
     >>> ca.column_names
     ('r', 'v', 'f')
-    Data is accesed via string indicies (similar to dataframes in pandas):
+    Data is accesed via string indices (similar to dataframes in pandas):
     >>> ca['r'] = np.ones((1000,2))
     >>> ca['v'] = 2   # Broadcastet by numpy to correct shape
     >>> print(ca['r'] + 0.01*ca['v'])
@@ -45,11 +45,11 @@ class colarray():
         ...
     ValueError: could not broadcast input array from shape (100,2) into shape (1000,2)
 
-    To assign indicies to variable names (say to use on a GPU):
+    To assign indices to variable names (say to use on a GPU):
     
     >>> ca = colarray(('r', 'v', 'f'), size=(1000,2))
     >>> for col in ca.column_names:
-    ...    exec(f'ca_{col}_id = {ca.indicies[col]}', globals())
+    ...    exec(f'ca_{col}_id = {ca.indices[col]}', globals())
     >>> print(ca_r_id, ca_v_id, ca_f_id)
     0 1 2
     
@@ -61,7 +61,7 @@ class colarray():
     def __init__(self, column_names, size, dtype=np.float32, array=None):
         self.column_names = column_names
         self.dtype = dtype
-        self.indicies = {key:index for index,key in enumerate(column_names)}
+        self.indices = {key:index for index,key in enumerate(column_names)}
         if type(array)==np.ndarray: # Used, e.g.,  when loading from file
             self.array = array
         else:
@@ -70,13 +70,13 @@ class colarray():
         self.shape = self.array.shape
 
     def __setitem__(self, key, data):
-        self.array[self.indicies[key]] = data
+        self.array[self.indices[key]] = data
         
     def __getitem__(self, key):
-        return self.array[self.indicies[key]]
+        return self.array[self.indices[key]]
    
     def __repr__(self):
-        return 'colarray('+str(tuple(self.indicies.keys()))+', '+self.array.shape[1:].__repr__()+')\n'+self.array.__repr__()
+        return 'colarray('+str(tuple(self.indices.keys()))+', '+self.array.shape[1:].__repr__()+')\n'+self.array.__repr__()
     
     def copy(self):
         return colarray(self.column_names, self.shape, self.dtype, self.array.copy())

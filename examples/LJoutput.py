@@ -70,11 +70,11 @@ def make_output_calculator(configuration, steps_between_output, compute_plan=com
     UtilizeNIII = compute_plan['UtilizeNIII']
     num_blocks = (num_part-1)//pb + 1
     
-    # Unpack indicies for vectors and scalars    
+    # Unpack indices for vectors and scalars
     #for key in configuration.vid:
     #    exec(f'{key}_id = {configuration.vid[key]}', globals())
     for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
  

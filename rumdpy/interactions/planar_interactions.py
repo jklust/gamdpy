@@ -14,17 +14,17 @@ def make_planar_calculator(configuration, potential_function):
     dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
-    # Unpack indicies for vectors and scalars    
+    # Unpack indices for vectors and scalars
     #for key in configuration.vid:
     #    exec(f'{key}_id = {configuration.vid[key]}', globals())
     for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
     
-    def planar_calculator(vectors, scalars, ptype, sim_box, indicies, values):
-        particle = indicies[0]
-        interaction_type = indicies[1] 
+    def planar_calculator(vectors, scalars, ptype, sim_box, indices, values):
+        particle = indices[0]
+        interaction_type = indices[1]
         point = values[interaction_type][0:D]      # Point in wall
         normal_vector = values[interaction_type][D:2*D] # Normal vector defining plane of wall
         
@@ -54,33 +54,33 @@ def setup_planar_interactions(configuration, potential_function, potential_param
     assert len(point_list) == num_types
     assert len(normal_vector_list) == num_types
     
-    total_number_indicies = 0 
+    total_number_indices = 0
     for particles in particles_list:
-        total_number_indicies += particles.shape[0] 
+        total_number_indices += particles.shape[0]
 
     if verbose:
-        print(f'Setting up planar interactions: {num_types} types, {total_number_indicies} particle-plane interactions in total.')
+        print(f'Setting up planar interactions: {num_types} types, {total_number_indices} particle-plane interactions in total.')
 
 
-    indicies = np.zeros((total_number_indicies, 2), dtype=np.int32)    
+    indices = np.zeros((total_number_indices, 2), dtype=np.int32)
     params = np.zeros((num_types, 2*D+len(potential_params_list[0])), dtype=np.float32)
     
     start_index = 0  
     for interaction_type in range(num_types):
         next_start_index = start_index + len(particles_list[interaction_type])
-        indicies[start_index:next_start_index, 0] = particles_list[interaction_type] 
-        indicies[start_index:next_start_index, 1] = interaction_type 
+        indices[start_index:next_start_index, 0] = particles_list[interaction_type] 
+        indices[start_index:next_start_index, 1] = interaction_type
         start_index = next_start_index
         
         params[interaction_type,0:D] = point_list[interaction_type]
         params[interaction_type,D:2*D] = normal_vector_list[interaction_type] # Normalize it!
-        params[interaction_type,2*D:] = potential_params_list[interaction_type] 
-    
+        params[interaction_type,2*D:] = potential_params_list[interaction_type]
+
     calculator = make_planar_calculator(configuration, potential_function)
     interactions = make_fixed_interactions(configuration, calculator, compute_plan, verbose=False)
-    d_indicies = cuda.to_device(indicies)
+    d_indices = cuda.to_device(indices)
     d_params = cuda.to_device(params)
-    interaction_params = (d_indicies, d_params)
+    interaction_params = (d_indices, d_params)
 
     return {'interactions':interactions, 'interaction_params':interaction_params}
      

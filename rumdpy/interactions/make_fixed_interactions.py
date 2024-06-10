@@ -15,13 +15,13 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         print(f'Generating fixed interactions for {num_part} particles in {D} dimensions:')
         print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
         print(f'\tNumber (virtual) particles: {num_blocks*pb}')
-        print(f'\tNumber of threads {num_blocks*pb*tp}')      
+        print(f'\tNumber of threads {num_blocks*pb*tp}')
 
-    # Unpack indicies for vectors and scalars    
+    # Unpack indices for vectors and scalars
     #for key in configuration.vid:
     #    exec(f'{key}_id = {configuration.vid[key]}', globals())
     for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
     
@@ -32,8 +32,8 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
 
     @cuda.jit( device=gridsync )
     def fixed_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-        indicies, values = interaction_parameters
-        num_interactions = indicies.shape[0]
+        indices, values = interaction_parameters
+        num_interactions = indices.shape[0]
         num_threads = num_blocks*pb*tp
 
         my_block = cuda.blockIdx.x
@@ -43,7 +43,7 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         global_id = (my_block*pb + local_id) + my_t*cuda.blockDim.x*cuda.gridDim.x # Faster
         
         for index in range(global_id, num_interactions, num_threads):
-            potential_calculator(vectors, scalars, ptype, sim_box, indicies[index], values)
+            potential_calculator(vectors, scalars, ptype, sim_box, indices[index], values)
 
         return
     return fixed_interactions

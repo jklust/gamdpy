@@ -131,13 +131,13 @@ dr = np.zeros(3)
 dz = np.array((0., 0., 1.))
 
 @numba.njit()
-def get_bond_lengths_theta_z(r, bond_indicies, dist_sq_dr_function, simbox_data):
-    bond_lengths = np.zeros(bond_indicies.shape[0], dtype=np.float32)
-    theta_z = np.zeros(bond_indicies.shape[0])
+def get_bond_lengths_theta_z(r, bond_indices, dist_sq_dr_function, simbox_data):
+    bond_lengths = np.zeros(bond_indices.shape[0], dtype=np.float32)
+    theta_z = np.zeros(bond_indices.shape[0])
     dr = np.zeros(3)
 
-    for j in range(bond_indicies.shape[0]):
-        dist_sq = dist_sq_dr_function(r[bond_indicies[j,0]], r[bond_indicies[j,1]], simbox_data, dr)
+    for j in range(bond_indices.shape[0]):
+        dist_sq = dist_sq_dr_function(r[bond_indices[j,0]], r[bond_indices[j,1]], simbox_data, dr)
         dist = math.sqrt(dist_sq)
         bond_lengths[j] = dist
         theta_z[j] = math.acos(abs(dr[2]/dist))/math.pi*180

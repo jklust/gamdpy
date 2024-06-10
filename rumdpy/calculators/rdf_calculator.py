@@ -37,10 +37,10 @@ class RDF_calculator():
         gridsync = compute_plan['gridsync']
         num_blocks = (num_part - 1) // pb + 1
 
-        # Unpack indicies for vectors and scalars
-        # look up the indicies needed instead (and throw error if not there)    
+        # Unpack indices for vectors and scalars
+        # look up the indices needed instead (and throw error if not there)
         for col in configuration.vectors.column_names:
-            exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+            exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
 
         for key in configuration.sid:
             exec(f'{key}_id = {configuration.sid[key]}', globals())

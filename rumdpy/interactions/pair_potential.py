@@ -157,11 +157,11 @@ def make_interactions(configuration, pair_potential, num_cscalars, compute_plan,
     if verbose:
         print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
         print(f'\tNumber (virtual) particles: {num_blocks*pb}')
-        print(f'\tNumber of threads {num_blocks*pb*tp}')      
+        print(f'\tNumber of threads {num_blocks*pb*tp}')
 
-    # Unpack indicies for vectors and scalars    
+    # Unpack indices for vectors and scalars
     for col in configuration.vectors.column_names:
-            exec(f'{col}_id = {configuration.vectors.indicies[col]}', globals())
+            exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 

@@ -12,7 +12,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
     num_blocks = (num_part - 1) // pb + 1
 
     # Unpack indices for vectors and scalars to be compiled into kernel
-    v_id = configuration.vectors.indicies['v']
+    v_id = configuration.vectors.indices['v']
     m_id = configuration.sid['m']
 
     

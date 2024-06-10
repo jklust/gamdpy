@@ -92,8 +92,8 @@ class PairPotential2():
             print(f'\tNumber (virtual) particles: {num_blocks*pb}')
             print(f'\tNumber of threads {num_blocks*pb*tp}')      
 
-        # Unpack indicies for vectors and scalars to be compiled into kernel
-        r_id, f_id = [configuration.vectors.indicies[key] for key in ['r', 'f']]
+        # Unpack indices for vectors and scalars to be compiled into kernel
+        r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]     
 
         pairpotential_function = self.pairpotential_function
