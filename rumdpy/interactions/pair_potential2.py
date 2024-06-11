@@ -94,7 +94,7 @@ class PairPotential2():
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]     
+        u_id, w_id, lap_id, m_id, sts_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm', 'sts']]
 
         pairpotential_function = self.pairpotential_function
     
@@ -102,12 +102,19 @@ class PairPotential2():
             virial_factor_NIII = numba.float32( 1.0/configuration.D)
             def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, f, other_id):
                 u, s, umm = pairpotential_function(ij_dist, ij_params)
+                sts_idx = 0
                 for k in range(D):
                     cuda.atomic.add(f, (other_id, k), dr[k]*s)
                     my_f[k] = my_f[k] - dr[k]*s                         # Force
                     cscalars[w_id] += dr[k]*dr[k]*s*virial_factor_NIII  # Virial
+                    for k2 in range(k, D):
+                        cscalars[sts_id+sts_idx] -= dr[k]*dr[k2] * s; 
+                        sts_idx += 1
+                        
                 cscalars[u_id] += u                                      # Potential energy
                 cscalars[lap_id] += (numba.float32(1-D)*s + umm)*numba.float32( 2.0 ) # Laplacian 
+
+
                 return
             
         else:

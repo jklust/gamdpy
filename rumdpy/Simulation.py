@@ -90,6 +90,8 @@ class Simulation():
         
         # per block storage of scalars
         self.num_scalars = 9
+        # include the appropriate number of stress components
+        self.num_scalars += D*(D+1)/2
 
         if self.output_calculator != None:
             self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output

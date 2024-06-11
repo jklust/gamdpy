@@ -33,7 +33,13 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
 
                 cuda.atomic.add(output_array, (save_index, 6), vectors[v_id][global_id][0]) 
                 cuda.atomic.add(output_array, (save_index, 7), vectors[v_id][global_id][1]) 
-                cuda.atomic.add(output_array, (save_index, 8), vectors[v_id][global_id][2]) 
+                cuda.atomic.add(output_array, (save_index, 8), vectors[v_id][global_id][2])
+                sts_idx = 9
+                for k in range(D):
+                    for k2 in range(k, D):
+                        cuda.atomic.add(output_array, (save_index, sts_idx), scalars[global_id][sts_idx])  # CHECK INDEXING HERE!!!!!
+                        sts_idx += 1
+                
 
             if global_id == 0 and my_t == 0:
                 output_array[save_index][5] = volume_function(sim_box)
