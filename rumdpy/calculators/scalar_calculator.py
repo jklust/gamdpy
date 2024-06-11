@@ -34,12 +34,6 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
                 cuda.atomic.add(output_array, (save_index, 6), vectors[v_id][global_id][0]) 
                 cuda.atomic.add(output_array, (save_index, 7), vectors[v_id][global_id][1]) 
                 cuda.atomic.add(output_array, (save_index, 8), vectors[v_id][global_id][2])
-                sts_idx = 9
-                for k in range(D):
-                    for k2 in range(k, D):
-                        cuda.atomic.add(output_array, (save_index, sts_idx), scalars[global_id][sts_idx])  # CHECK INDEXING HERE!!!!!
-                        sts_idx += 1
-                
 
             if global_id == 0 and my_t == 0:
                 output_array[save_index][5] = volume_function(sim_box)
@@ -54,7 +48,12 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
 def extract_scalars(data, column_list, first_block=0):
     # Indcies hardcoded for now (see scalar_calculator above)
 
-    column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'vCMx':6, 'vCMy':7, 'vCMz':8}
+    column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}
+    vCM_id_str = ['vCMx', 'vCMy', 'vCMz', 'vCMw']
+    if D > 4:
+        raise ValueError("Label for CM velocity components not defined for dimensions greater than 4")
+    for k in range(D):
+        column_indices[vCM_id_str] = 6+k
 
     output_list = []
     for column in column_list:

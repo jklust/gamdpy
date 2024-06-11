@@ -30,10 +30,13 @@ class NbList2():
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
-        num_blocks = (num_part - 1) // pb + 1  
+        num_blocks = (num_part - 1) // pb + 1
+        compute_stresses = configuration.compute_stresses
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+        if compute_stresses:
+            sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']]
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
@@ -66,7 +69,11 @@ class NbList2():
             if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
                 for k in range(D):
                     vectors[f_id][global_id, k] = numba.float32(0.0)
-            return    
+                    if  compute_stresses:
+                        vectors[sx_id][global_id, k] =  numba.float32(0.0)
+                        vectors[sy_id][global_id, k] =  numba.float32(0.0)
+                        vectors[sz_id][global_id, k] =  numba.float32(0.0)
+            return
    
         @cuda.jit(device=gridsync)
         def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist, r_ref, exclusions):

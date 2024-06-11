@@ -34,10 +34,13 @@ class Configuration:
     sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
 
-    def __init__(self, N: int, D: int, simbox_lengths: np.ndarray, ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, N: int, D: int, simbox_lengths: np.ndarray, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
         self.N = N
         self.D = D
+        self.compute_stresses = compute_stresses
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifyable. Move r_ref to nblist
+        if self.compute_stresses:
+            self.vector_columns += ['sx', 'sy', 'sz'] # D=3 ASSUMED HERE!!!!
         # self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
         self.vectors = colarray(self.vector_columns, size=(N, D), dtype=ftype)
         self.scalars = np.zeros((N, len(self.sid)), dtype=ftype)

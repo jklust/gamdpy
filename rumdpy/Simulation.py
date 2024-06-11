@@ -15,7 +15,7 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', verbose=False):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', compute_stresses = False, verbose=False):
                 
         self.configuration = configuration
         if compute_plan==None:
@@ -23,9 +23,13 @@ class Simulation():
         else:
             self.compute_plan = compute_plan
 
+        self.compute_stresses = compute_stresses
+        if self.compute_stresses and not configuration.compute_stresses:
+           raise ValueError("Configuration must have compute_stresses set as well!")
+
         self.interactions = interactions
         self.interactions_params = self.interactions.get_params(self.configuration, self.compute_plan, verbose)
-        self.interactions_kernel = self.interactions.get_kernel(self.configuration, self.compute_plan, verbose)
+        self.interactions_kernel = self.interactions.get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
 
         self.integrator = integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
@@ -89,9 +93,9 @@ class Simulation():
         self.d_conf_array = cuda.to_device(self.zero_conf_array)
         
         # per block storage of scalars
-        self.num_scalars = 9
-        # include the appropriate number of stress components
-        self.num_scalars += D*(D+1)/2
+        self.num_scalars = 6
+        #include CM velocity
+        self.num_scalars += self.configuration.D
 
         if self.output_calculator != None:
             self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
