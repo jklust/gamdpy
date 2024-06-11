@@ -58,7 +58,7 @@ class Configuration:
         if key in self.vectors.column_names:
             # return self.vectors[self.vid[key]]
             return self.vectors[key]
-        return self.scalars[self.sid[key]]  # Improve error handling if key in neither
+        return self.scalars[:,self.sid[key]]  # Improve error handling if key in neither
 
     def set_vector(self, key: str, data: np.ndarray) -> None:
         """ Set new vector data

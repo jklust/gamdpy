@@ -296,14 +296,13 @@ class Simulation():
         self.scalars_list = np.array(self.scalars_list)
 
     def status(self, per_particle=False):
-        scalars = np.sum(self.configuration.scalars, axis=0)
-        if per_particle:
-            scalars /= self.configuration.N
         time = self.current_block * self.steps_per_block * self.dt
         st = f'{time= :<10.3f}'
         for name in self.configuration.sid:
-            idx = self.configuration.sid[name]
-            st += f'{name}= {scalars[idx]:<10.3f}'
+            data = np.sum(self.configuration[name])
+            if per_particle:
+                data /=  self.configuration.N
+            st += f'{name}= {data:<10.3f}'
         return st
 
     def summary(self):
