@@ -75,12 +75,15 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] SLLOD (stress, LEBC), Nick
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Finish Atomic interface
-- [ ] Momentum resetting (remove default) Nick
+- [X] Momentum resetting (remove default) Nick
 - [ ] Read rumd3 & others configurations Thomas
 - [ ] Testing (Framework, doctest), Ulf & Thomas 
 - [ ] Settle on io format
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda?
+- [ ] Generalize make_configuration to different lattices
+- [ ] Rename Simulation.blocks() to something like run_blocks()
+- [ ] Read configurations from file
 
 ## TODO, long term:
 - [ ] Implement other fixed interactions: point interactions (tethered particles).
@@ -96,6 +99,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] Constraints
 - [ ] Define hdf5 'template'
+- [ ] Ensure neighborlist integrity (automated check/reallocate)
 
 
 ## Various tools/strategies we will use:
