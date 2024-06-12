@@ -38,7 +38,7 @@ class Configuration:
         self.N = N
         self.D = D
         self.compute_stresses = compute_stresses
-        self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifyable. Move r_ref to nblist
+        self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
         if self.compute_stresses:
             self.vector_columns += ['sx', 'sy', 'sz'] # D=3 ASSUMED HERE!!!!
         # self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
