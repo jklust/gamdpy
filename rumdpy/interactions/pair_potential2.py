@@ -122,7 +122,6 @@ class PairPotential2():
                 return
             
         else:
-                
             virial_factor = numba.float32( 0.5/configuration.D )
             def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
                 u, s, umm = pairpotential_function(ij_dist, ij_params)
