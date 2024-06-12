@@ -46,7 +46,7 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
     return scalar_calculator
 
 def extract_scalars(data, column_list, first_block=0):
-    # Indcies hardcoded for now (see scalar_calculator above)
+    # Indices hardcoded for now (see scalar_calculator above)
 
     column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}
     vCM_id_str = ['vCMx', 'vCMy', 'vCMz', 'vCMw']
