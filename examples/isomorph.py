@@ -40,7 +40,7 @@ for index, rho in enumerate(rhos):
                         storage='memory') 
     
     # Setup on-the-fly calculation of Radial Distribution Function
-    rdf_calculator = rp.RDF_calculator(configuration, num_bins=1000)
+    calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
     print('Equilibration:', end='\t')
     for block in sim.blocks():
@@ -49,7 +49,7 @@ for index, rho in enumerate(rhos):
     
     print('Production:', end='\t')
     for block in sim.blocks():
-        rdf_calculator.update()
+        calc_rdf.update()
     print(sim.status(per_particle=True))
     
     # Do data analysis
@@ -61,7 +61,7 @@ for index, rho in enumerate(rhos):
     print(f'Gamma = {gamma:.3f},  R = {R:.3f}')
 
     dynamics = rp.tools.calc_dynamics(sim.output, 0, qvalues=7.5*rho**(1/3))
-    rdf = rdf_calculator.read()
+    rdf = calc_rdf.read()
     data.append({'rho':rho, 'T':float(T), 'dynamics':dynamics, 'rdf':rdf})
 
     # Set temperature for next simulation
