@@ -84,6 +84,9 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Generalize make_configuration to different lattices
 - [ ] Rename Simulation.blocks() to something like run_blocks()
 - [ ] Read configurations from file
+- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration (e.g. stresses)
+- [ ] Runtime actions to include conf_saver and scalar_output
+
 
 ## TODO, long term:
 - [ ] Implement other fixed interactions: point interactions (tethered particles).
