@@ -106,7 +106,7 @@ A good place to see how this is done without implementing all functions twice is
 
 
 ## Various tools/strategies we will use:
-- Git ( https://git-scm.com/doc ).
+- Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
 - ... to be hosted on readthedocs ( https://about.readthedocs.com/ ). Model: https://numba.readthedocs.io.
 - Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
