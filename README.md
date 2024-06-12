@@ -21,8 +21,9 @@ Classes implementing a simulation algorithm. Currently implemented:
 - class NVE 
 - class NVE_Toxvaerd
 - class NVT : Nose-Hoover thermostat 
-- NVT_Langevin (not converted to class yet)
-- NPT_Langevin (not converted to class yet)
+- class NVT_Langevin
+- class NPT_Langevin
+... all integrators converted to classes to use new interface. Old ones kept briefly for testing.
 
 Temperature can be controlled by a user-supplied function, see examples/kablj.py
 
