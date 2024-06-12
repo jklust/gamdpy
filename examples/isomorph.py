@@ -5,8 +5,8 @@ the possibility of keeping the output of the simulation in memory (storage='memo
 This is usefull when a lot of short simulations are performed.
 
 To plot the results do: 
-python plot_isomorph_dynamics.pdf
-python plot_isomorph_rdf.pdf
+python plot_isomorph_dynamics.py (generates: isomorph_dynamics.pdf)
+python plot_isomorph_rdf.py (generates: isomorph_rdf.pdf)
 
 For a simpler script performing multiple simulations, see isochore.py
 
