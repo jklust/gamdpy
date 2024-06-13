@@ -16,56 +16,80 @@ import numpy as np
 
 np.random.seed(2024)
 
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=3.0)
 
-# Make ideal gas, or add small random displacements to the particles
-dx = 'ideal gas'  # | 0.1
-if dx == 'ideal gas':
-    L = configuration.simbox.lengths
-    configuration['r'] = np.random.rand(*configuration['r'].shape) * L
-else:
-    print(configuration['r'][0][0])
-    configuration['r'] += dx * np.random.rand(*configuration['r'].shape)-dx/2
-    print(configuration['r'][0][0])
+def compute_structure_factor(conf, verbose=False):
+    # Get configuration data and set up q vectors
+    L = conf.simbox.lengths
+    D = conf.D
+    N = conf.N
+    r = conf['r']
+    # n_vectors: [[0, 0, 0], [1, 0, 0], [2, 0, 0], ..., [18, 18, 18]]
+    n_max = 20
+    n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
+    # Remove the first vector [0, 0, 0]
+    n_vectors = n_vectors[1:]
+    q_vectors = 2 * np.pi * n_vectors / L
+    q_len = np.linalg.norm(q_vectors, axis=1)
 
-# Get configuration data and set up q vectors
-L = configuration.simbox.lengths
-D = configuration.D
-N = configuration.N
-r = configuration['r']
-# n_vectors: [[0, 0, 0], [1, 0, 0], [2, 0, 0], ..., [5, 5, 5]]
-n_max = 12
-n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
-# Remove the first vector [0, 0, 0]
-n_vectors = n_vectors[1:]
-q = 2 * np.pi * n_vectors / L
-q_lengths = np.linalg.norm(q, axis=1)
+    # Compute the structure factor
+    r_dot_q = np.dot(r, q_vectors.T)
+    tic = time.perf_counter()
+    structure_factor = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
+    toc = time.perf_counter()
+    wall_clock_time = toc - tic
+    if verbose:
+        print(f"Wall-clock time to compute S(q): {wall_clock_time:.4f} s")
 
-# Compute the structure factor
-r_dot_q = np.dot(r, q.T)
-tic = time.perf_counter()
-S_of_q = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
-toc = time.perf_counter()
-print(f"Elapsed time: {toc - tic:.2f} s")
+    return q_len, structure_factor, wall_clock_time
+
 
 # Bin the structure factor to reduce noise
-q_min_for_binning = 1.0
-q_bin_width = 0.3
-q_bins = np.arange(q_min_for_binning, q_lengths.max(), q_bin_width)
-S_of_q_binned = np.zeros_like(q_bins)
-for i, q_bin in enumerate(q_bins):
-    mask = (q_lengths >= q_bin) & (q_lengths < q_bin + q_bin_width)
-    S_of_q_binned[i] = np.mean(S_of_q[mask])
+def binning(structure_factor, q_lengths):
+    q_min_for_binning: float = 1.0
+    q_bin_width: float = 0.2
+    q_bins = np.arange(q_min_for_binning, q_lengths.max(), q_bin_width)
+    S_of_q_binned = np.zeros_like(q_bins)
+    for i, q_bin in enumerate(q_bins):
+        mask = (q_lengths >= q_bin) & (q_lengths < q_bin + q_bin_width)
+        S_of_q_binned[i] = np.mean(structure_factor[mask])
 
-# Add un-binned and binned structure factors to the plot
-S_of_q_unbinned = S_of_q[q_lengths <= q_min_for_binning]
-S = np.append(S_of_q_unbinned, S_of_q_binned)
-q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_bins)
+    # Add un-binned and binned structure factors to the plot
+    S_of_q_unbinned = structure_factor[q_lengths <= q_min_for_binning]
+    S = np.append(S_of_q_unbinned, S_of_q_binned)
+    q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_bins)
+    return q, S
+
+# Setup simulation
+temperature = 2.0
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=temperature*2)
+pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+sig, eps, cut = 1.0, 1.0, 2.5
+pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
+sim = rp.Simulation(configuration, pair_potential, integrator,
+                    steps_per_block=512, num_blocks=128, storage='memory')
+
+print("Equilibration run")
+sim.run()
+
+print("Production run")
+structure_factor_list = []
+wall_clock_times = []
+for block in sim.blocks():
+    print(sim.status(per_particle=True))
+    q_lengths, S_of_q, wall_clock_time = compute_structure_factor(sim.configuration, verbose=True)
+    q, S = binning(S_of_q, q_lengths)
+    structure_factor_list.append(S)
+    wall_clock_times.append(wall_clock_time)
+
+# Average the structure factor
+S = np.mean(structure_factor_list, axis=0)
 
 plt.figure()
 plt.plot(q, S, 'o')
-plt.xlabel('q')
-plt.ylabel('S(q)')
+plt.yscale('log')
+plt.xlabel(r'$|q|$')
+plt.ylabel('$S(q)$')
 plt.ylim(0, 3)
+plt.xlim(0, 14)
 plt.show()
-
