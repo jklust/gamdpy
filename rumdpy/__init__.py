@@ -3,6 +3,7 @@
 from .interactions import *
 from .potential_functions import *
 from .Configuration import *
+from .Simbox import *
 from .Simulation import *
 from .Evaluater import *
 from .colarray import *
