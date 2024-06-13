@@ -6,6 +6,7 @@ Created on Thu Jun 13 11:41:24 2024
 @author: nbailey
 """
 
+import numpy as np
 import numba
 from numba import cuda
 
@@ -60,3 +61,88 @@ class Simbox():
             return vol
 
         return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension, volume
+    
+    
+    
+class Simbox_LeesEdwards(Simbox):
+    def __init__(self, D, lengths, box_shift=0.):
+        if D < 2:
+            raise ValueError("Cannot use Simbox_LeesEdwards with dimension smaller than 2")
+        Simbox.__init__(self, D, lengths)
+        self.box_shift = box_shift
+        print('Simbox_LeesEdwards, box_shift=', box_shift)
+
+        # have already called base class Simox.make_simbox_functions, and can re-use the volume
+        # so this version only has to override the first three
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension = self.make_simbox_functions_LE()
+        
+
+        return
+
+    def copy_to_device(self):
+       self.d_data = cuda.to_device(np.append(self.lengths, self.box_shift))
+
+    def copy_to_host(self):
+        D = self.D
+        box_data =  self.d_data.copy_to_host()
+        self.lengths = box_data[:D].copy()
+        self.box_shift = box_data[D]
+        
+        
+    def make_simbox_functions_LE(self):
+        D = self.D
+
+        def dist_sq_dr_function(ri, rj, sim_box, dr):  
+            box_shift = sim_box[D]
+            for k in range(D):
+                dr[k] = ri[k] - rj[k]
+            
+            dist_sq = numba.float32(0.0)
+            box_1 = sim_box[1]
+            dr[0] += (-box_shift if numba.float32(2.0) * dr[1] > +box_1 else
+                      (+box_shift if numba.float32(2.0) * dr[1] < -box_1 else
+                        numba.float32(0.0)))
+
+            for k in range(D):
+                box_k = sim_box[k]
+                dr[k] += (-box_k if numba.float32(2.0) * dr[k] > +box_k else
+                          (+box_k if numba.float32(2.0) * dr[k] < -box_k else numba.float32(0.0)))  # MIC
+                dist_sq = dist_sq + dr[k] * dr[k]
+            return dist_sq
+
+        def dist_sq_function(ri, rj, sim_box):  
+            box_shift = sim_box[D]
+            dist_sq = numba.float32(0.0)
+            
+            dr1 = ri[1] - rj[1]
+            box_1 = sim_box[1]
+            x_shift = (-box_shift if numba.float32(2.0) * dr1 > box_1 else
+                      (+box_shift if numba.float32(2.0) * dr1 < -box_1 else
+                        numba.float32(0.0)))
+            
+            for k in range(D):
+                dr_k = ri[k] - rj[k]
+                if k == 0:
+                    dr_k += x_shift
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
+                         (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
+                dist_sq = dist_sq + dr_k * dr_k
+            return dist_sq
+        
+        def apply_PBC_dimension(r, image, sim_box, dimension):
+            box_shift = sim_box[D]
+            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
+                r[dimension] -= sim_box[dimension]
+                image[dimension] += 1
+            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
+                r[dimension] += sim_box[dimension]
+                image[dimension] -= 1
+
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension
+    
+        
+        
+
+ 
