@@ -107,6 +107,7 @@ A good place to see how this is done without implementing all functions twice is
 
 
 ## Various tools/strategies we will use:
+- [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
 - Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
 - ... to be hosted on readthedocs ( https://about.readthedocs.com/ ). Model: https://numba.readthedocs.io.
