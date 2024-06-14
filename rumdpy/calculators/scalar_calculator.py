@@ -45,7 +45,7 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
         return
     return scalar_calculator
 
-def extract_scalars(data, column_list, first_block=0):
+def extract_scalars(data, column_list, first_block=0, D=3):
     # Indices hardcoded for now (see scalar_calculator above)
 
     column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}
@@ -53,7 +53,7 @@ def extract_scalars(data, column_list, first_block=0):
     if D > 4:
         raise ValueError("Label for CM velocity components not defined for dimensions greater than 4")
     for k in range(D):
-        column_indices[vCM_id_str] = 6+k
+        column_indices[vCM_id_str[k]] = 6+k
 
     output_list = []
     for column in column_list:
