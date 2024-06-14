@@ -85,7 +85,7 @@ class Simbox_LeesEdwards(Simbox):
 
         # have already called base class Simox.make_simbox_functions, and can re-use the volume
         # so this version only has to override the first three
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC = self.make_simbox_functions_LE()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift = self.make_simbox_functions_LE()
         
 
         return
@@ -129,13 +129,14 @@ class Simbox_LeesEdwards(Simbox):
         def dist_sq_function(ri, rj, sim_box):  
             box_shift = sim_box[D]
             dist_sq = numba.float32(0.0)
-            
+
+            # first shift the x-component depending on whether the y-component is wrapped
             dr1 = ri[1] - rj[1]
             box_1 = sim_box[1]
             x_shift = (-box_shift if numba.float32(2.0) * dr1 > box_1 else
                       (+box_shift if numba.float32(2.0) * dr1 < -box_1 else
                         numba.float32(0.0)))
-            
+            # then wrap as usual for all components
             for k in range(D):
                 dr_k = ri[k] - rj[k]
                 if k == 0:
@@ -147,7 +148,15 @@ class Simbox_LeesEdwards(Simbox):
             return dist_sq
         
         def apply_PBC(r, image, sim_box):
+
+            # first shift the x-component depending on whether the y-component is outside the box
             box_shift = sim_box[D]
+            box1_half = sim_box[1] * numba.float32(0.5)
+            if r[1] > + box1_half:
+                r[0] -= box_shift
+            if r[1] < -box1_half:
+                r[0] += box_shift
+            # then put everything back in the box as usual
             for k in range(D):
                 if r[k] * numba.float32(2.0) > +sim_box[k]:
                     r[k] -= sim_box[k]
@@ -156,8 +165,18 @@ class Simbox_LeesEdwards(Simbox):
                     r[k] += sim_box[k]
                     image[k] -= 1
     
+    
+        def update_box_shift(sim_box, shift):
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC
+            sim_box[D] += shift
+            Lx = sim_box[0]
+            Lx_half = Lx*numba.float32(0.5)
+            if sim_box[D] > +Lx_half:
+                sim_box[D] -= Lx
+            if sim_box[D] < -Lx_half:
+                sim_box[D] += Lx
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift
     
         
         
