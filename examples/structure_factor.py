@@ -14,9 +14,18 @@ import matplotlib.pyplot as plt
 import rumdpy as rp
 import numpy as np
 from scipy import stats
+import numba
 
 
-def compute_structure_factor(conf, verbose=False):
+@numba.njit(parallel=True)
+def compute_structure_factor_backend(r_vec: np.ndarray, q_vec: np.ndarray):
+    N = r_vec.shape[0]
+    r_dot_q = np.dot(r_vec, q_vec.T)
+    struct_fact = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
+    return struct_fact
+
+
+def compute_structure_factor(conf, backend='parallel'):
     # Get configuration data and set up q vectors
     L = conf.simbox.lengths
     D = conf.D
@@ -30,18 +39,21 @@ def compute_structure_factor(conf, verbose=False):
     # Remove n_vectors where the length is greater than n_max
     n_vectors = n_vectors[np.linalg.norm(n_vectors, axis=1) < n_max]
     q_vectors = 2 * np.pi * n_vectors / L
+    q_vectors = np.array(q_vectors, dtype=np.float32)
     q_len = np.linalg.norm(q_vectors, axis=1)
 
     # Compute the structure factor
-    r_dot_q = np.dot(r, q_vectors.T)
+    structure_factor: None | np.ndarray = None
     tic = time.perf_counter()
-    structure_factor = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
+    if backend == 'single core':
+        r_dot_q = np.dot(r, q_vectors.T)
+        structure_factor = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
+    elif backend == 'parallel':
+        structure_factor = compute_structure_factor_backend(r, q_vectors)
     toc = time.perf_counter()
-    wall_clock_time = toc - tic
-    if verbose:
-        print(f"Wall-clock time to compute S(q): {wall_clock_time:.4f} s")
+    wall_clock_timeing = toc - tic
 
-    return q_len, structure_factor, wall_clock_time
+    return q_len, structure_factor, wall_clock_timeing
 
 
 # Bin the structure factor to reduce noise
@@ -79,17 +91,19 @@ sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_per_block=4096, num_blocks=32, storage='memory')
+                    steps_per_block=4096, num_blocks=8, storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
 structure_factor_list = []
+backend: str = 'parallel'  # 'single core' or 'parallel'
+print(f"Using backend: {backend}")
 wall_clock_times = []
 for block in sim.blocks():
     print(sim.status(per_particle=True))
-    q_lengths, S_of_q, wall_clock_time = compute_structure_factor(sim.configuration, verbose=True)
+    q_lengths, S_of_q, wall_clock_time = compute_structure_factor(sim.configuration, backend=backend)
     q, S = binning(S_of_q, q_lengths)
     structure_factor_list.append(S)
     wall_clock_times.append(wall_clock_time)
@@ -98,7 +112,11 @@ for block in sim.blocks():
 print(f"Average wall-clock time: {np.mean(wall_clock_times):.4f} s")
 print(f"Min wall-clock time: {np.min(wall_clock_times):.4f} s")
 print(f"Max wall-clock time: {np.max(wall_clock_times):.4f} s")
-
+# Remove slowest wall-clock time
+wall_clock_times.remove(np.max(wall_clock_times))
+print(f"Average wall-clock time (excluding slowest): {np.mean(wall_clock_times):.4f} s")
+print(f"Min wall-clock time (excluding slowest): {np.min(wall_clock_times):.4f} s")
+print(f"Max wall-clock time (excluding slowest): {np.max(wall_clock_times):.4f} s")
 
 # Average the structure factor
 S = np.mean(structure_factor_list, axis=0)
