@@ -48,7 +48,7 @@ class NVT():
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
-        apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
    
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NVT timestep using Leap-frog
@@ -76,7 +76,8 @@ class NVT():
                     my_v[k] = plus * (minus * my_v[k] + my_f[k] / my_m * dt)
                     my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
                     my_r[k] += my_v[k] * dt
-                    apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+                    
+                apply_PBC(my_r, r_im[global_id], sim_box)
 
                 cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow? Not really!
                 scalars[global_id][k_id] = my_k

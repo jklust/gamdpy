@@ -13,8 +13,8 @@ from numba import cuda
 class Simbox():
     def __init__(self, D, lengths):
         self.D = D
-        self.lengths = lengths.copy()
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension, self.volume = self.make_simbox_functions()
+        self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume = self.make_simbox_functions()
         return
 
     def copy_to_device(self):
@@ -46,6 +46,15 @@ class Simbox():
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
         
+        def apply_PBC(r, image, sim_box):
+            for k in range(D):
+                if r[k] * numba.float32(2.0) > +sim_box[k]:
+                    r[k] -= sim_box[k]
+                    image[k] += 1
+                if r[k] * numba.float32(2.0) < -sim_box[k]:
+                    r[k] += sim_box[k]
+                    image[k] -= 1
+
         def apply_PBC_dimension(r, image, sim_box, dimension):
             if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
                 r[dimension] -= sim_box[dimension]
@@ -54,13 +63,15 @@ class Simbox():
                 r[dimension] += sim_box[dimension]
                 image[dimension] -= 1
 
+
+
         def volume(sim_box):
             vol = sim_box[0]
             for i in range(1,D):
                 vol *= sim_box[i]
             return vol
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension, volume
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume
     
     
     
@@ -74,13 +85,18 @@ class Simbox_LeesEdwards(Simbox):
 
         # have already called base class Simox.make_simbox_functions, and can re-use the volume
         # so this version only has to override the first three
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC_dimension = self.make_simbox_functions_LE()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC = self.make_simbox_functions_LE()
         
 
         return
 
     def copy_to_device(self):
-       self.d_data = cuda.to_device(np.append(self.lengths, self.box_shift))
+        D = self.D
+        data_array = np.zeros(D+1, dtype=np.float32)
+        data_array[:D] = self.lengths[:]
+        data_array[D] = self.box_shift
+        self.d_data = cuda.to_device(data_array)
+        #self.d_data = cuda.to_device(np.append(self.lengths, self.box_shift))
 
     def copy_to_host(self):
         D = self.D
@@ -130,17 +146,18 @@ class Simbox_LeesEdwards(Simbox):
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
         
-        def apply_PBC_dimension(r, image, sim_box, dimension):
+        def apply_PBC(r, image, sim_box):
             box_shift = sim_box[D]
-            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
-                r[dimension] -= sim_box[dimension]
-                image[dimension] += 1
-            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
-                r[dimension] += sim_box[dimension]
-                image[dimension] -= 1
+            for k in range(D):
+                if r[k] * numba.float32(2.0) > +sim_box[k]:
+                    r[k] -= sim_box[k]
+                    image[k] += 1
+                if r[k] * numba.float32(2.0) < -sim_box[k]:
+                    r[k] += sim_box[k]
+                    image[k] -= 1
+    
 
-
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC_dimension
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC
     
         
         

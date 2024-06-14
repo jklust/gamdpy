@@ -25,7 +25,7 @@ def make_step_nve_toxvaerd(configuration, compute_plan, verbose=True):
     for key in configuration.sid:
         exec(f'{key}_id = {configuration.sid[key]}', globals())
 
-    apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+    apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
@@ -61,7 +61,7 @@ def make_step_nve_toxvaerd(configuration, compute_plan, verbose=True):
                 my_k += numba.float32(1/8) * my_f[k] * my_f[k] * dt * dt / my_m
                 my_r[k] += my_v[k] * dt
 
-                apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+            apply_PBC(my_r, r_im[global_id], sim_box)
             scalars[global_id][k_id] = my_k
             scalars[global_id][fsq_id] = my_fsq
         return
