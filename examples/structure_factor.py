@@ -28,6 +28,8 @@ def compute_structure_factor(conf, verbose=False):
     n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
     # Remove the first vector [0, 0, 0]
     n_vectors = n_vectors[1:]
+    # Remove n_vectors where the length is graeter than n_max
+    n_vectors = n_vectors[np.linalg.norm(n_vectors, axis=1) < n_max]
     q_vectors = 2 * np.pi * n_vectors / L
     q_len = np.linalg.norm(q_vectors, axis=1)
 
@@ -49,14 +51,16 @@ def binning(structure_factor, q_lengths):
     q_bin_width: float = 0.2
     q_bins = np.arange(q_min_for_binning, q_lengths.max(), q_bin_width)
     S_of_q_binned = np.zeros_like(q_bins)
+    q_binned = np.zeros_like(q_bins)
     for i, q_bin in enumerate(q_bins):
         mask = (q_lengths >= q_bin) & (q_lengths < q_bin + q_bin_width)
         S_of_q_binned[i] = np.mean(structure_factor[mask])
+        q_binned[i] = np.mean(q_lengths[mask])
 
     # Add un-binned and binned structure factors to the plot
     S_of_q_unbinned = structure_factor[q_lengths <= q_min_for_binning]
     S = np.append(S_of_q_unbinned, S_of_q_binned)
-    q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_bins)
+    q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_binned)
     return q, S
 
 # Setup simulation
