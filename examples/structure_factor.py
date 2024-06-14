@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 
 import rumdpy as rp
 import numpy as np
-
-np.random.seed(2024)
+from scipy import stats
 
 
 def compute_structure_factor(conf, verbose=False):
@@ -47,15 +46,23 @@ def compute_structure_factor(conf, verbose=False):
 
 # Bin the structure factor to reduce noise
 def binning(structure_factor, q_lengths):
-    q_min_for_binning: float = 1.0
-    q_bin_width: float = 0.2
+    q_min_for_binning: float = 0.0
+    q_bin_width: float = 0.1
     q_bins = np.arange(q_min_for_binning, q_lengths.max(), q_bin_width)
     S_of_q_binned = np.zeros_like(q_bins)
     q_binned = np.zeros_like(q_bins)
+    n_values_in_bin = np.zeros_like(q_bins)
     for i, q_bin in enumerate(q_bins):
         mask = (q_lengths >= q_bin) & (q_lengths < q_bin + q_bin_width)
+        if np.sum(mask) == 0:  # Skip empty bins
+            continue
         S_of_q_binned[i] = np.mean(structure_factor[mask])
         q_binned[i] = np.mean(q_lengths[mask])
+        n_values_in_bin[i] = np.sum(mask)
+
+    # Remove bins with zero values
+    q_binned = q_binned[n_values_in_bin > 0]
+    S_of_q_binned = S_of_q_binned[n_values_in_bin > 0]
 
     # Add un-binned and binned structure factors to the plot
     S_of_q_unbinned = structure_factor[q_lengths <= q_min_for_binning]
@@ -63,15 +70,16 @@ def binning(structure_factor, q_lengths):
     q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_binned)
     return q, S
 
-# Setup simulation
+
+# Setup simulation of single-component Lennard-Jones liquid
 temperature = 2.0
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=temperature*2)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=temperature * 2)
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_per_block=512, num_blocks=128, storage='memory')
+                    steps_per_block=4096, num_blocks=32, storage='memory')
 
 print("Equilibration run")
 sim.run()
@@ -86,14 +94,23 @@ for block in sim.blocks():
     structure_factor_list.append(S)
     wall_clock_times.append(wall_clock_time)
 
+# Print the average, min and max of wall-clock times
+print(f"Average wall-clock time: {np.mean(wall_clock_times):.4f} s")
+print(f"Min wall-clock time: {np.min(wall_clock_times):.4f} s")
+print(f"Max wall-clock time: {np.max(wall_clock_times):.4f} s")
+
+
 # Average the structure factor
 S = np.mean(structure_factor_list, axis=0)
+# Compute 95% confidence interval
+S_sem = stats.sem(structure_factor_list, axis=0)  # Assume blocks are statistically independent
+S_error = 1.96 * S_sem  # 95% confidence interval for normal distribution (large sample size)
 
 plt.figure()
-plt.plot(q, S, 'o')
+plt.errorbar(q, S, S_error, fmt='x')
 plt.yscale('log')
 plt.xlabel(r'$|q|$')
 plt.ylabel('$S(q)$')
-plt.ylim(1e-2, 3)
+plt.ylim(1e-2, 10)
 plt.xlim(0, 14)
 plt.show()
