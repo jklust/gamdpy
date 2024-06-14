@@ -24,11 +24,11 @@ def compute_structure_factor(conf, verbose=False):
     N = conf.N
     r = conf['r']
     # n_vectors: [[0, 0, 0], [1, 0, 0], [2, 0, 0], ..., [18, 18, 18]]
-    n_max = 20
+    n_max = 24
     n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
     # Remove the first vector [0, 0, 0]
     n_vectors = n_vectors[1:]
-    # Remove n_vectors where the length is graeter than n_max
+    # Remove n_vectors where the length is greater than n_max
     n_vectors = n_vectors[np.linalg.norm(n_vectors, axis=1) < n_max]
     q_vectors = 2 * np.pi * n_vectors / L
     q_len = np.linalg.norm(q_vectors, axis=1)
