@@ -27,7 +27,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
 
     temperature_function = numba.njit(temperature_function)
     # Could accept float and convert to function ourselves, to increase user friendliness
-    apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+    apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
     # @cuda.jit('void(float32[:,:,:], float32[:,:], int32[:,:], float32[:], float32)', device=gridsync)
     # @cuda.jit(device=gridsync)
@@ -61,7 +61,7 @@ def make_step_nvt(configuration, temperature_function, compute_plan, verbose=Tru
                 my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
                 my_r[k] += my_v[k] * dt
                 
-                apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+            apply_PBC(my_r, r_im[global_id], sim_box)
 
             cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow! Not really
             scalars[global_id][k_id] = my_k

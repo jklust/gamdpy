@@ -30,7 +30,7 @@ class NVE():
         m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]     
         
         # JIT compile functions to be compiled into kernel
-        apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
    
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NVE timestep using Leap-frog
@@ -68,7 +68,7 @@ class NVE():
 
                     my_r[k] += my_v[k] * dt
                 
-                    apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+                apply_PBC(my_r, r_im[global_id], sim_box)
 
                 
                 scalars[global_id][k_id] = my_k

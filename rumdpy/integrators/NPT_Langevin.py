@@ -71,7 +71,7 @@ class NPT_Langevin():
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
-        apply_PBC_dimension = numba.njit(configuration.simbox.apply_PBC_dimension)
+        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
         def copyParticleVirial(scalars, integrator_params):
             dt, alpha, alpha_baro, mass_baro, barostatModeISO, boxFlucCoord, rng_states, barostat_state, barostatVirial, length_ratio  = integrator_params
@@ -178,7 +178,7 @@ class NPT_Langevin():
                     L_factor = 2.*length_ratio[k] / (1. + length_ratio[k]) 
                     my_r[k] = length_ratio[k] * my_r[k] + L_factor * my_v[k] * dt             
                      
-                    apply_PBC_dimension(my_r, r_im[global_id], sim_box, k)
+                apply_PBC(my_r, r_im[global_id], sim_box)
             
                 scalars[global_id][k_id] = numba.float32(0.5) * my_k
                 scalars[global_id][fsq_id] = my_fsq
