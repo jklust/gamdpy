@@ -30,7 +30,17 @@ class SLLOD():
         # Unpack indices for vectors and scalars
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
         m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]     
-        
+        # was thinking that using a function oculd avoid synchronization
+        # issues for updating the boxshift. But now I'm sure if it really
+        # makes sense to use a function (the same way that NVT
+        # does for temperature). There the temperature isn't stored anywhere.
+        # Here I'm pretty sure the box_shift has to be stored together with the
+        # other box details so interactions can always access it. So any
+        # function has to update that one location and then we have to worry
+        # about synchronization anyway
+        #def strain_function(time):
+        #    strain = self.shear_rate*time
+ 
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
         update_box_shift = numba.njit(configuration.simbox.update_box_shift)

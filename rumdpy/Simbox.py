@@ -167,18 +167,15 @@ class Simbox_LeesEdwards(Simbox):
     
     
         def update_box_shift(sim_box, shift):
+            global_id, my_t = cuda.grid(2)
 
-            sim_box[D] += shift
-            Lx = sim_box[0]
-            Lx_half = Lx*numba.float32(0.5)
-            if sim_box[D] > +Lx_half:
-                sim_box[D] -= Lx
-            if sim_box[D] < -Lx_half:
-                sim_box[D] += Lx
+            if global_id == 0 and my_t == 0:
+                sim_box[D] += shift
+                Lx = sim_box[0]
+                Lx_half = Lx*numba.float32(0.5)
+                if sim_box[D] > +Lx_half:
+                    sim_box[D] -= Lx
+                if sim_box[D] < -Lx_half:
+                    sim_box[D] += Lx
 
         return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift
-    
-        
-        
-
- 
