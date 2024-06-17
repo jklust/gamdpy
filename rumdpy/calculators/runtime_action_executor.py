@@ -71,7 +71,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
         def kernel(grid, vectors, scalars, r_im, sim_box, step, cm_velocity):
             if step%steps_between_action == 0:
                 zero_momentum[1, 1](cm_velocity)
-                sum_momentum[num_blocks, (pb, 1)](vectors, cm_velocity)
+                sum_momentum[num_blocks, (pb, 1)](vectors, scalars, cm_velocity)
                 shift_velocities[num_blocks, (pb, 1)](vectors, cm_velocity)
             return
         return kernel

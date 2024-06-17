@@ -208,7 +208,7 @@ class Simulation():
                     if output_calculator != None:
                         output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
                     if runtime_action_executor != None:
-                        runtime_action_executor[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, step, cm_velocity)
+                        runtime_action_executor(0, vectors, scalars, r_im, sim_box, step, cm_velocity)
 
                         
                 if conf_saver != None:
