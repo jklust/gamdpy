@@ -18,10 +18,32 @@ import numba
 
 
 @numba.njit(parallel=True)
-def compute_structure_factor_backend(r_vec: np.ndarray, q_vec: np.ndarray):
+def compute_structure_factor_parallel(r_vec: np.ndarray, q_vec: np.ndarray):
     N = r_vec.shape[0]
     r_dot_q = np.dot(r_vec, q_vec.T)
     struct_fact = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
+    return struct_fact
+
+@numba.njit(parallel=True)
+def compute_structure_factor_loop_over_q(r_vec: np.ndarray, q_vec: np.ndarray):
+    N = r_vec.shape[0]
+    number_of_q_vectors = q_vec.shape[0]
+    struct_fact = np.zeros(number_of_q_vectors)
+    for i in numba.prange(number_of_q_vectors):
+        r_dot_q = np.dot(r_vec, q_vec[i])
+        struct_fact[i] = np.abs(np.sum(np.exp(1j * r_dot_q))) ** 2 / N
+    return struct_fact
+
+@numba.njit(parallel=True)
+def compute_structure_factor_loop_over_r(r_vec: np.ndarray, q_vec: np.ndarray):
+    N = r_vec.shape[0]
+    number_of_q_vectors = q_vec.shape[0]
+    struct_fact = np.zeros(number_of_q_vectors)
+    for i in numba.prange(N):
+        this_struct_fact = np.zeros(number_of_q_vectors)
+        for j in range(number_of_q_vectors):
+            this_struct_fact[j] = np.abs(np.exp(1j * np.dot(r_vec[i], q_vec[j])))**2
+        struct_fact += this_struct_fact
     return struct_fact
 
 
@@ -32,7 +54,7 @@ def compute_structure_factor(conf, backend='parallel'):
     N = conf.N
     r = conf['r']
     # n_vectors: [[0, 0, 0], [1, 0, 0], [2, 0, 0], ..., [18, 18, 18]]
-    n_max = 24
+    n_max = 48
     n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
     # Remove the first vector [0, 0, 0]
     n_vectors = n_vectors[1:]
@@ -49,7 +71,13 @@ def compute_structure_factor(conf, backend='parallel'):
         r_dot_q = np.dot(r, q_vectors.T)
         structure_factor = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
     elif backend == 'parallel':
-        structure_factor = compute_structure_factor_backend(r, q_vectors)
+        structure_factor = compute_structure_factor_parallel(r, q_vectors)
+    elif backend == 'loop over q':
+        structure_factor = compute_structure_factor_loop_over_q(r, q_vectors)
+    elif backend == 'loop over r':
+        structure_factor = compute_structure_factor_loop_over_r(r, q_vectors)
+    else:
+        raise ValueError(f"Unknown backend: {backend}")
     toc = time.perf_counter()
     wall_clock_timeing = toc - tic
 
@@ -58,9 +86,8 @@ def compute_structure_factor(conf, backend='parallel'):
 
 # Bin the structure factor to reduce noise
 def binning(structure_factor, q_lengths):
-    q_min_for_binning: float = 0.0
     q_bin_width: float = 0.1
-    q_bins = np.arange(q_min_for_binning, q_lengths.max(), q_bin_width)
+    q_bins = np.arange(0.0, q_lengths.max(), q_bin_width)
     S_of_q_binned = np.zeros_like(q_bins)
     q_binned = np.zeros_like(q_bins)
     n_values_in_bin = np.zeros_like(q_bins)
@@ -76,11 +103,7 @@ def binning(structure_factor, q_lengths):
     q_binned = q_binned[n_values_in_bin > 0]
     S_of_q_binned = S_of_q_binned[n_values_in_bin > 0]
 
-    # Add un-binned and binned structure factors to the plot
-    S_of_q_unbinned = structure_factor[q_lengths <= q_min_for_binning]
-    S = np.append(S_of_q_unbinned, S_of_q_binned)
-    q = np.append(q_lengths[q_lengths <= q_min_for_binning], q_binned)
-    return q, S
+    return q_binned, S_of_q_binned
 
 
 # Setup simulation of single-component Lennard-Jones liquid
@@ -91,14 +114,14 @@ sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_per_block=4096, num_blocks=8, storage='memory')
+                    steps_per_block=128, num_blocks=8, storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
 structure_factor_list = []
-backend: str = 'parallel'  # 'single core' or 'parallel'
+backend: str = 'loop over q'  # 'single core' or 'parallel', 'loop over q', 'loop over r'
 print(f"Using backend: {backend}")
 wall_clock_times = []
 for block in sim.blocks():
@@ -130,5 +153,5 @@ plt.yscale('log')
 plt.xlabel(r'$|q|$')
 plt.ylabel('$S(q)$')
 plt.ylim(1e-2, 10)
-plt.xlim(0, 14)
+plt.xlim(0, None)
 plt.show()
