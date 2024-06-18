@@ -45,7 +45,7 @@ class SLLOD():
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
         update_box_shift = numba.njit(configuration.simbox.update_box_shift)
     
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def update_particle_data(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one SLLOD timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
@@ -86,16 +86,33 @@ class SLLOD():
                 scalars[global_id][k_id] = my_k
                 scalars[global_id][fsq_id] = my_fsq
                 
-                if global_id == 0:
-                    # Note: not synchronized!!!
-                    update_box_shift(sim_box, sr_dt)
-                
             return
 
-        step = cuda.jit(device=gridsync)(step)
+        def call_update_box_shift(sim_box, integrator_params):
+            dt,sr_dt = integrator_params
+            global_id, my_t = cuda.grid(2)
+            if global_id == 0 and my_t == 0:
+                update_box_shift(sim_box, sr_dt)
+
+
+        call_update_box_shift = cuda.jit(call_update_box_shift)
+        update_particle_data = cuda.jit(device=gridsync)(update_particle_data)
 
         if gridsync:
-            return step  # return device function
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+                update_particle_data(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                grid.sync()
+                call_update_box_shift(sim_box, integrator_params)
+                return
+
+            return cuda.jit(device=gridsync)(kernel)
+
         else:
-            return step[num_blocks, (pb, 1)]  # return kernel, incl. launch parameters
-        
+
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+                update_particle_data[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                call_update_box_shift[1, (1, 1)](sim_box, integrator_params)
+                return
+
+        return kernel
+
