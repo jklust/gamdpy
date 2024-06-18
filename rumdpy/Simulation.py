@@ -23,9 +23,12 @@ class Simulation():
         if self.compute_stresses and not configuration.compute_stresses:
            raise ValueError("Configuration must have compute_stresses set as well!")
 
-        self.interactions = interactions
-        self.interactions_params = self.interactions.get_params(self.configuration, self.compute_plan, verbose)
-        self.interactions_kernel = self.interactions.get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
+        if type(interactions) == list:
+            self.interactions = interactions
+        else:
+            self.interactions = [interactions]
+        self.interactions_params = self.interactions[0].get_params(self.configuration, self.compute_plan, verbose)
+        self.interactions_kernel = self.interactions[0].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
 
         self.integrator = integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
@@ -289,7 +292,7 @@ class Simulation():
     
         self.timing_numba = cuda.event_elapsed_time(start, end)
         self.timing_numba_blocks = np.array(block_times)
-        self.nbflag = self.interactions.nblist.d_nbflag.copy_to_host()    
+        self.nbflag = self.interactions[0].nblist.d_nbflag.copy_to_host()    
         self.scalars_list = np.array(self.scalars_list)
 
     def status(self, per_particle=False):
@@ -317,8 +320,8 @@ class Simulation():
         st  = f'Particles : {self.configuration.N} \n'
         st += f'Steps : {self.last_num_blocks*self.steps_per_block} \n'
         st += f'nbflag : {self.nbflag} \n'
-        st += f'Total time (incl. time spent between blocks): {time_sim:.2f} s \n'
-        st += f'Simulation time : {time_total:.2f} s \n'
+        st += f'Total time (incl. time spent between blocks): {time_total:.2f} s \n'
+        st += f'Simulation time : {time_sim:.2f} s \n'
         st += f'Extra time 1.st block (presumably JIT): {extratime_firstblock:.2f} s \n'
         st += f'TPS_total : {tps_total:.2e} \n'
         st += f'TPS_sim : {tps_sim:.2e} \n'
