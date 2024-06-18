@@ -12,18 +12,23 @@ configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=0.8 * 2
 
 configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simbox.lengths)
 
+
+compute_plan = rp.get_default_compute_plan(configuration)
+print(compute_plan)
+compute_plan['gridsync'] = True # False
+
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator: NVT
-integrator = rp.integrators.SLLOD(shear_rate=0.002, dt=0.005)
+integrator = rp.integrators.SLLOD(shear_rate=0.005, dt=0.005)
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, pairpot, integrator,
                     num_blocks=16, steps_per_block=1024*4,
-                    storage='memory', compute_stresses=True)
+                    storage='memory', compute_stresses=True, compute_plan=compute_plan)
 
 # Run simulation one block at a time
 for block in sim.blocks():
