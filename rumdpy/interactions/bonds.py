@@ -24,7 +24,7 @@ class Bonds():
             print(f'{self.num_types} bond types, {self.total_number_indices} bonds in total.')
 
         self.bond_indices = np.zeros((self.total_number_indices, 3), dtype=np.int32)
-        self.bond_params = np.zeros((self.num_types, len(potential_params_list[0])), dtype=np.float32)
+        self.bond_params = np.zeros((self.num_types, len(self.potential_params_list[0])), dtype=np.float32)
     
         start_index = 0  
         for bond_type in range(self.num_types):
@@ -58,7 +58,7 @@ class Bonds():
         u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
-        bondpotential_function = numba.njit(self.bondpotential_function)
+        bondpotential_function = numba.njit(self.bond_potential)
     
         def bond_calculator(vectors, scalars, ptype, sim_box, indices, values):
             

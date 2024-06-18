@@ -11,7 +11,7 @@ configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=rho,  T=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
-potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
+potential_params_list = [[1.12, 3000.], [1.00, 3000.], [1.12, 3000.]]
 fourth = np.arange(0,configuration.N,4)
 bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
 bonds = rp.Bonds(bond_potential, potential_params_list, bond_particles_list)
@@ -22,32 +22,37 @@ sig, eps, cut = 1.0, 1.0, 2.5
 pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Make integrator
-dt = 0.005 # timestep 
+dt = 0.002 # timestep 
 num_blocks = 128               # Do simulation in this many 'blocks'
-steps_per_block = 1024      # ... each of this many steps
+steps_per_block = 1024*4      # ... each of this many steps
 running_time = dt*num_blocks*steps_per_block
-temperature = 1.2 
+temperature = 2.5
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 compute_plan = rp.get_default_compute_plan(configuration)
-#compute_plan['tp'] = 6
+print(compute_plan)
+compute_plan['tp'] = 6
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
+#sim = rp.Simulation(configuration, [pairpot, ], integrator,
                     num_blocks=num_blocks, steps_per_block=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
+print('Equilibration:')
 for block in sim.blocks():
-    print('.', end=' ')
+    print('.', end='', flush=True)
 print()
 print(sim.summary())
 
+print('Production:')
 for block in sim.blocks():
-    print(sim.status(per_particle=True))
+    if block%10==0:
+        print(f'{block=:4}  {sim.status(per_particle=True)}')
     calc_rdf.update()
 print(sim.summary())
 

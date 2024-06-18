@@ -27,8 +27,13 @@ class Simulation():
             self.interactions = interactions
         else:
             self.interactions = [interactions]
-        self.interactions_params = self.interactions[0].get_params(self.configuration, self.compute_plan, verbose)
-        self.interactions_kernel = self.interactions[0].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
+        #self.interactions_params = self.interactions[1].get_params(self.configuration, self.compute_plan, verbose)
+        #self.interactions_kernel = self.interactions[1].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
+        #self.interactions_params = self.interactions[0].get_params(self.configuration, self.compute_plan, verbose)
+        #self.interactions_kernel = self.interactions[0].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
+        self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration, self.interactions, 
+                                                                                      compute_plan, compute_stresses=compute_stresses, 
+                                                                                      verbose=verbose)
 
         self.integrator = integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
