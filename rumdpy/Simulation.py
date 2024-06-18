@@ -5,12 +5,8 @@ from numba import cuda
 
 # rumdpy
 import rumdpy as rp
-from rumdpy.integrators import nve, nve_toxvaerd, nvt_nh, nvt_langevin, npt_langevin
 
 # IO
-import pandas as pd
-import pickle
-import sys
 import h5py
 
 class Simulation():
@@ -35,8 +31,6 @@ class Simulation():
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
-        
-        
         
         if num_blocks==0:
             num_blocks = 32
@@ -267,10 +261,10 @@ class Simulation():
                             self.steps_per_block)
 
             self.configuration.copy_to_host()
-            self.vectors_list.append(self.configuration.vectors.copy())
-            self.scalars_list.append(self.configuration.scalars.copy())
-            self.simbox_data_list.append(self.configuration.simbox.lengths.copy()) # save to memory/hdf5
-            self.scalars_t.append(self.d_output_array.copy_to_host())     # save to memory/hdf5   
+            self.vectors_list.append(self.configuration.vectors.copy()) # Needed for 3D viz, should use memory/hdf5
+            self.scalars_list.append(self.configuration.scalars.copy())            # same
+            self.simbox_data_list.append(self.configuration.simbox.lengths.copy()) # same
+            self.scalars_t.append(self.d_output_array.copy_to_host())              # same
             
             if self.storage[-3:]=='.h5':
                 with h5py.File(self.storage, "a") as f:
@@ -284,8 +278,6 @@ class Simulation():
                 if self.output_calculator != None:
                     self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
                 
-            #vol = (c1.simbox.lengths[0] * c1.simbox.lengths[1] * c1.simbox.lengths[2])
-            #vol_t.append(vol)
             end_block.record()
             end_block.synchronize()
             block_times.append(cuda.event_elapsed_time(start_block, end_block))
@@ -294,7 +286,6 @@ class Simulation():
         # Finalizing run
         end.record()
         end.synchronize()
-        #print()
     
         self.timing_numba = cuda.event_elapsed_time(start, end)
         self.timing_numba_blocks = np.array(block_times)
