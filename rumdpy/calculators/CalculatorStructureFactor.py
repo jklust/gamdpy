@@ -28,7 +28,8 @@ class CalculatorStructureFactor:
     """
 
     def __init__(self, configuration: rp.Configuration,
-                 q_max: None | float = None, n_vectors=None, backend='parallel', ) -> None:
+#                 q_max: None | float = None, n_vectors=None, backend='parallel', ) -> None:
+                 q_max = None, n_vectors=None, backend='parallel', ) -> None:
         self.update_count = 0
         self.configuration = configuration
         self.L = self.configuration.simbox.lengths.copy()
@@ -90,7 +91,8 @@ class CalculatorStructureFactor:
         self.sum_S_q += np.abs(this_rho_q) ** 2
         self.update_count += 1
 
-    def read(self, bins: int | None) -> dict:
+    #def read(self, bins: int | None) -> dict:
+    def read(self, bins) -> dict:
         """ Return the structure factor S(q) for the q vectors in the q_direction.
             If bins is an integer, the data is binned (ready to be plotted).
             If bins is None, the raw S(q) data is returned.
