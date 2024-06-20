@@ -2,156 +2,61 @@
     S(𝐪) = 1/N * |sum_{i=1}^{N} exp(-i𝐪•𝐫)|^2
     where 𝐪 is the wave vector, 𝐫 is the position of the particles, and N is the number of particles.
     The 𝐪 vectors are given by 𝐪 = 2π𝐧/L, where 𝐧 is a vector of integers and L is the box size.
-
-    Below we compute for several 𝐧 vectors and plot the structure factor.
-
 """
-import itertools
-import time
-
 import matplotlib.pyplot as plt
+import numpy as np
 
 import rumdpy as rp
-import numpy as np
-from scipy import stats
-import numba
-
-
-@numba.njit(parallel=True)
-def compute_structure_factor_parallel(r_vec: np.ndarray, q_vec: np.ndarray):
-    N = r_vec.shape[0]
-    r_dot_q = np.dot(r_vec, q_vec.T)
-    struct_fact = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
-    return struct_fact
-
-@numba.njit(parallel=True)
-def compute_structure_factor_loop_over_q(r_vec: np.ndarray, q_vec: np.ndarray):
-    N = r_vec.shape[0]
-    number_of_q_vectors = q_vec.shape[0]
-    struct_fact = np.zeros(number_of_q_vectors)
-    for i in numba.prange(number_of_q_vectors):
-        r_dot_q = np.dot(r_vec, q_vec[i])
-        struct_fact[i] = np.abs(np.sum(np.exp(1j * r_dot_q))) ** 2 / N
-    return struct_fact
-
-@numba.njit(parallel=True)
-def compute_structure_factor_loop_over_r(r_vec: np.ndarray, q_vec: np.ndarray):
-    N = r_vec.shape[0]
-    number_of_q_vectors = q_vec.shape[0]
-    struct_fact = np.zeros(number_of_q_vectors)
-    for i in numba.prange(N):
-        this_struct_fact = np.zeros(number_of_q_vectors)
-        for j in range(number_of_q_vectors):
-            this_struct_fact[j] = np.abs(np.exp(1j * np.dot(r_vec[i], q_vec[j])))**2
-        struct_fact += this_struct_fact
-    return struct_fact
-
-
-def compute_structure_factor(conf, backend='parallel'):
-    # Get configuration data and set up q vectors
-    L = conf.simbox.lengths
-    D = conf.D
-    N = conf.N
-    r = conf['r']
-    # n_vectors: [[0, 0, 0], [1, 0, 0], [2, 0, 0], ..., [18, 18, 18]]
-    n_max = 48
-    n_vectors = np.array(list(itertools.product(range(n_max), repeat=D)), dtype=int)
-    # Remove the first vector [0, 0, 0]
-    n_vectors = n_vectors[1:]
-    # Remove n_vectors where the length is greater than n_max
-    n_vectors = n_vectors[np.linalg.norm(n_vectors, axis=1) < n_max]
-    q_vectors = 2 * np.pi * n_vectors / L
-    q_vectors = np.array(q_vectors, dtype=np.float32)
-    q_len = np.linalg.norm(q_vectors, axis=1)
-
-    # Compute the structure factor
-    structure_factor: None | np.ndarray = None
-    tic = time.perf_counter()
-    if backend == 'single core':
-        r_dot_q = np.dot(r, q_vectors.T)
-        structure_factor = np.abs(np.sum(np.exp(1j * r_dot_q), axis=0)) ** 2 / N
-    elif backend == 'parallel':
-        structure_factor = compute_structure_factor_parallel(r, q_vectors)
-    elif backend == 'loop over q':
-        structure_factor = compute_structure_factor_loop_over_q(r, q_vectors)
-    elif backend == 'loop over r':
-        structure_factor = compute_structure_factor_loop_over_r(r, q_vectors)
-    else:
-        raise ValueError(f"Unknown backend: {backend}")
-    toc = time.perf_counter()
-    wall_clock_timeing = toc - tic
-
-    return q_len, structure_factor, wall_clock_timeing
-
-
-# Bin the structure factor to reduce noise
-def binning(structure_factor, q_lengths):
-    q_bin_width: float = 0.1
-    q_bins = np.arange(0.0, q_lengths.max(), q_bin_width)
-    S_of_q_binned = np.zeros_like(q_bins)
-    q_binned = np.zeros_like(q_bins)
-    n_values_in_bin = np.zeros_like(q_bins)
-    for i, q_bin in enumerate(q_bins):
-        mask = (q_lengths >= q_bin) & (q_lengths < q_bin + q_bin_width)
-        if np.sum(mask) == 0:  # Skip empty bins
-            continue
-        S_of_q_binned[i] = np.mean(structure_factor[mask])
-        q_binned[i] = np.mean(q_lengths[mask])
-        n_values_in_bin[i] = np.sum(mask)
-
-    # Remove bins with zero values
-    q_binned = q_binned[n_values_in_bin > 0]
-    S_of_q_binned = S_of_q_binned[n_values_in_bin > 0]
-
-    return q_binned, S_of_q_binned
-
 
 # Setup simulation of single-component Lennard-Jones liquid
-temperature = 2.0
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=temperature * 2)
+temperature: float = 2.0
+density: float = 0.973
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=density, T=temperature * 2)
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_per_block=128, num_blocks=8, storage='memory')
+                    steps_per_block=1024, num_blocks=128, storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
-structure_factor_list = []
-backend: str = 'loop over q'  # 'single core' or 'parallel', 'loop over q', 'loop over r'
-print(f"Using backend: {backend}")
-wall_clock_times = []
+calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=18.0)
 for block in sim.blocks():
     print(sim.status(per_particle=True))
-    q_lengths, S_of_q, wall_clock_time = compute_structure_factor(sim.configuration, backend=backend)
-    q, S = binning(S_of_q, q_lengths)
-    structure_factor_list.append(S)
-    wall_clock_times.append(wall_clock_time)
+    calc_struct_fact.update()
 
-# Print the average, min and max of wall-clock times
-print(f"Average wall-clock time: {np.mean(wall_clock_times):.4f} s")
-print(f"Min wall-clock time: {np.min(wall_clock_times):.4f} s")
-print(f"Max wall-clock time: {np.max(wall_clock_times):.4f} s")
-# Remove slowest wall-clock time
-wall_clock_times.remove(np.max(wall_clock_times))
-print(f"Average wall-clock time (excluding slowest): {np.mean(wall_clock_times):.4f} s")
-print(f"Min wall-clock time (excluding slowest): {np.min(wall_clock_times):.4f} s")
-print(f"Max wall-clock time (excluding slowest): {np.max(wall_clock_times):.4f} s")
+struct_fact = calc_struct_fact.read(bins=100)
+q = struct_fact['|q|']
+S = struct_fact['S(|q|)']
 
-# Average the structure factor
-S = np.mean(structure_factor_list, axis=0)
-# Compute 95% confidence interval
-S_sem = stats.sem(structure_factor_list, axis=0)  # Assume blocks are statistically independent
-S_error = 1.96 * S_sem  # 95% confidence interval for normal distribution (large sample size)
+# Find maximum of S(q) and corresponding q
+max_S_raw = np.max(S)
+max_q_raw = q[np.argmax(S)]
+# Fit polynomial to two nearest points to
+n_range = 2
+idx_max = np.argmax(S)
+idx_fit = slice(idx_max-n_range, idx_max+n_range)
+fit = np.polyfit(q[idx_fit], S[idx_fit], 2)
+a, b, c = fit
+max_q = -b / (2 * a)
+max_S = a * max_q ** 2 + b * max_q + c
 
 plt.figure()
-plt.errorbar(q, S, S_error, fmt='x')
+plt.title(f'Lennard-Jones liquid at $T={temperature}$ and $\\rho={density}$')
+plt.plot(q, S, 'o')
+x_fit = np.arange(q[idx_fit.start], q[idx_fit.stop], 0.01)
+plt.plot(x_fit, a * x_fit ** 2 + b * x_fit + c, 'r--')
+plt.text(max_q, max_S+1, f'Maximum: $S(q = {max_q:.3f}) = {max_S:.2f}$')
+# Use S(q) in q→0 limit and estimate compressibility
+plt.plot([0, 1], [S[0], S[0]], 'k--')
+kappa_T = S[0]/(temperature*density)
+plt.text(1, S[0]/2, r'$\kappa_T=\frac{S(q→0)}{\rho k_B T}=$' f'{kappa_T:.4f}')
 plt.yscale('log')
-plt.xlabel(r'$|q|$')
-plt.ylabel('$S(q)$')
+plt.xlabel(r'Length of wave-vector, $|q|$ ($\sigma^{-1}$)')
+plt.ylabel(r'Static structure factor, $S(|q|)$')
 plt.ylim(1e-2, 10)
-plt.xlim(0, None)
+plt.xlim(0, max(q))
 plt.show()
