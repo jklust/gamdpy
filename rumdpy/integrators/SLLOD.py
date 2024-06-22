@@ -6,9 +6,12 @@ import math
 
 
 ## TO DO LIST FOR SLLOD (including LEBCs)
-# 1. Check conservation of KE
-# 2. Correct check of whether nb list needs to be built
-# 3. Update images when box shift gets wrapped, or something equivalent
+# 1. implement gridsync=False case and check that it runs DONE
+# 2. Check conservation of KE
+# 3. Figure out how to run the initialization kernel separately
+# 4. Correct check of whether nb list needs to be built
+# 5. Update images when box shift gets wrapped, or something equivalent
+# 6. compatibility wih Order-N NB-list
 
 class SLLOD():
     def __init__(self, shear_rate, dt):
@@ -281,36 +284,32 @@ class SLLOD():
 
         if gridsync:
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
-
-                
-                if True:
-                    
-                    initialize_g_factor(grid, vectors, scalars, integrator_params) # should only be called the first time
-                    grid.sync()
-                    integrate_sllod_b1(grid, vectors, scalars, integrator_params, time)
-                    grid.sync()
-                    integrate_sllod_b2(grid, vectors, scalars, integrator_params, time)
-                    grid.sync()
-                    call_update_box_shift(sim_box, integrator_params)
-                    # need to apply wrap to images!
-                    # (alternatively store an extra integer with the box to count
-                    # how many times it's been wrapped)
-                    grid.sync()
-                    integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                else:
-                    # initial newtonian update, to be replaced by isokinetic sllod.
-                    update_particle_data(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                    grid.sync()
-                    call_update_box_shift(sim_box, integrator_params)
+                initialize_g_factor(grid, vectors, scalars, integrator_params) # should only be called the first time
+                grid.sync()
+                integrate_sllod_b1(grid, vectors, scalars, integrator_params, time)
+                grid.sync()
+                integrate_sllod_b2(grid, vectors, scalars, integrator_params, time)
+                grid.sync()
+                call_update_box_shift(sim_box, integrator_params)
+                # need to apply wrap to images!
+                # (alternatively store an extra integer with the box to count
+                # how many times it's been wrapped)
+                grid.sync()
+                integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 return
 
             return cuda.jit(device=gridsync)(kernel)
-
         else:
 
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
-                update_particle_data[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                initialize_g_factor[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params) # should only be called the first time
+                integrate_sllod_b1[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
+                integrate_sllod_b2[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
                 call_update_box_shift[1, (1, 1)](sim_box, integrator_params)
+                # need to apply wrap to images!
+                # (alternatively store an extra integer with the box to count
+                # how many times it's been wrapped)
+                integrate_sllod_a_b1[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 return
 
         return kernel
