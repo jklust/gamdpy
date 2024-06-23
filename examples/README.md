@@ -9,3 +9,5 @@ List of examples of atomic simulations in order of increasing complexity:
 - [test_stress.py](test_stress.py) : Like blocks.py but calculates also the stress tensor and prints it after each block.
 - [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'
 - [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
+- [ASD.py](ASD.py) : Simulating ASymmetric Dumbbels (toy model of toluene)
+- [LJchain.py](LJchain.py) : Simulating LJ chains (coarse grained polymer model)
