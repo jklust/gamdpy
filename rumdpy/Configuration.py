@@ -186,8 +186,9 @@ class Configuration:
             return ptype
 
         return ptype_function
-
-
+    
+    def get_volume(self):
+        return self.simbox.volume(self.simbox.lengths)
 
 
 # Helper functions
@@ -237,7 +238,11 @@ def make_configuration_fcc(nx, ny, nz, rho, T, N=None):
     if N==None:
         N = N_
     else:
-        assert N <= N_, f'N needs to be equal to or smaller than number of particle in generated crystal ($N_$)'
+        if N > N_:
+            raise ValueError(f'N ({N}) needs to be equal to or smaller than number of particle in generated crystal ({N_})')
+        scale_factor = (N/N_)**(1/3)
+        positions *= scale_factor
+        simbox_data *= scale_factor
 
     configuration = Configuration(N, D, simbox_data)
     configuration['r'] = positions[:N,:]
