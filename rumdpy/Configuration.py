@@ -186,8 +186,9 @@ class Configuration:
             return ptype
 
         return ptype_function
-
-
+    
+    def get_volume(self):
+        return self.simbox.volume(self.simbox.lengths)
 
 
 # Helper functions
@@ -223,18 +224,28 @@ def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
     return conf * scale_factor, sim_box * scale_factor
 
 
-def make_configuration_fcc(nx, ny, nz, rho, T):
+def make_configuration_fcc(nx, ny, nz, rho, T, N=None):
     """
     Generate Configuration for particle positions and simbox of a FCC lattice with a given density
     (nx x ny x nz unit cells), 
     and assign velocities corresponding to the temperature T, and default types ('0') and masses ('1.')
+    If N is given, only N particles will be in the configuration 
+    (needs to be equal to or smaller than number of particle in generated crystal)
     """
 
     positions, simbox_data = generate_fcc_positions(nx, ny, nz, rho)
-    N, D = positions.shape
+    N_, D = positions.shape
+    if N==None:
+        N = N_
+    else:
+        if N > N_:
+            raise ValueError(f'N ({N}) needs to be equal to or smaller than number of particle in generated crystal ({N_})')
+        scale_factor = (N/N_)**(1/3)
+        positions *= scale_factor
+        simbox_data *= scale_factor
 
     configuration = Configuration(N, D, simbox_data)
-    configuration['r'] = positions
+    configuration['r'] = positions[:N,:]
     if T>0.0:
         configuration['v'] = generate_random_velocities(N, D, T=T)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses

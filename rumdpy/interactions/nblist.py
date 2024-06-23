@@ -14,14 +14,17 @@ class NbList2():
         self.d_nblist = cuda.to_device(self.nblist)
         self.d_nbflag = cuda.to_device(self.nbflag)
         self.d_r_ref = cuda.to_device(self.r_ref)
-        self.d_exclusions = cuda.to_device(self.exclusions_)
+        self.d_exclusions = cuda.to_device(self._exclusions)
     
     def get_params(self, max_cut, compute_plan, verbose=True):
         self.max_cut = max_cut
         self.skin, = [compute_plan[key] for key in ['skin']]
-        self.exclusions_ = self.exclusions # Don't change user-set properties
-        if self.exclusions_ == None:
-            self.exclusions_ = np.zeros((self.r_ref.shape[0], 2), dtype=np.int32)
+
+        #print('NbList.exclusions:\n', self.exclusions)
+        if type(self.exclusions) == np.ndarray: # Don't change user-set properties
+            self._exclusions = self.exclusions.copy()
+        else:
+            self._exclusions = np.zeros((self.r_ref.shape[0], 2), dtype=np.int32)
         self.copy_to_device()                     
         return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions)
 
