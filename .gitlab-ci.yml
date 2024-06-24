@@ -19,8 +19,8 @@ variables:
 
 .test:
   script:
-    - apt-get update
-    - apt-get -q -q -y install g++
+#    - apt-get update
+#    - apt-get -q -q -y install g++
     - python -V  # Print out python version for debugging
     - pip install virtualenv
     - virtualenv env
