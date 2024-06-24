@@ -31,7 +31,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
         local_id = cuda.threadIdx.x
         global_id = my_block * pb + local_id
         my_t = cuda.threadIdx.y
-        if my_t == 0:
+        if global_id < num_part and my_t == 0:
             my_m = scalars[global_id][m_id]
             for k in range(D):
                 cuda.atomic.add(cm_velocity, k, my_m * vectors[v_id][global_id][k])
@@ -44,7 +44,7 @@ def make_runtime_action_executor(configuration, steps_between_action, compute_pl
         global_id = my_block * pb + local_id
         my_t = cuda.threadIdx.y
 
-        if my_t == 0:
+        if global_id < num_part and my_t == 0:
             for k in range(D):
                 vectors[v_id][global_id,k] -= cm_velocity[k] / cm_velocity[D] 
 
