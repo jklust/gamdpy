@@ -6,9 +6,9 @@ class Test(unittest.TestCase):
         pass
 
     def test_(self):
+        print('test_bare')
         self.assertTrue(True)
 
 
 if __name__ == '__main__':
-    print('test_bare')
     unittest.main()
