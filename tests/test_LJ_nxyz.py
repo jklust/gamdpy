@@ -12,6 +12,9 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     configuration = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
     assert configuration.N==nx*ny*nz*4, f'Wrong number particles (FCC), {configuration.N} <> {nx*ny*nz*4}'
     assert configuration.D==3, f'Wrong dimension (FCC), {configuration.D} <> {3}'
+    N = configuration.N
+    vol = configuration.get_volume()
+    print(nx, ny, nz, N, vol, N/vol)
 
     # Allow for overwritting of the default compute_plan
     compute_plan = rp.get_default_compute_plan(configuration)
@@ -53,7 +56,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
                         num_blocks=2, steps_per_block=1024*4,
                         scalar_output=8, 
                         conf_output=None, 
-                        storage='memory', verbose=False)
+                        storage='memory', verbose=False, compute_stresses=False)
 
     # Run simulation one block at a time
     for block in sim.blocks():
@@ -91,6 +94,7 @@ def get_results_from_df(df, N, D):
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
 @example(nx=16, ny=16, nz=32)
+@example(nx=5, ny=5, nz=13)
 def test_nve(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
