@@ -54,7 +54,7 @@ if integrator_name=='NPT_Langevin':
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 compute_plan = rp.get_default_compute_plan(configuration)
-compute_plan['tp'] = 6
+print(compute_plan)
 
 sim = rp.Simulation(configuration, pairpot, integrator,
                     num_blocks=num_blocks, steps_per_block=steps_per_block,
