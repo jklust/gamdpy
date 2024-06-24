@@ -10,4 +10,5 @@ class Test(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    print('test_bare')
     unittest.main()
