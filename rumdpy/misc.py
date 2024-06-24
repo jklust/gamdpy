@@ -81,7 +81,7 @@ def get_default_compute_plan(configuration):
    
     # tp: threads per particle
     tp = 1
-    while N*tp < 3*num_cc_cores: # Performance heuristic 
+    while N*tp < 2*num_cc_cores: # Performance heuristic (conservative) 
         tp += 1
         
     while (pb*tp)%warpsize != 0: # Number of threads per thread-block should be multiplum of warpsize
