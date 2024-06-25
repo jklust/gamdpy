@@ -11,7 +11,7 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', compute_stresses = False, verbose=False):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', compute_stresses=False, verbose=False):
                 
         self.configuration = configuration
         if compute_plan==None:
