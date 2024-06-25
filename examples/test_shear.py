@@ -15,7 +15,7 @@ configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simb
 
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
-compute_plan['gridsync'] = True # False
+compute_plan['gridsync'] = True # False # 
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -27,7 +27,7 @@ integrator = rp.integrators.SLLOD(shear_rate=0.005, dt=0.005)
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, pairpot, integrator,
-                    num_blocks=16, steps_per_block=1024*4,
+                    num_blocks=8, steps_per_block=1024,
                     storage='memory', compute_stresses=True, compute_plan=compute_plan)
 
 # Run simulation one block at a time
@@ -41,8 +41,10 @@ print(sim.summary())
 
 
 u = sim.output['scalars'][:,:,0].flatten()/configuration.N
+k = sim.output['scalars'][:,:,4].flatten()/configuration.N
 
 plt.plot(u)
+plt.plot(k)
 plt.show()
 
 # To get a plot of the MSD do something like this:
