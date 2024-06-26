@@ -29,12 +29,12 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     # Setup the Simulation
     num_blocks = 32
     steps_per_block = 512
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
     
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
 
@@ -45,10 +45,10 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
 
     # Run standard NVE Simulation
     integrator = rp.integrators.NVE(dt=dt)
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))

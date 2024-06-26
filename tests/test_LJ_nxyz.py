@@ -49,14 +49,14 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     # Setup the Simulation
     num_blocks = 1
     steps_per_block = 1024*4
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=2, steps_per_block=1024*4,
-                        scalar_output=8, 
-                        conf_output=None, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=2, steps_per_timeblock=1024 * 4,
+                        scalar_output=8,
+                        conf_output=None,
                         storage='memory', verbose=False, compute_stresses=False)
 
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
 
     # Make conversion to dataframe a method at some point...

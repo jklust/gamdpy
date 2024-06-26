@@ -25,17 +25,17 @@ for temperature in ['0.70', '1.10', '1.50']:
     integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 
     # Setup Simulation
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block,
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         print(sim.status(per_particle=True))
     print(sim.summary())
     
     print('Production:')
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         print(sim.status(per_particle=True))
     print(sim.summary())
 

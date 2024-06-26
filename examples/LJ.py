@@ -57,10 +57,10 @@ compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
 
 sim = rp.Simulation(configuration, pairpot, integrator,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
-for block in sim.blocks():
+for block in sim.timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
 
