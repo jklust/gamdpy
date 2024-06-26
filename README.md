@@ -74,23 +74,23 @@ A good place to see how this is done without implementing all functions twice is
 
 ## TODO, before summer interns arrive:
 - [ ] SLLOD (stress, LEBC), Nick
-- [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
-- [ ] Finish Atomic interface
+- [X] Bonds interface
+- [ ] Implement other fixed interactions: point interactions (tethered particles). Jesper
+- [ ] Finish Atomic interface (runtime actions...) Thomas
 - [X] Momentum resetting (remove default) Nick
 - [ ] Read rumd3 & others configurations Thomas
 - [ ] Testing (Framework, doctest), Ulf & Thomas 
 - [ ] Settle on io format
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda?
-- [ ] Generalize make_configuration to different lattices
-- [ ] Rename Simulation.blocks() to something like run_blocks()
+- [ ] Generalize make_configuration to different lattices, Ulf
 - [ ] Read configurations from file
 - [ ] Allow more flexible/dynamical changing which data to be stored in Configuration (e.g. stresses)
 - [ ] Runtime actions to include conf_saver and scalar_output
 
 
 ## TODO, long term:
-- [ ] Implement other fixed interactions: point interactions (tethered particles).
+- [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
 - [ ] make installable by pip for all, by uploading to pypi
