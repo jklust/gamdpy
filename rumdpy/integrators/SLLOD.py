@@ -54,9 +54,9 @@ class SLLOD():
 
         # Unpack indices for vectors and scalars
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]     
-        # was thinking that using a function oculd avoid synchronization
-        # issues for updating the boxshift. But now I'm sure if it really
+        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]
+        # was thinking that using a function could avoid synchronization
+        # issues for updating the boxshift. But now I'm not sure if it really
         # makes sense to use a function (the same way that NVT
         # does for temperature). There the temperature isn't stored anywhere.
         # Here I'm pretty sure the box_shift has to be stored together with the
@@ -74,8 +74,8 @@ class SLLOD():
             dt, sr, thermostat_sums = integrator_params
             global_id, my_t = cuda.grid(2)
             if global_id == 0 and my_t == 0:
-                sr_dt = sr * dt
-                update_box_shift(sim_box, sr_dt)
+                delta_shift = sim_box[1] * sr * dt
+                update_box_shift(sim_box, delta_shift)
 
 
         def integrate_sllod_b1(grid, vectors, scalars, integrator_params, time):
@@ -107,7 +107,7 @@ class SLLOD():
                 my_fp = numba.float32(0.)
                 my_f2 = numba.float32(0.)
                 for k in range(D):
-                    my_p2 += my_v[k] * my_v[k] / my_m
+                    my_p2 += my_v[k] * my_v[k] * my_m
                     my_fp += my_f[k] * my_v[k]
                     my_f2 += my_f[k] * my_f[k] / my_m
                 cuda.atomic.add(thermostat_sums, 3, my_p2)
@@ -156,16 +156,15 @@ class SLLOD():
                     my_p2 += my_v[k]**2
                 my_p2 *= my_m
                 
-                # add to variables in 'group 0''
                 cuda.atomic.add(thermostat_sums, 6, my_pxpy)
                 cuda.atomic.add(thermostat_sums, 7, my_pypy)
                 cuda.atomic.add(thermostat_sums, 8, my_p2)
 
             # and reset group 0 sums to zero
             if global_id == 0 and my_t == 0:
-                thermostat_sums[0] = 0.
-                thermostat_sums[1] = 0.
-                thermostat_sums[2] = 0.
+                thermostat_sums[0] = numba.float32(0.)
+                thermostat_sums[1] = numba.float32(0.)
+                thermostat_sums[2] = numba.float32(0.)
 
 
         def integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
@@ -187,7 +186,7 @@ class SLLOD():
                 # g-factor for a half time-step
                 g_factor = numba.float32(1.)/math.sqrt(numba.float32(1.) - c1*dt  + numba.float32(0.25) * c2 * dt**2)
                 
-                
+
                 # update velocity
                 my_v[0] = g_factor * (my_v[0] - numba.float32(0.5)*sr*dt*my_v[1])
                 for k in range(1, D):
@@ -195,7 +194,7 @@ class SLLOD():
                 
                 # update position and apply bounday conditions
                 my_r[0] += sr*dt*my_r[1] # rumd-3 has another term which seems to be incorrect (!)
-                for k in range(k):
+                for k in range(D):
                     my_r[k] += my_v[k] * dt
 
                 apply_PBC(my_r, r_im[global_id], sim_box)
@@ -216,9 +215,9 @@ class SLLOD():
 
             # and reset group 1 sums to zero
             if global_id == 0 and my_t == 0:
-                thermostat_sums[3] = 0.
-                thermostat_sums[4] = 0.
-                thermostat_sums[5] = 0.
+                thermostat_sums[3] = numba.float32(0.)
+                thermostat_sums[4] = numba.float32(0.)
+                thermostat_sums[5] = numba.float32(0.)
         
 
                 

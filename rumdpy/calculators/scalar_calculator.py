@@ -10,9 +10,10 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
     num_blocks = (num_part - 1) // pb + 1
     
     # Unpack indices for scalars to be compiled into kernel  
-    u_id, k_id, w_id, fsq_id, lap_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap']]     
+    u_id, k_id, w_id, fsq_id, lap_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap']]
     v_id = configuration.vectors.indices['v']
-    
+    sx_id = configuration.vectors.indices['sx']
+
     volume_function = numba.njit(configuration.simbox.volume)
 
     def scalar_calculator(grid, vectors, scalars, r_im, sim_box,  output_array, step):
@@ -34,7 +35,8 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
                 cuda.atomic.add(output_array, (save_index, 6), vectors[v_id][global_id][0]) 
                 cuda.atomic.add(output_array, (save_index, 7), vectors[v_id][global_id][1]) 
                 cuda.atomic.add(output_array, (save_index, 8), vectors[v_id][global_id][2])
-
+                # XY component of stress
+                cuda.atomic.add(output_array, (save_index, 9), vectors[sx_id][global_id][1])
             if global_id == 0 and my_t == 0:
                 output_array[save_index][5] = volume_function(sim_box)
 

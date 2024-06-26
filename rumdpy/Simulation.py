@@ -99,6 +99,8 @@ class Simulation():
         self.num_scalars = 6
         #include CM velocity
         self.num_scalars += self.configuration.D
+        #include XY component of stress [temporary - need to figure out what we want to do in general]
+        self.num_scalars += 1
 
         if self.output_calculator != None:
             self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
