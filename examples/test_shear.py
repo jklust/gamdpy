@@ -8,7 +8,13 @@ import rumdpy as rp
 import matplotlib.pyplot as plt
 
 # Setup configuration: FCC Lattice
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=0.8 * 2)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
+
+every_other = range(1, configuration.N, 2)
+configuration['m'][every_other] = 2.0
+
+
+configuration.randomize_velocities(T=0.8 * 2)
 
 configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simbox.lengths)
 
@@ -24,7 +30,7 @@ pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator to melt the crystal
 dt = 0.005
-num_blocks = 50
+num_blocks = 10 # 50
 steps_per_block = 2048
 running_time = dt*num_blocks*steps_per_block
 temperature_low = 0.700
@@ -52,9 +58,9 @@ rdf = calc_rdf.read()
 
 print("Now run SLLOD simulation on what should now be a glass or polycrystal")
 
-sc_output = 32
+sc_output = 4 # 32
 
-sr = 0.005
+sr = 0.001
 dt = 0.005
 integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 
@@ -83,7 +89,7 @@ sxy_mean = np.mean(sxy)
 print(f'{sr:.2g} {sxy_mean:.6f}')
 
 plt.figure(1)
-#plt.plot(strains, k)
+plt.plot(strains, k)
 #plt.plot(time, u)
 #plt.figure(2)
 plt.plot(strains, sxy)

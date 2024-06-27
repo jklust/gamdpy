@@ -191,13 +191,27 @@ class Configuration:
         return self.simbox.volume(self.simbox.lengths)
 
 
+    def randomize_velocities(self, T):
+        if T > 0.0:
+            self['v'] = generate_random_velocities(self.N, self.D, T=T, m=self['m'])
+        else:
+            self['v'] = np.zeros((self.N, self.D), np.float32)
+
 # Helper functions
 
 def generate_random_velocities(N, D, T, m=1, dtype=np.float32):
-    v = dtype(np.random.normal(0.0, T ** 0.5, (N, D)))  ###### Assuming m=1, INSERT CORRECT FORMULA ######
+    v = np.zeros((N, D), dtype=dtype)
     for k in range(D):
-        v[:, k] -= np.mean(v[:, k])  # remove drift
-    T_ = np.sum(m * v ** 2) / (D * (N - 1))
+        # to cover the case that m is a 1D array of length N, need to
+        # generate one column at a time, passing the initial zeros as the
+        # mean to avoid problems with inferring the correct shape
+        v[:, k] = np.random.normal(v[:,k], (T/m)**0.5)
+        CM_drift = np.mean(m*v[:, k]) / np.mean(m)
+        v[:, k] -= CM_drift
+
+    # rescale to get the kinetic temperature exactly right. The outer np.sum
+    # is necessary when m is a scalar.
+    T_ = np.sum( np.dot(m, np.sum(v ** 2, axis=1)) ) / (D * (N - 1))
     v *= (T / T_) ** 0.5
     return dtype(v)
 
@@ -224,11 +238,11 @@ def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
     return conf * scale_factor, sim_box * scale_factor
 
 
-def make_configuration_fcc(nx, ny, nz, rho, T, N=None):
+def make_configuration_fcc(nx, ny, nz, rho, N=None):
     """
     Generate Configuration for particle positions and simbox of a FCC lattice with a given density
     (nx x ny x nz unit cells), 
-    and assign velocities corresponding to the temperature T, and default types ('0') and masses ('1.')
+    and default types ('0') and masses ('1.')
     If N is given, only N particles will be in the configuration 
     (needs to be equal to or smaller than number of particle in generated crystal)
     """
@@ -246,8 +260,6 @@ def make_configuration_fcc(nx, ny, nz, rho, T, N=None):
 
     configuration = Configuration(N, D, simbox_data)
     configuration['r'] = positions[:N,:]
-    if T>0.0:
-        configuration['v'] = generate_random_velocities(N, D, T=T)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
 

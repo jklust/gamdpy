@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 
 rho = 1.200
 # Setup configuration: FCC crystal
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, T=1.6)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+configuration.randomize_velocities(T=1.6)
 configuration.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
 #configuration['r'][27,2] += 0.01 # Pertube z-coordinate of particle 27
 

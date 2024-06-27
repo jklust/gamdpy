@@ -8,7 +8,8 @@ For an even simpler script, see minimal.py
 import rumdpy as rp
 
 # Setup fcc configuration
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973, T=0.8 * 2)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
+configuration.randomize_velocities(T=0.8 * 2)
 
 # Setup pair potential.
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

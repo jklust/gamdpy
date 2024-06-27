@@ -29,8 +29,9 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
-    configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, T=2*T)
-    
+    configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+    configuration.randomize_velocities(T=2*T)
+
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 

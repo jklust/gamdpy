@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 # Generate configuration with a FCC lattice
 #rho = 0.932
 rho = 1.863
-configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho,  T=1.44)
+configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho)
 B_particles = range(1, configuration.N, 2)
 configuration.ptype[range(1, configuration.N, 2)] = 1 # Setting masses of B particles
 configuration['m'][B_particles] = 0.195 # Setting masses of B particles
+configuration.randomize_velocities(T=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
