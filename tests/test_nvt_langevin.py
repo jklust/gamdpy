@@ -34,12 +34,12 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     # Setup the Simulation
     num_blocks = 32
     steps_per_block = 512
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
 
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
 

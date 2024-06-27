@@ -43,13 +43,13 @@ integrator_NVT = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
-                    storage='cool.h5', compute_plan=compute_plan)
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        storage='cool.h5', compute_plan=compute_plan)
 
 
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
-for block in sim_NVT.blocks():
+for block in sim_NVT.timeblocks():
     print(block)
     print(sim_NVT.status(per_particle=True))
     calc_rdf.update()
@@ -66,11 +66,11 @@ integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
-                    num_blocks=100, steps_per_block=2048, scalar_output=sc_output,
-                    storage='memory', compute_stresses=True, compute_plan=compute_plan)
+                          num_timeblocks=100, steps_per_timeblock=2048, scalar_output=sc_output,
+                          storage='memory', compute_stresses=True, compute_plan=compute_plan)
 
 # Run simulation one block at a time
-for block in sim_SLLOD.blocks():
+for block in sim_SLLOD.timeblocks():
     print(sim_SLLOD.status(per_particle=True))
     configuration.simbox.copy_to_host()
     box_shift = configuration.simbox.box_shift

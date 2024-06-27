@@ -10,7 +10,7 @@ import rumdpy as rp
 import h5py
 
 class Simulation():
-    def __init__(self, configuration, interactions, integrator, num_steps=0, num_blocks=0, steps_per_block=0, 
+    def __init__(self, configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', compute_stresses=False, verbose=False):
                 
         self.configuration = configuration
@@ -41,17 +41,17 @@ class Simulation():
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
         
-        if num_blocks==0:
-            num_blocks = 32
-            steps_per_block = 2**int( math.log2( math.ceil(num_steps / num_blocks )))
-            num_blocks = math.ceil(num_steps / steps_per_block) 
+        if num_timeblocks==0:
+            num_timeblocks = 32
+            steps_per_timeblock = 2 ** int(math.log2(math.ceil(num_steps / num_timeblocks)))
+            num_timeblocks = math.ceil(num_steps / steps_per_timeblock)
             print('num_steps: ', num_steps)
-            print('num_blocks: ', num_blocks)
-            print('steps_per_block: ', steps_per_block)
+            print('num_blocks: ', num_timeblocks)
+            print('steps_per_block: ', steps_per_timeblock)
              
-        self.num_blocks = num_blocks
+        self.num_blocks = num_timeblocks
         self.current_block = -1
-        self.steps_per_block = steps_per_block
+        self.steps_per_block = steps_per_timeblock
         self.storage = storage
          
         if scalar_output == 'default':
@@ -86,7 +86,7 @@ class Simulation():
 
         # per block storage of configuration
         if self.conf_saver != None:
-            self.conf_per_block = int(math.log2(steps_per_block))+2 # Should be user controlable
+            self.conf_per_block = int(math.log2(steps_per_timeblock)) + 2 # Should be user controlable
             if verbose:
                 print('Configurations per block (log2-storing):', self.conf_per_block)
         else:
@@ -224,12 +224,12 @@ class Simulation():
 
     # simple run function
     def run(self):
-        for block in self.blocks():
+        for _ in self.timeblocks():
             print(self.status(per_particle=True))
         print(self.summary())
 
     # generator for running simulation one block at a time
-    def blocks(self, num_blocks=-1):
+    def timeblocks(self, num_blocks=-1):
         if num_blocks==-1:
             num_blocks=self.num_blocks
         self.last_num_blocks = num_blocks

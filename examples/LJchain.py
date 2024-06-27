@@ -49,25 +49,25 @@ print(compute_plan)
 compute_plan['tp'] = 6
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator0,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage=filename)
 
 print('High Temperature followed by cooling and equilibration:')
-for block in sim.blocks():
+for block in sim.timeblocks():
     if block%10==0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage=filename)
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
 print('Production:')
-for block in sim.blocks():
+for block in sim.timeblocks():
     if block%10==0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
     calc_rdf.update()

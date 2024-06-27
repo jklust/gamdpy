@@ -42,15 +42,15 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
     
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim = rp.Simulation(c1, pairpot, integrator, 
-                    num_blocks=1, steps_per_block=steps, 
-                    conf_output=None, scalar_output=None, 
-                    storage='None', verbose=False)
+    sim = rp.Simulation(c1, pairpot, integrator,
+                        num_timeblocks=1, steps_per_timeblock=steps,
+                        conf_output=None, scalar_output=None,
+                        storage='None', verbose=False)
 
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass
 
     #print(sim.summary())
