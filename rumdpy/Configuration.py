@@ -197,6 +197,15 @@ class Configuration:
         else:
             self['v'] = np.zeros((self.N, self.D), np.float32)
 
+    def set_kinetic_temperature(self, T, ndofs=None):
+        if ndofs is None:
+            ndofs = self.D * (self.N-1)
+
+        T_ = np.sum( np.dot(self['m'], np.sum(self['v'] ** 2, axis=1)) ) / ndofs
+        if T_ == 0:
+            raise ValueError('Cannot rescale velocities when all equal to zero')
+        self['v'] *= (T / T_) ** 0.5
+
 # Helper functions
 
 def generate_random_velocities(N, D, T, m=1, dtype=np.float32):

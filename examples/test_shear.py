@@ -58,11 +58,15 @@ rdf = calc_rdf.read()
 
 print("Now run SLLOD simulation on what should now be a glass or polycrystal")
 
-sc_output = 4 # 32
+sc_output = 32
 
 sr = 0.001
-dt = 0.005
+dt = 0.01
 integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
+
+# set the kinetic temperature to the exact value associated with the desired temperature
+# since SLLOD uses an isokinetic thermostat
+configuration.set_kinetic_temperature(temperature_low, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,

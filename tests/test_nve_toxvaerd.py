@@ -16,7 +16,8 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     temperature: float = 1.2
 
     # Setup configuration
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=2 * temperature)
+    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration.randomize_velocities(T=2 * temperature)
 
     # Setup interactions
     pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)

@@ -19,7 +19,8 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     expected_potential_energy = expected_total_energy - expected_kinetic_energy
 
     # Setup configuration (give temperature kick to particles to get closer to equilibrium)
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=2*temperature)
+    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration.randomize_velocities(T=2*temperature)
 
     # Setup pair potential.
     pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
