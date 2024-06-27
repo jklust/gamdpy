@@ -44,7 +44,6 @@ sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
 for block in sim_NVT.timeblocks():
-
     print(block)
     print(sim_NVT.status(per_particle=True))
     calc_rdf.update()
