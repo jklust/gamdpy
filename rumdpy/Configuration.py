@@ -5,6 +5,9 @@ from numba import cuda
 from rumdpy.colarray import colarray
 from rumdpy.Simbox import Simbox
 
+# IO
+import h5py
+
 class Configuration:
     """ The configuration class
 
@@ -274,6 +277,42 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
 
     return configuration
 
+
+def configuration_to_hdf5(conf, filename):
+    if not filename.endswith('.h5'):
+        filename += '.h5'
+    with h5py.File(filename, "w") as f:
+        f.attrs['simbox'] = conf.simbox.lengths
+
+        ds_r = f.create_dataset('r', shape=(conf.N, conf.D), dtype=np.float32)
+        ds_v = f.create_dataset('v', shape=(conf.N, conf.D), dtype=np.float32)
+        ds_p = f.create_dataset('ptype', shape=(conf.N), dtype=np.int32)
+        ds_m = f.create_dataset('m', shape=(conf.N), dtype=np.float32)
+        ds_r[:] = conf['r']
+        ds_v[:] = conf['v']
+        ds_p[:] = conf.ptype
+        ds_m[:] = conf['m']
+        # images!!!!
+        # forces?
+        # parameters of the integrator?
+        # some text indicating the history of the configuration?
+
+def configuration_from_hdf5(filename):
+    if not filename.endswith('.h5'):
+        raise ValueError('Filename not inHDF5 format')
+    with h5py.File(filename, "r") as f:
+        lengths = f.attrs['simbox']
+        r = f['r'][:]
+        v = f['v'][:]
+        ptype = f['ptype'][:]
+        m = f['m'][:]
+    N, D = r.shape
+    configuration = Configuration(N, D, lengths)
+    configuration['r'] = r
+    configuration['v'] = v
+    configuration.ptype = ptype
+    configuration['m'] = m
+    return configuration
 
 def configuration_to_lammps(conf, timestep=0) -> str:
     """ Convert a configuration to a string formatted as LAMMPS dump file
