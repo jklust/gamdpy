@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 
 rho = 1.200
 # Setup configuration: FCC crystal
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, T=1.6)
+configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+configuration.randomize_velocities(T=1.6)
 configuration.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
 #configuration['r'][27,2] += 0.01 # Pertube z-coordinate of particle 27
 
@@ -38,19 +39,19 @@ print('High Temperature followed by cooling and equilibration:')
 Ttarget_function = rp.make_function_ramp(value0=2.000,       x0=running_time*(1/8), 
                                          value1=temperature, x1=running_time*(1/4))
 integrator = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
-sim = rp.Simulation(configuration, pairpot, integrator, 
-                    num_blocks=num_blocks, steps_per_block=steps_per_block, 
+sim = rp.Simulation(configuration, pairpot, integrator,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     storage=filename) 
-for block in sim.blocks():
+for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
 print('Production:')
 integrator = rp.integrators.NVT(temperature, tau=0.2, dt=dt)
-sim = rp.Simulation(configuration, pairpot, integrator, 
-                    num_blocks=num_blocks, steps_per_block=steps_per_block, 
+sim = rp.Simulation(configuration, pairpot, integrator,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     storage=filename)
-for block in sim.blocks():
+for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 

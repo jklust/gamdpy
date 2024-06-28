@@ -16,7 +16,8 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     temperature: float = 1.2
 
     # Setup configuration
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=2 * temperature)
+    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration.randomize_velocities(T=2 * temperature)
 
     # Setup interactions
     pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -29,12 +30,12 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     # Setup the Simulation
     num_blocks = 32
     steps_per_block = 512
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
     
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
 
@@ -45,10 +46,10 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
 
     # Run standard NVE Simulation
     integrator = rp.integrators.NVE(dt=dt)
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))

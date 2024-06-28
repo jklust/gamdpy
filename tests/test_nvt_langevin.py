@@ -19,7 +19,8 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     expected_potential_energy = expected_total_energy - expected_kinetic_energy
 
     # Setup configuration (give temperature kick to particles to get closer to equilibrium)
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density, T=2*temperature)
+    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration.randomize_velocities(T=2*temperature)
 
     # Setup pair potential.
     pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -34,12 +35,12 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     # Setup the Simulation
     num_blocks = 32
     steps_per_block = 512
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=num_blocks, steps_per_block=steps_per_block, 
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         conf_output=None, storage='memory', verbose=False)
 
     # Run simulation one block at a time
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass 
     print(sim.summary())
 

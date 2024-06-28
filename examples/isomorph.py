@@ -29,26 +29,27 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
-    configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, T=2*T)
-    
+    configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+    configuration.randomize_velocities(T=2*T)
+
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
     # Setup Simulation
-    sim = rp.Simulation(configuration, pairpot, integrator, 
-                        num_blocks=128, steps_per_block=512,
+    sim = rp.Simulation(configuration, pairpot, integrator,
+                        num_timeblocks=128, steps_per_timeblock=512,
                         storage='memory') 
     
     # Setup on-the-fly calculation of Radial Distribution Function
     calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
     print('Equilibration:', end='\t')
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         pass
     print(sim.status(per_particle=True))
     
     print('Production:', end='\t')
-    for block in sim.blocks():
+    for block in sim.timeblocks():
         calc_rdf.update()
     print(sim.status(per_particle=True))
     

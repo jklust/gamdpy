@@ -32,34 +32,34 @@ integrator1 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 integrator2 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
 # Setup Simulations
-sim1 = rp.Simulation(configuration, pairpot, integrator1, 
-                    num_blocks=4, steps_per_block=512,
-                    scalar_output=1, 
-                    storage='memory') 
+sim1 = rp.Simulation(configuration, pairpot, integrator1,
+                     num_timeblocks=4, steps_per_timeblock=512,
+                     scalar_output=1,
+                     storage='memory')
 
-sim2 = rp.Simulation(configuration, pairpot, integrator2, 
-                    num_blocks=4, steps_per_block=512,
-                    scalar_output=1,
-                    storage='memory') 
+sim2 = rp.Simulation(configuration, pairpot, integrator2,
+                     num_timeblocks=4, steps_per_timeblock=512,
+                     scalar_output=1,
+                     storage='memory')
     
 
 print(configuration['r'][1])
 print('Integrator1, Equilibration:', end='\t')
-for block in sim1.blocks():
+for block in sim1.timeblocks():
     pass
 print(sim1.status(per_particle=True))
 U1, K1 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E1 = U1 + K1
 
 print('Integrator1, Production:', end='\t')
-for block in sim1.blocks():
+for block in sim1.timeblocks():
     pass
 print(sim1.status(per_particle=True))
 U2, K2 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E2 = U2 + K2 
 
 print('Integrator2, Production:', end='\t')
-for block in sim2.blocks():
+for block in sim2.timeblocks():
     pass
 print(sim2.status(per_particle=True))
 

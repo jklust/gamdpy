@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 # Generate configuration with a FCC lattice
 #rho = 0.932
 rho = 1.863
-configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho,  T=1.44)
+configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho)
 B_particles = range(1, configuration.N, 2)
 configuration.ptype[range(1, configuration.N, 2)] = 1 # Setting masses of B particles
 configuration['m'][B_particles] = 0.195 # Setting masses of B particles
+configuration.randomize_velocities(T=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
@@ -45,25 +46,25 @@ print(compute_plan)
 compute_plan['tp'] = 6
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator0,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
 print('High Temperature followed by cooling and equilibration:')
-for block in sim.blocks():
+for block in sim.timeblocks():
     if block%10==0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
-                    num_blocks=num_blocks, steps_per_block=steps_per_block,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
 print('Production:')
-for block in sim.blocks():
+for block in sim.timeblocks():
     if block%10==0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
     calc_rdf.update()

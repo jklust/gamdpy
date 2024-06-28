@@ -17,14 +17,14 @@ sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_per_block=1024, num_blocks=128, storage='memory')
+                    steps_per_timeblock=1024, num_timeblocks=128, storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
 calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=18.0)
-for block in sim.blocks():
+for block in sim.timeblocks():
     print(sim.status(per_particle=True))
     calc_struct_fact.update()
 
