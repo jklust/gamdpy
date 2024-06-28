@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 rho = 1.863
 configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho)
 B_particles = range(1, configuration.N, 2)
-configuration.ptype[range(1, configuration.N, 2)] = 1 # Setting masses of B particles
+configuration.ptype[B_particles] = 1    # Setting particle type of B particles
 configuration['m'][B_particles] = 0.195 # Setting masses of B particles
 configuration.randomize_velocities(T=1.44)
 
@@ -33,7 +33,7 @@ pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], exclusions=exclusi
 
 # Make integrator
 dt = 0.002 # timestep 
-num_blocks = 128               # Do simulation in this many 'blocks'
+num_blocks = 64                # Do simulation in this many 'blocks'
 steps_per_block = 1024*16      # ... each of this many steps
 running_time = dt*num_blocks*steps_per_block
 temperature = 0.465
@@ -43,7 +43,7 @@ integrator0 = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
-compute_plan['tp'] = 6
+#compute_plan['tp'] = 6
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator0,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
@@ -55,9 +55,13 @@ for block in sim.timeblocks():
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
+runtime_action=128
+#runtime_action=1024*8 # to see momentum resetting
+
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    runtime_action=runtime_action,
                     compute_plan=compute_plan, storage='memory')
 
 # Setup on-the-fly calculation of Radial Distribution Function
@@ -71,7 +75,7 @@ for block in sim.timeblocks():
 print(sim.summary())
 
 # scalars
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
+columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol', 'Px', 'Py', 'Pz']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U']))*dt*sim.steps_between_output # should be build in
@@ -95,6 +99,16 @@ axs[1].semilogx(dynamics['times'], dynamics['alpha2'], 'o--')
 axs[2].semilogx(dynamics['times'], dynamics['Fs'], 'o--')
 plt.show(block=False)  
 
+fig, axs = plt.subplots(1, 1, figsize=(8,4))
+axs.set_ylabel('Center-of-mass velocity')
+axs.set_xlabel('Time')
+axs.grid(linestyle='--', alpha=0.5)
+total_mass = np.sum(configuration['m'])
+for label in ['Px', 'Py', 'Pz']:
+    axs.plot(df['t'], df[label]/total_mass, '-', label=label+'/M')
+axs.legend()
+plt.show(block=False)
+
 rdf = calc_rdf.read()
 rdf['rdf'] = np.mean(rdf['rdf'], axis=0)
 fig, axs = plt.subplots(1, 1, figsize=(8,4))
@@ -104,5 +118,3 @@ axs.grid(linestyle='--', alpha=0.5)
 axs.plot(rdf['distances'], rdf['rdf'], '-')
 axs.set_xlim([0.5, 3.5])
 plt.show(block=True)
-
-
