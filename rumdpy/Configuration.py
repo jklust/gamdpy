@@ -278,26 +278,27 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
     return configuration
 
 
-def configuration_to_hdf5(conf, filename):
+def configuration_to_hdf5(conf, filename, meta_data=None):
     if not filename.endswith('.h5'):
         filename += '.h5'
     with h5py.File(filename, "w") as f:
         f.attrs['simbox'] = conf.simbox.lengths
+        if meta_data is not None:
+            for item in meta_data:
+                f.attrs[item] = meta_data[item]
 
         ds_r = f.create_dataset('r', shape=(conf.N, conf.D), dtype=np.float32)
         ds_v = f.create_dataset('v', shape=(conf.N, conf.D), dtype=np.float32)
         ds_p = f.create_dataset('ptype', shape=(conf.N), dtype=np.int32)
         ds_m = f.create_dataset('m', shape=(conf.N), dtype=np.float32)
+        ds_r_im = f.create_dataset('r_im', shape=(conf.N, conf.D), dtype=np.int32)
         ds_r[:] = conf['r']
         ds_v[:] = conf['v']
         ds_p[:] = conf.ptype
         ds_m[:] = conf['m']
-        # images!!!!
-        # forces?
-        # parameters of the integrator?
-        # some text indicating the history of the configuration?
+        ds_r_im[:] = conf.r_im
 
-def configuration_from_hdf5(filename):
+def configuration_from_hdf5(filename, reset_images=False):
     if not filename.endswith('.h5'):
         raise ValueError('Filename not inHDF5 format')
     with h5py.File(filename, "r") as f:
@@ -306,12 +307,17 @@ def configuration_from_hdf5(filename):
         v = f['v'][:]
         ptype = f['ptype'][:]
         m = f['m'][:]
+        r_im = f['r_im'][:]
     N, D = r.shape
     configuration = Configuration(N, D, lengths)
     configuration['r'] = r
     configuration['v'] = v
     configuration.ptype = ptype
     configuration['m'] = m
+    if reset_images:
+        configuration.r_im = np.zeros((N, D), dtype=np.int32)
+    else:
+        configuration.r_im = r_im
     return configuration
 
 def configuration_to_lammps(conf, timestep=0) -> str:
