@@ -7,6 +7,7 @@ from rumdpy.Simbox import Simbox
 
 # IO
 import h5py
+import gzip
 
 class Configuration:
     """ The configuration class
@@ -319,6 +320,97 @@ def configuration_from_hdf5(filename, reset_images=False):
     else:
         configuration.r_im = r_im
     return configuration
+
+def configuration_to_rumd3(configuration, filename):
+    N = configuration.N
+    if configuration.D != 3:
+        raise ValueError("Only D==3 is compatibale with RUMD-3")
+
+    r = configuration['r']
+    v = configuration['v']
+    ptype = configuration.ptype
+    m = configuration['m']
+    r_im = configuration.r_im
+
+    num_types = max(ptype) + 1 # assumes consecutive types  starting from zero
+    # find corresponding masses assuming unique mass for each type as required by RUMD-3
+    masses = np.ones(num_types, dtype=np.float32)
+    for type in range(num_types):
+        type_first_idx = np.where(ptype == type)[0][0]
+        masses[type] = m[type_first_idx]
+
+    sim_box = configuration.simbox.lengths
+    if not filename.endswith('.gz'):
+        filename += '.gz'
+
+    with gzip.open(filename, 'wt') as f:
+        f.write('%d\n' % N)
+        comment_line = 'ioformat=2 numTypes=%d' % (num_types)
+        comment_line += ' sim_box=RectangularSimulationBox,%f,%f,%f' % (sim_box[0], sim_box[1],sim_box[2])
+        comment_line += ' mass=%f' % (masses[0])
+        for mass in masses[1:]:
+            comment_line += ',%f' % mass
+        comment_line += ' columns=type,x,y,z,imx,imy,imz,vx,vy,vz'
+        comment_line += '\n'
+        f.write(comment_line)
+        for idx in range(N):
+            line_out = '%d %f %f %f %d %d %d %f %f %f\n' % (ptype[idx], r[idx,0], r[idx,1], r[idx,2], r_im[idx,0], r_im[idx,1], r_im[idx,2], v[idx,0], v[idx,1], v[idx,2])
+            f.write(line_out)
+
+
+def configuration_from_rumd3(filename, reset_images=False):
+    with gzip.open(filename) as f:
+        line1 = f.readline().decode()
+        N = int(line1)
+
+        line2 = f.readline().decode()
+        meta_data_items = line2.split()
+        meta_data = {}
+        for item in meta_data_items:
+            key, val = item.split("=")
+            meta_data[key] = val
+
+        num_types = int(meta_data['numTypes'])
+        masses = [float(x) for x in  meta_data['mass'].split(',')]
+        assert len(masses) == num_types
+        if meta_data['ioformat'] == '1':
+            lengths = np.array([float(x) for x in meta_data['boxLengths'].split(',')], dtype=np.float32)
+        else:
+            assert meta_data['ioformat'] == '2'
+            sim_box_data = meta_data['sim_box'].split(',')
+            sim_box_type = sim_box_data[0]
+            sim_box_params = [float(x) for x in sim_box_data[1:]]
+            assert sim_box_type == 'RectangularSimulationBox'
+            lengths = np.array(sim_box_params)
+        # TO DO: handle LeesEdwards sim box
+        assert meta_data['columns'].startswith('type,x,y,z,imx,imy,imz')
+        has_velocities = (meta_data['columns'].startswith('type,x,y,z,imx,imy,imz,vx,vy,vz'))
+        type_array = np.zeros(N, dtype=np.int32)
+        r_array = np.zeros((N, 3), dtype = np.float32)
+        im_array = np.zeros( (N, 3), dtype = np.int32)
+        v_array = np.zeros((N, 3), dtype = np.float32)
+        m_array = np.ones(N, dtype = np.float32)
+
+        for idx in range(N):
+            p_data = f.readline().decode().split()
+            ptype = int(p_data[0])
+            type_array[idx] = ptype
+            r_array[idx,:] = [float(x) for x in p_data[1:4] ]
+            if not reset_images:
+                im_array[idx,:] = [int(x) for x in p_data[4:7] ]
+            if has_velocities:
+                v_array[idx,:] = [float(x) for x in p_data[7:10] ]
+            m_array[idx] = masses[ptype]
+
+    configuration = Configuration(N, 3, lengths)
+    configuration['r'] = r_array
+    configuration['v'] = v_array
+    configuration.r_im = im_array
+    configuration.ptype = type_array
+    configuration['m'] = m_array
+
+    return configuration
+
 
 def configuration_to_lammps(conf, timestep=0) -> str:
     """ Convert a configuration to a string formatted as LAMMPS dump file
