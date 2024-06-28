@@ -10,7 +10,7 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
     num_blocks = (num_part - 1) // pb + 1
     
     # Unpack indices for scalars to be compiled into kernel  
-    u_id, k_id, w_id, fsq_id, lap_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap']]
+    u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
     v_id = configuration.vectors.indices['v']
     sx_id = configuration.vectors.indices['sx']
 
@@ -31,18 +31,17 @@ def make_scalar_calculator(configuration, steps_between_output, compute_plan, ve
                 cuda.atomic.add(output_array, (save_index, 3), scalars[global_id][fsq_id]) # F**2
                 cuda.atomic.add(output_array, (save_index, 4), scalars[global_id][k_id])   # Kinetic energy
             
+                # Contribution to total momentum
+                my_m = scalars[global_id][m_id]
+                cuda.atomic.add(output_array, (save_index, 6), my_m*vectors[v_id][global_id][0])
+                cuda.atomic.add(output_array, (save_index, 7), my_m*vectors[v_id][global_id][1])
+                cuda.atomic.add(output_array, (save_index, 8), my_m*vectors[v_id][global_id][2])
 
-                cuda.atomic.add(output_array, (save_index, 6), vectors[v_id][global_id][0]) 
-                cuda.atomic.add(output_array, (save_index, 7), vectors[v_id][global_id][1]) 
-                cuda.atomic.add(output_array, (save_index, 8), vectors[v_id][global_id][2])
                 # XY component of stress
                 cuda.atomic.add(output_array, (save_index, 9), vectors[sx_id][global_id][1])
+
             if global_id == 0 and my_t == 0:
                 output_array[save_index][5] = volume_function(sim_box)
-
-
-
-                
 
         return
     return scalar_calculator
@@ -51,11 +50,11 @@ def extract_scalars(data, column_list, first_block=0, D=3):
     # Indices hardcoded for now (see scalar_calculator above)
 
     column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}
-    vCM_id_str = ['vCMx', 'vCMy', 'vCMz', 'vCMw']
+    momentum_id_str = ['Px', 'Py', 'Pz', 'Pw']
     if D > 4:
-        raise ValueError("Label for CM velocity components not defined for dimensions greater than 4")
+        raise ValueError("Label for total momentum components not defined for dimensions greater than 4")
     for k in range(D):
-        column_indices[vCM_id_str[k]] = 6+k
+        column_indices[momentum_id_str[k]] = 6+k
 
     output_list = []
     for column in column_list:
