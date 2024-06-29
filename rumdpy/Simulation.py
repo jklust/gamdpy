@@ -11,7 +11,8 @@ import h5py
 
 class Simulation():
     def __init__(self, configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', runtime_action='default', compute_stresses=False, verbose=False):
+                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default', 
+                 steps_between_momentum_reset='default', compute_stresses=False, verbose=False):
                 
         self.configuration = configuration
         if compute_plan==None:
@@ -27,10 +28,6 @@ class Simulation():
             self.interactions = interactions
         else:
             self.interactions = [interactions,]
-        #self.interactions_params = self.interactions[1].get_params(self.configuration, self.compute_plan, verbose)
-        #self.interactions_kernel = self.interactions[1].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
-        #self.interactions_params = self.interactions[0].get_params(self.configuration, self.compute_plan, verbose)
-        #self.interactions_kernel = self.interactions[0].get_kernel(self.configuration, self.compute_plan, self.compute_stresses, verbose)
         self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration, self.interactions, 
                                                                                       compute_plan=self.compute_plan, 
                                                                                       compute_stresses=compute_stresses, 
@@ -71,19 +68,7 @@ class Simulation():
             self.conf_saver = None
         else:
             print('Did not understand conf_output = ', conf_output)
-
-        if runtime_action == 'default':
-            runtime_action = 100
-        if type(runtime_action)==int and runtime_action>0:
-            self.steps_between_runtime_action = runtime_action
-            self.runtime_action_executor = rp.make_runtime_action_executor(self.configuration, self.steps_between_runtime_action, self.compute_plan)
-        elif runtime_action == None or runtime_action == 'none' or runtime_action <= 0:
-            self.runtime_action_executor = None
-            #self.steps_between_runtime_action = 0
-        else:
-            print('Did not understand runtime_action = ', runtime_action)
-
-
+ 
         # per block storage of configuration
         if self.conf_saver != None:
             self.conf_per_block = int(math.log2(steps_per_timeblock)) + 2 # Should be user controlable
@@ -109,11 +94,7 @@ class Simulation():
 
         self.zero_output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.d_output_array = cuda.to_device(self.zero_output_array) 
-        
-        # Storage for momentum resetting
-        self.cm_velocity = np.zeros(self.configuration.D+1, dtype=np.float32) # Total mass summed in last index of cm_velocity
-        self.d_cm_velocity = cuda.to_device(self.cm_velocity)
-            
+                    
         if self.storage[-3:]=='.h5': # Saving in hdf5 format
             if verbose:
                 print('Saving results in hdf5 format. Filename:', self.storage)
@@ -149,14 +130,24 @@ class Simulation():
         else:
             print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
             
+        # Momentum reset
+        if steps_between_momentum_reset>0:
+            self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
+            self.momentum_reset_params = self.momentum_reset.get_params(configuration, compute_plan)
+            self.momentum_reset_kernel = self.momentum_reset.get_kernel(configuration, compute_plan)
+        else:
+            self.momentum_reset_kernel = None
+            self.momentum_reset_params = (0,)
+            
         self.vectors_list = []
         self.scalars_list = []
         self.simbox_data_list = []
                   
         self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
-                                              self.output_calculator, self.conf_saver, self.runtime_action_executor, self.compute_plan, True)
+                                              self.output_calculator, self.conf_saver, self.momentum_reset_kernel, 
+                                              self.compute_plan, True)
         
-    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, runtime_action_executor, compute_plan, verbose=True ):
+    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, momentum_reset_kernel, compute_plan, verbose=True ):
         pb = compute_plan['pb']
         tp = compute_plan['tp']
         gridsync = compute_plan['gridsync']
@@ -168,14 +159,11 @@ class Simulation():
             output_calculator = cuda.jit(device=gridsync)(numba.njit(output_calculator))
         if conf_saver != None:
             conf_saver = cuda.jit(device=gridsync)(numba.njit(conf_saver))
-        #if runtime_action_executor != None:
-        #    runtime_action_executor = cuda.jit(device=gridsync)(numba.njit(runtime_action_executor))
 
-            
         if gridsync:
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, cm_velocity, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, momentum_reset_params, time_zero, steps):
                 grid = cuda.cg.this_grid()
                 time = time_zero
                 for step in range(steps):
@@ -185,14 +173,13 @@ class Simulation():
                     grid.sync()
                     time = time_zero + step*integrator_params[0]
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
-                    if runtime_action_executor != None:
-                        runtime_action_executor(grid, vectors, scalars, r_im, sim_box, step, cm_velocity)
+                    if momentum_reset_kernel != None:
+                        momentum_reset_kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
 
                     if output_calculator != None:
                         output_calculator(grid, vectors, scalars, r_im, sim_box, output_array, step)
                     
                     grid.sync()
-                    #time += integrator_params[0]  # dt. ! Dont do many additions like this
                 if conf_saver != None:
                     conf_saver(grid, vectors, scalars, r_im, sim_box, conf_array, steps) # Save final configuration (if conditions fullfiled)
                 return
@@ -202,7 +189,7 @@ class Simulation():
         else:
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, cm_velocity, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, momentum_reset_params, time_zero, steps):
                 time = time_zero
                 for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
@@ -212,8 +199,8 @@ class Simulation():
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if output_calculator != None:
                         output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
-                    if runtime_action_executor != None:
-                        runtime_action_executor(0, vectors, scalars, r_im, sim_box, step, cm_velocity)
+                    if momentum_reset_kernel != None:
+                        momentum_reset_kernel(0, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
 
                         
                 if conf_saver != None:
@@ -267,7 +254,7 @@ class Simulation():
                             self.integrator_params, 
                             self.d_output_array, 
                             self.d_conf_array, 
-                            self.d_cm_velocity,
+                            self.momentum_reset_params,
                             np.float32(block*self.steps_per_block*self.dt), 
                             self.steps_per_block)
 

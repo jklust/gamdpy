@@ -47,6 +47,7 @@ print(compute_plan)
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator0,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
 
 print('High Temperature followed by cooling and equilibration:')
@@ -56,12 +57,13 @@ for block in sim.timeblocks():
 print(sim.summary())
 
 runtime_action=128
-#runtime_action=1024*8 # to see momentum resetting
+#runtime_action=1024*8 # to see effect of momentum resetting
+#runtime_action=0 # Turn off momentum resetting (at own risk!)
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    runtime_action=runtime_action,
+                    steps_between_momentum_reset=runtime_action,
                     compute_plan=compute_plan, storage='memory')
 
 # Setup on-the-fly calculation of Radial Distribution Function
