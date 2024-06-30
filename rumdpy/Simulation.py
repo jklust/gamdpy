@@ -50,17 +50,6 @@ class Simulation():
         self.current_block = -1
         self.steps_per_block = steps_per_timeblock
         self.storage = storage
-         
-        if scalar_output == 'default':
-            scalar_output = 16
-        if type(scalar_output)==int and scalar_output>0:
-            self.steps_between_output = scalar_output
-            self.output_calculator = rp.make_scalar_calculator(self.configuration, self.steps_between_output, self.compute_plan)
-        elif scalar_output==None or scalar_output =='none' or scalar_output < 1:
-            self.output_calculator = None
-            self.steps_between_output = scalar_output
-        else:
-            print('Did not understand scalar_output = ', scalar_output)
 
         if conf_output=='default':
             self.conf_saver = rp.make_conf_saver(self.configuration, self.compute_plan)
@@ -79,21 +68,7 @@ class Simulation():
         self.num_vectors = 2 # 'r' and 'r_im'
         self.zero_conf_array = np.zeros((self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
         self.d_conf_array = cuda.to_device(self.zero_conf_array)
-        
-        # per block storage of scalars
-        self.num_scalars = 6
-        #include CM velocity
-        self.num_scalars += self.configuration.D
-        #include XY component of stress [temporary - need to figure out what we want to do in general]
-        self.num_scalars += 1
-
-        if self.output_calculator != None:
-            self.scalar_saves_per_block = self.steps_per_block//self.steps_between_output
-        else:
-            self.scalar_saves_per_block = 1
-
-        self.zero_output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-        self.d_output_array = cuda.to_device(self.zero_output_array) 
+ 
                     
         if self.storage[-3:]=='.h5': # Saving in hdf5 format
             if verbose:
@@ -110,11 +85,6 @@ class Simulation():
                     ds = f.create_dataset("block", shape=(self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
                                           chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
 
-                if self.output_calculator != None:
-                    ds = f.create_dataset("scalars", shape=(self.num_blocks, self.scalar_saves_per_block, self.num_scalars),
-                                          chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-                    f.attrs['steps_between_output'] = self.steps_between_output
-
         elif self.storage=='memory':
             # Setup a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
             self.output = {}
@@ -123,49 +93,57 @@ class Simulation():
             if self.conf_saver != None:
                 self.output['block'] = 0
             print(f'Storing results in memory. Expected footprint  {self.num_blocks*self.conf_per_block*self.num_vectors*self.configuration.N*self.configuration.D*4/1024/1024:.2f} MB.')
-            # allocation delayed until beginning of run to let user reconsider
-            if self.output_calculator != None:
-                self.output['scalars'] = 0
-                self.output['attrs']['steps_between_output'] = self.steps_between_output
         else:
             print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
             
         # Momentum reset
         if steps_between_momentum_reset>0:
             self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
-            self.momentum_reset_params = self.momentum_reset.get_params(configuration, compute_plan)
-            self.momentum_reset_kernel = self.momentum_reset.get_kernel(configuration, compute_plan)
+            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
+            self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
         else:
             self.momentum_reset_kernel = None
             self.momentum_reset_params = (0,)
+
+        # Scalar saving
+        if scalar_output == 'default':
+            scalar_output = 16
+        if scalar_output==None or scalar_output =='none' or scalar_output < 1:
+            self.output_calculator = None
+            self.output_calculator_kernel = None
+            self.output_calculator_params = (0,)
+        else:
+            self.output_calculator = rp.ScalarSaver(configuration, scalar_output, num_timeblocks, steps_per_timeblock, storage)
+            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
+            self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
+
             
         self.vectors_list = []
         self.scalars_list = []
         self.simbox_data_list = []
                   
         self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
-                                              self.output_calculator, self.conf_saver, self.momentum_reset_kernel, 
+                                              self.output_calculator_kernel, self.conf_saver, self.momentum_reset_kernel, 
                                               self.compute_plan, True)
         
     def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator, conf_saver, momentum_reset_kernel, compute_plan, verbose=True ):
-        pb = compute_plan['pb']
-        tp = compute_plan['tp']
-        gridsync = compute_plan['gridsync']
-        D = configuration.D
-        num_part = configuration.N
+        # Unpack parameters from configuration and compute_plan
+        D, num_part = configuration.D, configuration.N
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
         num_blocks = (num_part - 1) // pb + 1
     
-        if output_calculator != None:
-            output_calculator = cuda.jit(device=gridsync)(numba.njit(output_calculator))
+        #if output_calculator != None:
+        #    output_calculator = cuda.jit(device=gridsync)(numba.njit(output_calculator))
         if conf_saver != None:
             conf_saver = cuda.jit(device=gridsync)(numba.njit(conf_saver))
+
+        output_flag = output_calculator != None
 
         if gridsync:
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, momentum_reset_params, time_zero, steps):
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, conf_array, momentum_reset_params, output_calculator_params, time_zero, steps):
                 grid = cuda.cg.this_grid()
-                time = time_zero
                 for step in range(steps):
                     compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_params)
                     if conf_saver != None:
@@ -175,9 +153,8 @@ class Simulation():
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if momentum_reset_kernel != None:
                         momentum_reset_kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
-
-                    if output_calculator != None:
-                        output_calculator(grid, vectors, scalars, r_im, sim_box, output_array, step)
+                    if output_flag:
+                        output_calculator(grid, vectors, scalars, r_im, sim_box, step, output_calculator_params)
                     
                     grid.sync()
                 if conf_saver != None:
@@ -189,8 +166,7 @@ class Simulation():
         else:
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
-            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, output_array, conf_array, momentum_reset_params, time_zero, steps):
-                time = time_zero
+            def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params, conf_array, momentum_reset_params, output_calculator_params, time_zero, steps):
                 for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
                     if conf_saver != None:
@@ -198,11 +174,10 @@ class Simulation():
                     time = time_zero + step*integrator_params[0]
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if output_calculator != None:
-                        output_calculator[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, output_array, step)
+                        output_calculator(0, vectors, scalars, r_im, sim_box, step, output_calculator_params)
                     if momentum_reset_kernel != None:
                         momentum_reset_kernel(0, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
-
-                        
+                     
                 if conf_saver != None:
                         conf_saver[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_array, steps) # Save final configuration (if conditions fullfiled)
                 return
@@ -224,9 +199,7 @@ class Simulation():
         if self.storage=='memory':
             if self.conf_saver != None:
                 self.output['block'] = np.zeros((self.num_blocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
-            if self.output_calculator != None:
-                self.output['scalars'] = np.zeros((self.num_blocks, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-
+            
         self.configuration.copy_to_device()
         self.vectors_list = []
         self.scalars_list = []
@@ -244,7 +217,7 @@ class Simulation():
         for block in range(num_blocks):
             start_block.record()
             self.current_block = block
-            self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
+            #self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
             self.integrate(self.configuration.d_vectors, 
                             self.configuration.d_scalars, 
                             self.configuration.d_ptype, 
@@ -252,9 +225,9 @@ class Simulation():
                             self.configuration.simbox.d_data,       
                             self.interactions_params, 
                             self.integrator_params, 
-                            self.d_output_array, 
                             self.d_conf_array, 
                             self.momentum_reset_params,
+                            self.output_calculator_params,
                             np.float32(block*self.steps_per_block*self.dt), 
                             self.steps_per_block)
 
@@ -262,20 +235,19 @@ class Simulation():
             self.vectors_list.append(self.configuration.vectors.copy()) # Needed for 3D viz, should use memory/hdf5
             self.scalars_list.append(self.configuration.scalars.copy())            # same
             self.simbox_data_list.append(self.configuration.simbox.lengths.copy()) # same
-            self.scalars_t.append(self.d_output_array.copy_to_host())              # same
+            #self.scalars_t.append(self.d_output_array.copy_to_host())              # same
             
             if self.storage[-3:]=='.h5':
                 with h5py.File(self.storage, "a") as f:
                     if self.conf_saver != None:
                         f['block'][block,:] = self.d_conf_array.copy_to_host()
-                    if self.output_calculator != None:
-                        f['scalars'][block,:] = self.d_output_array.copy_to_host()
             elif self.storage=='memory':
                 if self.conf_saver != None:
                     self.output['block'][block,:] = self.d_conf_array.copy_to_host()
-                if self.output_calculator != None:
-                    self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
                 
+            if self.output_calculator != None:
+                self.output_calculator.update_at_end_of_timeblock(block)
+
             end_block.record()
             end_block.synchronize()
             block_times.append(cuda.event_elapsed_time(start_block, end_block))

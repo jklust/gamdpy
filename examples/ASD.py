@@ -6,8 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Generate configuration with a FCC lattice
-#rho = 0.932
-rho = 1.863
+#rho = 0.932 # Molecular density
+rho = 1.863  # Atomic density
 configuration = rp.make_configuration_fcc(nx=6,  ny=6,  nz=6,  rho=rho)
 B_particles = range(1, configuration.N, 2)
 configuration.ptype[B_particles] = 1    # Setting particle type of B particles
@@ -16,8 +16,8 @@ configuration.randomize_velocities(T=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
-bond_params = [[0.584, 3000.], ]
-bond_indices = [[i, i+1, 0] for i in range(0, configuration.N-1, 2)] # dumbells
+bond_params = [[0.584, 3000.], ]  # Parameters for bond type 0, 1, 2 etc (here only 0)
+bond_indices = [[i, i+1, 0] for i in range(0, configuration.N-1, 2)] # dumbells: i(even) and i+1 bonded with type 0
 bonds = rp.Bonds(bond_potential, bond_params, bond_indices)
 
 # Make pair potential
@@ -78,9 +78,10 @@ print(sim.summary())
 
 # scalars
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol', 'Px', 'Py', 'Pz']
-data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
+#data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
+data = np.array(rp.extract_scalars(sim.output_calculator.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 if callable(temperature):
     df['Ttarget'] = numba.vectorize(temperature)(np.array(df['t']))
 rp.plot_scalars(df, configuration.N,  configuration.D, figsize=(10,8), block=False)
