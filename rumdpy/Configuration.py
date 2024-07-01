@@ -19,42 +19,43 @@ class Configuration:
     --------
 
     >>> import rumdpy as rp
-    >>> conf = rp.Configuration(10, 3, np.array([10, 10, 10]))
+    >>> conf = rp.Configuration()
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
     >>> print(conf.sid) # Print names of scalar columns
     {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
-    >>> print(type(conf['r']))  # conf['r'] is a numpy array
-    <class 'numpy.ndarray'>
-    >>> print(conf['r'][0])  # Print position of particle 0
-    [0. 0. 0.]
-    >>> conf['r'] = np.ones((10, 3))  # Set positions to (1, 1, 1)
-    >>> print(conf['r'][0])
-    [1. 1. 1.]
-    >>> print(conf['u'][0])  # Print potential energy of particle 0
-    0.0
     """
     # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
     sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
 
-    def __init__(self, N: int, D: int, simbox_lengths: np.ndarray, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
-        self.N = N
-        self.D = D
+    def __init__(self, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
+        self.N = None
+        self.D = None
         self.compute_stresses = compute_stresses
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
+        self.simbox = None
         if self.compute_stresses:
-            self.vector_columns += ['sx', 'sy', 'sz'] # D=3 ASSUMED HERE!!!!
+            self.vector_columns += ['sx', 'sy', 'sz']  # D=3 ASSUMED HERE!!!!
         # self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
-        self.vectors = colarray(self.vector_columns, size=(N, D), dtype=ftype)
-        self.scalars = np.zeros((N, len(self.sid)), dtype=ftype)
-        self.r_im = np.zeros((N, D), dtype=itype) # Move to vectors
-        self.ptype = np.zeros(N, dtype=itype)     # Move to scalars
         self.ptype_function = self.make_ptype_function()
-        self.simbox = Simbox(D, simbox_lengths)
+        self.ftype = ftype
+        self.itype = itype
         return
 
     def __setitem__(self, key, data):
+        if self.D is None:  # First time setting data
+            if key not in self.vector_columns:
+                raise ValueError(f'Try one of {self.vector_columns} the first time setting data')
+            D = data.shape[1]
+            N = data.shape[0]
+            self.D = D
+            self.N = N
+            self.vectors = colarray(self.vector_columns, size=(N, D), dtype=self.ftype)
+            self.scalars = np.zeros((N, len(self.sid)), dtype=self.ftype)
+            self.r_im = np.zeros((N, D), dtype=self.itype) # Move to vectors
+            self.ptype = np.zeros(N, dtype=self.itype)     # Move to scalars
+
         if key in self.vectors.column_names:
             self.set_vector(key, data)
         else:
@@ -68,17 +69,7 @@ class Configuration:
         return self.scalars[:,self.sid[key]]  # Improve error handling if key in neither
 
     def set_vector(self, key: str, data: np.ndarray) -> None:
-        """ Set new vector data
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> conf.set_vector('r', np.ones((10, 3)))
-        >>> print(conf['r'][0])
-        [1. 1. 1.]
-        """
+        """ Set new vector data """
         N, D = data.shape
         if key not in self.vector_columns:
             raise ValueError(f'Unknown vector column {key}. Try one of {self.vector_columns}')
@@ -90,30 +81,14 @@ class Configuration:
         return
 
     def get_vector(self, key: str) -> np.ndarray: # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the vector lengths
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> print(conf.get_vector('r')[0])
-        [0. 0. 0.]
-        """
+        """ Returns a copy of the vector lengths """
         if key not in self.vector_columns:
             raise ValueError(f'Unknown vector column {key}')
         idx = self.vector_columns.index(key)
         return self.vectors[self.vector_columns[idx]].copy()
 
     def set_scalar(self, key: str, data) -> None:
-        """ Set new scalar data
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        """
+        """ Set new scalar data """
         N, = data.shape
         if key not in self.sid:
             raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
@@ -123,16 +98,7 @@ class Configuration:
         return
 
     def get_scalar(self, key: str): # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the scalar lengths
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> print(conf.get_scalar('m')[0])
-        0.0
-        """
+        """ Returns a copy of the scalar lengths """
         if key not in self.sid:
             raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
         idx = self.sid[key]
@@ -140,15 +106,7 @@ class Configuration:
 
 
     def copy_to_device(self):
-        """ Copy all data to device memory
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> conf.copy_to_device()
-        """
+        """ Copy all data to device memory """
         # self.d_vectors = cuda.to_device(self.vectors)
         self.d_vectors = cuda.to_device(self.vectors.array)
         self.d_scalars = cuda.to_device(self.scalars)
@@ -158,19 +116,7 @@ class Configuration:
         return
 
     def copy_to_host(self):
-        """ Copy all data to host memory
-
-        Examples
-        --------
-
-        >>> import rumdpy as rp
-        >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> conf.copy_to_device()
-        >>> # Do something with the configuration on the device
-        >>> conf.copy_to_host()
-        >>> print(conf['r'][0])
-        [0. 0. 0.]
-        """
+        """ Copy all data to host memory """
         # self.vectors = self.d_vectors.copy_to_host()
         self.vectors.array = self.d_vectors.copy_to_host()
         self.scalars = self.d_scalars.copy_to_host()
@@ -266,8 +212,9 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
         positions *= scale_factor
         simbox_data *= scale_factor
 
-    configuration = Configuration(N, D, simbox_data)
+    configuration = Configuration()
     configuration['r'] = positions[:N,:]
+    configuration.simbox = Simbox(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
 
@@ -408,12 +355,7 @@ def configuration_from_rumd3(filename, reset_images=False):
 
 
 def configuration_to_lammps(conf, timestep=0) -> str:
-    """ Convert a configuration to a string formatted as LAMMPS dump file
-    >>> import rumdpy as rp
-    >>> conf = rp.Configuration(4, 3, np.array([1, 1, 1]))
-    >>> lammps_str = rp.configuration_to_lammps(conf, timestep=100)
-    >>> # print(lammps_str, ofile=open('dump.lammps', 'w'))  # Uncomment to write to file
-    """
+    """ Convert a configuration to a string formatted as LAMMPS dump file """
     D = conf.D
     if D != 3:
         raise ValueError('Only 3D configurations are supported')
