@@ -9,13 +9,12 @@ cells = [8, 8, 8]
 positions, box_vector = rp.tools.make_lattice(bcc_unit_cell, lattice_constants, cells, rho=1.0)
 configuration = rp.Configuration()
 configuration['r'] = positions
-D = len(box_vector)  # Dimension of space
-configuration.simbox = rp.Simbox(D, box_vector)
+configuration.simbox = rp.Simbox(configuration.D, box_vector)
 
 # Setup masses and types
-N = len(configuration['r'])  # Number of particles
-configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
-configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
+#N = len(configuration['r'])  # Number of particles
+configuration['m'] = 1.0 # np.ones(N, dtype=np.float32)  # Set masses
+configuration.ptype = 0  #np.zeros(N, dtype=np.int32)  # Set types
 
 # Setup velocities
 configuration.randomize_velocities(T=0.7 * 2)
