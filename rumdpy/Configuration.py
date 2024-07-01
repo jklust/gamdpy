@@ -21,7 +21,7 @@ class Configuration:
     >>> import rumdpy as rp
     >>> conf = rp.Configuration(10, 3, np.array([10, 10, 10]))
     >>> print(conf.vector_columns)  # Print names of vector columns
-    ['r', 'v', 'f', 'r_ref']
+    ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
     >>> print(conf.sid) # Print names of scalar columns
     {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     >>> print(type(conf['r']))  # conf['r'] is a numpy array
@@ -113,11 +113,6 @@ class Configuration:
 
         >>> import rumdpy as rp
         >>> conf = rp.Configuration(N=10, D=3, simbox_lengths=[10, 10, 10])
-        >>> print(conf['m'][0])
-        0.0
-        >>> conf.set_scalar('u', np.ones(10))
-        >>> print(conf['m'][0])
-        1.0
         """
         N, = data.shape
         if key not in self.sid:

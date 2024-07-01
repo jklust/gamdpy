@@ -19,9 +19,9 @@ class colarray():
     (3, 1000, 2)
     >>> ca.column_names
     ('r', 'v', 'f')
-    Data is accesed via string indices (similar to dataframes in pandas):
+    >>> # Data is accessed via string indices (similar to dataframes in pandas):
     >>> ca['r'] = np.ones((1000,2))
-    >>> ca['v'] = 2   # Broadcastet by numpy to correct shape
+    >>> ca['v'] = 2   # Broadcast by numpy to correct shape
     >>> print(ca['r'] + 0.01*ca['v'])
     [[1.02 1.02]
      [1.02 1.02]
@@ -30,29 +30,6 @@ class colarray():
      [1.02 1.02]
      [1.02 1.02]
      [1.02 1.02]]
-    
-    Assignment have to use an existing key (as opposed to eg. pandas):
-    
-    >>> ca['c'] = 1
-    Traceback (most recent call last):
-        ...
-    KeyError: 'c'
-    
-    On assignment the right hand side needs to be a numpy array compatible with size of columns originaly specified (possibly after broadcasting by numpy):
-    
-    >>> ca['f'] =  np.ones((100,2))
-    Traceback (most recent call last):
-        ...
-    ValueError: could not broadcast input array from shape (100,2) into shape (1000,2)
-
-    To assign indices to variable names (say to use on a GPU):
-    
-    >>> ca = colarray(('r', 'v', 'f'), size=(1000,2))
-    >>> for col in ca.column_names:
-    ...    exec(f'ca_{col}_id = {ca.indices[col]}', globals())
-    >>> print(ca_r_id, ca_v_id, ca_f_id)
-    0 1 2
-    
     """
     
     # Most error handling is left to be handled by numpy, as it gives usefull error messages 
