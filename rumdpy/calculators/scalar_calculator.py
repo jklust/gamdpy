@@ -54,7 +54,7 @@ class ScalarSaver():
         
         def zero_kernel(array):
             Nx, Ny = array.shape
-            #i, j = cuda.grid(2) # doing simple 1 thread kernel for now
+            #i, j = cuda.grid(2) # doing simple 1 thread kernel for now ...
             for i in range(Nx):
                 for j in range(Ny):
                     array[i,j] = numba.float32(0.0)
@@ -74,9 +74,6 @@ class ScalarSaver():
             with h5py.File(self.storage, "a") as f:
                 f['scalars'][block,:] = self.d_output_array.copy_to_host()
         elif self.storage=='memory':
-                #print('Updating scalars, block:', block)
-                #output = self.d_output_array.copy_to_host()
-                #print(output)
                 self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
         self.zero_kernel(self.d_output_array)
     
@@ -88,8 +85,7 @@ class ScalarSaver():
         
         # Unpack indices for scalars to be compiled into kernel  
         u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
-        v_id = configuration.vectors.indices['v']
-        sx_id = configuration.vectors.indices['sx']
+        v_id, sx_id = [configuration.vectors.indices[key] for key in ['v', 'sx']]
 
         volume_function = numba.njit(configuration.simbox.volume)
 
