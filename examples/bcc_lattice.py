@@ -1,0 +1,36 @@
+import numpy as np
+
+import rumdpy as rp
+
+# Setup configuration. BCC Lattice
+bcc_unit_cell = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
+lattice_constants = [1.0, 1.0, 1.0]
+cells = [8, 8, 8]
+positions, box_vector = rp.tools.make_lattice(bcc_unit_cell, lattice_constants, cells, rho=1.0)
+configuration = rp.Configuration()
+configuration['r'] = positions
+D = len(box_vector)  # Dimension of space
+configuration.simbox = rp.Simbox(D, box_vector)
+
+# Setup masses and types
+N = len(configuration['r'])  # Number of particles
+configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
+configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
+
+# Setup velocities
+configuration.randomize_velocities(T=0.7 * 2)
+
+# Setup pair potential: Single component 12-6 Lennard-Jones
+pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+sig, eps, cut = 1.0, 1.0, 2.5
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+
+# Setup integrator
+integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
+
+# Setup Simulation.
+sim = rp.Simulation(configuration, pair_pot, integrator,
+                    num_steps=32*1024, storage='memory')
+
+# Run simulation
+sim.run()
