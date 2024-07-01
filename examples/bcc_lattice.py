@@ -1,10 +1,8 @@
 import rumdpy as rp
 
 # Setup configuration. BCC Lattice
-bcc_unit_cell = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
-lattice_constants = [1.0, 1.0, 1.0]
 cells = [8, 8, 8]
-positions, box_vector = rp.tools.make_lattice(bcc_unit_cell, lattice_constants, cells, rho=1.0)
+positions, box_vector = rp.tools.make_lattice(rp.unit_cells.BCC, cells, rho=1.0)
 configuration = rp.Configuration()
 configuration['r'] = positions
 configuration.simbox = rp.Simbox(configuration.D, box_vector)

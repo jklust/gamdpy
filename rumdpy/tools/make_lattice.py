@@ -1,8 +1,8 @@
-def make_lattice(unit_cell: list, lattice_constants: list, cells: list, rho=None) -> tuple:
+def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
     """ Returns a configuration of a crystal lattice.
     The lattice is constructed by replicating the unit cell in all directions.
-    The coordinates (`unit_cell`) of the unit cell are given in fractional coordinates.
-    The `lattice_constants` a list of lengths of the unit cell in all directions.
+    The `unit_cell` is a dictonary with `fractional_coordinates` for particles, and
+    the `lattice_constants` as a list of lengths of the unit cell in all directions.
     The `cells` are the number of unit cells in each direction.
 
     Returns a list of positions of the atoms in the lattice, and the box vector of the lattice.
@@ -11,17 +11,18 @@ def make_lattice(unit_cell: list, lattice_constants: list, cells: list, rho=None
     -------
 
     >>> import rumdpy as rp
-    >>> fcc_unit_cell = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]]
-    >>> lattice_constants = [1.0, 1.0, 1.0]
-    >>> cells = [8, 8, 8]
-    >>> positions, box_vector = rp.tools.make_lattice(fcc_unit_cell, lattice_constants, cells)
+    >>> positions, box_vector = rp.tools.make_lattice(rp.FCC, cells=[8, 8, 8], rho=1.0)
     >>> configuration = rp.Configuration()
     >>> configuration['r'] = positions
-    >>> configuration.simbox = rp.Simbox(len(box_vector), box_vector)
+    >>> configuration.simbox = rp.Simbox(configuration.D, box_vector)
     """
     import numpy as np
-    particles_in_unit_cell = len(unit_cell)
-    spatial_dimension = len(unit_cell[0])
+    pos = unit_cell["fractional_coordinates"]
+    lat = unit_cell["lattice_constants"]
+    particles_in_unit_cell = len(pos)
+    spatial_dimension = len(pos[0])
+    if cells is None:
+        cells = [1] * spatial_dimension
     number_of_cells = np.prod(cells)
     positions = np.zeros(
         shape=(particles_in_unit_cell * number_of_cells, spatial_dimension),
@@ -33,10 +34,10 @@ def make_lattice(unit_cell: list, lattice_constants: list, cells: list, rho=None
         )
         for particle_index in range(particles_in_unit_cell):
             positions[cell_index * particles_in_unit_cell + particle_index] = (
-                unit_cell[particle_index] + cell_coordinates
+                pos[particle_index] + cell_coordinates
             )
-    positions *= lattice_constants
-    box_vector = np.array(lattice_constants) * np.array(cells)
+    positions *= lat
+    box_vector = np.array(lat) * np.array(cells)
     if rho is not None:
         box_volume = np.prod(box_vector)
         number_of_particles = len(positions)

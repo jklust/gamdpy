@@ -4,15 +4,11 @@ import rumdpy as rp
 
 
 def test_fcc_lattice(verbose=False, plot=False):
-    fcc_unit_cell = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]]
-    lattice_constants = [1.0, 1.0, 1.0]
     cells = [2, 2, 2]
-    positions, box_vector = rp.tools.make_lattice(fcc_unit_cell, lattice_constants, cells)
+    positions, box_vector = rp.tools.make_lattice(rp.unit_cells.FCC, cells)
     configuration = rp.Configuration()
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
-    assert configuration['r'].shape == (len(fcc_unit_cell) * np.prod(cells), len(fcc_unit_cell[0]))
-    assert configuration.simbox.lengths.shape == (len(fcc_unit_cell[0]),)
     expected_positions = np.array([
         [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5],
         [1.0, 1.0, 0.0], [1.5, 1.5, 0.0], [1.5, 1.0, 0.5], [1.0, 1.5, 0.5],
@@ -31,15 +27,11 @@ def test_fcc_lattice(verbose=False, plot=False):
 
 
 def test_bcc_lattice(verbose=False, plot=False):
-    bcc_unit_cell = [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
-    lattice_constants = [1.0, 1.0, 1.0]
     cells = [2, 2, 2]
-    positions, box_vector = rp.tools.make_lattice(bcc_unit_cell, lattice_constants, cells)
+    positions, box_vector = rp.tools.make_lattice(rp.unit_cells.BCC, cells)
     configuration = rp.Configuration()
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
-    assert configuration['r'].shape == (len(bcc_unit_cell) * np.prod(cells), len(bcc_unit_cell[0]))
-    assert configuration.simbox.lengths.shape == (len(bcc_unit_cell[0]),)
     expected_number_of_particles = 16
     assert configuration['r'].shape[0] == expected_number_of_particles
     expected_positions = np.array([[0., 0., 0.],
