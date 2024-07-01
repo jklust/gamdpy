@@ -117,6 +117,12 @@ A good place to see how this is done without implementing all functions twice is
 - Automatic testing upon uploading (CI). How to get acces to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
+## Notes on how to test the code
+Run the 
+
+Run the doctests in a file (here `rumdpy/Configuration.py`) with something like
+`pytest --doctest-modules rumdpy/Configuration.py --maxfail=3 --verbose`
+
 ## Known issues:
 
 ### LinkerError: libcudadevrt.a not found

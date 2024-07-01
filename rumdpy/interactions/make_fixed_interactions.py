@@ -30,7 +30,6 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
     
     potential_calculator = numba.njit(fixed_potential)
 
-    @cuda.jit( device=gridsync )
     def fixed_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
         indices, values = interaction_parameters
         num_interactions = indices.shape[0]
@@ -44,7 +43,13 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         
         for index in range(global_id, num_interactions, num_threads):
             potential_calculator(vectors, scalars, ptype, sim_box, indices[index], values)
-
         return
-    return fixed_interactions
+    
+    fixed_interactions = cuda.jit(device=gridsync)(fixed_interactions)
+
+    if gridsync:
+        return fixed_interactions  # return device function
+    else:
+        return fixed_interactions[num_blocks, (pb, tp)]  # return kernel, incl. launch parameters
+
 

@@ -8,8 +8,8 @@ import h5py
 
 # Generate configuration with a FCC lattice
 rho = 1.0
-configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=rho,  T=1.44, N=2000)  
-#configuration = rp.make_configuration_fcc(nx=10,  ny=10,  nz=10,  rho=rho,  T=1.44, N=4000)  
+configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=rho,  T=1.44, N=2000)
+#configuration = rp.make_configuration_fcc(nx=10,  ny=10,  nz=10,  rho=rho,  T=1.44, N=4000)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
