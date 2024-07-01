@@ -8,8 +8,8 @@ import h5py
 
 # Generate configuration with a FCC lattice
 rho = 1.0
-configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=rho,  T=1.44, N=2000)
-#configuration = rp.make_configuration_fcc(nx=10,  ny=10,  nz=10,  rho=rho,  T=1.44, N=4000)
+configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=rho, N=2000)
+configuration.randomize_velocities(T=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function
@@ -46,10 +46,10 @@ integrator0 = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
-compute_plan['tp'] = 6
 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator0,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage=filename)
 
 print('High Temperature followed by cooling and equilibration:')
@@ -61,6 +61,7 @@ print(sim.summary())
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 sim = rp.Simulation(configuration, [pairpot, bonds], integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage=filename)
 
 # Setup on-the-fly calculation of Radial Distribution Function
@@ -77,7 +78,7 @@ columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
 with h5py.File(filename, "r") as f:
        data = np.array(rp.extract_scalars(f, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 rp.plot_scalars(df, configuration.N,  configuration.D, figsize=(10,8), block=False)
 
 mu = np.mean(df['U'])/configuration.N

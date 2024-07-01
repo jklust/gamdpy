@@ -44,6 +44,7 @@ integrator_NVT = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=100,
                         storage='cool.h5', compute_plan=compute_plan)
 
 
@@ -71,6 +72,7 @@ configuration.set_kinetic_temperature(temperature_low, ndofs=configuration.N*3-4
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
                           num_timeblocks=100, steps_per_timeblock=2048, scalar_output=sc_output,
+                          steps_between_momentum_reset=100,
                           storage='memory', compute_stresses=True, compute_plan=compute_plan)
 
 # Run simulation one block at a time
