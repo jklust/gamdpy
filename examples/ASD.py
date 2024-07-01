@@ -78,8 +78,7 @@ print(sim.summary())
 
 # scalars
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol', 'Px', 'Py', 'Pz']
-#data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
-data = np.array(rp.extract_scalars(sim.output_calculator.output, columns, first_block=0))
+data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 if callable(temperature):
