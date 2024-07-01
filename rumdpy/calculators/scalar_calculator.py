@@ -52,16 +52,16 @@ class ScalarSaver():
 
     def make_zero_kernel(self):
         
-        def kernel(array):
+        def zero_kernel(array):
             Nx, Ny = array.shape
             #i, j = cuda.grid(2) # doing simple 1 thread kernel for now
             for i in range(Nx):
                 for j in range(Ny):
                     array[i,j] = numba.float32(0.0)
 
-        kernel = cuda.jit(kernel)
-        return kernel[1,1]
-    
+        zero_kernel = cuda.jit(zero_kernel)
+        return zero_kernel[1,1]
+     
     def get_params(self, configuration, compute_plan):
         
         self.output_array = np.zeros((self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
