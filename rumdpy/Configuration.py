@@ -89,11 +89,8 @@ class Configuration:
 
     def set_scalar(self, key: str, data) -> None:
         """ Set new scalar data """
-        N, = data.shape
         if key not in self.sid:
             raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
-        if N != self.N:
-            raise ValueError(f'Inconsistent number of particles, {N} <> {self.N}')
         self.scalars[:, self.sid[key]] = data
         return
 

@@ -10,7 +10,7 @@ def test_fcc_lattice(verbose=False, plot=False):
     positions, box_vector = rp.tools.make_lattice(fcc_unit_cell, lattice_constants, cells)
     configuration = rp.Configuration()
     configuration['r'] = positions
-    configuration.simbox = rp.Simbox(len(box_vector), box_vector)
+    configuration.simbox = rp.Simbox(configuration.D, box_vector)
     assert configuration['r'].shape == (len(fcc_unit_cell) * np.prod(cells), len(fcc_unit_cell[0]))
     assert configuration.simbox.lengths.shape == (len(fcc_unit_cell[0]),)
     expected_positions = np.array([
@@ -37,7 +37,7 @@ def test_bcc_lattice(verbose=False, plot=False):
     positions, box_vector = rp.tools.make_lattice(bcc_unit_cell, lattice_constants, cells)
     configuration = rp.Configuration()
     configuration['r'] = positions
-    configuration.simbox = rp.Simbox(len(box_vector), box_vector)
+    configuration.simbox = rp.Simbox(configuration.D, box_vector)
     assert configuration['r'].shape == (len(bcc_unit_cell) * np.prod(cells), len(bcc_unit_cell[0]))
     assert configuration.simbox.lengths.shape == (len(bcc_unit_cell[0]),)
     expected_number_of_particles = 16

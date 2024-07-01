@@ -1,5 +1,3 @@
-import numpy as np
-
 import rumdpy as rp
 
 # Setup configuration. BCC Lattice
@@ -11,12 +9,8 @@ configuration = rp.Configuration()
 configuration['r'] = positions
 configuration.simbox = rp.Simbox(configuration.D, box_vector)
 
-# Setup masses and types
-#N = len(configuration['r'])  # Number of particles
-configuration['m'] = 1.0 # np.ones(N, dtype=np.float32)  # Set masses
-configuration.ptype = 0  #np.zeros(N, dtype=np.int32)  # Set types
-
-# Setup velocities
+# Setup masses and velocities
+configuration['m'] = 1.0  # Set all masses to 1.0
 configuration.randomize_velocities(T=0.7 * 2)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
