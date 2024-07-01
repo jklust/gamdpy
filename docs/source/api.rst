@@ -21,8 +21,19 @@ The Configuration Class
 .. autoclass:: rumdpy.Configuration
    :members:
 
-The Column array Class
-^^^^^^^^^^^^^^^^^^^^^^
+The Simbox Class
+^^^^^^^^^^^^^^^^
 
-.. autoclass:: rumdpy.colarray
+.. autoclass:: rumdpy.Simbox
    :members:
+
+
+Tools
+-----
+
+rumdpy.tools.make_lattice
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: rumdpy.tools.make_lattice
+   :members:
+   :undoc-members:

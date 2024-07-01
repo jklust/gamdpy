@@ -11,10 +11,8 @@ Integrators
 
 A function (or kernel) that takes a configuration as input and takes a number of time steps. Interactions to be used are compiled in when constructed (make_integrator()).
 - NVE,
-- NVE_Toxvaerd
-- NVT, Nose-Hoover (Temperature controlled by user-supplied function, see examples/LJchain_wall.py), 
-- NVT_Langevin
-- NPT_Langevin
+- NVT (Langevin and Nose-Hoover)
+- NPT (Langevin)
 
 Interactions
 ------------
@@ -31,4 +29,3 @@ Evaluator
 ---------
 
 Takes a configuration and an interactions function/kernel, and evaluates properties as specified at its construction (make_evaluator)
-- *not implemented yet*

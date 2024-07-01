@@ -11,7 +11,7 @@ def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
     -------
 
     >>> import rumdpy as rp
-    >>> positions, box_vector = rp.tools.make_lattice(rp.FCC, cells=[8, 8, 8], rho=1.0)
+    >>> positions, box_vector = rp.tools.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
     >>> configuration = rp.Configuration()
     >>> configuration['r'] = positions
     >>> configuration.simbox = rp.Simbox(configuration.D, box_vector)
