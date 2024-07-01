@@ -21,6 +21,7 @@ integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, pairpot, integrator,
                     num_timeblocks=16, steps_per_timeblock=1024 * 2,
+                    steps_between_momentum_reset=100,
                     storage='LJ_T0.70.h5', compute_stresses=True)
 
 print(sim.compute_plan)

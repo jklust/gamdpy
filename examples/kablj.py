@@ -41,6 +41,7 @@ Ttarget_function = rp.make_function_ramp(value0=2.000,       x0=running_time*(1/
 integrator = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 sim = rp.Simulation(configuration, pairpot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
                     storage=filename) 
 for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
@@ -50,6 +51,7 @@ print('Production:')
 integrator = rp.integrators.NVT(temperature, tau=0.2, dt=dt)
 sim = rp.Simulation(configuration, pairpot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
                     storage=filename)
 for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
@@ -59,7 +61,7 @@ columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
 with h5py.File(filename, "r") as f:
        data = np.array(rp.extract_scalars(f, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 
 mu = np.mean(df['U'])/configuration.N
 mw = np.mean(df['W'])/configuration.N
