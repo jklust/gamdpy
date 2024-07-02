@@ -8,6 +8,8 @@ version = "0.0.1"
 authors = [
     {name="Thomas Schrøder", email="tbs@ruc.dk" },
     {name="Ulf R. Pedersen"},
+    {name="Nick Bailey"},
+    {name="Jesper Schmidt Hansen"},
     {name="Lorenzo Costigliola"},
     {name="Rishabh Sharma"},
 ]
