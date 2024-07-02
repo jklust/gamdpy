@@ -1,9 +1,9 @@
 """ Example of a nanoslit pore simulation using tethered LJ particles 
 
-    The particles are tethered with a Hooke spring.   
+    The particles are tethered with a Hooke spring. The wall particles interact with a relaxation device.   
+    All particles are integrated forward in time with the NVE integrator
 
-    Wall density is set to 1.0 and fluid density to 0.8 - this is achieved by inclusion of a dummy particle
-    Currently the entire system is thermostated. 
+    Wall density is set to 1.0 and fluid density to 0.8 - this is achieved by inclusion of a dummy particle 
 
     Initial and final configurations are saved in xyz format for easy inspection in vmd
 """
@@ -51,7 +51,7 @@ savexyz(configuration, "initial.xyz")
 
 # Tether specifications. 
 # Tether-parameters: [x0, y0, z0, kspring] ; Index array: [row index in param, particle/atom index]  
-springconstant = 1000.0
+springconstant = 300.0
 indices_array = []
 tether_parameters = []
 counter = 0
@@ -64,6 +64,21 @@ for n in range(npart):
 
 tether = rp.Tether(tether_parameters, indices_array, verbose=False)
 
+# Temp relaxation for wall particles
+# Relax parameters: [Tdesired, tau (characteristic relax time 0<tau<<1)] 
+tau = 0.001
+Tkin = 1.3
+indices_array=[]
+relax_parameters=[]
+counter = 0
+for n in range(npart):
+    if configuration.ptype[n]==1:
+        indices_array.append( [counter, n] )
+        counter = counter + 1
+        relax_parameters.append( [Tkin, tau] )
+
+relax = rp.Relaxtemp(relax_parameters, indices_array, verbose=False)
+
 # Set the pair interactions
 pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 0.0]] 
@@ -75,7 +90,7 @@ pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 configuration.randomize_velocities(T=0.7)
 
 # Setup integrator: NVT
-integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
+integrator = rp.integrators.NVE(dt=0.005)
 
 # Some compute plan settings for old cards 
 compute_plan = rp.get_default_compute_plan(configuration)
@@ -83,9 +98,9 @@ compute_plan['gridsync']=False
 compute_plan['tp']=2 
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-sim = rp.Simulation(configuration, [pairpot, tether], integrator,
-                    num_timeblocks=12, steps_per_timeblock=6*1024,
-                    storage='LJ_T0.70.h5', compute_plan=compute_plan)
+sim = rp.Simulation(configuration, [pairpot, tether, relax], integrator,
+                    num_timeblocks=100, steps_per_timeblock=256,
+                    steps_between_momentum_reset=100, storage='LJ_T0.70.h5', compute_plan=compute_plan)
 
 # Run simulation one block at a time
 for block in sim.timeblocks():
