@@ -1,15 +1,10 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 import rumdpy as rp
 
-
 # Setup configuration. BCC Lattice
-cells = [16, 10]
-positions, box_vector = rp.tools.make_lattice(rp.unit_cells.HEXAGONAL, cells, rho=1.0)
 configuration = rp.Configuration()
-configuration['r'] = positions
-configuration.simbox = rp.Simbox(configuration.D, box_vector)
+configuration.make_lattice(unit_cell=rp.unit_cells.HEXAGONAL, cells=[16, 10], rho=1.0)
 
 # Setup masses and velocities
 configuration['m'] = 1.0  # Set all masses to 1.0
@@ -37,8 +32,9 @@ sim.run()
 # Plot final configuration and box
 plt.plot(configuration['r'][:, 0], configuration['r'][:, 1], 'o',
          color='blue', label='Final configuration')
-x_min, x_max = -box_vector[0] / 2, box_vector[0] / 2
-y_min, y_max = -box_vector[1] / 2, box_vector[1] / 2
+box_lengths = configuration.simbox.lengths
+x_min, x_max = -box_lengths[0] / 2, box_lengths[0] / 2
+y_min, y_max = -box_lengths[1] / 2, box_lengths[1] / 2
 x_vals = [x_min, x_max, x_max, x_min, x_min]
 y_vals = [y_min, y_min, y_max, y_max, y_min]
 plt.plot(x_vals, y_vals, 'k--', label='Box')

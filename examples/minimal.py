@@ -7,11 +7,12 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 import rumdpy as rp
 
 # Setup configuration: FCC Lattice
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
-configuration.randomize_velocities(T=0.7 * 2)
+configuration = rp.Configuration()
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration.randomize_velocities(T=0.7)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 

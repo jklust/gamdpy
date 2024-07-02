@@ -148,6 +148,15 @@ class Configuration:
             raise ValueError('Cannot rescale velocities when all equal to zero')
         self['v'] *= (T / T_) ** 0.5
 
+    def make_lattice(self, unit_cell: dict, cells: list, rho: float = None) -> None:
+        """ Generate a lattice configuration """
+        from rumdpy.tools import make_lattice
+        positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
+        self['r'] = positions
+        self.simbox = Simbox(self.D, box_vector)
+        return
+
+
 # Helper functions
 
 def generate_random_velocities(N, D, T, m=1, dtype=np.float32):
