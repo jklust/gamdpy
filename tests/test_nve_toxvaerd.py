@@ -32,6 +32,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     steps_per_block = 512
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=100,
                         conf_output=None, storage='memory', verbose=False)
     
     # Run simulation one block at a time
@@ -48,6 +49,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     integrator = rp.integrators.NVE(dt=dt)
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=100,
                         conf_output=None, storage='memory', verbose=False)
     for block in sim.timeblocks():
         pass 

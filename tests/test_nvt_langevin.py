@@ -37,6 +37,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     steps_per_block = 512
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=100,
                         conf_output=None, storage='memory', verbose=False)
 
     # Run simulation one block at a time

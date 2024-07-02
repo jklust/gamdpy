@@ -146,7 +146,7 @@ class Simulation():
                 for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
                     if conf_saver_kernel != None:
-                        conf_saver_kernel[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_saver_params, step)
+                        conf_saver_kernel(0, vectors, scalars, r_im, sim_box, step, conf_saver_params)
                     time = time_zero + step*integrator_params[0]
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
                     if output_calculator_kernel != None:
@@ -155,7 +155,7 @@ class Simulation():
                         momentum_reset_kernel(0, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
                      
                 if conf_saver_kernel != None:
-                    conf_saver_kernel[num_blocks, (pb, 1)](0, vectors, scalars, r_im, sim_box, conf_saver_params, steps) # Save final configuration (if conditions fullfiled)
+                    conf_saver_kernel(0, vectors, scalars, r_im, sim_box, steps, conf_saver_params) # Save final configuration (if conditions fullfiled)
                 return
             return integrator
         return            

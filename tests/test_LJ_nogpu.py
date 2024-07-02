@@ -49,6 +49,7 @@ class Test(unittest.TestCase):
         #        ev = rp.Evaluater(configuration, pairpot)
         #        for integrator in [integrator1, integrator2, integrator3, integrator4, integrator5]:
         #            sim = rp.Simulation(configuration, pairpot, integrator,
+        #                                steps_between_momentum_reset=100,
         #                                num_blocks=64, steps_per_block=1024, storage='memory')
 
         self.assertTrue(True)

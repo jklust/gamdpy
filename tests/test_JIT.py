@@ -43,7 +43,9 @@ def test_JIT():
                 for integrator in integrators:
                     sim = rp.Simulation(configuration, pairpot, integrator,
                                         num_timeblocks=2, steps_per_timeblock=1024, 
+                                        steps_between_momentum_reset=100,
                                         storage='memory')
+                    print(sim.compute_plan)
                     sim.run()
                     
 if __name__ == '__main__':
