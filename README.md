@@ -120,7 +120,7 @@ A good place to see how this is done without implementing all functions twice is
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
 ## Notes on how to test the code
-Rub in root (rumdpy) directory: pytest
+Run `pytest` in root (rumdpy) directory.
 
 ## Known issues:
 
