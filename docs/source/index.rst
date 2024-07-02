@@ -19,7 +19,7 @@ Contents
    features
    installation
    tutorials
-   examples
+   examples/README.md
    api
 
 Indices and tables
