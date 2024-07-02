@@ -9,6 +9,7 @@ import rumdpy as rp
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration()
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
