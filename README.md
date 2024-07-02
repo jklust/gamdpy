@@ -75,19 +75,22 @@ A good place to see how this is done without implementing all functions twice is
 ## TODO, before summer interns arrive:
 - [ ] SLLOD (stress, LEBC), Nick
 - [X] Bonds interface
-- [ ] Implement other fixed interactions: point interactions (tethered particles). Jesper
+- [X] Implement other fixed interactions: point interactions (tethered particles). Jesper
 - [ ] Finish Atomic interface (runtime actions...) Thomas
 - [X] Momentum resetting (remove default) Nick
-- [ ] Read rumd3 & others configurations Thomas
-- [ ] Testing (Framework, doctest), Ulf & Thomas 
+- [X] Read rumd3 & others configurations Nick
+- [X] Testing (Framework, doctest), Ulf & Thomas
+- [ ] Testing uding gitlab CI
 - [ ] Settle on io format
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda?
-- [ ] Generalize make_configuration to different lattices, Ulf
+- [X] Generalize make_configuration to different lattices, Ulf
 - [ ] Read configurations from file
 - [ ] Allow more flexible/dynamical changing which data to be stored in Configuration (e.g. stresses)
-- [ ] Runtime actions to include conf_saver and scalar_output
-
+- [ ] Runtime actions to include conf_saver and scalar_output, Thomas
+- [ ] NVT_Langevin-per-particle integrator, Jesper
+- [ ] Post analysis, RDF and Sq
+- [ ] NVU integrator, Mark
 
 ## TODO, long term:
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
@@ -105,7 +108,6 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Define hdf5 'template'
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 
-
 ## Various tools/strategies we will use:
 - [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
 - Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
@@ -118,10 +120,7 @@ A good place to see how this is done without implementing all functions twice is
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
 ## Notes on how to test the code
-Run the 
-
-Run the doctests in a file (here `rumdpy/Configuration.py`) with something like
-`pytest --doctest-modules rumdpy/Configuration.py --maxfail=3 --verbose`
+Rub in root (rumdpy) directory: pytest
 
 ## Known issues:
 
