@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 import math
-from numba import cuda
+from numba import cuda, config
 import h5py
 
 class ScalarSaver():
@@ -48,7 +48,10 @@ class ScalarSaver():
             self.output['scalars'] = np.zeros(shape=shape, dtype=np.float32)
             self.output['steps_between_output'] = self.steps_between_output
     
+        flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = False
         self.zero_kernel = self.make_zero_kernel()
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
     def make_zero_kernel(self):
         

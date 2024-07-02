@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 import math
-from numba import cuda
+from numba import cuda, config
 
 import h5py
 
@@ -44,7 +44,11 @@ class ConfSaver():
         else:
             print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
 
+        flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = False
         self.zero_kernel = self.make_zero_kernel()
+        config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
+
 
     def get_params(self, configuration, compute_plan):
         self.conf_array = np.zeros((self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
@@ -76,7 +80,9 @@ class ConfSaver():
                 f['block'][block,:] = self.d_conf_array.copy_to_host()
         elif self.storage=='memory':
             self.output['block'][block,:] = self.d_conf_array.copy_to_host()
+            
         self.zero_kernel(self.d_conf_array)
+        
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
         # Unpack parameters from configuration and compute_plan
