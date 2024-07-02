@@ -9,6 +9,7 @@ from rumdpy.Simbox import Simbox
 import h5py
 import gzip
 
+
 class Configuration:
     """ The configuration class
 
@@ -53,8 +54,8 @@ class Configuration:
             self.N = N
             self.vectors = colarray(self.vector_columns, size=(N, D), dtype=self.ftype)
             self.scalars = np.zeros((N, len(self.sid)), dtype=self.ftype)
-            self.r_im = np.zeros((N, D), dtype=self.itype) # Move to vectors
-            self.ptype = np.zeros(N, dtype=self.itype)     # Move to scalars
+            self.r_im = np.zeros((N, D), dtype=self.itype)  # Move to vectors
+            self.ptype = np.zeros(N, dtype=self.itype)  # Move to scalars
 
         if key in self.vectors.column_names:
             self.set_vector(key, data)
@@ -66,7 +67,7 @@ class Configuration:
         if key in self.vectors.column_names:
             # return self.vectors[self.vid[key]]
             return self.vectors[key]
-        return self.scalars[:,self.sid[key]]  # Improve error handling if key in neither
+        return self.scalars[:, self.sid[key]]  # Improve error handling if key in neither
 
     def set_vector(self, key: str, data: np.ndarray) -> None:
         """ Set new vector data """
@@ -80,7 +81,8 @@ class Configuration:
         self.vectors[key] = data
         return
 
-    def get_vector(self, key: str) -> np.ndarray: # Do we actually want a view instead of a copy (i.e. more like numpy)?
+    def get_vector(self,
+                   key: str) -> np.ndarray:  # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the vector lengths """
         if key not in self.vector_columns:
             raise ValueError(f'Unknown vector column {key}')
@@ -94,13 +96,12 @@ class Configuration:
         self.scalars[:, self.sid[key]] = data
         return
 
-    def get_scalar(self, key: str): # Do we actually want a view instead of a copy (i.e. more like numpy)?
+    def get_scalar(self, key: str):  # Do we actually want a view instead of a copy (i.e. more like numpy)?
         """ Returns a copy of the scalar lengths """
         if key not in self.sid:
             raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
         idx = self.sid[key]
         return self.scalars[:, idx].copy()
-
 
     def copy_to_device(self):
         """ Copy all data to device memory """
@@ -128,12 +129,17 @@ class Configuration:
             return ptype
 
         return ptype_function
-    
+
     def get_volume(self):
         return self.simbox.volume(self.simbox.lengths)
 
-
     def randomize_velocities(self, T):
+        """ Randomize velocities according to a given temperature. If T <= 0, set all velocities to zero. """
+        if self.D is None:
+            raise ValueError('Cannot randomize velocities. Start by assigning positions.')
+        masses = self['m']
+        if np.any(masses == 0):
+            raise ValueError('Cannot randomize velocities when any mass is zero')
         if T > 0.0:
             self['v'] = generate_random_velocities(self.N, self.D, T=T, m=self['m'])
         else:
@@ -141,9 +147,9 @@ class Configuration:
 
     def set_kinetic_temperature(self, T, ndofs=None):
         if ndofs is None:
-            ndofs = self.D * (self.N-1)
+            ndofs = self.D * (self.N - 1)
 
-        T_ = np.sum( np.dot(self['m'], np.sum(self['v'] ** 2, axis=1)) ) / ndofs
+        T_ = np.sum(np.dot(self['m'], np.sum(self['v'] ** 2, axis=1))) / ndofs
         if T_ == 0:
             raise ValueError('Cannot rescale velocities when all equal to zero')
         self['v'] *= (T / T_) ** 0.5
@@ -165,13 +171,13 @@ def generate_random_velocities(N, D, T, m=1, dtype=np.float32):
         # to cover the case that m is a 1D array of length N, need to
         # generate one column at a time, passing the initial zeros as the
         # mean to avoid problems with inferring the correct shape
-        v[:, k] = np.random.normal(v[:,k], (T/m)**0.5)
-        CM_drift = np.mean(m*v[:, k]) / np.mean(m)
+        v[:, k] = np.random.normal(v[:, k], (T / m) ** 0.5)
+        CM_drift = np.mean(m * v[:, k]) / np.mean(m)
         v[:, k] -= CM_drift
 
     # rescale to get the kinetic temperature exactly right. The outer np.sum
     # is necessary when m is a scalar.
-    T_ = np.sum( np.dot(m, np.sum(v ** 2, axis=1)) ) / (D * (N - 1))
+    T_ = np.sum(np.dot(m, np.sum(v ** 2, axis=1))) / (D * (N - 1))
     v *= (T / T_) ** 0.5
     return dtype(v)
 
@@ -209,17 +215,18 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
 
     positions, simbox_data = generate_fcc_positions(nx, ny, nz, rho)
     N_, D = positions.shape
-    if N==None:
+    if N == None:
         N = N_
     else:
         if N > N_:
-            raise ValueError(f'N ({N}) needs to be equal to or smaller than number of particle in generated crystal ({N_})')
-        scale_factor = (N/N_)**(1/3)
+            raise ValueError(
+                f'N ({N}) needs to be equal to or smaller than number of particle in generated crystal ({N_})')
+        scale_factor = (N / N_) ** (1 / 3)
         positions *= scale_factor
         simbox_data *= scale_factor
 
     configuration = Configuration()
-    configuration['r'] = positions[:N,:]
+    configuration['r'] = positions[:N, :]
     configuration.simbox = Simbox(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
@@ -247,6 +254,7 @@ def configuration_to_hdf5(conf, filename, meta_data=None):
         ds_m[:] = conf['m']
         ds_r_im[:] = conf.r_im
 
+
 def configuration_from_hdf5(filename, reset_images=False):
     if not filename.endswith('.h5'):
         raise ValueError('Filename not inHDF5 format')
@@ -269,6 +277,7 @@ def configuration_from_hdf5(filename, reset_images=False):
         configuration.r_im = r_im
     return configuration
 
+
 def configuration_to_rumd3(configuration, filename):
     N = configuration.N
     if configuration.D != 3:
@@ -280,7 +289,7 @@ def configuration_to_rumd3(configuration, filename):
     m = configuration['m']
     r_im = configuration.r_im
 
-    num_types = max(ptype) + 1 # assumes consecutive types  starting from zero
+    num_types = max(ptype) + 1  # assumes consecutive types  starting from zero
     # find corresponding masses assuming unique mass for each type as required by RUMD-3
     masses = np.ones(num_types, dtype=np.float32)
     for type in range(num_types):
@@ -294,7 +303,7 @@ def configuration_to_rumd3(configuration, filename):
     with gzip.open(filename, 'wt') as f:
         f.write('%d\n' % N)
         comment_line = 'ioformat=2 numTypes=%d' % (num_types)
-        comment_line += ' sim_box=RectangularSimulationBox,%f,%f,%f' % (sim_box[0], sim_box[1],sim_box[2])
+        comment_line += ' sim_box=RectangularSimulationBox,%f,%f,%f' % (sim_box[0], sim_box[1], sim_box[2])
         comment_line += ' mass=%f' % (masses[0])
         for mass in masses[1:]:
             comment_line += ',%f' % mass
@@ -302,7 +311,9 @@ def configuration_to_rumd3(configuration, filename):
         comment_line += '\n'
         f.write(comment_line)
         for idx in range(N):
-            line_out = '%d %f %f %f %d %d %d %f %f %f\n' % (ptype[idx], r[idx,0], r[idx,1], r[idx,2], r_im[idx,0], r_im[idx,1], r_im[idx,2], v[idx,0], v[idx,1], v[idx,2])
+            line_out = '%d %f %f %f %d %d %d %f %f %f\n' % (
+            ptype[idx], r[idx, 0], r[idx, 1], r[idx, 2], r_im[idx, 0], r_im[idx, 1], r_im[idx, 2], v[idx, 0], v[idx, 1],
+            v[idx, 2])
             f.write(line_out)
 
 
@@ -319,7 +330,7 @@ def configuration_from_rumd3(filename, reset_images=False):
             meta_data[key] = val
 
         num_types = int(meta_data['numTypes'])
-        masses = [float(x) for x in  meta_data['mass'].split(',')]
+        masses = [float(x) for x in meta_data['mass'].split(',')]
         assert len(masses) == num_types
         if meta_data['ioformat'] == '1':
             lengths = np.array([float(x) for x in meta_data['boxLengths'].split(',')], dtype=np.float32)
@@ -334,20 +345,20 @@ def configuration_from_rumd3(filename, reset_images=False):
         assert meta_data['columns'].startswith('type,x,y,z,imx,imy,imz')
         has_velocities = (meta_data['columns'].startswith('type,x,y,z,imx,imy,imz,vx,vy,vz'))
         type_array = np.zeros(N, dtype=np.int32)
-        r_array = np.zeros((N, 3), dtype = np.float32)
-        im_array = np.zeros( (N, 3), dtype = np.int32)
-        v_array = np.zeros((N, 3), dtype = np.float32)
-        m_array = np.ones(N, dtype = np.float32)
+        r_array = np.zeros((N, 3), dtype=np.float32)
+        im_array = np.zeros((N, 3), dtype=np.int32)
+        v_array = np.zeros((N, 3), dtype=np.float32)
+        m_array = np.ones(N, dtype=np.float32)
 
         for idx in range(N):
             p_data = f.readline().decode().split()
             ptype = int(p_data[0])
             type_array[idx] = ptype
-            r_array[idx,:] = [float(x) for x in p_data[1:4] ]
+            r_array[idx, :] = [float(x) for x in p_data[1:4]]
             if not reset_images:
-                im_array[idx,:] = [int(x) for x in p_data[4:7] ]
+                im_array[idx, :] = [int(x) for x in p_data[4:7]]
             if has_velocities:
-                v_array[idx,:] = [float(x) for x in p_data[7:10] ]
+                v_array[idx, :] = [float(x) for x in p_data[7:10]]
             m_array[idx] = masses[ptype]
 
     configuration = Configuration(N, 3, lengths)
@@ -379,7 +390,7 @@ def configuration_to_lammps(conf, timestep=0) -> str:
     header += f'ITEM: NUMBER OF ATOMS\n{number_of_atoms:d}\n'
     header += f'ITEM: BOX BOUNDS pp pp pp\n'
     for k in range(3):
-        header += f'{-simulation_box[k]/2:e} {simulation_box[k]/2:e}\n'
+        header += f'{-simulation_box[k] / 2:e} {simulation_box[k] / 2:e}\n'
     # Atoms
     atom_data = 'ITEM: ATOMS id type mass x y z ix iy iz vx vy vz fx fy fz\n'
     for i in range(number_of_atoms):
