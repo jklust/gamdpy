@@ -27,7 +27,7 @@ def savexyz(configuration, filestr):
 
 
 # Setup a default fcc configuration
-nxUnits, nyUnits, nzUnits, rhoWall, rhoFluid = 6, 6, 10, 1.0, 0.8;
+nxUnits, nyUnits, nzUnits, rhoWall, rhoFluid = 6, 6, 10, 1.2, 0.7;
 configuration = rp.make_configuration_fcc(nxUnits, nyUnits, nzUnits, rhoWall)
 
 # Fluid particles have type '0', wall particles '1', dummy particles '2'
@@ -37,7 +37,7 @@ for n in range(npart):
     if configuration['r'][n][2] + hlz < 5.0:
         configuration.ptype[n] = 1
         nwall = nwall + 1
-
+    
 nfluid = np.sum( configuration.ptype==0 )
 nfluidWanted = int(nfluid*rhoFluid/rhoWall)
 
@@ -67,7 +67,7 @@ tether = rp.Tether(tether_parameters, indices_array, verbose=False)
 # Temp relaxation for wall particles
 # Relax parameters: [Tdesired, tau (characteristic relax time 0<tau<<1)] 
 tau = 0.001
-Tkin = 1.3
+Tkin = 2.0
 indices_array=[]
 relax_parameters=[]
 counter = 0
@@ -87,7 +87,7 @@ cut = np.array(sig)*2.5
 pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Temperature
-configuration.randomize_velocities(T=0.7)
+configuration.randomize_velocities(T=2.0)
 
 # Setup integrator: NVT
 integrator = rp.integrators.NVE(dt=0.005)
@@ -99,13 +99,18 @@ compute_plan['tp']=2
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pairpot, tether, relax], integrator,
-                    num_timeblocks=100, steps_per_timeblock=256,
-                    steps_between_momentum_reset=100, storage='LJ_T0.70.h5', compute_plan=compute_plan)
+                    num_timeblocks=1000, steps_per_timeblock=128,
+                    steps_between_momentum_reset=0, storage='LJ_T0.70.h5', compute_plan=compute_plan)
+
+prof = rp.CalculatorHydrodynamicProfile(configuration, 0)
 
 # Run simulation one block at a time
 for block in sim.timeblocks():
     print(sim.status(per_particle=True))
+    prof.update()
 
 print(sim.summary())
+
+prof.read()
 
 savexyz(configuration, "final.xyz")
