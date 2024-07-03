@@ -99,7 +99,7 @@ compute_plan['tp']=2
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pairpot, tether, relax], integrator,
-                    num_timeblocks=1000, steps_per_timeblock=128,
+                    num_timeblocks=100, steps_per_timeblock=128,
                     steps_between_momentum_reset=0, storage='LJ_T0.70.h5', compute_plan=compute_plan)
 
 prof = rp.CalculatorHydrodynamicProfile(configuration, 0)
