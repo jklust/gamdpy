@@ -142,7 +142,8 @@ in the folder of the script. Note that the path to `libcudadevrt.a` to the file 
 ### Install WSL
 Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
 wsl --install 
-press enter and then restart your machine. The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
+press enter and then restart your machine. 
+The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
 
 ### Install python and pip on WSL
 
@@ -166,9 +167,13 @@ press enter and then restart your machine. The default installation is Ubuntu, f
 - sudo apt install nvidia-cuda-toolkit
 - modify .bashrc adding: export LD_LIBRARY_PATH="/usr/lib/wsl/lib/" from https://github.com/numba/numba/issues/7104
 
+### Install rumdpy
+
+- pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+
 ## Installing rumdpy on windows using Anaconda
 
-WARNING: due to naming of the integrators the package will not work without renaming/editing some files
+WARNING: due to naming of the integrators the package will not work without renaming/editing some files (awaiting fix)
 
 ### Install Anaconda
 ### Install rumdpy (and pip) using Powershell Prompt in Anaconda:
