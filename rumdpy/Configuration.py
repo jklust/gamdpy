@@ -392,9 +392,9 @@ def configuration_to_lammps(conf, timestep=0) -> str:
     for k in range(3):
         header += f'{-simulation_box[k] / 2:e} {simulation_box[k] / 2:e}\n'
     # Atoms
-    atom_data = 'ITEM: ATOMS id type mass x y z ix iy iz vx vy vz fx fy fz\n'
+    atom_data = 'ITEM: ATOMS id type mass x y z ix iy iz vx vy vz fx fy fz'
     for i in range(number_of_atoms):
-        atom_data += f'{i + 1:d} {ptypes[i] + 1:d} {masses[i]:f} '
+        atom_data += f'\n{i + 1:d} {ptypes[i] + 1:d} {masses[i]:f} '
         for k in range(3):
             atom_data += f'{positions[i, k]:f} '
         for k in range(3):
@@ -403,7 +403,7 @@ def configuration_to_lammps(conf, timestep=0) -> str:
             atom_data += f'{velocities[i, k]:f} '
         for k in range(3):
             atom_data += f'{forces[i, k]:f} '
-        atom_data += '\n'
+        #atom_data += '\n'
     # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump

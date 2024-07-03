@@ -1,16 +1,45 @@
 """ Example of writing a configuration to a LAMMPS dump file. """
+import os
+
 import rumdpy as rp
 
-def main():
-    # Generate configuration with a FCC lattice
-    conf = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=1.0, T=1.2)
-    conf.copy_to_device()
-    ...  # Do something with the configuration
-    conf.copy_to_host()
+# Setup configuration: FCC Lattice
+configuration = rp.Configuration()
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration['m'] = 1.0
+configuration.randomize_velocities(T=0.7)
 
-    # Write configuration to LAMMPS dump file
-    lmp_dump = rp.configuration_to_lammps(conf)
-    print(lmp_dump, file=open('dump.lammps', 'w'))
+# Write initial configuration to LAMMPS dump file
+lmp_dump = rp.configuration_to_lammps(configuration)
+print(lmp_dump, file=open('dump.initial', 'w'))
 
-if __name__ == '__main__':
-    main()
+# Setup pair potential: Single component 12-6 Lennard-Jones
+pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+sig, eps, cut = 1.0, 1.0, 2.5
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+
+# Setup integrator: NVT
+integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
+
+# Setup Simulation.
+sim = rp.Simulation(configuration, pair_pot, integrator,
+                    steps_between_momentum_reset=100,
+                    num_timeblocks=100,
+                    steps_per_timeblock=1000,
+                    storage='memory')
+
+# Delete old dump file if it exists
+dump_filename = 'dump.lammps'
+if os.path.exists(dump_filename):
+    os.remove(dump_filename)
+
+# Run simulation and write configuration to LAMMPS dump file on the fly
+for block in sim.timeblocks():
+    lmp_dump = rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*block)
+    print(lmp_dump, file=open(dump_filename, 'a'))
+
+# Open dump file in ovito with
+#   ovito dump.lammps
+#
+# Open in VMD with
+#   vmd -lammpstrj dump.lammps
