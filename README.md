@@ -35,10 +35,10 @@ Classes implementing interactions that can be applied to particles in the system
   - planar interactions: smooth walls, gravity, electric fields, ...
   - point interactions, e.g. tethering (to be implemented)
 
-An interaction is responsible for keeping any internal datastructures up to date (in particular: nblist). 
+An interaction is responsible for keeping any internal datastructures up to date (in particular: class PairPotential is resposible for keeping its neighbor-list (class NbList up to date). 
 
 ### 4. class Simulation
-Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up a simulation. Also controls when momentum-resetting and output is performed. 
+Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up a simulation. Also controls when momentum-resetting and output is performed. Performing simulation is done by a method of this class.
 
 ### 5. Evaluator
 Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
@@ -80,7 +80,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [ ] Testing uding gitlab CI
+- [ ] Testing using gitlab CI
 - [ ] Settle on io format
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda?
@@ -92,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Post analysis, RDF and Sq
 - [ ] NVU integrator, Mark
 
-## TODO, long term:
+## TODO or decide not necesarry, before paper:
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
@@ -100,13 +100,15 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
 - [ ] Configuration: include r_im in vectors
 - [ ] Requirements/dependencies, especially to use grid-sync 
-- [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Auto-tuner
-- [ ] Add CPU support (can it be done as a decorator?)
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [ ] Constraints
 - [ ] Define hdf5 'template'
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
+
+## TODO, long term:
+- [ ] Constraints
+- [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
+- [ ] Add CPU support (can it be done as a decorator?)
 
 ## Various tools/strategies we will use:
 - [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
