@@ -141,7 +141,7 @@ in the folder of the script. Note that the path to `libcudadevrt.a` to the file 
 
 ### Install WSL
 Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
-wsl --install 
+- wsl --install 
 press enter and then restart your machine. 
 The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
 
