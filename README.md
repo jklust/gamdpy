@@ -134,3 +134,49 @@ This can be done by running the somthing like the below in the terminal:
 ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
 ```
 in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.
+
+# Installation (in progress)
+
+## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)
+
+### Install WSL
+Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
+wsl --install 
+press enter and then restart your machine. The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
+
+### Install python and pip on WSL
+
+- open Windows Command Prompt
+- in the tab bar click on "v" and select ubuntu 
+- sudo apt-get update
+- sudo apt-get install python3.10
+- sudo apt-get install pip
+
+### Install miniconda https://docs.anaconda.com/miniconda/
+
+- mkdir -p ~/miniconda3
+- wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+- bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+- rm -rf ~/miniconda3/miniconda.sh
+- ~/miniconda3/bin/conda init bash
+ 
+### Install cuda
+
+- miniconda3/condabin/conda install cudatoolkit
+- sudo apt install nvidia-cuda-toolkit
+- modify .bashrc adding: export LD_LIBRARY_PATH="/usr/lib/wsl/lib/" from https://github.com/numba/numba/issues/7104
+
+## Installing rumdpy on windows using Anaconda
+
+WARNING: due to naming of the integrators the package will not work without renaming/editing some files
+
+### Install Anaconda
+### Install rumdpy (and pip) using Powershell Prompt in Anaconda:
+- open Anaconda Powershell as admin (from search) 
+- conda update -n base -c defaults conda
+- conda install anaconda::pip
+- conda install anaconda::git
+- conda config --set channel_priority flexible
+- conda install cudatoolkit
+- pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+
