@@ -9,7 +9,36 @@ import rumdpy as rp
 
 class Relaxtemp():
 
-    def __init__(self, relax_params, indices_array, verbose=False):
+    def __init__(self, *args, verbose=False):
+
+        nargin = len(args)
+
+        if nargin == 2:
+            relax_params = args[0]
+            indices_array = args[1]
+
+        elif nargin == 4:
+            ptypes, ntypes = args[0], len(args[0])
+            taus, ntaus = args[1], len(args[1])
+            temperatures, ntemperatures = args[2], len(args[2])
+            conf = args[3]
+
+            if ntypes != ntaus or ntypes != ntemperatures or ntemperatures != ntaus:
+                raise ValueError("Each type must have exactly one relax time - arrays must be same length")
+
+            indices_array, relax_params = [], []
+
+            counter = 0
+            for n in range(conf.N):
+                for m in range(ntypes):
+                    if conf.ptype[n]==ptypes:
+                        indices_array.append( [counter, n] )
+                        relax_params.append( [temperatures[m], taus[m]] )
+                        counter = counter + 1
+                        break
+        else:
+            raise ValueError("Incorrect number of arguments to constructor")
+
 
         self.relax_params = np.array(relax_params, dtype=np.float32)
         self.indices_array = np.array(indices_array, dtype=np.int32) 

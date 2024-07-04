@@ -50,34 +50,14 @@ while nfluid > nfluidWanted:
 savexyz(configuration, "initial.xyz")
 
 # Tether specifications. 
-# Tether-parameters: [x0, y0, z0, kspring] ; Index array: [row index in param, particle/atom index]  
-springconstant = 300.0
-indices_array = []
-tether_parameters = []
-counter = 0
-for n in range(npart):
-    if configuration.ptype[n]==1:
-        indices_array.append([counter, n])
-        counter = counter + 1
-        pos =  configuration['r'][n]
-        tether_parameters.append( [pos[0], pos[1], pos[2], springconstant] )
-
-tether = rp.Tether(tether_parameters, indices_array, verbose=False)
+# Alternative instanciation tether=rp.Tether(<index array>, <tether params>, verbose=False)
+# where  Index array: [row index in param, particle/atom index], tether parameters: [x0, y0, z0, kspring] 
+tether = rp.Tether([1], [300.0], configuration)
 
 # Temp relaxation for wall particles
-# Relax parameters: [Tdesired, tau (characteristic relax time 0<tau<<1)] 
-tau = 0.001
-Tkin = 2.0
-indices_array=[]
-relax_parameters=[]
-counter = 0
-for n in range(npart):
-    if configuration.ptype[n]==1:
-        indices_array.append( [counter, n] )
-        counter = counter + 1
-        relax_parameters.append( [Tkin, tau] )
-
-relax = rp.Relaxtemp(relax_parameters, indices_array, verbose=False)
+# Altnative instanciation  relax = rp.Relaxtemp(<relax_parameters>, <indices_array>, verbose=False)
+# where relax parameters: [Tdesired, tau (characteristic relax time 0<tau<<1)] index as tether
+relax = rp.Relaxtemp([1],[0.01],[2.0], configuration)
 
 # Set the pair interactions
 pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)

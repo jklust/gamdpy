@@ -21,6 +21,9 @@ class Tether():
             springs, nsprings = args[1], len(args[1])
             conf = args[2]
 
+            if ntypes != nsprings:
+                raise ValueError("Each type must have exactly one spring constant - arrays must be same length")
+
             indices_array, tether_params = [], []
             counter = 0
             for n in range(conf.N):
