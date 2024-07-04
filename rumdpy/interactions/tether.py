@@ -9,16 +9,41 @@ import rumdpy as rp
 
 class Tether():
 
-    def __init__(self, tether_params, indices_array, verbose=False):
+    def __init__(self, *args, verbose=False):
+
+        nargin = len(args)
+
+        if nargin == 2:
+            tether_params, indices_array = args[0], args[1]
+        
+        elif nargin == 3:
+            ptypes, ntypes = args[0], len(args[0])
+            springs, nsprings = args[1], len(args[1])
+            conf = args[2]
+
+            indices_array, tether_params = [], []
+            counter = 0
+            for n in range(conf.N):
+                for m in range(ntypes):
+                    if conf.ptype[n]==ptypes[m]:
+                        indices_array.append([counter, n])
+                        pos =  conf['r'][n]
+                        tether_params.append( [pos[0], pos[1], pos[2], springs[m]] )
+                        counter = counter + 1
+                        break
+        else:
+            raise ValueError("Incorrect number of arguments to constructor")
 
         self.tether_params = np.array(tether_params, dtype=np.float32)
         self.indices_array = np.array(indices_array, dtype=np.int32) 
-
+    
         if self.tether_params.shape[0] != self.indices_array.shape[0]:
-            raise ValueError("Length of indicies must be the same as length of tether points") 
+            raise ValueError("Input error") #... think about that!
 
         if verbose:
             print(f"{self.tether_params} \n {self.indices_array}")
+
+
 
     def get_params(self, configuration, compute_plan, verbose=False):
 
