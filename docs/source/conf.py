@@ -35,7 +35,15 @@ extensions = [
 templates_path = ['_templates']
 exclude_patterns = []
 
+# myst-nb configuration
 nb_execution_timeout = -1
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_image",
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

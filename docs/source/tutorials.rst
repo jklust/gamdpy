@@ -4,4 +4,4 @@ Tutorials
 .. toctree::
    :maxdepth: 2
 
-   tutorials/quick_start
+   tutorials/my_first_simulation
