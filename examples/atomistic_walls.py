@@ -12,19 +12,6 @@ import numpy as np
 import random 
 import rumdpy as rp
 
-def savexyz(configuration, filestr):
-    
-    configuration.get_vector('r')
-    npart = configuration.N
-
-    fp =  open(filestr,"w")
-    fp.write("%d\n" % (npart))
-    fp.write("Test for tethered particles\n")
-    for n in range(npart):
-        fp.write("%d %f %f %f\n" % 
-                 (configuration.ptype[n], configuration['r'][n][0], configuration['r'][n][1], configuration['r'][n][2])) 
-    fp.close()
-
 
 # Setup a default fcc configuration
 nxUnits, nyUnits, nzUnits, rhoWall, rhoFluid = 6, 6, 10, 1.2, 0.7;
@@ -47,7 +34,7 @@ while nfluid > nfluidWanted:
         configuration.ptype[idx] = 2
         nfluid = nfluid - 1
 
-savexyz(configuration, "initial.xyz")
+rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
 # Alternative instanciation tether=rp.Tether(<index array>, <tether params>, verbose=False)
@@ -74,12 +61,12 @@ integrator = rp.integrators.NVE(dt=0.005)
 
 # Some compute plan settings for old cards 
 compute_plan = rp.get_default_compute_plan(configuration)
-compute_plan['gridsync']=False
-compute_plan['tp']=2 
+compute_plan['gridsync']=True
+compute_plan['tp']=6 
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pairpot, tether, relax], integrator,
-                    num_timeblocks=100, steps_per_timeblock=128,
+                    num_timeblocks=200, steps_per_timeblock=64,
                     steps_between_momentum_reset=0, storage='LJ_T0.70.h5', compute_plan=compute_plan)
 
 prof = rp.CalculatorHydrodynamicProfile(configuration, 0)
@@ -93,4 +80,4 @@ print(sim.summary())
 
 prof.read()
 
-savexyz(configuration, "final.xyz")
+rp.tools.save_configuration(configuration, "final.xyz")

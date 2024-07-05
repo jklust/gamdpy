@@ -2,27 +2,13 @@
 
     Particles with label 1 and 2 are tethered with different Hooke springs.  
     All particles are integrated forward in time with the NVT integrator.
-    Density of fluid/free particles and tethered particles the same.
+    Density of fluid/free particles and tethered particles is the same.
     Initial and final configurations are saved in xyz format for easy inspection in vmd (guess a flag...)
 """
 
 import numpy as np
 import random 
 import rumdpy as rp
-
-def savexyz(configuration, filestr):
-    
-    configuration.get_vector('r')
-    npart = configuration.N
-
-    fp =  open(filestr,"w")
-    fp.write("%d\n" % (npart))
-    fp.write("Test for tethered particles\n")
-    for n in range(npart):
-        fp.write("%d %f %f %f\n" % 
-                 (configuration.ptype[n], configuration['r'][n][0], configuration['r'][n][1], configuration['r'][n][2])) 
-    fp.close()
-
 
 # Setup a default fcc configuration
 nxUnits, nyUnits, nzUnits, rho = 6, 6, 10, 1.0
@@ -35,7 +21,7 @@ for n in range(configuration.N):
     elif configuration['r'][n][0] > -1 and configuration['r'][n][0] < 1:
         configuration.ptype[n] = 2
 
-savexyz(configuration, "initial.xyz")
+rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
 tether = rp.Tether([1, 2], [300, 500], configuration, verbose=True)
@@ -60,7 +46,7 @@ compute_plan['tp']=2
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pairpot, tether], integrator,
-                    num_timeblocks=100, steps_per_timeblock=128,
+                    num_timeblocks=100, steps_per_timeblock=1024,
                     steps_between_momentum_reset=0, storage='LJ_T0.70.h5', compute_plan=compute_plan)
 
 # Run simulation one block at a time
@@ -69,4 +55,4 @@ for block in sim.timeblocks():
 
 print(sim.summary())
 
-savexyz(configuration, "final.xyz")
+rp.tools.save_configuration(configuration, "final.xyz")
