@@ -20,6 +20,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [bcc_lattice.py](bcc_lattice.py) : How to set up other initial structures (bcc lattice of LJ particles).
 - [2D.py](2D.py) : Simulating a 2D system (Lennard-Jones particle in a hexagonal lattice).
 - [kablj.py](kablj.py) : Simulating the Kob-Andersen binary LJ mixture. Also showing how to apply a temperature ramp for cooling.
+- [tether.py](tether.py) : Simple example simulation of tethered particles.
 - [atomistic_walls.py](atomistic_walls.py) : Simulation of an atomistic wall, defined by tethered and thermostated particles.
 
 ## Molecular models
