@@ -22,6 +22,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [kablj.py](kablj.py) : Simulating the Kob-Andersen binary LJ mixture. Also showing how to apply a temperature ramp for cooling.
 - [tether.py](tether.py) : Simple example simulation of tethered particles.
 - [atomistic_walls.py](atomistic_walls.py) : Simulation of an atomistic wall, defined by tethered and thermostated particles.
+- [yukawa.py](yukawa.py) : Example of implementing a user-defined potential, exemplified by the Yukawa potential.
 
 ## Molecular models
 
