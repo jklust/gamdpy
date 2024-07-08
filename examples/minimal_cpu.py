@@ -1,0 +1,34 @@
+""" Minimal example of a Simulation using rumdpy.
+
+Simulation of a Lennard-Jones crystal in the NVT ensemble.
+
+"""
+import os
+os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
+os.environ["NUMBA_DISABLE_JIT"] = "1"
+import rumdpy as rp
+
+# Setup fcc configuration
+configuration = rp.make_configuration_fcc(nx=4, ny=4, nz=4, rho=0.973)
+configuration['m'] = 1.0
+configuration.randomize_velocities(T=0.7)
+
+# Setup pair potential: Single component 12-6 Lennard-Jones
+pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+sig, eps, cut = 1.0, 1.0, 2.5
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+
+# Setup integrator: NVT
+integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
+
+# Setup Simulation.
+sim = rp.Simulation(configuration, pair_pot, integrator,
+                    steps_between_momentum_reset=100,
+                    num_steps=512, storage='LJ_T0.70.h5', timing=False)
+
+# Run simulation
+sim.run()
+
+# To get a plot of the MSD do something like this:
+# python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
+
