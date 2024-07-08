@@ -133,18 +133,6 @@ class Configuration:
     def get_volume(self):
         return self.simbox.volume(self.simbox.lengths)
 
-    def randomize_velocities(self, T):
-        """ Randomize velocities according to a given temperature. If T <= 0, set all velocities to zero. """
-        if self.D is None:
-            raise ValueError('Cannot randomize velocities. Start by assigning positions.')
-        masses = self['m']
-        if np.any(masses == 0):
-            raise ValueError('Cannot randomize velocities when any mass is zero')
-        if T > 0.0:
-            self['v'] = generate_random_velocities(self.N, self.D, T=T, m=self['m'])
-        else:
-            self['v'] = np.zeros((self.N, self.D), np.float32)
-
     def set_kinetic_temperature(self, T, ndofs=None):
         if ndofs is None:
             ndofs = self.D * (self.N - 1)
@@ -153,6 +141,20 @@ class Configuration:
         if T_ == 0:
             raise ValueError('Cannot rescale velocities when all equal to zero')
         self['v'] *= (T / T_) ** 0.5
+
+    def randomize_velocities(self, T, seed=None, ndofs=None):
+        """ Randomize velocities according to a given temperature. If T <= 0, set all velocities to zero. """
+        if self.D is None:
+            raise ValueError('Cannot randomize velocities. Start by assigning positions.')
+        masses = self['m']
+        if np.any(masses == 0):
+            raise ValueError('Cannot randomize velocities when any mass is zero')
+        if T > 0.0:
+            self['v'] = generate_random_velocities(self.N, self.D, T=T, seed=seed, m=self['m'])
+            # rescale to get the kinetic temperature exactly right
+            self.set_kinetic_temperature(T=T, ndofs=ndofs)
+        else:
+            self['v'] = np.zeros((self.N, self.D), np.float32)
 
     def make_lattice(self, unit_cell: dict, cells: list, rho: float = None) -> None:
         """ Generate a lattice configuration """
@@ -165,8 +167,10 @@ class Configuration:
 
 # Helper functions
 
-def generate_random_velocities(N, D, T, m=1, dtype=np.float32):
+def generate_random_velocities(N, D, T, seed, m=1, dtype=np.float32):
     v = np.zeros((N, D), dtype=dtype)
+    # default value of seed is None and random.seed(None) has no effect
+    np.random.seed(seed)
     for k in range(D):
         # to cover the case that m is a 1D array of length N, need to
         # generate one column at a time, passing the initial zeros as the
@@ -174,11 +178,6 @@ def generate_random_velocities(N, D, T, m=1, dtype=np.float32):
         v[:, k] = np.random.normal(v[:, k], (T / m) ** 0.5)
         CM_drift = np.mean(m * v[:, k]) / np.mean(m)
         v[:, k] -= CM_drift
-
-    # rescale to get the kinetic temperature exactly right. The outer np.sum
-    # is necessary when m is a scalar.
-    T_ = np.sum(np.dot(m, np.sum(v ** 2, axis=1))) / (D * (N - 1))
-    v *= (T / T_) ** 0.5
     return dtype(v)
 
 
