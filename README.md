@@ -102,7 +102,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Auto-tuner
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [ ] Define hdf5 'template'
+- [ ] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/)
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 
 ## TODO, long term:
@@ -123,6 +123,7 @@ A good place to see how this is done without implementing all functions twice is
 
 ## Notes on how to test the code
 Run `pytest` in root (rumdpy) directory.
+NOTE: pytest fails if k3d not installed
 
 ## Known issues:
 
