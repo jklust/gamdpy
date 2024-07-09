@@ -6,10 +6,10 @@ import numpy as np
 def load_output(name : str) -> dict:
     '''This function takes a simulation output and returns it as a dictionary in python following the formatting of sim.output'''
     if name[-3:]==".h5":
-        print("Found .h5 file")
+        print("Found .h5 file, loading to rumdpy as output dictionary")
         return load_h5(name)
     elif name=="TrajectoryFiles":
-        print("Found TrajectoryFiles")
+        print("Found TrajectoryFiles, loading to rumpdy as output dictionary")
         return load_rumd3(name)
     else:
         print("Input not recognized")
