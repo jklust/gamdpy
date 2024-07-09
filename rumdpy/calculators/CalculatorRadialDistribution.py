@@ -111,3 +111,8 @@ class CalculatorRadialDistribution():
 
         distances = np.arange(0, num_bins) * bin_width
         return {'distances': distances, 'rdf': rdf}
+
+    def save_average(self, output_filename="rdf.dat"):
+        rdf_dict = self.read()
+        np.savetxt(output_filename, np.c_[rdf_dict['distances'], np.mean(rdf_dict['rdf'], axis=0)])
+
