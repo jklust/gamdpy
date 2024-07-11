@@ -114,5 +114,5 @@ class CalculatorRadialDistribution():
 
     def save_average(self, output_filename="rdf.dat"):
         rdf_dict = self.read()
-        np.savetxt(output_filename, np.c_[rdf_dict['distances'], np.mean(rdf_dict['rdf'], axis=0)])
+        np.savetxt(output_filename, np.c_[rdf_dict['distances'], np.mean(rdf_dict['rdf'], axis=0)], header="r g(r)")
 

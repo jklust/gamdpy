@@ -85,11 +85,11 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda?
 - [X] Generalize make_configuration to different lattices, Ulf
-- [ ] Read configurations from file
+- [X] Read configurations from file (Lorenzo: added function load_output in tools)
 - [ ] Allow more flexible/dynamical changing which data to be stored in Configuration (e.g. stresses)
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
 - [ ] NVT_Langevin-per-particle integrator, Jesper
-- [ ] Post analysis, RDF and Sq
+- [X] Post analysis, RDF and Sq (Lorenzo: done, to test for multicomponents)
 - [ ] NVU integrator, Mark
 
 ## TODO or decide not necesarry, before paper:

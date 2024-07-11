@@ -22,7 +22,7 @@ configuration['r'] = output['block'][0][0][0]
 configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
-calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+calc_sq = rp.CalculatorStructureFactor(configuration, q_max=18.0)
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)
 #       the zero is to select the position array and discard images
@@ -32,8 +32,8 @@ positions = positions.reshape(nblocks*nconfs,N,D)
 for pos in positions[nconfs-1::nconfs]:
     configuration.set_vector('r', pos)
     configuration.copy_to_device()
-    calc_rdf.update()
+    calc_sq.update()
 
 # Save rdf
-calc_rdf.save_average()
+calc_sq.save_average()
 

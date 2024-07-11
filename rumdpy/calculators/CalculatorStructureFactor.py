@@ -131,3 +131,9 @@ class CalculatorStructureFactor:
             }
         else:
             raise ValueError('bins must be an integer.')
+
+    #def save_average(self, bins: int=None, output_filename: str="sq.dat") -> None:
+    def save_average(self, bins=None, output_filename="sq.dat"):
+        if bins is None: bins=100
+        sq_dict = self.read(bins)
+        np.savetxt(output_filename, np.c_[sq_dict['|q|'], sq_dict['S(|q|)']], header="|q| S(|q|)")

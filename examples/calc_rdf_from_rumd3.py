@@ -4,15 +4,17 @@ import rumdpy as rp
 import numpy as np
 import os
 
-if "LJ_T0.70.h5" not in os.listdir(os.getcwd()):
+file_to_read = "TrajectoryFiles"
+
+if file_to_read not in os.listdir(os.getcwd()):
     print("This example needs a the file LJ_T0.70.h5 to be present")
-    print("LJ_T0.70.h5 can be generated using minimal.py example")
+    print(f"{file_to_read} can be generated using minimal.py example")
     exit()
 
 # Create configuration object
 configuration = rp.Configuration()
 # Load existing data
-output = rp.tools.load_output("TrajectoryFiles")
+output = rp.tools.load_output(file_to_read)
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
 # Set up the configuration object
