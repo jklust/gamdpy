@@ -9,7 +9,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 
 ## Analysis
 
-- [thermodynamics.py](thermodynamics_old.py) : Calculate thermodynamic properties.
+- [thermodynamics.py](thermodynamics.py) : Calculate thermodynamic properties.
 - [isochore.py](isochore.py) : Performing several simulations in one script, here an isochore.
 - [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), usefull when a lot of short simulations are performed.
 - [test_stress.py](test_stress.py) : Like blocks.py but calculates also the stress tensor and prints it after each block.
