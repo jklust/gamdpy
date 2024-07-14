@@ -18,7 +18,7 @@ sim = rp.get_default_sim()
 sim.run()
 
 # Extract thermodynamic data after each timeblock
-thermo_data = sim.get_scalar_sums()  # Thermodynamic data in a dictionary
+thermo_data = rp.tools.get_scalar_sums(sim)  # Thermodynamic data in a dictionary
 print(f'{thermo_data.keys()=}')
 
 # Plot the potential energy as a function of time
