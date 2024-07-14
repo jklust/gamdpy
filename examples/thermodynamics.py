@@ -1,12 +1,12 @@
 """ Investigation of thermodynamic properties
 
-This example demonstrates how thermodynamic properties
+This example show how thermodynamic data can be extracted
 using the `extract_scalars` function from the `rumdpy` package.
 
-The script runs a NVT simulation of a Lennard-Jones fluid.
+The script runs a NVT simulation of a Lennard-Jones crystal.
 The potential energy, virial, and kinetic energy are extracted
 from the simulation output and the mean values are printed.
-Then derived quantities such as kinetic temperature and pressure are computed.
+Derived quantities such as kinetic temperature and pressure are computed.
 The energy trajectory is plotted and the error estimate of potential energy
 is estimated using the blocking method.
 
@@ -80,7 +80,7 @@ time = np.arange(len(U)) * dt * sim.output_calculator.steps_between_output
 print(f"Total time of analysed trajectory: {time[-1]}")
 
 # Compute kinetic temperature
-dof = 3 * N - 3  # degrees of freedom (3N - 3 for NVT)
+dof = 3 * N - 3  # degrees of freedom
 T_kin = 2 * K / dof
 print(f"Mean kinetic temperature: {np.mean(T_kin)}")
 
