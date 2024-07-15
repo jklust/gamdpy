@@ -92,7 +92,7 @@ class PairPotential2():
             print(f'\tNumber (virtual) particles: {num_blocks*pb}')
             print(f'\tNumber of threads {num_blocks*pb*tp}')
             if compute_stresses:
-                print('\tIncluding computation of stress tensor')
+                print('\tIncluding computation of stress tensor in pair potential')
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         if compute_stresses:
@@ -106,7 +106,6 @@ class PairPotential2():
             virial_factor_NIII = numba.float32( 1.0/configuration.D)
             def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
                 u, s, umm = pairpotential_function(ij_dist, ij_params)
-                sts_idx = 0
                 for k in range(D):
                     cuda.atomic.add(f, (other_id, k), dr[k]*s)
                     my_f[k] = my_f[k] - dr[k]*s                         # Force

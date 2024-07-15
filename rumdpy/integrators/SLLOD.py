@@ -109,12 +109,12 @@ class SLLOD():
                 c1 = sr*sum_pxpy / sum_p2
                 c2 = sr*sr * sum_pypy / sum_p2
                 # g-factor for a half time-step
-                g_factor = numba.float32(1.)/math.sqrt(numba.float32(1.) - c1*dt  + numba.float32(0.25) * c2 * dt**2)
+                g_factor = 1./math.sqrt(1. - (c1*dt  - 0.25 * c2 * dt**2))  # double precision
 
-                # update velocity 
-                my_v[0] = g_factor * (my_v[0] - numba.float32(0.5)*sr*dt*my_v[1])
+                # update velocity - multiply by g_factor in double precision
+                my_v[0] = numba.float32(g_factor * (my_v[0] - 0.5*sr*dt*my_v[1]))
                 for k in range(1, D):
-                    my_v[k] *= g_factor
+                    my_v[k] = numba.float32(g_factor * my_v[k])
 
                 # add to sums in group 1 needed for step B2
                 my_p2 = numba.float32(0.)
@@ -154,7 +154,7 @@ class SLLOD():
                 beta = math.sqrt(sum_f2 / sum_p2)
                 h = (alpha + beta) / (alpha - beta)
                 e = math.exp(-beta * dt)
-                one = numba.float32(1.0)
+                one = numba.float32(1.)
                 integrate_coefficient1 = (one - h) / (e - h/e)
                 integrate_coefficient2 = (one + h - e - h/e)/((one-h)*beta)
                 # update velocity
@@ -198,16 +198,18 @@ class SLLOD():
                 c1 = sr*sum_pxpy / sum_p2
                 c2 = sr*sr * sum_pypy / sum_p2
                 # g-factor for a half time-step
-                g_factor = numba.float32(1.)/math.sqrt(numba.float32(1.) - c1*dt  + numba.float32(0.25) * c2 * dt**2)
-                
+                g_factor = 1./math.sqrt(1. - (c1*dt  - 0.25 * c2 * dt**2))  # double precision
 
-                # update velocity
-                my_v[0] = g_factor * (my_v[0] - numba.float32(0.5)*sr*dt*my_v[1])
+                # update velocity - multiply by g_factor in double precision
+                my_v[0] = numba.float32(g_factor * (my_v[0] - 0.5*sr*dt*my_v[1]))
                 for k in range(1, D):
-                    my_v[k] *= g_factor
-                
-                # update position and apply bounday conditions
+                    my_v[k] = numba.float32(g_factor * my_v[k])
+
+                # update position and apply boundary conditions
                 my_r[0] += sr*dt*my_r[1] # rumd-3 has another term which seems to be incorrect (!)
+                # Here is the alternative version (DEBUG)
+                #my_r[0] += (my_v[0] + numba.float32(0.5) * sr*dt*my_v[1])  * dt
+                #for k in range(1, D): # DEBUG, was range(D)
                 for k in range(D):
                     my_r[k] += my_v[k] * dt
 
