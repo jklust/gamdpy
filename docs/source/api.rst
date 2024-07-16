@@ -27,6 +27,23 @@ The Simbox Class
 .. autoclass:: rumdpy.Simbox
    :members:
 
+Integrators
+-----------
+
+.. automodule:: rumdpy.integrators.NVE
+   :members:
+
+.. automodule:: rumdpy.integrators.NVT
+   :members:
+
+.. automodule:: rumdpy.integrators.NVT_Langevin
+   :members:
+
+Potential Functions
+----------------
+
+.. automodule:: rumdpy.potential_functions
+   :members:
 
 Tools
 -----

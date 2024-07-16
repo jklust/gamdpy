@@ -11,10 +11,65 @@ import h5py
 
 
 class Simulation():
-    def __init__(self, configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
-                 compute_plan=None, storage='output.h5', scalar_output='default', conf_output='default',
-                 steps_between_momentum_reset: int = 'default', compute_stresses=False, verbose=False, timing=True):
+    """ Class for running a simulation.
 
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        The configuration to simulate.
+
+    interactions : an interaction or list of interactions
+        Interactions such as pair potentials, bonds, external fields, etc.
+
+    integrator : an integrator
+        The integrator to use for the simulation.
+
+    num_steps : int
+        Number of steps to run the simulation. If 0, num_timeblocks and steps_per_timeblock should be set.
+
+    num_timeblocks : int
+        Number of timeblocks to run the simulation. If not 0, then steps_per_timeblock should be set.
+
+    steps_per_timeblock : int
+        Number of steps per timeblock.
+
+    compute_plan : dict
+        A dictionary with the compute plan for the simulation. If None, a default compute plan is used.
+
+    storage : str
+        Storage for the simulation output. Can be 'memory' or a filename with extension '.h5'.
+
+    scalar_output : str or int
+        How often to save scalar output. If 'default', then a default value is used.
+
+    conf_output : str or None
+        If 'default', then a default method is used (logarithmic spacing).
+        If None, no configuration output is saved.
+
+    steps_between_momentum_reset : int
+        Number of steps between momentum reset. If 'default', then a default value is used.
+
+    compute_stresses : bool
+        If True, stresses are computed.
+
+    verbose : bool
+        If True, print verbose output.
+
+    timing : bool
+        If True, timing information is saved.
+
+
+    See also
+    --------
+
+    :func:`rumdpy.get_default_sim`
+
+    """
+
+    def __init__(self, configuration: rp.Configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
+                 compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
+                 steps_between_momentum_reset: int = 'default', compute_stresses=False, verbose=False, timing=True):
         self.configuration = configuration
         if compute_plan == None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
@@ -174,6 +229,14 @@ class Simulation():
         # simple run function
 
     def run(self, verbose=True):
+        """ Run the simulation.
+
+        See also
+        --------
+
+        :func:`rumdpy.Simulation.timeblocks`
+
+        """
         for _ in self.timeblocks():
             if verbose:
                 print(self.status(per_particle=True))
@@ -181,11 +244,36 @@ class Simulation():
             print(self.summary())
 
     # generator for running simulation one block at a time
-    def timeblocks(self, num_blocks=-1):
-        if num_blocks == -1:
-            num_blocks = self.num_blocks
-        self.last_num_blocks = num_blocks
-        assert (num_blocks <= self.num_blocks)  # Could be made OK with more blocks
+    def timeblocks(self, num_timeblocks=-1) -> None:
+        """ Generator for running the simulation one block at a time.
+
+        Parameters
+        ----------
+
+        num_timeblocks : int
+            Number of blocks to run. If -1, all blocks are run.
+
+        Examples
+        --------
+
+        >>> import rumdpy as rp
+        >>> sim = rp.get_default_sim()
+        >>> for block in sim.timeblocks(num_timeblocks=3):
+        ...     print(f'{block=}')  # Replace with code to analyze the current configuration
+        block=0
+        block=1
+        block=2
+
+        See also
+        --------
+
+        :func:`rumdpy.Simulation.run`
+
+        """
+        if num_timeblocks == -1:
+            num_timeblocks = self.num_blocks
+        self.last_num_blocks = num_timeblocks
+        assert (num_timeblocks <= self.num_blocks)  # Could be made OK with more blocks
 
         self.configuration.copy_to_device()
         self.vectors_list = []
@@ -204,7 +292,7 @@ class Simulation():
 
         zero = np.float32(0.0)
 
-        for block in range(num_blocks):
+        for block in range(num_timeblocks):
             if self.timing: start_block.record()
             self.current_block = block
             #self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
@@ -248,7 +336,23 @@ class Simulation():
         self.nbflag = self.interactions[0].nblist.d_nbflag.copy_to_host()
         self.scalars_list = np.array(self.scalars_list)
 
-    def status(self, per_particle=False):
+    def status(self, per_particle=False) -> str:
+        """ String with the current status
+        Should be executed during the simulation run, see :func:`rumdpy.Simulation.timeblocks`
+
+        Parameters
+        ----------
+
+        per_particle : bool
+            If True, the values are divided by the number of particles in the configuration.
+
+        Returns
+        -------
+
+        str
+            A string with the current status of the simulation.
+
+        """
         time = self.current_block * self.steps_per_block * self.dt
         st = f'{time= :<10.3f}'
         for name in self.configuration.sid:
@@ -258,7 +362,11 @@ class Simulation():
             st += f'{name}= {data:<10.3f}'
         return st
 
-    def summary(self):
+    def summary(self) -> str:
+        """ Returns a summary string of the simulation run.
+         Should be called after the simulation has been run,
+         see :func:`rumdpy.Simulation.timeblocks` or :func:`rumdpy.Simulation.run`
+         """
         if self.timing:
             time_total = self.timing_numba / 1000
             tps_total = self.last_num_blocks * self.steps_per_block / time_total

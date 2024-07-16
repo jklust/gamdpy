@@ -4,9 +4,22 @@ from numba import cuda
 import rumdpy as rp
 
 class NVT():
-    """
-        Integrator keeping N (number of particles), V (volume), and T (temperature) constant, 
-        using the leapfrog algorithm and a Nose-Hoover thermostat.
+    """ The leapfrog algorithm with a Nose-Hoover thermostat
+
+    Integrator keeping N (number of particles), V (volume), and T (temperature) constant,
+    using the leapfrog algorithm and a Nose-Hoover thermostat.
+
+    Parameters
+    ----------
+    temperature : float or function
+        The temperature to keep the system at. If a function, it should take time as argument.
+
+    tau : float
+        The relaxation time of the thermostat.
+
+    dt : float
+        The time step of the integration.
+
     """
 
     def __init__(self, temperature, tau: float, dt: float) -> None: 

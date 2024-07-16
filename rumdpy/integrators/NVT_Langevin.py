@@ -8,12 +8,32 @@ from numba.cuda.random import xoroshiro128p_normal_float32
 import rumdpy as rp
 
 class NVT_Langevin():
-    """ 
-        NVT Langevin Leap-frog integrator
-        REF: https://arxiv.org/pdf/1303.7011.pdf
+    """ NVT Langevin Leap-frog integrator
+
+    The langevin thermostat is a stochastic thermostat that keeps the system at a constant temperature:
+
+    .. math::
+        m a = f - \\alpha v + \\beta
+
+    where :math:`a` is the acceleration, :math:`f` is the force, :math:`v` is the velocity, :math:`m` is the mass,
+    :math:`\\alpha` is the friction coefficient, and :math:`\\beta` is a random number drawn from a normal distribution.
+    The implementation uses the leap-frog algorithm described in reference https://arxiv.org/pdf/1303.7011.pdf
+
+    Parameters
+    ----------
+
+    temperature : float or function
+        Temperature of the thermostat. If a function, it must take a single argument, time, and return a float.
+
+    alpha : float
+        Friction coefficient of the thermostat.
+
+    dt : float
+        Time step for the integration.
+
     """
   
-    def __init__(self, temperature, alpha:float, dt:float, seed:int) -> None:
+    def __init__(self, temperature, alpha: float, dt: float, seed: int) -> None:
         self.temperature = temperature
         self.alpha = alpha 
         self.dt = dt

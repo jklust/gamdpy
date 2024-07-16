@@ -11,6 +11,7 @@ import numba
 from numba import cuda
 
 class Simbox():
+    """ Simulation box class """
     def __init__(self, D, lengths):
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision

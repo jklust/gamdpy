@@ -15,6 +15,40 @@ Here is an example of a script that runs a simple Lennard-Jones simulation ( :do
 .. literalinclude:: ./examples/minimal.py
    :language: python
 
+Features
+--------
+
+* Pure Python code (with numba JIT compilation)
+
+  * Easy to extend
+  * Fast
+
+* Numerical integrators
+
+  * Leapfrog NVE, Nose-Hoover NVT, Langevin NVT, Langevin NpT
+
+* Atom systems
+
+  * Lennard-Jones
+  * Multi component systems
+  * Easy to extend to any pair-potential
+  * Scalar forces such as gravity or tethered particles.
+
+* Molecular systems
+
+  * Harmonic bonds
+  * Easy to extend to any bond-potential
+
+* Analysis tools
+
+  * Structure: radial distribution function, structure factor
+  * Dynamics: mean square displacement
+
+* Easy integration with other codebases
+
+  * Easy analysis with popular Python packages such as numpy, pandas, matplotlib, etc.
+  * Read and write RUMD3 files and write LAMMPS data files.
+
 
 Contents
 ========
@@ -22,11 +56,12 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   features
    installation
    tutorials
    examples/README.md
    api
+   development
+
 
 Indices and tables
 ==================
