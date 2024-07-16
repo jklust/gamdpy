@@ -9,5 +9,10 @@ The package is installed by cloning the repository from GitLab.
 cd [some_directory]
 git clone https://gitlab.com/tbs.cph/rumdpy-dev
 cd rumdpy-dev
-pip install .
+pip install -e .
+```
+
+Update to latest version
+```shell
+git pull
 ```

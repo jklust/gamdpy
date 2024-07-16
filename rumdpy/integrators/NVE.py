@@ -5,6 +5,23 @@ from numba import cuda
 import math
 
 class NVE():
+    """Total energy conserving integrator
+
+    Use the Leap-frog algorithm to integrate the equations of motion:
+
+    .. math::
+        v(t+dt/2) &= v(t-dt/2) + f(t) dt / m
+
+        r(t+dt) &= r(t) + v(t+dt/2) dt
+
+
+    Parameters
+    ----------
+
+    dt : float
+        Time step for the integration.
+
+    """
     def __init__(self, dt):
         self.dt = dt
   
