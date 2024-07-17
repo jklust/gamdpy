@@ -91,6 +91,7 @@ def create_alpha2_plot(dynamics, figsize=(8, 6)):
 
 
 def main(argv: list = None) -> None:
+    """ Command line interface for calc_dynamics """
     import sys
     import h5py
 

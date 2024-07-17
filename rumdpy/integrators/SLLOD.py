@@ -14,6 +14,20 @@ import math
 # 6. compatibility wih Order-N NB-list
 
 class SLLOD():
+    """ The SLLOD integrator
+
+    Shear an atomic system in the xy-plane using the SLLOD equations.
+
+    Parameters
+    ----------
+
+    shear_rate : float
+        The shear rate of the system.
+
+    dt : float
+        The time step of the simulation.
+
+    """
     def __init__(self, shear_rate, dt):
         self.shear_rate = shear_rate
         self.dt = dt

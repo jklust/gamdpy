@@ -157,7 +157,27 @@ class Configuration:
             self['v'] = np.zeros((self.N, self.D), np.float32)
 
     def make_lattice(self, unit_cell: dict, cells: list, rho: float = None) -> None:
-        """ Generate a lattice configuration """
+        """ Generate a lattice configuration
+
+        The lattice is constructed by replicating the unit cell in all directions.
+        Unit cell is a dictonary with `fractional_coordinates` for particles, and
+        the `lattice_constants` as a list of lengths of the unit cell in all directions.
+
+        Unit cells are avalible in rumdpy.unit_cells
+
+        Example
+        -------
+
+        >>> import rumdpy as rp
+        >>> conf = rp.Configuration()
+        >>> conf.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
+        >>> print(rp.unit_cells.FCC)  # Example of a unit cell dict
+        {'fractional_coordinates': [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]], 'lattice_constants': [1.0, 1.0, 1.0]}
+
+
+
+
+        """
         from rumdpy.tools import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
@@ -168,6 +188,7 @@ class Configuration:
 # Helper functions
 
 def generate_random_velocities(N, D, T, seed, m=1, dtype=np.float32):
+    """ Generate random velocities according to a given temperature. """
     v = np.zeros((N, D), dtype=dtype)
     # default value of seed is None and random.seed(None) has no effect
     np.random.seed(seed)
@@ -233,7 +254,8 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
     return configuration
 
 
-def configuration_to_hdf5(conf, filename, meta_data=None):
+def configuration_to_hdf5(conf: Configuration, filename: str, meta_data=None):
+    """ Write a configuration to a HDF5 file """
     if not filename.endswith('.h5'):
         filename += '.h5'
     with h5py.File(filename, "w") as f:
@@ -254,7 +276,8 @@ def configuration_to_hdf5(conf, filename, meta_data=None):
         ds_r_im[:] = conf.r_im
 
 
-def configuration_from_hdf5(filename, reset_images=False):
+def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
+    """ Read a configuration from a HDF5 file """
     if not filename.endswith('.h5'):
         raise ValueError('Filename not inHDF5 format')
     with h5py.File(filename, "r") as f:
@@ -277,7 +300,8 @@ def configuration_from_hdf5(filename, reset_images=False):
     return configuration
 
 
-def configuration_to_rumd3(configuration, filename):
+def configuration_to_rumd3(configuration: Configuration, filename: str) -> None:
+    """ Write a configuration to a RUMD3 file """
     N = configuration.N
     if configuration.D != 3:
         raise ValueError("Only D==3 is compatibale with RUMD-3")
@@ -316,7 +340,8 @@ def configuration_to_rumd3(configuration, filename):
             f.write(line_out)
 
 
-def configuration_from_rumd3(filename, reset_images=False):
+def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration:
+    """ Read a configuration from a RUMD3 file """
     with gzip.open(filename) as f:
         line1 = f.readline().decode()
         N = int(line1)

@@ -60,7 +60,7 @@ A rough estimate is that the maximum number of time steps per second (TPS) that 
 There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
- ## TODO, short term:
+## TODO, short term:
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
@@ -121,9 +121,37 @@ A good place to see how this is done without implementing all functions twice is
 - Automatic testing upon uploading (CI). How to get acces to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
+## Checklist for developing a new feature
+- Copy code that resembles what you want to do, and modify it to your needs.
+- Write tests in a file placed in tests (run pytest to check that it works).
+- Write an example and place it in examples, add it to the examples/README.md
+- Write documentation in the docstrings of the code (run doctests to check that it works).
+- Include the new feature in the documentation, e.g. you may need to edit docs/source/api.rst
+
 ## Notes on how to test the code
 Run `pytest` in root (rumdpy) directory.
 NOTE: pytest fails if k3d not installed
+
+### Running doctest of a single file
+
+```bash
+python3 -m doctest -v rumdpy/calculators/CalculatorRadialDistribution.py
+```
+
+## Building documentation
+
+Building the documentation using sphinx, https://www.sphinx-doc.org
+
+```bash
+cd docs
+make html
+```
+
+Clean the build directory
+
+```bash
+make clean
+```
 
 ## Known issues:
 
@@ -137,6 +165,15 @@ ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
 in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.
 
 # Installation (in progress)
+
+## Installing rumdpy on linux from source
+
+```bash
+cd [some_directory]
+git clone https://gitlab.com/tbs.cph/rumdpy-dev
+cd rumdpy-dev
+pip install -e .
+```
 
 ## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)
 

@@ -10,6 +10,31 @@ from numba import cuda
 #############################################################
 
 class CalculatorRadialDistribution():
+    """ Calculator class for the radial distribution function, g(r)
+
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        The configuration object for which the radial distribution function is calculated.
+
+    num_bins : int
+        The number of bins in the radial distribution function.
+
+    compute_plan : dict
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> sim = rp.get_default_sim()
+    >>> calc_rdf = rp.CalculatorRadialDistribution(sim.configuration, num_bins=1000)
+    >>> for _ in sim.timeblocks():
+    ...     calc_rdf.update()      # Current configuration to rdf
+    >>> rdf_data = calc_rdf.read() # Read the rdf data as a dictionary
+    >>> r = rdf_data['distances']  # Pair distances
+    >>> rdf = rdf_data['rdf']      # Radial distribution function
+    """
 
     def __init__(self, configuration, num_bins, compute_plan=None) -> None:
         self.configuration = configuration
@@ -85,6 +110,7 @@ class CalculatorRadialDistribution():
         return cuda.jit(device=0)(rdf_calculator_full)[num_blocks, (pb, tp)]
 
     def update(self):
+        """ Update the radial distribution function with the current configuration. """
         self.count += 1
         self.update_kernel(self.configuration.d_vectors,
                            self.configuration.simbox.d_data,
@@ -94,6 +120,14 @@ class CalculatorRadialDistribution():
         self.d_gr_bins = cuda.to_device(self.host_array_zeros)
 
     def read(self):
+        """ Read the radial distribution function
+
+        Returns
+        -------
+
+        dict
+            A dictionary containing the distances and the radial distribution function.
+        """
         num_bins = self.rdf_list[0].shape[0]
         min_box_dim = min(self.configuration.simbox.lengths[0], self.configuration.simbox.lengths[1],
                           self.configuration.simbox.lengths[2])
@@ -112,7 +146,15 @@ class CalculatorRadialDistribution():
         distances = np.arange(0, num_bins) * bin_width
         return {'distances': distances, 'rdf': rdf}
 
-    def save_average(self, output_filename="rdf.dat"):
+    def save_average(self, output_filename="rdf.dat") -> None:
+        """ Save the average radial distribution function to a file
+
+        Parameters
+        ----------
+
+        output_filename : str
+            The name of the file to which the radial distribution function is saved.
+        """
+
         rdf_dict = self.read()
         np.savetxt(output_filename, np.c_[rdf_dict['distances'], np.mean(rdf_dict['rdf'], axis=0)], header="r g(r)")
-

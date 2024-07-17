@@ -7,29 +7,59 @@ import numba
 
 class CalculatorStructureFactor:
     """ Calculator class for the structure factor of a system, S(q)
-    The calculation is done for the q vectors pointing in the q_direction (0=x, 1=y, ...).
-    The length of the q vectors is determined by the n_values list:
-        q = (2*pi*n_x/L_x, 2*pi*n_x/L_x, ...)
-    where n=(n_x, n_y, ...) is a D-dimensional vector of integers and L_x, L_y are the box lengths in the x and y  directions.
-    The collective density rho_q is calculated as:
-        rho_q = 1/sqrt(N) * sum_{n} exp(-i q.x_n)
-    where x_n is the position of particle n
-    The structure factor is defined as:
-        S(q) = |rho_q|^2
+    The calculation is done for several :math:`{\\bf q}` vectors given by
 
-    Initialize the structure factor calculator.
-    ===========================================
-    If n_vectors is None, the q vectors are generated from q_max.
-    If n_vectors is not None, the q vectors are taken from n_vectors.
-    The n_vectors must be a numpy array of shape (n, D)
-    where n is the number of vectors and D is the number of dimensions.
-    Note that either q_max or n_vectors must be specified.
+    .. math::
+
+        {\\bf q} = (2\\pi n_x/L_x, 2\\pi n_y/L_y, ...)
+
+    where :math:`n=(n_x, n_y, ...)` is a D-dimensional vector of integers and
+    :math:`L_x`, :math:`L_y` are the box lengths in the :math:`x` and :math:`y` directions.
+    The collective density :math:`\\rho_q` is calculated as
+
+    .. math::
+
+        \\rho_{\\bf q} = \\frac{1}{\\sqrt{N}} \\sum_{n} \\exp(-i {\\bf q}\\cdot {\\bf r}_n)
+
+    where :math:`x_n` is the position of particle :math:`n`
+    The structure factor is defined as
+
+    .. math::
+
+        S({\\bf q}) = |\\rho_{\\bf q}|^2
+
+    The method :meth:`~rumdpy.calculators.CalculatorStructureFactor.update`
+    updates the structure factor with the current configuration.
+    The method :meth:`~rumdpy.calculators.CalculatorStructureFactor.read` returns the structure factor for the q vectors in the q_direction.
+
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        The configuration object to calculate the structure factor for.
+
+    q_max : float or None
+        The maximum value of the q vectors.
+
+    n_vectors : numpy.ndarray or None
+        n-vectors defining q-vectors.
+        The shape of n_vectors, if specified, must be (N, D)
+        where N is the number of q vectors and D is the number of dimensions.
+        Either q_max or n_vectors must be not None,
+        If n_vectors is None, then the q-vectors are auto generated from q_max.
+
+    backend : str
+        The backend to use for the calculation. Either 'parallel' or 'single core'.
+
+    See also
+    --------
+
+    :class:`~rumdpy.CalculatorRadialDistribution`
 
     """
 
     def __init__(self, configuration: rp.Configuration,
-#                 q_max: None | float = None, n_vectors=None, backend='parallel', ) -> None:
-                 q_max = None, n_vectors=None, backend='parallel', ) -> None:
+                 q_max: float = None, n_vectors: np.ndarray = None, backend='parallel') -> None:
         self.update_count = 0
         self.configuration = configuration
         self.L = self.configuration.simbox.lengths.copy()
@@ -94,8 +124,21 @@ class CalculatorStructureFactor:
     #def read(self, bins: int | None) -> dict:
     def read(self, bins) -> dict:
         """ Return the structure factor S(q) for the q vectors in the q_direction.
+
+        Parameters
+        ----------
+
+        bins : int | None
             If bins is an integer, the data is binned (ready to be plotted).
             If bins is None, the raw S(q) data is returned.
+
+        Returns
+        -------
+
+        dict
+            A dictionary containing the q vectors, the q lengths, the structure factor S(q),
+            the collective density rho_q, and the number of q vectors in each bin. Output depends on the value of
+            the bins parameter.
         """
         if isinstance(bins, int):
             q_bins = np.linspace(0, np.max(self.q_lengths), bins+1)

@@ -5,6 +5,15 @@ from numba import cuda
 import math
 
 class NVE_Toxvaerd():
+    """ Integrator keeping NVE (number of particles, volume, and energy) constant
+        using the leapfrog algorithm and the Toxvaerd correction to the kinetic energy.
+
+    Parameters
+    ----------
+
+    dt : float
+        Time step for the integration.
+    """
     def __init__(self, dt):
         self.dt = dt
   

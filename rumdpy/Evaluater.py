@@ -7,6 +7,7 @@ from numba import cuda
 import rumdpy as rp
 
 class Evaluater():
+    """ Evaluates interactions between particles in a configuration."""
     def __init__(self, configuration, interactions, compute_plan=None, verbose=True):
                 
         self.configuration = configuration
