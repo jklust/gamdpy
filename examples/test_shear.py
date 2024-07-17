@@ -21,7 +21,7 @@ gridsync = True
 if run_NVT:
     # Setup configuration: FCC Lattice
     configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
-
+    configuration.randomize_velocities(T=2.0)
 
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
     sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
