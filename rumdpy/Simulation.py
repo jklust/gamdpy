@@ -69,7 +69,7 @@ class Simulation():
 
     def __init__(self, configuration: rp.Configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
-                 steps_between_momentum_reset: int = 'default', compute_stresses=False, verbose=False, timing=True):
+                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True):
         self.configuration = configuration
         if compute_plan == None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
@@ -95,16 +95,23 @@ class Simulation():
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
 
+
         if num_timeblocks == 0:
+            if num_steps == 0:
+                raise ValueError("Either num_steps or num_timeblocks must be non-zero")
             num_timeblocks = 32
             steps_per_timeblock = 2 ** int(math.log2(math.ceil(num_steps / num_timeblocks)))
             num_timeblocks = math.ceil(num_steps / steps_per_timeblock)
             print('num_steps: ', num_steps)
             print('num_blocks: ', num_timeblocks)
             print('steps_per_block: ', steps_per_timeblock)
-
+        elif steps_per_timeblock == 0:
+            raise ValueError("If num_timeblocks is non-zero then steps_per_block must be too (num_steps is ignored in this case)")
+        # we do not use nsteps if num_timeblocks is non-zero, because it's
+        # not guaranteed to be a multiple of the latter
         self.num_blocks = num_timeblocks
         self.current_block = -1
+
         self.steps_per_block = steps_per_timeblock
         self.storage = storage
         self.timing = timing
@@ -123,6 +130,8 @@ class Simulation():
             self.output['ptype'] = configuration.ptype.copy()
 
         # Momentum reset
+        if steps_between_momentum_reset == 'default':
+            steps_between_momentum_reset = 100
         if steps_between_momentum_reset > 0:
             self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
             self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
