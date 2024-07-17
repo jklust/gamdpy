@@ -9,7 +9,7 @@ import os
 ### Stuff we haven't decided where to place yet
 #############################################################################
 
-    
+
 def make_function_constant(value):
     value = np.float32(value)
     def function(x):

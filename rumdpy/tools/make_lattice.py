@@ -15,6 +15,12 @@ def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
     >>> configuration = rp.Configuration()
     >>> configuration['r'] = positions
     >>> configuration.simbox = rp.Simbox(configuration.D, box_vector)
+
+    See also
+    --------
+
+    :meth:`rumdpy.Configuration.make_lattice`
+
     """
     import numpy as np
     pos = unit_cell["fractional_coordinates"]
