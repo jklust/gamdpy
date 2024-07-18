@@ -29,11 +29,36 @@ class Configuration:
     --------
 
     >>> import rumdpy as rp
-    >>> conf = rp.Configuration(D=3)
+    >>> conf = rp.Configuration(D=3, N=1000)
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
     >>> print(conf.scalar_columns) # Print names of scalar columns
     ['u', 'w', 'lap', 'm', 'k', 'fsq']
+    >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
+    (1000, 3)
+    >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
+    (1000,)
+
+    Data can be accessed via string keys (similar to dataframes in pandas):
+    >>> conf['r'] = np.ones((1000, 3))
+    >>> conf['v'] = 2   # Broadcast by numpy to correct shape
+    >>> print(conf['r'] + 0.01*conf['v'])
+    [[1.02 1.02 1.02]
+     [1.02 1.02 1.02]
+     [1.02 1.02 1.02]
+     ...
+     [1.02 1.02 1.02]
+     [1.02 1.02 1.02]
+     [1.02 1.02 1.02]]
+
+    A configuration can be specified without setting the number particles, N.
+    In that case N is determined the first time the particle data is written to the configuration:
+    >>> import numpy as np
+    >>> conf = rp.Configuration(D=3)
+    >>> conf['r'] = np.zeros((400, 3))
+    >>> print(conf['r'].shape)
+    (400, 3)
+
     """
 
     # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
@@ -50,12 +75,10 @@ class Configuration:
         self.scalar_columns = list(self.sid.keys())
         self.simbox = None
         self.ptype_function = self.make_ptype_function()
-        self.ftype = ftype
+        self.ftype = ftype 
         self.itype = itype  
         if self.N != None:
             self.__allocate_arrays()
-
-        return
     
     def __allocate_arrays(self):
         self.vectors = colarray(self.vector_columns, size=(self.N, self.D), dtype=self.ftype)
@@ -66,55 +89,48 @@ class Configuration:
 
     def __setitem__(self, key, data):
         if self.N is None:  # First time setting particle data, so allocate arrays
+           if type(data) != np.ndarray:
+               raise(TypeError)(f'Number of particles, N, not determined yet, so assignment needs to be with a numpy array')
            self.N = data.shape[0]
            self.__allocate_arrays() 
             
-        if key in self.vectors.column_names:
-            self.set_vector(key, data)
-        else:
-            self.set_scalar(key, data)  # Improve error handling if key in neither
-        return
+        if key in self.vector_columns:
+            self.__set_vector(key, data)
+            return 
+        if key in self.scalar_columns:
+            self.__set_scalar(key, data)
+            return
+        raise ValueError(f'Unknown key {key}. Vectors: {self.vector_columns}, Scalars: {self.scalar_columns}')
 
-    def __getitem__(self, key):
-        if key in self.vectors.column_names:
-            # return self.vectors[self.vid[key]]
-            return self.vectors[key]
-        return self.scalars[:, self.sid[key]]  # Improve error handling if key in neither
-
-    def set_vector(self, key: str, data: np.ndarray) -> None:
+    def __set_vector(self, key: str, data: np.ndarray) -> None:
         """ Set new vector data """
-        N, D = data.shape
-        if key not in self.vector_columns:
-            raise ValueError(f'Unknown vector column {key}. Try one of {self.vector_columns}')
-        if N != self.N:
-            raise ValueError(f'Inconsistent number of particles, {N} <> {self.N}')
-        if D != self.D:
-            raise ValueError(f'Inconsistent number of dimensions, {D} <> {self.D}')
+        
+        if type(data) == np.ndarray: # Allow for possibility of using scalar float, which is then broadcast by numpy
+            N, D = data.shape
+            if N != self.N:
+                raise ValueError(f'Inconsistent number of particles, {N} <> {self.N}')
+            if D != self.D:
+                raise ValueError(f'Inconsistent number of dimensions, {D} <> {self.D}')
         self.vectors[key] = data
         return
-
-    def get_vector(self,
-                   key: str) -> np.ndarray:  # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the vector lengths """
-        if key not in self.vector_columns:
-            raise ValueError(f'Unknown vector column {key}')
-        idx = self.vector_columns.index(key)
-        return self.vectors[self.vector_columns[idx]].copy()
-
-    def set_scalar(self, key: str, data) -> None:
+    
+    def __set_scalar(self, key: str, data) -> None:
         """ Set new scalar data """
-        if key not in self.sid:
-            raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
+
+        if type(data) == np.ndarray: # Allow for possibility of using scalar float, which is then broadcast by numpy
+            N,  = data.shape
+            if N != self.N:
+                raise ValueError(f'Inconsistent number of particles, {N} <> {self.N}')
         self.scalars[:, self.sid[key]] = data
         return
 
-    def get_scalar(self, key: str):  # Do we actually want a view instead of a copy (i.e. more like numpy)?
-        """ Returns a copy of the scalar lengths """
-        if key not in self.sid:
-            raise ValueError(f'Unknown scalar column {key}. Try one of {self.sid}')
-        idx = self.sid[key]
-        return self.scalars[:, idx].copy()
-
+    def __getitem__(self, key):
+        if key in self.vector_columns:
+            return self.vectors[key]
+        if key in self.scalar_columns:
+            return self.scalars[:, self.sid[key]]
+        raise ValueError(f'Unknown key {key}. Vectors: {self.vector_columns}, Scalars: {self.scalar_columns}')
+    
     def copy_to_device(self):
         """ Copy all data to device memory """
         self.d_vectors = cuda.to_device(self.vectors.array)
@@ -141,6 +157,7 @@ class Configuration:
         return ptype_function
 
     def get_volume(self):
+        """ Get volume of simulation box associated with configuration """
         return self.simbox.volume(self.simbox.lengths)
 
     def set_kinetic_temperature(self, T, ndofs=None):
@@ -409,11 +426,11 @@ def configuration_to_lammps(conf, timestep=0) -> str:
     D = conf.D
     if D != 3:
         raise ValueError('Only 3D configurations are supported')
-    masses = conf.get_scalar('m')
-    positions = conf.get_vector('r')
+    masses = conf['m']
+    positions = conf['r']
     image_coordinates = conf.r_im
-    forces = conf.get_vector('f')
-    velocities = conf.get_vector('v')
+    forces = conf['f']
+    velocities = conf['v']
     ptypes = conf.ptype
     simulation_box = conf.simbox.lengths
 

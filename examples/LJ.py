@@ -19,7 +19,9 @@ if 'NPT_Langevin' in sys.argv:            # use with NoRDF since box size is var
     integrator_name = 'NPT_Langevin'
 
 # Generate configuration with a FCC lattice
-configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442,  T=1.44)  
+configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442)
+configuration['m'] = 1
+configuration.randomize_velocities(T=1.44)  
 
 # Make pair potential
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -67,7 +69,7 @@ print(sim.summary())
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 if integrator_name!='NVE' and callable(temperature):
     df['Ttarget'] = numba.vectorize(temperature)(np.array(df['t']))
 if integrator_name=='NPT_Langevin' and callable(pressure):

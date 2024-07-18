@@ -8,8 +8,7 @@ def save_configuration(configuration, filestr:str, format="xyz", append=False):
     This version only supports the standard xyz-format
     """
 
-    if format=="xyz":
-        configuration.get_vector('r')     
+    if format=="xyz":     
         npart = configuration.N     
         
         if append:

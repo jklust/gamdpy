@@ -29,7 +29,7 @@ positions = output['block'][:,:,0,:,:]
 positions = positions.reshape(nblocks*nconfs,N,D)
 # Loop over saved configurations
 for pos in positions[nconfs-1::nconfs]:
-    configuration.set_vector('r', pos)
+    configuration['r'] = pos
     configuration.copy_to_device()
     calc_rdf.update()
 
