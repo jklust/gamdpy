@@ -24,7 +24,7 @@ import rumdpy as rp
 ###############################
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration()
+configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
@@ -51,8 +51,9 @@ sim.run()
 # Basic information of NVT simulation
 N = sim.configuration.N  # Number of particles
 T = sim.integrator.temperature  # Temperature
-lengths = sim.configuration.simbox.lengths  # Box lengths
-V = np.prod(lengths)  # Volume (assume orthorhombic box)
+#lengths = sim.configuration.simbox.lengths  # Box lengths
+#V = np.prod(lengths)  # Volume (assume orthorhombic box)
+V = configuration.get_volume()
 rho = N / V  # Density
 
 
@@ -132,7 +133,7 @@ error = error_estimate_by_blocking(U/N, num_blocks)
 plt.figure()
 plt.title('Error estimate of potential energy per particle')
 plt.plot(test_num_blocks, errors, 'o')
-plt.plot(num_blocks, error, fmt='ro', label='Estimated error')
+plt.plot(num_blocks, error, 'ro', label='Estimated error')
 plt.xscale('log')
 plt.xlim(1, None)
 plt.ylim(0, None)

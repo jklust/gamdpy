@@ -19,7 +19,7 @@ match flag:
     case "Langevin": integrator = rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=TODO, alpha_baro=TODO, mass_baro=TODO,
                                                               volume_velocity=TODO, barostatModeISO=True, boxFlucCoord=TODO, dt=0.001, seed=TODO)
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration()
+configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=my_T)

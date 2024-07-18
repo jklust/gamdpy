@@ -1,7 +1,7 @@
 import rumdpy as rp
 
 # Setup configuration. BCC Lattice
-configuration = rp.Configuration()
+configuration = rp.Configuration(D=3)
 configuration.make_lattice(unit_cell=rp.unit_cells.BCC, cells=[8, 8, 8], rho=1.0)
 
 # Setup masses and velocities

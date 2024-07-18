@@ -11,14 +11,13 @@ if file_to_read not in os.listdir(os.getcwd()):
     print(f"{file_to_read} can be generated using minimal.py example")
     exit()
 
-# Create configuration object
-configuration = rp.Configuration()
 # Load existing data
 output = rp.tools.load_output(file_to_read)
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
-# Set up the configuration object
-configuration['r'] = output['block'][0][0][0]
+
+# Create configuration object
+configuration = rp.Configuration(D=D, N=N)
 configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
@@ -30,7 +29,7 @@ positions = output['block'][:,:,0,:,:]
 positions = positions.reshape(nblocks*nconfs,N,D)
 # Loop over saved configurations
 for pos in positions[nconfs-1::nconfs]:
-    configuration.set_vector('r', pos)
+    configuration['r'] = pos
     configuration.copy_to_device()
     calc_rdf.update()
 

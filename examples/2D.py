@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import rumdpy as rp
 
 # Setup configuration. BCC Lattice
-configuration = rp.Configuration()
+configuration = rp.Configuration(D=2)
 configuration.make_lattice(unit_cell=rp.unit_cells.HEXAGONAL, cells=[16, 10], rho=1.0)
 
 # Setup masses and velocities

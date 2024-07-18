@@ -13,50 +13,62 @@ import gzip
 class Configuration:
     """ The configuration class
 
-    Store particle vectors (positions, velocities, forces) and scalars (energy, virial, ...).
-    Also store particle type and mass, simulation box dimensions, and image coordinates.
+    Store particle vectors (positions, velocities, forces) and scalars (energy, virial, mass ...).
+    Also store particle type, image coordinates, and the simulation box.
 
+    Parameters
+    ----------
+    D : int
+        Spatial dimension for the configuration.
+    
+    N : int [Optional]
+        Number of particles. 
+        If not set, this will be determined the first time particle data is written to the configuration. 
+        
     Examples
     --------
 
     >>> import rumdpy as rp
-    >>> conf = rp.Configuration()
+    >>> conf = rp.Configuration(D=3)
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
-    >>> print(conf.sid) # Print names of scalar columns
-    {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
+    >>> print(conf.scalar_columns) # Print names of scalar columns
+    ['u', 'w', 'lap', 'm', 'k', 'fsq']
     """
+
     # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
     sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
 
-    def __init__(self, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
-        self.N = None
-        self.D = None
+    def __init__(self, D:int, N:int=None, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
+        self.D = D
+        self.N = N
         self.compute_stresses = compute_stresses
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
-        self.simbox = None
         if self.compute_stresses:
             self.vector_columns += ['sx', 'sy', 'sz']  # D=3 ASSUMED HERE!!!!
-        # self.vectors = np.zeros((len(self.vid), N, D), dtype=ftype)
+        self.scalar_columns = list(self.sid.keys())
+        self.simbox = None
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
-        self.itype = itype
+        self.itype = itype  
+        if self.N != None:
+            self.__allocate_arrays()
+
+        return
+    
+    def __allocate_arrays(self):
+        self.vectors = colarray(self.vector_columns, size=(self.N, self.D), dtype=self.ftype)
+        self.scalars = np.zeros((self.N, len(self.sid)), dtype=self.ftype)
+        self.r_im = np.zeros((self.N, self.D), dtype=self.itype)  # Move to vectors
+        self.ptype = np.zeros(self.N, dtype=self.itype)  # Move to scalars
         return
 
     def __setitem__(self, key, data):
-        if self.D is None:  # First time setting data
-            if key not in self.vector_columns:
-                raise ValueError(f'Try one of {self.vector_columns} the first time setting data')
-            D = data.shape[1]
-            N = data.shape[0]
-            self.D = D
-            self.N = N
-            self.vectors = colarray(self.vector_columns, size=(N, D), dtype=self.ftype)
-            self.scalars = np.zeros((N, len(self.sid)), dtype=self.ftype)
-            self.r_im = np.zeros((N, D), dtype=self.itype)  # Move to vectors
-            self.ptype = np.zeros(N, dtype=self.itype)  # Move to scalars
-
+        if self.N is None:  # First time setting particle data, so allocate arrays
+           self.N = data.shape[0]
+           self.__allocate_arrays() 
+            
         if key in self.vectors.column_names:
             self.set_vector(key, data)
         else:
@@ -105,7 +117,6 @@ class Configuration:
 
     def copy_to_device(self):
         """ Copy all data to device memory """
-        # self.d_vectors = cuda.to_device(self.vectors)
         self.d_vectors = cuda.to_device(self.vectors.array)
         self.d_scalars = cuda.to_device(self.scalars)
         self.d_r_im = cuda.to_device(self.r_im)
@@ -115,7 +126,6 @@ class Configuration:
 
     def copy_to_host(self):
         """ Copy all data to host memory """
-        # self.vectors = self.d_vectors.copy_to_host()
         self.vectors.array = self.d_vectors.copy_to_host()
         self.scalars = self.d_scalars.copy_to_host()
         self.r_im = self.d_r_im.copy_to_host()
@@ -169,13 +179,10 @@ class Configuration:
         -------
 
         >>> import rumdpy as rp
-        >>> conf = rp.Configuration()
+        >>> conf = rp.Configuration(D=3)
         >>> conf.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
         >>> print(rp.unit_cells.FCC)  # Example of a unit cell dict
         {'fractional_coordinates': [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]], 'lattice_constants': [1.0, 1.0, 1.0]}
-
-
-
 
         """
         from rumdpy.tools import make_lattice
@@ -245,7 +252,7 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
         positions *= scale_factor
         simbox_data *= scale_factor
 
-    configuration = Configuration()
+    configuration = Configuration(D=3)
     configuration['r'] = positions[:N, :]
     configuration.simbox = Simbox(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
@@ -288,7 +295,7 @@ def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
         m = f['m'][:]
         r_im = f['r_im'][:]
     N, D = r.shape
-    configuration = Configuration()
+    configuration = Configuration(D=D)
     configuration.simbox = Simbox(D, lengths)
     configuration['r'] = r
     configuration['v'] = v
@@ -386,7 +393,7 @@ def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration
                 v_array[idx, :] = [float(x) for x in p_data[7:10]]
             m_array[idx] = masses[ptype]
 
-    configuration = Configuration()
+    configuration = Configuration(D=3)
     configuration.simbox = Simbox(3, lengths)
     configuration['r'] = r_array
     configuration['v'] = v_array

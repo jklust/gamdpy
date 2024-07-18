@@ -18,7 +18,7 @@ EXPECTED_FCC_POSITIONS = np.array(
 def test_fcc_lattice(verbose=False, plot=False):
     cells = [2, 2, 2]
     positions, box_vector = rp.tools.make_lattice(rp.unit_cells.FCC, cells)
-    configuration = rp.Configuration()
+    configuration = rp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
     expected_box_vector = np.array([2.0, 2.0, 2.0])
@@ -36,7 +36,7 @@ def test_fcc_lattice(verbose=False, plot=False):
         plt.show()
 
 def test_fcc_lattice_method(verbose=False, plot=False):
-    conf = rp.Configuration()
+    conf = rp.Configuration(D=3)
     conf.make_lattice(rp.unit_cells.FCC, [2, 2, 2])
     positions = conf['r']
     box_vector = conf.simbox.lengths
@@ -56,7 +56,7 @@ def test_fcc_lattice_method(verbose=False, plot=False):
 def test_bcc_lattice(verbose=False, plot=False):
     cells = [2, 2, 2]
     positions, box_vector = rp.tools.make_lattice(rp.unit_cells.BCC, cells)
-    configuration = rp.Configuration()
+    configuration = rp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
     expected_number_of_particles = 16
@@ -94,7 +94,7 @@ def test_bcc_lattice(verbose=False, plot=False):
 def test_hexagonal(verbose=False, plot=False):
     cells = [4, 2]
     positions, box_vector = rp.tools.make_lattice(rp.unit_cells.HEXAGONAL, cells=cells)
-    configuration = rp.Configuration()
+    configuration = rp.Configuration(D=2)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
     expected_dimensions_of_space = 2

@@ -54,7 +54,7 @@ def yukawa(dist, params):
 
         s(r) = A·exp(-κ·r)·(κ·r + 1)/r³
 
-    The curvature (`d2u_dr2`) of the potential is given by
+    The second derivative (`d2u_dr2`) of the potential is given by
 
         u''(r) = A·exp(-κ·r)*([κ·r]² + 2κ·r + 2)/r³
 
@@ -111,7 +111,7 @@ plt.legend()
 plt.show()
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration()
+configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
