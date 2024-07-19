@@ -101,7 +101,7 @@ print(sim_SLLOD.summary())
 
 u = sim_SLLOD.output['scalars'][:,:,0].flatten()/configuration.N
 k = sim_SLLOD.output['scalars'][:,:,4].flatten()/configuration.N
-sxy = sim_SLLOD.output['scalars'][:,:,9].flatten()/2./configuration.get_volume()
+sxy = sim_SLLOD.output['scalars'][:,:,9].flatten()/configuration.get_volume()
 times = np.arange(len(u)) * sc_output *  dt
 stacked_output = np.column_stack((times, u, k, sxy))
 np.savetxt('shear_run.txt', stacked_output, delimiter=' ', fmt='%f')

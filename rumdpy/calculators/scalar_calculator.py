@@ -114,7 +114,8 @@ class ScalarSaver():
                     cuda.atomic.add(output_array, (save_index, 8), my_m*vectors[v_id][global_id][2])
 
                     # XY component of stress
-                    cuda.atomic.add(output_array, (save_index, 9), vectors[sx_id][global_id][1])
+                    cuda.atomic.add(output_array, (save_index, 9), numba.float32(0.5) * vectors[sx_id][global_id][1] -
+                                    my_m * vectors[v_id][global_id][0]*vectors[v_id][global_id][1])
 
                 if global_id == 0 and my_t == 0:
                     output_array[save_index][5] = volume_function(sim_box)
