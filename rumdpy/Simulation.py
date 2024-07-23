@@ -253,7 +253,7 @@ class Simulation():
             print(self.summary())
 
     # generator for running simulation one block at a time
-    def timeblocks(self, num_timeblocks=-1) -> None:
+    def timeblocks(self, num_timeblocks=-1):
         """ Generator for running the simulation one block at a time.
 
         Parameters
