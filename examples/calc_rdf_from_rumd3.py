@@ -1,14 +1,13 @@
 """ Minimal example for calculing rdf from existing data """
 
-import rumdpy as rp
-import numpy as np
 import os
+
+import rumdpy as rp
 
 file_to_read = "TrajectoryFiles"
 
 if file_to_read not in os.listdir(os.getcwd()):
-    print("This example needs a the file LJ_T0.70.h5 to be present")
-    print(f"{file_to_read} can be generated using minimal.py example")
+    print(f"This example needs {file_to_read} to be present")
     exit()
 
 
