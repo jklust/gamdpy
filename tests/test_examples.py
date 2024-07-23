@@ -12,17 +12,14 @@ import os
 
 mpl.use('Agg')  # Static backend that does not halt on plt.show()
 
-def test_examples(path_to_examples='examples'):
 
+def test_examples(path_to_examples='examples'):
     # List of scripts to exclude
     exclude_files = [
         'test_shear.py',
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
         'LJchain_wall.py',  # ImportError: cannot import name 'nvt_nh' from 'rumdpy.integrators'
-        'yukawa.py',  # NameError: name 'yukawa' is not defined
         'calc_rdf_from_rumd3.py',  # This example needs TrajectoryFiles to be present
-        'thermodynamics.py',  # NameError: name 'error_estimate_by_blocking' is not defined
-        'LJchain.py',  # NameError: name 'np' is not defined
         'minimal_cpu.py',  # I suspect this script makes other scripts fail due to the os.environ[...] lines
         'consistency_NPT.py',  # Very slow: Execution time for consistency_NPT.py: 8.98e+02 s
     ]
@@ -48,11 +45,11 @@ def test_examples(path_to_examples='examples'):
             with open(file) as example:
                 print(f"Executing {file}")
                 tic = time.perf_counter()
-                exec(example.read())
+                exec(example.read(), {})
                 toc = time.perf_counter()
-                print(f"Execution time for {file}: {toc-tic:.3} s")
+                print(f"Execution time for {file}: {toc - tic:.3} s")
     except FileNotFoundError as e:
-        print(f"Warning: Cannot find needed file to run {file}. See if running another example can provide it.")
+        print(f"Warning: Cannot find needed file to run {file}. Running another example may provide it.")
         print(f"FileNotFoundError: {e}")
     finally:
         os.chdir(original_cwd)
@@ -61,4 +58,3 @@ def test_examples(path_to_examples='examples'):
 
 if __name__ == '__main__':
     test_examples()
-
