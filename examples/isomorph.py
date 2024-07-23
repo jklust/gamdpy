@@ -37,7 +37,8 @@ for index, rho in enumerate(rhos):
 
     # Setup Simulation
     sim = rp.Simulation(configuration, pairpot, integrator,
-                        num_timeblocks=128, steps_per_timeblock=512,
+                        num_timeblocks=16,  # try something like 128 for better statistics
+                        steps_per_timeblock=512,
                         steps_between_momentum_reset=100,
                         storage='memory') 
     
