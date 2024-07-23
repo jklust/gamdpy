@@ -11,7 +11,9 @@ import rumdpy as rp
 # Setup simulation of single-component Lennard-Jones liquid
 temperature: float = 2.0
 density: float = 0.973
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=density)
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=density)
+configuration['m'] = 1.0
 configuration.randomize_velocities(T=1.44)
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
@@ -19,17 +21,20 @@ pair_potential = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nb
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 sim = rp.Simulation(configuration, pair_potential, integrator,
                     steps_between_momentum_reset=100,
-                    steps_per_timeblock=1024, num_timeblocks=128, 
+                    num_timeblocks=16,
+                    steps_per_timeblock=512,
                     storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
-calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=18.0)
+q_max = 12.0  # Change to 18.0 to include second peak
+calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=q_max)
 for block in sim.timeblocks():
     print(sim.status(per_particle=True))
     calc_struct_fact.update()
+print(sim.summary())
 
 struct_fact = calc_struct_fact.read(bins=100)
 q = struct_fact['|q|']
