@@ -16,13 +16,11 @@ def test_examples(path_to_examples='examples'):
 
     # List of scripts to exclude
     exclude_files = [
-        'switching_integrator.py',  # FileNotFoundError: [Errno 2] No such file or directory: 'Data/isomorph.pkl'
-        'plot_isomorph_rdf.py',  # FileNotFoundError: [Errno 2] No such file or directory: 'Data/isomorph.pkl'
         'test_shear.py',
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
         'LJchain_wall.py',  # ImportError: cannot import name 'nvt_nh' from 'rumdpy.integrators'
         'yukawa.py',  # NameError: name 'yukawa' is not defined
-        'calc_rdf_from_rumd3.py',  # SystemExit: None
+        'calc_rdf_from_rumd3.py',  # This example needs TrajectoryFiles to be present
         'thermodynamics.py',  # NameError: name 'error_estimate_by_blocking' is not defined
         'LJchain.py',  # NameError: name 'np' is not defined
         'minimal_cpu.py',  # I suspect this script makes other scripts fail due to the os.environ[...] lines
@@ -40,7 +38,8 @@ def test_examples(path_to_examples='examples'):
         files = list(glob.glob('*.py'))
         files.sort()
         # files = ['minimal.py']  # Uncomment and modify for debugging a few or a single file
-        print(f"Running {len(files)} examples: {files}")
+        print(f"Found {len(files)} examples: {files}")
+        print(f"Excluding {len(exclude_files)} (if pressent): {exclude_files}")
         for file in files:
             if os.path.basename(file) in exclude_files:
                 print(f"Skipping {file} (warning: may fail)")
@@ -52,10 +51,12 @@ def test_examples(path_to_examples='examples'):
                 exec(example.read())
                 toc = time.perf_counter()
                 print(f"Execution time for {file}: {toc-tic:.3} s")
-            # Close all matplotlib figures
-            plt.close('all')
+    except FileNotFoundError as e:
+        print(f"Warning: Cannot find needed file to run {file}. See if running another example can provide it.")
+        print(f"FileNotFoundError: {e}")
     finally:
         os.chdir(original_cwd)
+        plt.close('all')
 
 
 if __name__ == '__main__':
