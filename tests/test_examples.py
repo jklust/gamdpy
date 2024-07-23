@@ -27,7 +27,6 @@ def test_examples(path_to_examples='examples'):
         'LJchain.py',  # NameError: name 'np' is not defined
         'minimal_cpu.py',  # I suspect this script makes other scripts fail due to the os.environ[...] lines
         'consistency_NPT.py',  # Very slow: Execution time for consistency_NPT.py: 8.98e+02 s
-        'ASD.py',  # Slow: Execution time for ASD.py: 56.3 s
     ]
 
     # Save the current working directory
