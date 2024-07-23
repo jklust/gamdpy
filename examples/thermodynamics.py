@@ -81,7 +81,8 @@ time = np.arange(len(U)) * dt * sim.output_calculator.steps_between_output
 print(f"Total time of analysed trajectory: {time[-1]}")
 
 # Compute kinetic temperature
-dof = 3 * N - 3  # degrees of freedom
+D = sim.configuration.D  # dimension of space
+dof = D * N - D  # degrees of freedom
 T_kin = 2 * K / dof
 print(f"Mean kinetic temperature: {np.mean(T_kin)}")
 
