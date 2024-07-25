@@ -197,7 +197,7 @@ in the folder of the script. Note that the path to `libcudadevrt.a` to the file 
 
 ```bash
 cd [some_directory]
-git clone https://gitlab.com/tbs.cph/rumdpy-dev
+git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/
 cd rumdpy-dev
 pip install -e .
 ```
