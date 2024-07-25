@@ -48,11 +48,15 @@ Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
 ## Installing rumdpy on linux from source
 
+To get the latest developers version:
+
 ```bash
 cd [some_directory]
-git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/
+git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/  # Clone latest developers version
 cd rumdpy-dev
-pip install -e .
+python3 -m venv venv  # Create virtual enviroment
+. venv/bin/activate   # ... and activate
+pip install -e .      # Install rumdpy 
 ```
 
 ## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)  [in progress]
