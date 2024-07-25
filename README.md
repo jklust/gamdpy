@@ -251,7 +251,9 @@ or `coverage html`
 
 ## Building documentation
 
-Building the documentation using sphinx, https://www.sphinx-doc.org
+To building the documentation using sphinx, https://www.sphinx-doc.org
+(needs `pip install myst_nb pydata_sphinx_theme`)
+
 
 ```bash
 cd docs
