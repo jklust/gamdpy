@@ -46,11 +46,17 @@ Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
 # Installation
 
+## For users
+
+```sh
+pip install https://gitlab.com/tbs.cph/rumdpy-dev.git
+```
+
 ## Installing rumdpy on linux from source
 
 To get the latest developers version:
 
-```bash
+```sh
 cd [some_directory]
 git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/  # Clone latest developers version
 cd rumdpy-dev
