@@ -49,7 +49,7 @@ Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 ## For users
 
 ```sh
-pip install https://gitlab.com/tbs.cph/rumdpy-dev.git
+pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
 ```
 
 ## Installing rumdpy on linux from source
