@@ -128,7 +128,6 @@ conda install cudatoolkit
 pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
 ```
 
-
 # Info for developers
 
 ## Implementing on GPU using numba.cuda
@@ -275,15 +274,28 @@ or `coverage html`
 To building the documentation using sphinx, https://www.sphinx-doc.org
 (needs `pip install myst_nb pydata_sphinx_theme`)
 
+Install needed packages:
 
-```bash
+```sh
+pip install sphinx myst_nb pydata_sphinx_theme
+```
+
+Build documentation webpage:
+
+```sh
 cd docs
 make html
 ```
 
-Clean the build directory
+Open webpage with firefox (or your favorite browers):
 
-```bash
+```sh
+firefox build/html/index.html
+```
+
+Clean the build directory (optional):
+
+```sh
 make clean
 ```
 
