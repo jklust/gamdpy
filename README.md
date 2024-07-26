@@ -215,16 +215,37 @@ A good place to see how this is done without implementing all functions twice is
 - Include the new feature in the documentation, e.g. you may need to edit docs/source/api.rst
 
 ## How to test the code
-Run `pytest` in root (rumdpy) directory will run all tests (typical takes several minutes).
-This will use the settings in the file `pytest.ini`
-Note that pytest will fail if k3d not installed.
+Running `pytest` in root (rumdpy) directory will run all tests.
+This will use the settings in the file `pytest.ini`.
+
+Make needed datafiles for examples
+
+```sh
+cd examples
+python3 minimal.py
+cd -
+```
+
+Install needed packages:
+
+```sh
+pip install pytest hypothesis k3d scipy
+```
+
+Running pytest:
+
+```sh
+python3 -m pytest
+```
+
+Running test typical takes several minutes.
 
 ### Test of specific features
 
 Test scripts are located in the `tests` directory. Most can be executed (in a verbose mode) as script:
 
 ```bash
-python3 tests/test_make_lattice.py
+python3 tests/test_examples.py
 ```
 
 Running doctest of a single file:
