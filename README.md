@@ -5,10 +5,10 @@ Rumdpy implements molecular dynamics on GPU's in Python, relying heavily on the 
 The rumdpy package being pure Python (letting numba do the heavy lifting of generating fast code) results in an extremely extendable package: simply by interjecting Python functions in the right places, 
 the (experienced) user can extend most aspect of the code, including: new integrators, new pair-potentials, new properties to be calculated during simulation, new particle properties, ...  
 
-## NOTE:
+## NOTE
 This is the developers version of the rumdpy package, NOT for general consumption just yet. Do NOT trust any of the results produced! Be prepared for interfaces and structure to change overnight. 
 
-## Overall structure of the package:
+## Overall structure of the package
 
 ### 1. Configuration
 A class containing all relevant information about a configuration, including the simulation box (class sim_box). 
@@ -115,7 +115,7 @@ WARNING: due to naming of the integrators the package will not work without rena
 
 ### Install Anaconda
 
-### Install rumdpy (and pip) using Powershell Prompt in Anaconda:
+### Install rumdpy (and pip) using Powershell Prompt in Anaconda
 
 - open Anaconda Powershell as admin (from search)
 
@@ -145,7 +145,7 @@ A rough estimate is that the maximum number of time steps per second (TPS) that 
 There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
-## TODO, short term:
+## TODO, short term
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
@@ -157,7 +157,7 @@ A good place to see how this is done without implementing all functions twice is
 - [x] Use 'colarray' for vectors in Configuration
 - [x] Move r_ref from Configuration to nblist
 
-## TODO, before summer interns arrive:
+## TODO, before summer interns arrive
 - [ ] SLLOD (stress, LEBC), Nick
 - [X] Bonds interface
 - [X] Implement other fixed interactions: point interactions (tethered particles). Jesper
@@ -177,7 +177,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Post analysis, RDF and Sq (Lorenzo: done, to test for multicomponents)
 - [ ] NVU integrator, Mark
 
-## TODO or decide not necesarry, before paper:
+## TODO or decide not necesarry, before paper
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
@@ -195,7 +195,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Add CPU support (can it be done as a decorator?)
 
-## Various tools/strategies we will use:
+## Various tools/strategies we will use
 - [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
 - Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
@@ -299,9 +299,10 @@ Clean the build directory (optional):
 make clean
 ```
 
-## Known issues:
 
-### LinkerError: libcudadevrt.a not found
+# Known issues
+
+## LinkerError: libcudadevrt.a not found
 A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
 is to make a symbolic link to the missing file. 
 This can be done by running the somthing like the below in the terminal:
