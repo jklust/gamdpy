@@ -65,6 +65,12 @@ python3 -m venv venv  # Create virtual enviroment
 pip install -e .      # Install rumdpy 
 ```
 
+To update for the latest version on GitLab:
+
+```sh
+git pull
+```
+
 ## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)  [in progress]
 
 ### Install WSL
