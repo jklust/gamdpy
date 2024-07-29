@@ -1,3 +1,10 @@
+""" Example of a BCC lattice simulation with Lennard-Jones potential.
+
+This example demonstrates how to set up a different lattice than the default FCC lattice.
+Note more lattices are available, or you can define your own lattice.
+
+"""
+
 import rumdpy as rp
 
 # Setup configuration. BCC Lattice
