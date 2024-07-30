@@ -177,6 +177,34 @@ class Simulation():
                                               self.output_calculator_kernel, self.conf_saver_kernel,
                                               self.momentum_reset_kernel,
                                               self.compute_plan, True)
+        
+        # Trigger compilation to detect any problems early (also gets JIT time over with) 
+        self.configuration.copy_to_device()
+        try:
+            self.integrate_self(0.0, 0)
+        except numba.cuda.cudadrv.driver.CudaAPIError as e:
+            print(f"CUDA ERROR ({e})")
+            print("Try reducing tp or set gridsynce=False in compute_plan. Current compute_plan:")
+            print(self.compute_plan)
+            exit()
+
+
+
+    def integrate_self(self, time_zero, steps):
+        self.integrate(self.configuration.d_vectors,
+                           self.configuration.d_scalars,
+                           self.configuration.d_ptype,
+                           self.configuration.d_r_im,
+                           self.configuration.simbox.d_data,
+                           self.interactions_params,
+                           self.integrator_params,
+                           self.conf_saver_params,
+                           self.momentum_reset_params,
+                           self.output_calculator_params,
+                           np.float32(time_zero),
+                           steps)
+        return
+
 
     def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator_kernel,
                         conf_saver_kernel, momentum_reset_kernel, compute_plan, verbose=True):
@@ -296,7 +324,6 @@ class Simulation():
             start_block = cuda.event()
             end_block = cuda.event()
             block_times = []
-
             start.record()
 
         zero = np.float32(0.0)
@@ -304,26 +331,8 @@ class Simulation():
         for block in range(num_timeblocks):
             if self.timing: start_block.record()
             self.current_block = block
-            #self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
-            try:
-                self.integrate(self.configuration.d_vectors,
-                           self.configuration.d_scalars,
-                           self.configuration.d_ptype,
-                           self.configuration.d_r_im,
-                           self.configuration.simbox.d_data,
-                           self.interactions_params,
-                           self.integrator_params,
-                           self.conf_saver_params,
-                           self.momentum_reset_params,
-                           self.output_calculator_params,
-                           np.float32(block * self.steps_per_block * self.dt),
-                           self.steps_per_block)
-            except numba.cuda.cudadrv.driver.CudaAPIError as e:
-                print(f"CUDA ERROR ({e})")
-                print("Try reducing tp or set gridsynce=False in compute_plan. Current compute_plan:")
-                print(self.compute_plan)
-                exit()
-
+            self.integrate_self(np.float32(block * self.steps_per_block * self.dt),self.steps_per_block)
+            
             self.configuration.copy_to_host()
             self.vectors_list.append(self.configuration.vectors.copy())  # Needed for 3D viz, should use memory/hdf5
             self.scalars_list.append(self.configuration.scalars.copy())  # same
