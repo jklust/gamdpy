@@ -51,8 +51,6 @@ sim.run()
 # Basic information of NVT simulation
 N = sim.configuration.N  # Number of particles
 T = sim.integrator.temperature  # Temperature
-#lengths = sim.configuration.simbox.lengths  # Box lengths
-#V = np.prod(lengths)  # Volume (assume orthorhombic box)
 V = configuration.get_volume()
 rho = N / V  # Density
 

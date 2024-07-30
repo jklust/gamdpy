@@ -167,7 +167,7 @@ class Simulation():
             self.conf_saver_kernel = None
             self.conf_saver_params = (0,)
         else:
-            print('Did not understand conf_output = ', conf_output)
+            raise RuntimeError('Did not understand conf_output = ', conf_output)
 
         self.vectors_list = []
         self.scalars_list = []

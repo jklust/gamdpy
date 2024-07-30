@@ -5,10 +5,10 @@ Rumdpy implements molecular dynamics on GPU's in Python, relying heavily on the 
 The rumdpy package being pure Python (letting numba do the heavy lifting of generating fast code) results in an extremely extendable package: simply by interjecting Python functions in the right places, 
 the (experienced) user can extend most aspect of the code, including: new integrators, new pair-potentials, new properties to be calculated during simulation, new particle properties, ...  
 
-## NOTE:
+## NOTE
 This is the developers version of the rumdpy package, NOT for general consumption just yet. Do NOT trust any of the results produced! Be prepared for interfaces and structure to change overnight. 
 
-## Overall structure of the package:
+## Overall structure of the package
 
 ### 1. Configuration
 A class containing all relevant information about a configuration, including the simulation box (class sim_box). 
@@ -43,6 +43,103 @@ Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up
 ### 5. Evaluator
 Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
+
+# Installation
+
+## For users
+
+```sh
+pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+```
+
+## Installing rumdpy on linux from source
+
+To get the latest developers version:
+
+```sh
+cd [some_directory]
+git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/  # Clone latest developers version
+cd rumdpy-dev
+python3 -m venv venv  # Create virtual enviroment
+. venv/bin/activate   # ... and activate
+pip install -e .      # Install rumdpy 
+```
+
+To update for the latest version on GitLab:
+
+```sh
+git pull
+```
+
+## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)  [in progress]
+
+### Install WSL
+Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
+
+```sh
+wsl --install
+```
+
+press enter and then restart your machine. 
+The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
+
+### Install python and pip on WSL
+
+- open Windows Command Prompt
+- in the tab bar click on "v" and select ubuntu
+```sh 
+sudo apt-get update
+sudo apt-get install python3.10
+sudo apt-get install pip
+```
+
+### Install miniconda 
+
+See https://docs.anaconda.com/miniconda/
+
+```sh
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm -rf ~/miniconda3/miniconda.sh
+~/miniconda3/bin/conda init bash
+```
+
+### Install cuda
+
+```sh
+miniconda3/condabin/conda install cudatoolkit
+sudo apt install nvidia-cuda-toolkit
+```
+
+- modify .bashrc adding: export LD_LIBRARY_PATH="/usr/lib/wsl/lib/" from https://github.com/numba/numba/issues/7104
+
+
+### Install rumdpy
+
+```sh
+pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+```
+
+## Installing rumdpy on windows using Anaconda
+
+WARNING: due to naming of the integrators the package will not work without renaming/editing some files (awaiting fix)
+
+### Install Anaconda
+
+### Install rumdpy (and pip) using Powershell Prompt in Anaconda
+
+- open Anaconda Powershell as admin (from search)
+
+```sh 
+conda update -n base -c defaults conda
+conda install anaconda::pip
+conda install anaconda::git
+conda config --set channel_priority flexible
+conda install cudatoolkit
+pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+```
+
 # Info for developers
 
 ## Implementing on GPU using numba.cuda
@@ -60,7 +157,7 @@ A rough estimate is that the maximum number of time steps per second (TPS) that 
 There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
-## TODO, short term:
+## TODO, short term
 - [x] Break single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
@@ -72,7 +169,7 @@ A good place to see how this is done without implementing all functions twice is
 - [x] Use 'colarray' for vectors in Configuration
 - [x] Move r_ref from Configuration to nblist
 
-## TODO, before summer interns arrive:
+## TODO, before summer interns arrive
 - [ ] SLLOD (stress, LEBC), Nick
 - [X] Bonds interface
 - [X] Implement other fixed interactions: point interactions (tethered particles). Jesper
@@ -92,7 +189,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Post analysis, RDF and Sq (Lorenzo: done, to test for multicomponents)
 - [ ] NVU integrator, Mark
 
-## TODO or decide not necesarry, before paper:
+## TODO or decide not necesarry, before paper
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
@@ -110,7 +207,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Add CPU support (can it be done as a decorator?)
 
-## Various tools/strategies we will use:
+## Various tools/strategies we will use
 - [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
 - Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
@@ -128,98 +225,102 @@ A good place to see how this is done without implementing all functions twice is
 - Write documentation in the docstrings of the code (run doctests to check that it works).
 - Include the new feature in the documentation, e.g. you may need to edit docs/source/api.rst
 
-## Notes on how to test the code
-Run `pytest` in root (rumdpy) directory.
-NOTE: pytest fails if k3d not installed
+## How to test the code
+Running `pytest` in root (rumdpy) directory will run all tests.
+This will use the settings in the file `pytest.ini`.
 
-### Running doctest of a single file
+Make needed datafiles for examples
+
+```sh
+cd examples
+python3 minimal.py
+cd -
+```
+
+Install needed packages:
+
+```sh
+pip install pytest hypothesis k3d scipy
+```
+
+Running pytest:
+
+```sh
+python3 -m pytest
+```
+
+Running test typical takes several minutes.
+
+### Test of specific features
+
+Test scripts are located in the `tests` directory. Most can be executed (in a verbose mode) as script:
+
+```bash
+python3 tests/test_examples.py
+```
+
+Running doctest of a single file:
 
 ```bash
 python3 -m doctest -v rumdpy/calculators/CalculatorRadialDistribution.py
 ```
 
+### Coverage of tests
+
+To see what part of the code is covered, run (after `pip install coverage`)
+
+```sh
+coverage run -m pytest
+```
+
+After the tests are finished do:
+
+```sh
+coverage report -m
+```
+
+or `coverage html`
+
 ## Building documentation
 
-Building the documentation using sphinx, https://www.sphinx-doc.org
+To building the documentation using sphinx, https://www.sphinx-doc.org
+(needs `pip install myst_nb pydata_sphinx_theme`)
 
-```bash
+Install needed packages:
+
+```sh
+pip install sphinx myst_nb pydata_sphinx_theme
+```
+
+Build documentation webpage:
+
+```sh
 cd docs
 make html
 ```
 
-Clean the build directory
+Open webpage with firefox (or your favorite browers):
 
-```bash
+```sh
+firefox build/html/index.html
+```
+
+Clean the build directory (optional):
+
+```sh
 make clean
 ```
 
-## Known issues:
 
-### LinkerError: libcudadevrt.a not found
+# Known issues
+
+## LinkerError: libcudadevrt.a not found
 A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
 is to make a symbolic link to the missing file. 
 This can be done by running the somthing like the below in the terminal:
+
 ```bash
 ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
 ```
+
 in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.
-
-# Installation (in progress)
-
-## Installing rumdpy on linux from source
-
-```bash
-cd [some_directory]
-git clone https://gitlab.com/tbs.cph/rumdpy-dev
-cd rumdpy-dev
-pip install -e .
-```
-
-## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)
-
-### Install WSL
-Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
-- wsl --install     
-press enter and then restart your machine. 
-The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
-
-### Install python and pip on WSL
-
-- open Windows Command Prompt
-- in the tab bar click on "v" and select ubuntu 
-- sudo apt-get update
-- sudo apt-get install python3.10
-- sudo apt-get install pip
-
-### Install miniconda https://docs.anaconda.com/miniconda/
-
-- mkdir -p ~/miniconda3
-- wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-- bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-- rm -rf ~/miniconda3/miniconda.sh
-- ~/miniconda3/bin/conda init bash
- 
-### Install cuda
-
-- miniconda3/condabin/conda install cudatoolkit
-- sudo apt install nvidia-cuda-toolkit
-- modify .bashrc adding: export LD_LIBRARY_PATH="/usr/lib/wsl/lib/" from https://github.com/numba/numba/issues/7104
-
-### Install rumdpy
-
-- pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
-
-## Installing rumdpy on windows using Anaconda
-
-WARNING: due to naming of the integrators the package will not work without renaming/editing some files (awaiting fix)
-
-### Install Anaconda
-### Install rumdpy (and pip) using Powershell Prompt in Anaconda:
-- open Anaconda Powershell as admin (from search) 
-- conda update -n base -c defaults conda
-- conda install anaconda::pip
-- conda install anaconda::git
-- conda config --set channel_priority flexible
-- conda install cudatoolkit
-- pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
-
