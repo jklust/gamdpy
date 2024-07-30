@@ -305,7 +305,8 @@ class Simulation():
             if self.timing: start_block.record()
             self.current_block = block
             #self.d_output_array = cuda.to_device(self.zero_output_array) # Set output array to zero. Could probably be done faster
-            self.integrate(self.configuration.d_vectors,
+            try:
+                self.integrate(self.configuration.d_vectors,
                            self.configuration.d_scalars,
                            self.configuration.d_ptype,
                            self.configuration.d_r_im,
@@ -317,6 +318,11 @@ class Simulation():
                            self.output_calculator_params,
                            np.float32(block * self.steps_per_block * self.dt),
                            self.steps_per_block)
+            except numba.cuda.cudadrv.driver.CudaAPIError as e:
+                print(f"CUDA ERROR ({e})")
+                print("Try reducing tp or set gridsynce=False in compute_plan. Current compute_plan:")
+                print(self.compute_plan)
+                exit()
 
             self.configuration.copy_to_host()
             self.vectors_list.append(self.configuration.vectors.copy())  # Needed for 3D viz, should use memory/hdf5
