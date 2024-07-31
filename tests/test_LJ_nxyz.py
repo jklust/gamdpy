@@ -108,10 +108,10 @@ def test_nve(nx, ny, nz):
     return
 
 @settings(deadline=200_000, max_examples = 8)
-@given(nx=st.integers(min_value=4, max_value=8), ny=st.integers(min_value=4, max_value=8), nz=st.integers(min_value=4, max_value=8))
+@given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
 @example(nx=16, ny=16, nz=32)
-#@example(nx=16, ny=16, nz=32)
+@example(nx=10, ny=13, nz=15)
 def test_nvt(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
@@ -130,7 +130,7 @@ def test_nvt(nx, ny, nz):
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
 @example(nx=16, ny=16, nz=32)
-@example(nx=10, ny=13, nz=15)
+
 def test_nvt_langevin(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3

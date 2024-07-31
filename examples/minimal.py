@@ -20,14 +20,9 @@ pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 
-compute_plan = rp.get_default_compute_plan(configuration=configuration)
-print(compute_plan)
-compute_plan['tp']=8
-
 # Setup Simulation. 
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
-                    compute_plan=compute_plan,
                     num_steps=32*1024, storage='LJ_T0.70.h5')
 
 print('Simulation created')

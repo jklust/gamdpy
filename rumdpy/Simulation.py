@@ -80,21 +80,13 @@ class Simulation():
         if self.compute_stresses and not configuration.compute_stresses:
             raise ValueError("Configuration must have compute_stresses set as well!")
 
+        # Integrator
         if type(interactions) == list:
             self.interactions = interactions
         else:
             self.interactions = [interactions, ]
-        self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration,
-                                                                                      self.interactions,
-                                                                                      compute_plan=self.compute_plan,
-                                                                                      compute_stresses=compute_stresses,
-                                                                                      verbose=verbose)
-
         self.integrator = integrator
-        self.integrator_params = self.integrator.get_params(self.configuration, verbose)
-        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
         self.dt = self.integrator.dt
-
 
         if num_timeblocks == 0:
             if num_steps == 0:
@@ -134,38 +126,27 @@ class Simulation():
             steps_between_momentum_reset = 100
         if steps_between_momentum_reset > 0:
             self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
-            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
-            self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
         else:
-            self.momentum_reset_kernel = None
-            self.momentum_reset_params = (0,)
+            self.momentum_reset = None
 
         # Scalar saving
         if scalar_output == 'default':
             scalar_output = 16
         if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
             self.output_calculator = None
-            self.output_calculator_kernel = None
-            self.output_calculator_params = (0,)
         else:
             self.output_calculator = rp.ScalarSaver(configuration, scalar_output, num_timeblocks, steps_per_timeblock,
                                                     storage)
             if self.storage[-3:] != '.h5':
                 self.output.update(self.output_calculator.output)
-            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
-            self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
 
         # Saving of configurations
         if conf_output == 'default':
             self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage)
             if self.storage[-3:] != '.h5':
                 self.output.update(self.conf_saver.output)
-            self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
-            self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
-            self.conf_saver_kernel = None
-            self.conf_saver_params = (0,)
         else:
             raise RuntimeError('Did not understand conf_output = ', conf_output)
 
@@ -173,22 +154,65 @@ class Simulation():
         self.scalars_list = []
         self.simbox_data_list = []
 
-        self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
-                                              self.output_calculator_kernel, self.conf_saver_kernel,
-                                              self.momentum_reset_kernel,
-                                              self.compute_plan, True)
+        while True:
+            try:
+                self.get_kernels_and_params()
+                self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
+                                                self.output_calculator_kernel, self.conf_saver_kernel,
+                                                self.momentum_reset_kernel,
+                                                self.compute_plan, True)
         
-        # Trigger compilation to detect any problems early (also gets JIT time over with) 
-        self.configuration.copy_to_device()
-        try:
-            self.integrate_self(0.0, 0)
-        except numba.cuda.cudadrv.driver.CudaAPIError as e:
-            print(f"CUDA ERROR ({e})")
-            print("Try reducing tp or set gridsynce=False in compute_plan. Current compute_plan:")
-            print(self.compute_plan)
-            exit()
+                self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
+                self.integrate_self(0.0, 0)
+                break
+            except numba.cuda.cudadrv.driver.CudaAPIError as e:
+                #print('Failed compute_plan : ', self.compute_plan)
+                if self.compute_plan['tp'] > 1:
+                    self.compute_plan['tp'] -= 1
+                elif self.compute_plan['gridsync'] == True:
+                    self.compute_plan['gridsync'] == False
+                else:
+                    print(f'FAILURE. Can not handle cuda error (e)')
+                    exit()
+                print('Trying adjusted compute_plan :', self.compute_plan)
 
+    def get_kernels_and_params(self, verbose=False):
+        # Interactions
+        self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration,
+                                                                                      self.interactions,
+                                                                                      compute_plan=self.compute_plan,
+                                                                                      compute_stresses=self.compute_stresses,
+                                                                                      verbose=verbose)
 
+        # Momentum reset 
+        if self.momentum_reset != None:
+            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
+            self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
+        else:
+            self.momentum_reset_kernel = None
+            self.momentum_reset_params = (0,)
+
+        # Scalar saving
+        if self.output_calculator != None:
+            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
+            self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
+        else:
+            self.output_calculator_kernel = None
+            self.output_calculator_params = (0,)
+
+        # Configuration saving
+        if self.conf_saver != None:
+            self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
+            self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
+        else:
+            self.conf_saver_kernel = None
+            self.conf_saver_params = (0,)
+
+        # Integrator
+        self.integrator_params = self.integrator.get_params(self.configuration, verbose)
+        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
+
+        return
 
     def integrate_self(self, time_zero, steps):
         self.integrate(self.configuration.d_vectors,
