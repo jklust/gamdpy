@@ -23,9 +23,8 @@ Classes implementing a simulation algorithm. Currently implemented:
 - class NVT : Nose-Hoover thermostat 
 - class NVT_Langevin
 - class NPT_Langevin
-... all integrators converted to classes to use new interface. Old ones kept briefly for testing.
 
-Temperature can be controlled by a user-supplied function, see examples/kablj.py
+Temperature/Pressure can be controlled by a user-supplied function, see examples/kablj.py
 
 ### 3. Interactions
 Classes implementing interactions that can be applied to particles in the system:  
@@ -200,10 +199,11 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Configuration: include r_im in vectors
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Auto-tuner
-- [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
+- [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/)
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Thermostat on subsets of particles
+- [ ] Benchmarking
 
 ## TODO, long term:
 - [ ] Constraints
