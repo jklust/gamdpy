@@ -25,7 +25,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [2D.py](2D.py) : Simulating a 2D system (Lennard-Jones particle in a hexagonal lattice).
 - [kablj.py](kablj.py) : Simulating the Kob-Andersen binary LJ mixture. Also showing how to apply a temperature ramp for cooling.
 - [tethered_particles.py](tethered_particles.py) : Simulation of tethered particles.
-- [atomistic_walls.py](atomistic_walls.py) : Simulation of an atomistic wall, defined by tethered and thermostated particles.
+- [poiseuille.py](poiseuille.py) : Simulation of a nano-scale Poiseuille flow in a slit-pore.
 - [yukawa.py](yukawa.py) : Example of implementing a user-defined potential, exemplified by the Yukawa potential.
 
 ## Molecular models
