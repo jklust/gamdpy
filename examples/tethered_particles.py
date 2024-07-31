@@ -23,7 +23,7 @@ for n in range(configuration.N):
 rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
-tether = rp.Tether([1, 2], [300, 500], configuration, verbose=True)
+tether = rp.Tether(ptypes=[1, 2], spring_constants=[300, 500], configuration=configuration, verbose=True)
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
