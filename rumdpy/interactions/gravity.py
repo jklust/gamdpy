@@ -18,7 +18,7 @@ class Gravity():
 
         elif nargin == 3:
             ptype = args[0] # e.g. 0
-            force = args[1] # e.g. [1, 0, 0]
+            force = args[1] 
             conf = args[2] 
 
             force_array, indices_array = [], []

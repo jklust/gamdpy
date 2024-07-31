@@ -52,7 +52,7 @@ class Tether():
     
         # Get indices values (instead of dictonary entries) 
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
+        #u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         
@@ -62,16 +62,19 @@ class Tether():
             dist_sq = dist_sq_dr_function(values[indices[0]][:D], vectors[r_id][indices[1]], sim_box, dr)
             
             spring = values[indices[0]][3]
-            u = numba.float32(0.5)*spring*dist_sq
-            s = -spring
-            umm = spring
+            #u = numba.float32(0.5)*spring*dist_sq
+            #s = -spring
+            #umm = spring
+            
+            f=vectors[f_id][indices[1]];
 
             for k in range(D):
-                cuda.atomic.add(vectors, (f_id, indices[1], k), -dr[k]*s)      # Force
+                f[k] = f[k] + dr[k]*spring
+               # cuda.atomic.add(vectors, (f_id, indices[1], k), -dr[k]*s)      # Force
                # cuda.atomic.add(scalars, (indices[0], w_id), dr[k]*dr[k]*s*virial_factor)    # Virial
                # cuda.atomic.add(scalars, (indices[1], w_id), dr[k]*dr[k]*s*virial_factor)                      
         
-            cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5)) # Potential energy 
+            #cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5)) # Potential energy 
             #cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5))
             #lap = numba.float32(1-D)*s + umm                                   # Laplacian  
             #cuda.atomic.add(scalars, (indices[0], lap_id), lap)               
