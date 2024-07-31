@@ -177,21 +177,23 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [ ] Testing using gitlab CI
-- [ ] Settle on io format
-- [ ] Documentation/Tutorials/Best practices
-- [ ] Reserve name on pypi, conda?
+- [ ] Testing using gitlab CI, Lorenzo
+- [ ] Include scalar column names in output, Lorenzo
+- [X] Documentation/Tutorials/Best practices
+- [ ] Reserve name on pypi, conda? Thomas
 - [X] Generalize make_configuration to different lattices, Ulf
 - [X] Read configurations from file (Lorenzo: added function load_output in tools)
-- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration (e.g. stresses)
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
-- [ ] NVT_Langevin-per-particle integrator, Jesper
-- [X] Post analysis, RDF and Sq (Lorenzo: done, to test for multicomponents)
-- [ ] NVU integrator, Mark
+- [X] Per particles thermostat using interaction
+- [X] Post analysis, RDF and Sq 
+- [ ] Post analysis for multicomponents, Lorenzo
+- [ ] NVU integrator (tests missing), Mark
 
 ## TODO or decide not necesarry, before paper
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
+- [ ] Settle on io format
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
+- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
 - [ ] make installable by pip for all, by uploading to pypi
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
@@ -201,6 +203,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/)
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
+- [ ] Thermostat on subsets of particles
 
 ## TODO, long term:
 - [ ] Constraints
