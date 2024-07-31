@@ -9,48 +9,36 @@ import rumdpy as rp
 
 class Tether():
 
-    def __init__(self, *args, verbose=False):
+    def __init__(self, indices=None, tether_params=None, ptypes=None, spring_constants=None, configuration=None, verbose=False):
 
-        nargin = len(args)
-
-        if nargin == 2:
-            tether_params, indices_array = args[0], args[1]
-        
-        elif nargin == 3:
-            ptypes, ntypes = args[0], len(args[0])
-            springs, nsprings = args[1], len(args[1])
-            conf = args[2]
-
+        if indices == None:
+            ntypes, nsprings = len(ptypes), len(spring_constants)
+            conf = configuration 
             if ntypes != nsprings:
                 raise ValueError("Each type must have exactly one spring constant - arrays must be same length")
 
-            indices_array, tether_params = [], []
+            indices, tether_params = [], []
             counter = 0
             for n in range(conf.N):
                 for m in range(ntypes):
                     if conf.ptype[n]==ptypes[m]:
-                        indices_array.append([counter, n])
+                        indices.append([counter, n]) # Note the counter(?)
                         pos =  conf['r'][n]
-                        tether_params.append( [pos[0], pos[1], pos[2], springs[m]] )
+                        tether_params.append( [pos[0], pos[1], pos[2], spring_constants[m]] )
                         counter = counter + 1
                         break
-        else:
-            raise ValueError("Incorrect number of arguments to constructor")
 
         self.tether_params = np.array(tether_params, dtype=np.float32)
-        self.indices_array = np.array(indices_array, dtype=np.int32) 
+        self.indices = np.array(indices, dtype=np.int32) 
     
-        if self.tether_params.shape[0] != self.indices_array.shape[0]:
-            raise ValueError("Input error") #... think about that!
-
         if verbose:
-            print(f"{self.tether_params} \n {self.indices_array}")
+            print(f"{self.tether_params} \n {self.indices}")
 
 
 
     def get_params(self, configuration, compute_plan, verbose=False):
 
-        self.d_pindices = cuda.to_device(self.indices_array)
+        self.d_pindices = cuda.to_device(self.indices)
         self.d_tether_params = cuda.to_device(self.tether_params);
         
         return (self.d_pindices, self.d_tether_params)
