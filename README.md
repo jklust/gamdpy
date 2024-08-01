@@ -252,7 +252,12 @@ Running pytest:
 python3 -m pytest
 ```
 
-Running test typical takes several minutes.
+Running all test typical takes several minutes.
+Slow tests can be skipped by running (test functions decorated with `@pytest.mark.slow`):
+
+```sh
+python3 -m pytest -m "not slow"
+```
 
 ### Test of specific features
 
@@ -270,9 +275,10 @@ python3 -m doctest -v rumdpy/calculators/CalculatorRadialDistribution.py
 
 ### Coverage of tests
 
-To see what part of the code is covered, run (after `pip install coverage`)
+To see what part of the code is covered:
 
 ```sh
+pip install coverage
 coverage run -m pytest
 ```
 
@@ -282,7 +288,7 @@ After the tests are finished do:
 coverage report -m
 ```
 
-or `coverage html`
+or `coverage html`.
 
 ## Building documentation
 

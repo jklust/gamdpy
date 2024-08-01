@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.slow
 def test_JIT():
         import rumdpy as rp
         import numpy as np

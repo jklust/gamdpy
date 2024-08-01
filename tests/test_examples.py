@@ -4,15 +4,17 @@ The plt.show() function is replaced by a dummy function to avoid showing the plo
 This script will skip some examples that are known to fail, see variable exclude_files.
 When debugging, you can change variable files to a few or a single file.
 """
-import time
 import glob
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 import os
+import time
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import pytest
 
 mpl.use('Agg')  # Static backend that does not halt on plt.show()
 
-
+@pytest.mark.slow
 def test_examples(path_to_examples='examples'):
     # List of scripts to exclude
     exclude_files = [

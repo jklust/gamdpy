@@ -3,6 +3,7 @@ import numpy as np
 import rumdpy as rp
 from numba import cuda, config
 import pandas as pd
+import pytest
 
 from hypothesis import given, strategies as st, settings, Verbosity, example
 
@@ -88,6 +89,7 @@ def get_results_from_df(df, N, D):
 
     return var_e, Tkin, Tconf, R, Gamma
 
+@pytest.mark.slow
 @settings(deadline=200_000, max_examples = 8)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
@@ -106,7 +108,7 @@ def test_nve(nx, ny, nz):
     assert 5.1  < Gamma < 6.6,  print(f'{Gamma=}')
     
     return
-
+@pytest.mark.slow
 @settings(deadline=200_000, max_examples = 8)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
@@ -124,13 +126,14 @@ def test_nvt(nx, ny, nz):
     assert 0.91 <   R   < 1.00, print(f'{R=}')
     assert 4.9  < Gamma < 7.2,  print(f'{Gamma=}')
     
-    return 
- 
+    return
+
+
+@pytest.mark.slow
 @settings(deadline=200_000, max_examples = 8)
 @given(nx=st.integers(min_value=4, max_value=16), ny=st.integers(min_value=4, max_value=16), nz=st.integers(min_value=4, max_value=16))
 @example(nx=4,  ny=4,  nz=4)
 @example(nx=16, ny=16, nz=32)
-
 def test_nvt_langevin(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
