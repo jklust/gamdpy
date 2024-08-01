@@ -6,6 +6,7 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 import os
 os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
 os.environ["NUMBA_DISABLE_JIT"] = "1"
+os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
 import rumdpy as rp
 
 # Setup fcc configuration
@@ -24,11 +25,17 @@ integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 # Setup Simulation.
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
-                    num_steps=512, storage='LJ_T0.70.h5', timing=False)
+                    num_timeblocks=2, steps_per_timeblock=4, scalar_output=2, 
+                    storage='LJ_T0.70.h5', timing=False)
 
 # Run simulation
 sim.run()
 
 # To get a plot of the MSD do something like this:
 # python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
+
+# Disable settings for the CUDA simulator
+os.environ["NUMBA_ENABLE_CUDASIM"] = "0"
+os.environ["NUMBA_DISABLE_JIT"] = "0"
+os.environ["NUMBA_CUDA_DEBUGINFO"] = "0"
 

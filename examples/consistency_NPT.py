@@ -33,9 +33,9 @@ pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000
 # NOTE: steps_per_timeblock=15 generate a crash
 integratorNVT = rp.integrators.NVT(temperature=my_T, tau=0.2, dt=0.001)
 sim = rp.Simulation(configuration, pair_pot, integratorNVT,
-                    num_timeblocks=64, steps_per_timeblock=16384,
+                    num_timeblocks=8, steps_per_timeblock=16384,
                     steps_between_momentum_reset=100, scalar_output=32,
-                    storage='memory', timing=False)
+                    storage='memory')
 # Equilibration run
 print("Running NVT simulation at (\\rho, T) = ({my_rho},{my_T})")
 print("Equilibration")
@@ -61,9 +61,9 @@ print()
 
 # NPT Simulation 
 sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=64, steps_per_timeblock=16384,
+                    num_timeblocks=8, steps_per_timeblock=16384,
                     steps_between_momentum_reset=100, scalar_output=32,
-                    storage='memory', timing=False)
+                    storage='memory')
 sim.run()
 sim.run()
 U, W, K, Vol = rp.extract_scalars(sim.output, ['U', 'W', 'K', 'Vol'], first_block=1)
@@ -90,7 +90,7 @@ print(f"Check 2: Consistency relations in Appendix B of http://dx.doi.org/10.106
 print(f"Equation B3 <P_int>   = P_ext + T<V^-1> : {np.mean((2*K/3+W)/Vol)} ?= {my_p + my_T*np.mean(1/Vol)}")
 print(f"Equation B4 <P_int V> = P_exp <V>       : {np.mean( 2*K/3+W     )/configuration.N} ?= {my_p * np.mean(Vol)/configuration.N}")
 print()
-print(f"Check 3: Specific heat at constant pressure")
+print(f"Check 3: Specific heat at constant pressure (this needs a longer run, use num_timeblocks=128)")
 print(f"c_P from enthalpy fluctuations in the NPT ensamble : {c_P}")
 # Verify that C_P = C_V + T V \beta_P**2 * K_T from problem 5.14 part c of Daniel V. Schroeder - An Introduction to Thermal Physics (1999)
 print(f"c_P obtained from c_P = c_V + T V \\beta_P**2 * K_T: {c_V + my_T * np.mean(Vol)/configuration.N * beta_P**2 * K_T}" )

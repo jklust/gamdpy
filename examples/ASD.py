@@ -109,10 +109,11 @@ axs.set_xlabel('Time')
 axs.grid(linestyle='--', alpha=0.5)
 total_mass = np.sum(configuration['m'])
 for label in ['Px', 'Py', 'Pz']:
-    axs.plot(df['t'], df[label] / total_mass, '-', label=label + '/M')
+    axs.plot(df['t'].values, df[label].values / total_mass, '-', label=label + '/M')
 axs.legend()
 plt.show(block=False)
 
+print("Alive")
 rdf = calc_rdf.read()
 rdf['rdf'] = np.mean(rdf['rdf'], axis=0)
 fig, axs = plt.subplots(1, 1, figsize=(8, 4))

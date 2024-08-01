@@ -24,7 +24,7 @@ class ScalarSaver():
         self.steps_per_timeblock = steps_per_timeblock
 
         if steps_between_output >= steps_per_timeblock:
-            raise ValueError(f'steps_between_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
+            raise ValueError(f'scalar_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
 
         if storage != 'memory' and storage[-3:] != '.h5': # Either in-memory or hdf5 (others could be added)
             raise ValueError(f'storage({storage}) needs to be "memory" or end at ".h5"')

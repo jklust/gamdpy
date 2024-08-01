@@ -98,7 +98,7 @@ class Simulation():
             print('num_blocks: ', num_timeblocks)
             print('steps_per_block: ', steps_per_timeblock)
         elif steps_per_timeblock == 0:
-            raise ValueError("If num_timeblocks is non-zero then steps_per_block must be too (num_steps is ignored in this case)")
+            raise ValueError("If num_timeblocks is non-zero then steps_per_timeblock must be too (num_steps is ignored in this case)")
         # we do not use nsteps if num_timeblocks is non-zero, because it's
         # not guaranteed to be a multiple of the latter
         self.num_blocks = num_timeblocks

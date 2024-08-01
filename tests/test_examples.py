@@ -22,8 +22,7 @@ def test_examples(path_to_examples='examples'):
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
         'LJchain_wall.py',  # ImportError: cannot import name 'nvt_nh' from 'rumdpy.integrators'
         'calc_rdf_from_rumd3.py',  # This example needs TrajectoryFiles to be present
-        'minimal_cpu.py',  # I suspect this script makes other scripts fail due to the os.environ[...] lines
-        'consistency_NPT.py',  # Very slow: Execution time for consistency_NPT.py: 8.98e+02 s
+        'minimal_cpu.py',
     ]
 
     # Save the current working directory
@@ -36,6 +35,7 @@ def test_examples(path_to_examples='examples'):
         # Iterate over all Python files in the examples directory
         files = list(glob.glob('*.py'))
         files.sort()
+        files.append('minimal_cpu.py')
         # files = ['minimal.py']  # Uncomment and modify for debugging a few or a single file
         print(f"Found {len(files)} examples: {files}")
         print(f"Excluding {len(exclude_files)} (if pressent): {exclude_files}")

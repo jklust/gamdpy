@@ -1,7 +1,6 @@
 import numpy as np
 # LC: check https://orbit.dtu.dk/en/publications/cudarray-cuda-based-numpy
 import numba
-import math
 from numba import cuda
 import rumdpy as rp
 
@@ -76,8 +75,8 @@ class NPT_Atomic():
 
             # NOTE: thermostat_state and barostat_state have units of inverse time ([t]**-1)
             factor = np.float32(0.5) * dt * ((1+3./degrees)*barostat_state[0] + thermostat_state[0]) # D=3
-            plus = np.float32(1.) / (np.float32(1.) + factor)  
-            minus = np.float32(1.) - factor                    
+            plus = np.float32(1.) / np.float32(1. + factor)  
+            minus = np.float32(1. - factor)                    
             rfactor = barostat_state[0]*dt
 
             global_id, my_t = cuda.grid(2)
@@ -117,14 +116,11 @@ class NPT_Atomic():
                 mass_p = mass_p * temperature                   # thermostat/barostat masses are extensive quantities
                 # Scale volume
                 barostat_state[2] *= scale_factor_3
-                # Scale simbox lenghts and positions
-                scale_factor  = math.pow(scale_factor_3, 1./3)
+                # Scale simbox lenghts
+                scale_factor  = scale_factor_3**(1./3)
                 sim_box[0]   *= scale_factor
                 sim_box[1]   *= scale_factor
                 sim_box[2]   *= scale_factor
-                for i in range(num_part): # This is insanely slow and stupid
-                    for k in range(D): 
-                        vectors[0][i][k] = scale_factor*vectors[0][i][k] # Assumes vectors[0] is positions <-- BAD
                 # Update states
                 target_temperature = temperature_function(time)
                 target_pressure    = pressure_function(time)
@@ -140,12 +136,29 @@ class NPT_Atomic():
                 barostat_state[1]   = np.float32(0.)
             return
 
+        # Scale the simulation box to the new density
+        def scale_box(vectors, sim_box, integrator_params):
+            # Unpack parameters. MUST be compatible with get_params() above
+            dt, mass_t, mass_p, degrees, thermostat_state, barostat_state = integrator_params 
+
+            scale_factor_3 = 1 + dt*D*barostat_state[0]     # assumes D=3
+            scale_factor  = scale_factor_3**(1./3)
+
+            global_id, my_t = cuda.grid(2)
+            if global_id < num_part and my_t == 0:
+                for k in range(D): 
+                    vectors[r_id][global_id][k] = scale_factor*vectors[r_id][global_id][k] 
+            return
+
         step = cuda.jit(device=gridsync)(step)
         update_thermostat_barostat_state = cuda.jit(device=gridsync)(update_thermostat_barostat_state)
+        scale_box = cuda.jit(device=gridsync)(scale_box)
 
         if gridsync: # construct and return device function
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                grid.sync()
+                scale_box(vectors, sim_box, integrator_params)
                 grid.sync()
                 update_thermostat_barostat_state(vectors, sim_box, integrator_params, time)
                 return
@@ -153,6 +166,7 @@ class NPT_Atomic():
         else: # return python function, which makes kernel-calls
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                scale_box[num_blocks, (pb, 1)](vectors, sim_box, integrator_params)
                 update_thermostat_barostat_state[1, (1, 1)](vectors, sim_box, integrator_params, time)
                 return
             return kernel
