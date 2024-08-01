@@ -74,9 +74,10 @@ class Relaxtemp():
             Tdesired = values[indices[0]][0]
             tau = values[indices[0]][1]
 
-            Tparticle = m/3.0*(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-
-            fac = math.sqrt( 1.0 + tau*(Tdesired/Tparticle - 1.0) )
+            Tparticle = m/numba.float32(3.0)*(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
+            
+            one = numba.float32(1.0)
+            fac = math.sqrt( one + tau*(Tdesired/Tparticle - one) )
 
             for k in range(D):
                 v[k] = v[k]*fac
