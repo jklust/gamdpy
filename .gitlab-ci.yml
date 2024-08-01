@@ -27,6 +27,7 @@ variables:
     - source env/bin/activate
     - pip install .
     - pip install coverage
+    - pip install pytest
     - coverage run --source rumdpy -m unittest discover -s tests
     - coverage report -m
   artifacts:
