@@ -23,7 +23,7 @@ for n in range(configuration.N):
 rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
-tether = rp.Tether(ptypes=[1, 2], spring_constants=[300, 500], configuration=configuration, verbose=True)
+tether = rp.Tether(ptypes=[1, 2], spring_constants=[300, 500], configuration=configuration)
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -38,18 +38,15 @@ configuration.randomize_velocities(T=2.0)
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=2.0, tau=0.2, dt=0.005)
 
-compute_plan = rp.get_default_compute_plan(configuration)
-# Uncomment below for compute plan settings for old cards
-# compute_plan['gridsync']=False
-# compute_plan['tp']=2
+# Compute plan
+#compute_plan = rp.get_default_compute_plan(configuration)
 
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pair_pot, tether], integrator,
                     num_timeblocks=16,
                     steps_per_timeblock=1024,
                     steps_between_momentum_reset=0,  # No momentum reset needed for tethered particles
-                    storage='memory',
-                    compute_plan=compute_plan)
+                    storage='memory');
 
 # Run simulation one block at a time
 for block in sim.timeblocks():

@@ -9,24 +9,41 @@ import rumdpy as rp
 
 class Tether():
 
-    def __init__(self, indices=None, tether_params=None, ptypes=None, spring_constants=None, configuration=None, verbose=False):
+    def __init__(self, pindices=None, anchor_points=None, ptypes=None, spring_constants=None, configuration=None, verbose=False):
 
-        if indices == None:
+        indices, tether_params = [], []
+         
+        if pindices == None: # Using part. type settings
+            
             ntypes, nsprings = len(ptypes), len(spring_constants)
-            conf = configuration 
             if ntypes != nsprings:
-                raise ValueError("Each type must have exactly one spring constant - arrays must be same length")
-
-            indices, tether_params = [], []
+                raise ValueError("Each type must have exactly one spring connection - arrays must be same length")
+            
             counter = 0
-            for n in range(conf.N):
+            for n in range(configuration.N):
                 for m in range(ntypes):
-                    if conf.ptype[n]==ptypes[m]:
-                        indices.append([counter, n]) # Note the counter(?)
-                        pos =  conf['r'][n]
+                    if configuration.ptype[n]==ptypes[m]:
+                        indices.append([counter, n]) 
+                        pos =  configuration['r'][n]
                         tether_params.append( [pos[0], pos[1], pos[2], spring_constants[m]] )
                         counter = counter + 1
                         break
+        
+        elif ptypes == None: # Using part. indices settings
+            
+            nsprings, nparticles = len(spring_constants), len(pindices)
+            if nsprings != nparticles:
+                raise ValueError("Each particle must have exactly one spring connection - array must be same length");
+
+            for n in range(nparticles):
+                indices.append([n, pindices[n]])
+                pos = configuration['r'][n]
+                tether_params.append( [pos[0], pos[1], pos[2], spring_constants[n]] )
+                
+        else:
+
+            raise ValueError("Incorrect instantiation of tether")
+
 
         self.tether_params = np.array(tether_params, dtype=np.float32)
         self.indices = np.array(indices, dtype=np.int32) 
