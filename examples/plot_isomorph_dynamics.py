@@ -2,13 +2,13 @@
 
 """
 
-import rumdpy as rp
-import numpy as np
 import pickle
+
 import matplotlib.pyplot as plt
 
 # Load data from pickle file
-with open('Data/isomorph.pkl','rb') as f: data = pickle.load(f)
+with open('Data/isomorph.pkl','rb') as f:
+    data = pickle.load(f)
 
 # Setup figure 
 fig, axs = plt.subplots(3, 1, figsize=(8,9), sharex=True)

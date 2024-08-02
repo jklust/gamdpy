@@ -7,17 +7,20 @@
 """
 
 import numpy as np
+
 import rumdpy as rp
 
 # Setup a default fcc configuration
-nxUnits, nyUnits, nzUnits, rho = 6, 6, 10, 1.0
-configuration = rp.make_configuration_fcc(nxUnits, nyUnits, nzUnits, rho)
+nx, ny, nz, rho = 6, 6, 10, 1.0
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
+configuration['m'] = 1.0
 
 # Fluid/free particles have type '0', tethered particles '1' and '2'
 for n in range(configuration.N):
-    if configuration['r'][n][2] > -3 and configuration['r'][n][2] < -1:
+    if -3 < configuration['r'][n][2] < -1:
         configuration.ptype[n] = 1
-    elif configuration['r'][n][0] > -1 and configuration['r'][n][0] < 1:
+    elif -1 < configuration['r'][n][0] < 1:
         configuration.ptype[n] = 2
 
 rp.tools.save_configuration(configuration, "initial.xyz")
@@ -27,7 +30,7 @@ tether = rp.Tether(ptypes=[1, 2], spring_constants=[300, 500], configuration=con
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
-sig = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]] 
+sig = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
 eps = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
 cut = np.array(sig)*2.5 
 pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
@@ -46,7 +49,7 @@ sim = rp.Simulation(configuration, [pair_pot, tether], integrator,
                     num_timeblocks=16,
                     steps_per_timeblock=1024,
                     steps_between_momentum_reset=0,  # No momentum reset needed for tethered particles
-                    storage='memory');
+                    storage='memory')
 
 # Run simulation one block at a time
 for block in sim.timeblocks():

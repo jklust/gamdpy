@@ -5,8 +5,9 @@ It`s possible to switch between Langevin and Atomic NPT integrators.
 
 """
 
-import rumdpy as rp
 import numpy as np
+
+import rumdpy as rp
 
 # Here you can decide to use "NPT_Atomic" or "NPT_Langevin"
 flag = "Atomic"

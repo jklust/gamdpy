@@ -7,10 +7,12 @@ import os
 os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
 os.environ["NUMBA_DISABLE_JIT"] = "1"
 os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
+
 import rumdpy as rp
 
 # Setup fcc configuration
-configuration = rp.make_configuration_fcc(nx=4, ny=4, nz=4, rho=0.973)
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
 

@@ -1,8 +1,8 @@
 """ Minimal example for calculing rdf from existing data """
 
-import rumdpy as rp
-import numpy as np
 import os
+
+import rumdpy as rp
 
 file_to_read = "LJ_T0.70.h5"
 
@@ -13,13 +13,16 @@ if file_to_read not in os.listdir(os.getcwd()):
 
 # Load existing data
 output = rp.tools.load_output(file_to_read)
+
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
+
 # Set up the configuration object
 # Create configuration object
 configuration = rp.Configuration(D=D, N=N)
 configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
 configuration.copy_to_device()
+
 # Call the rdf calculator
 calc_sq = rp.CalculatorStructureFactor(configuration, q_max=18.0)
 
@@ -27,6 +30,7 @@ calc_sq = rp.CalculatorStructureFactor(configuration, q_max=18.0)
 #       the zero is to select the position array and discard images
 positions = output['block'][:,:,0,:,:]
 positions = positions.reshape(nblocks*nconfs,N,D)
+
 # Loop over saved configurations
 for pos in positions[nconfs-1::nconfs]:
     configuration['r'] = pos
@@ -35,4 +39,3 @@ for pos in positions[nconfs-1::nconfs]:
 
 # Save rdf
 calc_sq.save_average()
-

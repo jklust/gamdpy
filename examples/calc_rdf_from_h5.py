@@ -1,8 +1,8 @@
 """ Minimal example for calculing rdf from existing data """
 
-import rumdpy as rp
-import numpy as np
 import os
+
+import rumdpy as rp
 
 file_to_read = "LJ_T0.70.h5"
 

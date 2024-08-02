@@ -228,6 +228,9 @@ def generate_random_velocities(N, D, T, seed, m=1, dtype=np.float32):
 
 @numba.njit
 def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
+    # This function is not recommended to use, and should be considered deprecated
+    # raise DeprecationWarning('Use Configuration.make_lattice() instead')
+
     D = 3
     conf = np.zeros((nx * ny * nz * 4, D), dtype=dtype)
     count = 0
@@ -256,6 +259,9 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
     If N is given, only N particles will be in the configuration 
     (needs to be equal to or smaller than number of particle in generated crystal)
     """
+
+    # This function is not recommended to use, and should be considered deprecated
+    # raise DeprecationWarning('Use Configuration.make_lattice() instead')
 
     positions, simbox_data = generate_fcc_positions(nx, ny, nz, rho)
     N_, D = positions.shape

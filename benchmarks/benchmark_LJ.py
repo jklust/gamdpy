@@ -15,7 +15,10 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
     """
 
     # Generate configuration with a FCC lattice
-    c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
+    c1 = rp.Configuration(D=3)
+    c1.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
+    c1['m'] = 1.0
+    c1.randomize_velocities(T=1.44)
     c1.copy_to_device() 
 
     pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)

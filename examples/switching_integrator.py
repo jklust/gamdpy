@@ -12,15 +12,14 @@ For a simpler script performing multiple simulations, see isochore.py
 
 """
 
+import matplotlib.pyplot as plt
+
 import rumdpy as rp
-import numpy as np
-import pickle
 
 # Setup pair potential.
-pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
-
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 T = 0.8
 
@@ -34,16 +33,17 @@ integrator1 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 integrator2 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
 # Setup Simulations
-sim1 = rp.Simulation(configuration, pairpot, integrator1,
-                     num_timeblocks=4, steps_per_timeblock=512,
+sim1 = rp.Simulation(configuration, pair_pot, integrator1,
+                     num_timeblocks=4,
+                     steps_per_timeblock=512,
                      scalar_output=1,
                      storage='memory')
 
-sim2 = rp.Simulation(configuration, pairpot, integrator2,
-                     num_timeblocks=4, steps_per_timeblock=512,
+sim2 = rp.Simulation(configuration, pair_pot, integrator2,
+                     num_timeblocks=4,
+                     steps_per_timeblock=512,
                      scalar_output=1,
                      storage='memory')
-    
 
 print(configuration['r'][1])
 print('Integrator1, Equilibration:', end='\t')
@@ -68,7 +68,6 @@ print(sim2.status(per_particle=True))
 U3, K3 = rp.extract_scalars(sim2.output, ['U', 'K'], first_block=0)
 E3 = U3 + K3 
 
-import matplotlib.pyplot as plt
 
 plt.plot(U1, '.-', label='Integrator1, Equilibration')
 plt.plot(U2, '.-', label='Integrator1, Production')

@@ -1,6 +1,6 @@
 import glob
 import sys
-from rumdpy.integrators import nve, nvt_nh, nvt_langevin
+# from rumdpy.integrators import nve, nvt_nh, nvt_langevin  # OLD CODE
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,28 +9,34 @@ from numba import cuda, config
 
 import rumdpy as rp
 
+
 def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
     """
     Setup and return configuration, potential function, and potential parameters for the LJ benchmark
     """
 
     # Generate configuration with a FCC lattice
-    c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44) #
-    
+    # Setup configuration: FCC Lattice
+    c1 = rp.Configuration(D=3)
+    c1.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
+    c1['m'] = 1.0
+    c1.randomize_velocities(T=1.44)
+    #  c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44)
+
     # Setup pair potential.
-    pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
     sig, eps, cut = 1.0, 1.0, 2.5
-    pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
-    
-    return c1, pairpot
+    pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+
+    return c1, pair_pot
 
 
-def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=False):
+def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=False):
     """
     Run LJ benchmark
     Could be run with other potential and/or parameters, but asserts would need to be updated
     """
-    
+
     # Set up the integrator
     dt = 0.005
 
@@ -40,9 +46,9 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
         integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
     if integrator == 'NVT_Langevin':
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
-    
+
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim = rp.Simulation(c1, pairpot, integrator,
+    sim = rp.Simulation(c1, pair_pot, integrator,
                         num_timeblocks=1, steps_per_timeblock=steps,
                         conf_output=None, scalar_output=None,
                         storage='None', verbose=False)
@@ -54,7 +60,7 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
         pass
 
     #print(sim.summary())
-    
+
     #assert 0.55 < Tkin < 0.85, f'{Tkin=}'
     #assert 0.55 < Tconf < 0.85, f'{Tconf=}'
     #if integrator == 'NVE':  # Only expect conservation of energy if we are running NVE
@@ -62,13 +68,14 @@ def run_benchmark(c1, pairpot, compute_plan, steps, integrator='NVE', verbose=Fa
     #assert nbflag[0] == 0
     #assert nbflag[1] == 0
 
-    tps = sim.last_num_blocks*sim.steps_per_block/sim.timing_numba*1000
-    time_in_sec = sim.timing_numba/1000
-    
+    tps = sim.last_num_blocks * sim.steps_per_block / sim.timing_numba * 1000
+    time_in_sec = sim.timing_numba / 1000
+
     #print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
     print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan)
 
     return tps, time_in_sec
+
 
 def main(integrator):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -114,11 +121,9 @@ def main(integrator):
 
 
 if __name__ == "__main__":
-    if len(sys.argv)==1 or 'NVE' in sys.argv:
+    if len(sys.argv) == 1 or 'NVE' in sys.argv:
         main(integrator='NVE')
     if 'NVT' in sys.argv:
         main(integrator='NVT')
     if 'NVT_Langevin' in sys.argv:
         main(integrator='NVT_Langevin')
-        
-

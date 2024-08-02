@@ -10,7 +10,10 @@ import rumdpy as rp
 # Generate configuration with a FCC lattice
 # rho = 0.932 # Molecular density
 rho = 1.863  # Atomic density
-configuration = rp.make_configuration_fcc(nx=6, ny=6, nz=6, rho=rho)
+
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[6, 6, 6], rho=rho)
+configuration['m'] = 1.0
 B_particles = range(1, configuration.N, 2)
 configuration.ptype[B_particles] = 1  # Setting particle type of B particles
 configuration['m'][B_particles] = 0.195  # Setting masses of B particles

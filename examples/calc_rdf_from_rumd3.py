@@ -10,7 +10,6 @@ if file_to_read not in os.listdir(os.getcwd()):
     print(f"This example needs {file_to_read} to be present")
     exit()
 
-
 # Load existing data
 output = rp.tools.load_output(file_to_read)
 # Read number of particles N and dimensions from data
@@ -34,4 +33,3 @@ for pos in positions[nconfs-1::nconfs]:
 
 # Save rdf
 calc_rdf.save_average("rdf_rumd3.dat")
-

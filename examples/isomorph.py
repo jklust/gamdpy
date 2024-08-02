@@ -12,14 +12,16 @@ For a simpler script performing multiple simulations, see isochore.py
 
 """
 
-import rumdpy as rp
-import numpy as np
 import pickle
 
+import numpy as np
+
+import rumdpy as rp
+
 # Setup pair potential.
-pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 T = 2.00
 rhos = [1.00, 1.05, 1.10, 1.15, 1.20, 1.20]
@@ -29,14 +31,16 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
-    configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+    configuration = rp.Configuration(D=3)
+    configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
+    configuration['m'] = 1.0
     configuration.randomize_velocities(T=2*T)
 
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
     # Setup Simulation
-    sim = rp.Simulation(configuration, pairpot, integrator,
+    sim = rp.Simulation(configuration, pair_pot, integrator,
                         num_timeblocks=16,  # try something like 128 for better statistics
                         steps_per_timeblock=512,
                         steps_between_momentum_reset=100,
@@ -73,6 +77,8 @@ for index, rho in enumerate(rhos):
     else:
         T = 2.00 # Last simulation Isothermal to first simulation
 
-with open('Data/isomorph.pkl','wb') as f: pickle.dump(data, f)
+with open('Data/isomorph.pkl', 'wb') as f:
+    pickle.dump(data, f)
+
 # To generat plots (isomorph_dynamics.pdf & isomorph_rdf.pdf) of data: 
 # python plot_isomorph_dynamics.py; python plot_isomorph_rdf.py

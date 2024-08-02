@@ -1,13 +1,11 @@
-import numpy as np
-import rumdpy as rp
-import numba
-from numba import cuda
-import pandas as pd
-import pickle
-import json
 import sys
-#import matplotlib.pyplot as plt
-    
+
+import numba
+import numpy as np
+import pandas as pd
+
+import rumdpy as rp
+
 integrator_name = 'NVE'
 if 'NVE_Toxvaerd' in sys.argv:
     integrator_name = 'NVE_Toxvaerd'
@@ -19,22 +17,23 @@ if 'NPT_Langevin' in sys.argv:            # use with NoRDF since box size is var
     integrator_name = 'NPT_Langevin'
 
 # Generate configuration with a FCC lattice
-configuration = rp.make_configuration_fcc(nx=8,  ny=8,  nz=8,  rho=0.8442)
-configuration['m'] = 1
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.8442)
+configuration['m'] = 1.0
 configuration.randomize_velocities(T=1.44)  
 
 # Make pair potential
-pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Make integrator
-dt = 0.005 # timestep 
+dt = 0.005  # timestep
 num_blocks = 64              # Do simulation in this many 'blocks'
-steps_per_block = 2*1024      # ... each of this many steps
+steps_per_block = 2*1024     # ... each of this many steps
 running_time = dt*num_blocks*steps_per_block
-temperature = 0.7 # Not used for NVE
-pressure = 1.2 # Not used for NV*
+temperature = 0.7  # Not used for NVE
+pressure = 1.2  # Not used for NV*
 
 # Parameters, temperature and pressure, can be functions of time:
 #temperature = rp.make_function_ramp(value0=0.7, x0=0.5*running_time, value1=1.7, x1=0.8*running_time)
@@ -58,7 +57,7 @@ if integrator_name=='NPT_Langevin':
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
 
-sim = rp.Simulation(configuration, pairpot, integrator,
+sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
@@ -76,5 +75,3 @@ if integrator_name=='NPT_Langevin' and callable(pressure):
     df['Ptarget'] = numba.vectorize(pressure)(np.array(df['t']))
 
 rp.plot_scalars(df, configuration.N,  configuration.D, figsize=(10,8), block=True)
-
-
