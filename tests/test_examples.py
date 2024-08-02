@@ -17,6 +17,13 @@ mpl.use('Agg')  # Static backend that does not halt on plt.show()
 @pytest.mark.slow
 def test_examples(path_to_examples='examples'):
     # List of scripts to exclude
+
+    run_first = [  # These examples generate files that are used by other examples
+        'minimal.py',
+        'isomorph.py',
+        'isochore.py'
+    ]
+
     exclude_files = [
         'test_shear.py',
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
@@ -35,7 +42,15 @@ def test_examples(path_to_examples='examples'):
         # Iterate over all Python files in the examples directory
         files = list(glob.glob('*.py'))
         files.sort()
-        files.append('minimal_cpu.py')
+
+        # Put the run_first files at the beginning
+        for file in run_first:  # Remove the files from the list if they are already there
+            if file in files:
+                files.remove(file)
+        files = run_first + files
+
+
+
         # files = ['minimal.py']  # Uncomment and modify for debugging a few or a single file
         print(f"Found {len(files)} examples: {files}")
         print(f"Excluding {len(exclude_files)} (if pressent): {exclude_files}")

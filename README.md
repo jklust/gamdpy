@@ -136,18 +136,10 @@ A good place to see how this is done without implementing all functions twice is
 Running `pytest` in root (rumdpy) directory will run all tests.
 This will use the settings in the file `pytest.ini`.
 
-Make needed datafiles for examples
-
-```sh
-cd examples
-python3 minimal.py
-cd -
-```
-
 Install needed packages:
 
 ```sh
-pip install pytest hypothesis k3d scipy
+pip install pytest hypothesis scipy
 ```
 
 Running pytest:
