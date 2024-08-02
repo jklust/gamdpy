@@ -1,10 +1,10 @@
 import numpy as np
-import k3d
-from k3d.colormaps import matplotlib_color_maps
 import ipywidgets as widgets
 
 class k3d_Visualization():
     def __init__(self, simulation):
+        import k3d
+        from k3d.colormaps import matplotlib_color_maps
         self.simulation = simulation
         self.conf = simulation.configuration
         self.plt_points = k3d.points(positions=self.conf['r'],
