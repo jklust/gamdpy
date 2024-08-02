@@ -9,7 +9,7 @@ import rumdpy as rp
 
 class Tether():
 
-    def __init__(self, pindices=None, anchor_points=None, ptypes=None, spring_constants=None, configuration=None, verbose=False):
+    def __init__(self, spring_constants, configuration, pindices=None, anchor_points=None, ptypes=None, verbose=False):
 
         indices, tether_params = [], []
          

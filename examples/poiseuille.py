@@ -48,9 +48,7 @@ tether = rp.Tether(ptypes=[1], spring_constants=[300.0], configuration=configura
 grav = rp.Gravity([0], [0.01], configuration)
 
 # Temp relaxation for wall particles
-# Altnative instanciation  relax = rp.Relaxtemp(<relax_parameters>, <indices_array>, verbose=False)
-# where relax parameters: [Tdesired, tau (characteristic relax time 0<tau<<1)] index as tether
-relax = rp.Relaxtemp([1],[0.01],[2.0], configuration)
+relax = rp.Relaxtemp(ptypes=[1],tau=[0.01],temperature=[2.0], configuration=configuration)
 
 # Set the pair interactions
 pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
