@@ -163,16 +163,16 @@ class Simulation():
                                                 self.compute_plan, True)
         
                 self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
-                self.integrate_self(0.0, 0)
+                self.integrate_self(0.0, 1)
                 break
             except numba.cuda.cudadrv.driver.CudaAPIError as e:
                 #print('Failed compute_plan : ', self.compute_plan)
-                if self.compute_plan['tp'] > 1:
-                    self.compute_plan['tp'] -= 1
-                elif self.compute_plan['gridsync'] == True:
-                    self.compute_plan['gridsync'] == False
+                if self.compute_plan['tp'] > 1:             # Most common problem tp is too big
+                    self.compute_plan['tp'] -= 1            # ... so we reduce it and try again
+                elif self.compute_plan['gridsync'] == True: # Last resort: turn off gridsync
+                    self.compute_plan['gridsync'] = False
                 else:
-                    print(f'FAILURE. Can not handle cuda error (e)')
+                    print(f'FAILURE. Can not handle cuda error {e}')
                     exit()
                 print('Trying adjusted compute_plan :', self.compute_plan)
 
