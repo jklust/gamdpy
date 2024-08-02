@@ -9,33 +9,38 @@ import rumdpy as rp
 
 class Relaxtemp():
 
-    def __init__(self, *args, verbose=False):
+    def __init__(self, tau, temperature, configuration, pindices=None, ptypes=None, verbose=False):
 
-        nargin = len(args)
 
-        if nargin == 2:
-            relax_params = args[0]
-            indices_array = args[1]
+        indices_array, relax_params = [], []
+        
+        if pindices == None:
 
-        elif nargin == 4:
-            ptypes, ntypes = args[0], len(args[0])
-            taus, ntaus = args[1], len(args[1])
-            temperatures, ntemperatures = args[2], len(args[2])
-            conf = args[3]
+            ntypes, ntau, ntemp = len(ptypes), len(tau), len(temperature)
 
-            if ntypes != ntaus or ntypes != ntemperatures or ntemperatures != ntaus:
+            if ntypes != ntau or ntypes != ntemp or ntemp != ntau:
                 raise ValueError("Each type must have exactly one relax time - arrays must be same length")
 
-            indices_array, relax_params = [], []
-
             counter = 0
-            for n in range(conf.N):
+            for n in range(configuration.N):
                 for m in range(ntypes):
-                    if conf.ptype[n]==ptypes:
+                    if configuration.ptype[n]==ptypes:
                         indices_array.append( [counter, n] )
-                        relax_params.append( [temperatures[m], taus[m]] )
+                        relax_params.append( [temperature[m], tau[m]] )
                         counter = counter + 1
                         break
+
+        elif ptypes == None:
+            
+            ntau, npart, ntemp = len(tau), len(pindices), len(temperature)
+            
+            if ntau != npart or ntau != ntemp or npart != ntemp:
+                raise ValueError("Each particle must have exactly one relax time and temperature - arrays must be same length")
+
+            for n in range(npart):
+                indices.append([n, pindices[n]])
+                tether_params.append( [temperature(n), tau[n]] )
+ 
         else:
             raise ValueError("Incorrect number of arguments to constructor")
 
@@ -43,12 +48,10 @@ class Relaxtemp():
         self.relax_params = np.array(relax_params, dtype=np.float32)
         self.indices_array = np.array(indices_array, dtype=np.int32) 
 
-        if self.relax_params.shape[0] != self.indices_array.shape[0]:
-            raise ValueError("Length of indicies must be the same as length of relaxation parameters") 
-
         if verbose:
             print(f"{self.relax_params} \n {self.indices_array}")
 
+    
     def get_params(self, configuration, compute_plan, verbose=False):
 
         self.d_pindices = cuda.to_device(self.indices_array)
