@@ -16,12 +16,15 @@ import numpy as np
 import rumdpy as rp
 
 # Setup a default fcc configuration
-nx, ny, nz = 6, 6, 10
-rhoWall = 1.0
-rhoFluid = 0.7
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoFluid)
-configuration['m'] = 1.0
+#nx, ny, nz = 6, 6, 10
+#rhoWall = 1.0
+#rhoFluid = 0.7
+#configuration = rp.Configuration(D=3)
+#configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoFluid)
+#configuration['m'] = 1.0
+nxUnits, nyUnits, nzUnits, rhoWall, rhoFluid = 6, 6, 10, 1.0, 0.7;
+configuration = rp.make_configuration_fcc(nxUnits, nyUnits, nzUnits, rhoWall)
+
 
 # Fluid particles have type '0', wall particles '1', dummy particles '2'
 nwall, npart = 0, configuration.N
