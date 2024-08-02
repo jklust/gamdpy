@@ -67,9 +67,11 @@ class Simulation():
 
     """
 
-    def __init__(self, configuration: rp.Configuration, interactions, integrator, num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
+    def __init__(self, configuration: rp.Configuration, interactions, integrator, 
+                 num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
                  steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True):
+
         self.configuration = configuration
         if compute_plan == None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
@@ -154,6 +156,9 @@ class Simulation():
         self.scalars_list = []
         self.simbox_data_list = []
 
+        self.JIT_and_test_kernel()
+
+    def JIT_and_test_kernel(self):
         while True:
             try:
                 self.get_kernels_and_params()
@@ -166,11 +171,20 @@ class Simulation():
                 self.integrate_self(0.0, 1)
                 break
             except numba.cuda.cudadrv.driver.CudaAPIError as e:
+<<<<<<< HEAD
                 #print('Failed compute_plan : ', self.compute_plan)
                 if self.compute_plan['tp'] > 1:             # Most common problem tp is too big
                     self.compute_plan['tp'] -= 1            # ... so we reduce it and try again
                 elif self.compute_plan['gridsync'] == True: # Last resort: turn off gridsync
                     self.compute_plan['gridsync'] = False
+=======
+                print(f'Cuda error {e}')
+                print('Failed compute_plan : ', self.compute_plan)
+                if self.compute_plan['tp'] > 1:
+                    self.compute_plan['tp'] -= 1
+                elif self.compute_plan['gridsync'] == True:
+                    self.compute_plan['gridsync'] == False
+>>>>>>> 44f0ae2 (First stab at autotuner)
                 else:
                     print(f'FAILURE. Can not handle cuda error {e}')
                     exit()
@@ -211,6 +225,44 @@ class Simulation():
         # Integrator
         self.integrator_params = self.integrator.get_params(self.configuration, verbose)
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
+
+        return
+
+    def update_params(self, verbose=False):
+        # Interactions
+        _, self.interactions_params = rp.add_interactions_list(self.configuration,
+                                                                self.interactions,
+                                                                compute_plan=self.compute_plan,
+                                                                compute_stresses=self.compute_stresses,
+                                                                verbose=verbose)
+
+        # Momentum reset 
+        if self.momentum_reset != None:
+            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
+            #self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
+        else:
+            #self.momentum_reset_kernel = None
+            self.momentum_reset_params = (0,)
+
+        # Scalar saving
+        if self.output_calculator != None:
+            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
+            #self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
+        else:
+            #self.output_calculator_kernel = None
+            self.output_calculator_params = (0,)
+
+        # Configuration saving
+        if self.conf_saver != None:
+            #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
+            self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
+        else:
+            #self.conf_saver_kernel = None
+            self.conf_saver_params = (0,)
+
+        # Integrator
+        self.integrator_params = self.integrator.get_params(self.configuration, verbose)
+        #self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
 
         return
 
@@ -439,5 +491,75 @@ class Simulation():
             if self.timing_numba_blocks.shape[0] > 1:
                 st += f'TPS_sim_minus_extra : {tps_sim_minus_extra:.2e} \n'
         return st
+
+    def autotune_bruteforce(self, pbs='auto', skins='auto', tps='auto', timesteps=0, repeats=1):
+        print('compute_plan :', self.compute_plan)
+        if timesteps==0: 
+            timesteps = self.steps_per_block
+        assert timesteps<=self.steps_per_block
+        
+        pb = self.compute_plan['pb']
+        if pbs=='auto':
+            pbs = [pb//2, pb, pb*2]
+        if pbs=='default':
+            pbs = [pb,]
+        print('pbs :', pbs)
+
+        tp = self.compute_plan['tp']
+        if tps=='auto': 
+            tps = [tp - 3, tp - 2, tp - 1, tp, tp + 1, tp + 2, tp + 3,]
+        if tps=='default':
+            tps = [tp,]
+        print('tps :', tps)
+
+        skin = self.compute_plan['skin']
+        if skins=='auto':
+            skins = [skin - 0.3, skin - 0.2, skin - 0.1, skin - 0.05, skin, skin + 0.05, skin + 0.1, skin + 0.2, skin + 0.3]
+        elif skins=='default':
+            skins = [skin, ]
+        print('skins :', skins)
+            
+        
+        flag = cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS
+        cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = False
+        
+        skin_times = []
+        for pb in pbs:
+            if pb <= 256:
+                self.compute_plan['pb'] = pb
+                for tp in tps:
+                    if tp>0:
+                        self.compute_plan['tp'] = tp
+                        gridsync = self.compute_plan['gridsync']
+                        #print(f'Trying: pb={pb}, tp={tp}')
+                        self.JIT_and_test_kernel()
+                        # does kernel run without adjustment?
+                        if self.compute_plan['tp'] != tp or self.compute_plan['gridsync'] != gridsync: 
+                            break
+                        #print('Seems to work, so looping over skins...')
+                        min_time = 1e9
+                        for skin in skins:
+                            if skin>0:
+                                self.compute_plan['skin'] = skin
+                                self.update_params()
+                                start = cuda.event()
+                                end = cuda.event()
+                                start.record()
+                                self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
+                                for i in range(repeats):
+                                    self.integrate_self(0.0, timesteps)
+                                end.record()
+                                end.synchronize()
+                                time_elapsed = cuda.event_elapsed_time(start, end)
+                                if time_elapsed < min_time:
+                                    min_time = time_elapsed
+                                    min_skin = skin
+                                skin_times.append(time_elapsed)
+                                #print(self.compute_plan['tp'], skin, skin_times[-1])
+                        max_TPS = repeats * timesteps / min_time * 1000
+                        print(pb, tp, min_skin, min_time, max_TPS)            
+        
+        cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
+
 
 
