@@ -1,4 +1,5 @@
 #  **rumdpy [rum-dee-pai]** 
+
 ## Roskilde University Molecular Dynamics Python Package
 
 Rumdpy implements molecular dynamics on GPU's in Python, relying heavily on the numba package ([numba.org](https://numba.pydata.org/)) which does JIT (Just-In-Time) compilation both to CPU and GPU (cuda). 
@@ -41,103 +42,6 @@ Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up
 
 ### 5. Evaluator
 Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
-
-
-# Installation
-
-## For users
-
-```sh
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
-```
-
-## Installing rumdpy on linux from source
-
-To get the latest developers version:
-
-```sh
-cd [some_directory]
-git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/  # Clone latest developers version
-cd rumdpy-dev
-python3 -m venv venv  # Create virtual enviroment
-. venv/bin/activate   # ... and activate
-pip install -e .      # Install rumdpy 
-```
-
-To update for the latest version on GitLab:
-
-```sh
-git pull
-```
-
-## Installing rumdpy on windows using Windows Subsystem For Linux (WSL)  [in progress]
-
-### Install WSL
-Open PowerShell or Windows Command Prompt in administrator mode by right-clicking and selecting "Run as administrator", enter the command
-
-```sh
-wsl --install
-```
-
-press enter and then restart your machine. 
-The default installation is Ubuntu, for others check: https://learn.microsoft.com/en-us/windows/wsl/install
-
-### Install python and pip on WSL
-
-- open Windows Command Prompt
-- in the tab bar click on "v" and select ubuntu
-```sh 
-sudo apt-get update
-sudo apt-get install python3.10
-sudo apt-get install pip
-```
-
-### Install miniconda 
-
-See https://docs.anaconda.com/miniconda/
-
-```sh
-mkdir -p ~/miniconda3
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-rm -rf ~/miniconda3/miniconda.sh
-~/miniconda3/bin/conda init bash
-```
-
-### Install cuda
-
-```sh
-miniconda3/condabin/conda install cudatoolkit
-sudo apt install nvidia-cuda-toolkit
-```
-
-- modify .bashrc adding: export LD_LIBRARY_PATH="/usr/lib/wsl/lib/" from https://github.com/numba/numba/issues/7104
-
-
-### Install rumdpy
-
-```sh
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
-```
-
-## Installing rumdpy on windows using Anaconda
-
-WARNING: due to naming of the integrators the package will not work without renaming/editing some files (awaiting fix)
-
-### Install Anaconda
-
-### Install rumdpy (and pip) using Powershell Prompt in Anaconda
-
-- open Anaconda Powershell as admin (from search)
-
-```sh 
-conda update -n base -c defaults conda
-conda install anaconda::pip
-conda install anaconda::git
-conda config --set channel_priority flexible
-conda install cudatoolkit
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
-```
 
 # Info for developers
 
@@ -188,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Post analysis for multicomponents, Lorenzo
 - [ ] NVU integrator (tests missing), Mark
 
-## TODO or decide not necesarry, before paper
+## TODO or decide not necessary, before paper
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
 - [ ] Settle on io format
 - [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
