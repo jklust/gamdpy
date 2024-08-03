@@ -1,11 +1,11 @@
 
 
 def save_configuration(configuration, filestr:str, format="xyz", append=False):        
-    """
-    Saves the current system configuration to file. (Helpful for, e.g., VMD
-    visualization)
-    
-    This version only supports the standard xyz-format
+    """ Saves configuration to file.
+
+    Helpful for, e.g., VMD visualization
+    This current version only supports the standard xyz-format.
+
     """
 
     if format=="xyz":     

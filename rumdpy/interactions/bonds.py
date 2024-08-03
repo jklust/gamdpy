@@ -5,6 +5,27 @@ from numba import cuda
 from .make_fixed_interactions import make_fixed_interactions   # bonds is an example of 'fixed' interactions
 
 class Bonds():
+    """ Fixed bond interactions between particles, such as harmonic bonds or FENE bonds.
+
+    Parameters
+    ----------
+
+    bond_potential : function
+        A function that takes the distance between two particles and the bond type as arguments and returns the potential energy, force and laplacian.
+        See :func:rumdpy.potential_functions.harmonic_bond_function for an example.
+
+    potential_params : list
+        A list of parameters for each bond type. Each entry is a list of parameters for a specific bond type.
+
+    indices : list
+        A list of lists, each containing the indices of the two particles involved in a bond and the bond
+
+    See Also
+    --------
+
+    rumdpy.harmonic_bond_function : Harmonic bond potential
+
+    """
     def __init__(self, bond_potential, potential_params, indices):
         self.bond_potential = bond_potential
         self.potential_params = potential_params

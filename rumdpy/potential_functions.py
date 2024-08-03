@@ -9,6 +9,8 @@ from numba import cuda
 def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
     """ The 12-6 Lennard-Jones potential
 
+    See :func:`rumdpy.apply_shifted_potential_cutoff` for a usage example.
+
     .. math::
 
         u(r) = A_{12} r^{-12} + A_6 r^{-6}
@@ -21,6 +23,17 @@ def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
 
     params : array-like
         A₁₂, A₆
+
+    Returns
+    -------
+
+    u : float
+        Potential energy
+    s : float
+        Force multiplier, -u'(r)/r
+    umm : float
+        Second derivative of potential energy
+
     """
     A12 = params[0]  #     Um(r) =    -12*A12*r**-13 -   6*A6*r**-7
     A6 = params[1]  #     Umm(r) = 13*12*A12*r**-14 + 7*6*A6*r**-8
@@ -39,6 +52,9 @@ def LJ_12_6_sigma_epsilon(dist, params):
     
         u(r) = 4\\epsilon(   (r/\\sigma)^{-12} -   (r/\\sigma)^{-6} )
     
+    This is the same as the :func:`rumdpy.LJ_12_6` potential, 
+    but with :math:`\\sigma` (sigma) and :math:`\\epsilon` (epsilon) as parameters.
+    
     Parameters
     ----------
     
@@ -47,16 +63,7 @@ def LJ_12_6_sigma_epsilon(dist, params):
         
     params : array-like
         sigma, epsilon
-    
-    Returns
-    -------
-    
-    u : float
-        Potential energy
-    s : float
-        Force multiplier, -u'(r)/r
-    umm : float
-        Second derivative of potential energy
+
     """  # LJ:  U(r)  =     4*epsilon(   (r/sigma)**-12 +   (r/sigma)**-6 )
     sigma = params[0]  #      Um(r) =   -24*epsilon( 2*(r/sigma)**-13 +   (r/sigma)**-7 )/sigma
     epsilon = params[1]  #      Umm(r) =   24*epsilon(26*(r/sigma)**-14 + 7*(r/sigma)**-8 )/sigma**2
@@ -73,11 +80,13 @@ def LJ_12_6_sigma_epsilon(dist, params):
 
 def LJ_12_6_params_from_sigma_epsilon_cutoff(sigma: float, epsilon: float, cutoff: float) -> np.ndarray:
     """ Convert LJ_12_6_sigma_epsilon (sigma, epsilon, and cutoff) to LJ_12_6 parameters (A12, A6, cutoff).
+
     Get 'params' array for LJ_12_6 from sigma, epsilon, and cutoff arrays (num_types, num_types)
 
     .. math::
 
-        4\\epsilon( (\\sigma/r)^{12 - (\\sigma/r)^6) = 4\\epsilon*\\sigma^{12}*r^{-12} - 4\\epsilon*\\sigma^6r^{-6}
+        4\\epsilon( (\\sigma/r)^{12} - (\\sigma/r)^6) = 4\\epsilon\\sigma^{12}r^{-12} - 4\\epsilon\\sigma^6r^{-6}
+
     """
     sigma = np.array(sigma, dtype=np.float32)
     epsilon = np.array(epsilon, dtype=np.float32)
@@ -90,6 +99,47 @@ def LJ_12_6_params_from_sigma_epsilon_cutoff(sigma: float, epsilon: float, cutof
     params = np.moveaxis(params, source=0, destination=2)
 
     return params
+
+
+def harmonic_bond_function(dist: float, params: np.ndarray) -> tuple:
+    """ Harmonic bond potential
+
+    .. math::
+
+        u(r) = \\frac{1}{2} k (r - r_0)^2
+
+    Parameters
+    ----------
+
+    dist : float
+        Distance between particles
+
+    params : array-like
+        r₀, k
+
+    Returns
+    -------
+
+    u : float
+        Potential energy
+    s : float
+        Force multiplier, -u'(r)/r
+    umm : float
+        Second derivative of potential energy
+
+    See Also
+    --------
+
+    rumdpy.Bonds
+
+    """
+    length = params[0]
+    strength = params[1]
+
+    u = numba.float32(0.5) * strength * (dist - length) ** 2
+    s = -strength * (dist - length) / dist
+    umm = strength
+    return u, s, umm  # U(r), s == -U'(r)/r, U''(r)
 
 
 def make_LJ_m_n(m: float, n: float) -> callable:
@@ -158,41 +208,6 @@ def make_IPL_n(n: float) -> callable:
     return IPL_n
 
 
-def harmonic_bond_function(dist: float, params: np.ndarray) -> tuple:
-    """ Harmonic bond potential
-
-    .. math::
-
-        u(r) = \\frac{1}{2} k (r - r_0)^2
-
-    Parameters
-    ----------
-
-    dist : float
-        Distance between particles
-
-    params : array-like
-        r₀, k
-
-    Returns
-    -------
-
-    u : float
-        Potential energy
-    s : float
-        Force multiplier, -u'(r)/r
-    umm : float
-        Second derivative of potential energy
-    """
-    length = params[0]
-    strength = params[1]
-
-    u = numba.float32(0.5) * strength * (dist - length) ** 2
-    s = -strength * (dist - length) / dist
-    umm = strength
-    return u, s, umm  # U(r), s == -U'(r)/r, U''(r)
-
-
 # Helper functions
 
 def make_potential_function_from_sympy(ufunc, param_names) -> callable:
@@ -241,7 +256,10 @@ def make_potential_function_from_sympy(ufunc, param_names) -> callable:
 def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
     """ Apply shifted potential cutoff to a pair-potential function
 
-        Note: calls original potential function twice, avoiding changes to params
+        If the input pair potential is :math:`u(r)`,
+        then the shifted potential is :math:`u(r) - u(r_{c})`, where :math:`r_c` is the cutoff distance.
+
+        Note: calls original potential function twice, avoiding changes to params.
 
         Parameters
         ----------
@@ -256,28 +274,44 @@ def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
         pair_potential : callable
             A function where shifted_potential_cutoff is applied to original function
 
+        Example
+        -------
+
+        The following example demonstrates how to use this function to set up the Lenard-Jones 12-6 potential
+        truncated and shifted to zero at the cutoff distance of 2.5:
+
+        >>> import rumdpy as rp
+        >>> pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
+        >>> A12, A6, cut = 1.0, 1.0, 2.5
+        >>> pair_pot = rp.PairPotential2(pair_func, params=[A12, A6, cut], max_num_nbs=1000)
+
     """
-    pair_potential = numba.njit(pair_potential)
+    pair_pot = numba.njit(pair_potential)
 
     @numba.njit
     def potential(dist, params):
         cut = params[-1]
-        u, s, umm = pair_potential(dist, params)
-        u_cut, s_cut, umm_cut = pair_potential(cut, params)
+        u, s, umm = pair_pot(dist, params)
+        u_cut, s_cut, umm_cut = pair_pot(cut, params)
         u -= u_cut
         return u, s, umm
 
     return potential
 
 
-def apply_shifted_force_cutoff(pairpotential):  # Cut-off by computing potential twice, avoiding changes to params
+def apply_shifted_force_cutoff(pair_potential):  # Cut-off by computing potential twice, avoiding changes to params
     """ Apply shifted force cutoff to a pair-potential function
+
+    If the input pair potential is :math:`u(r)`, then the shifted force potential is
+    :math:`u(r) - u(r_{c}) + s(r_{c})(r - r_{c})`, where :math:`r_c` is the cutoff distance,
+    and :math:`s(r) = -u'(r)/r`.
+
 
     Note: calls original potential function  twice, avoiding changes to params
 
     Parameters
     ----------
-        pairpotential: callable
+        pair_potential: callable
             a function that calculates a pair-potential:
             u, s, umm =  pair_potential(dist, params)
 
@@ -286,14 +320,15 @@ def apply_shifted_force_cutoff(pairpotential):  # Cut-off by computing potential
 
         potential: callable
             a function where shifted force cutoff is applied to original function
+
     """
-    pairpotential = numba.njit(pairpotential)
+    pair_pot = numba.njit(pair_potential)
 
     @numba.njit
     def potential(dist, params):
         cut = params[-1]
-        u, s, umm = pairpotential(dist, params)
-        u_cut, s_cut, umm_cut = pairpotential(cut, params)
+        u, s, umm = pair_pot(dist, params)
+        u_cut, s_cut, umm_cut = pair_pot(cut, params)
         u -= u_cut - s_cut * cut * (dist - cut)
         #u -= u_cut - s_cut*dist*(dist-cut)
         s -= s_cut

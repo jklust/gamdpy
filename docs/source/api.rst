@@ -1,40 +1,22 @@
 API
-===
+###
 
-rumdpy (mainmodule)
--------------------
-
-.. automodule:: rumdpy
-   :members:
-   :undoc-members:
 
 The Simulation Class
-^^^^^^^^^^^^^^^^^^^^
+********************
 
 .. autoclass:: rumdpy.Simulation
    :members:
    :undoc-members:
 
 The Configuration Class
-^^^^^^^^^^^^^^^^^^^^^^^
+***********************
 
 .. autoclass:: rumdpy.Configuration
    :members:
 
-The Simbox Class
-^^^^^^^^^^^^^^^^
-
-.. autoclass:: rumdpy.Simbox
-   :members:
-
-The Evaluater Class
-^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: rumdpy.Evaluater
-   :members:
-
 Integrators
------------
+***********
 
 .. autoclass:: rumdpy.NVE
    :members:
@@ -58,23 +40,66 @@ Integrators
    :members:
 
 Interactions
--------------------
+************
 
 Pair potentials
-^^^^^^^^^^^^^^^
+===============
 
-.. automodule:: rumdpy.potential_functions
-   :members:
+Functions
+---------
+
+.. autofunction:: rumdpy.LJ_12_6
+
+.. autofunction:: rumdpy.LJ_12_6_sigma_epsilon
+
+.. autofunction:: rumdpy.harmonic_bond_function
+
+Generators
+----------
+
+Generators return a function that can be used to calculate the potential energy and the force between two particles.
+
+.. autofunction:: rumdpy.make_LJ_m_n
+
+.. autofunction:: rumdpy.make_IPL_n
+
+.. autofunction:: rumdpy.make_potential_function_from_sympy
+
+Modifies
+--------
+
+Modifies are typically used to smoothly truncate the potential at a certain distance.
+
+.. autofunction:: rumdpy.apply_shifted_potential_cutoff
+
+.. autofunction:: rumdpy.apply_shifted_force_cutoff
 
 Fixed interactions
-^^^^^^^^^^^^^^^^^^
+==================
+
+Classes
+-------
+
+.. autoclass:: rumdpy.Bonds
+
+.. autoclass:: rumdpy.Tether
+
+.. autoclass:: rumdpy.Gravity
+
+.. autoclass:: rumdpy.Relaxtemp
+
+Generators
+----------
 
 .. autofunction:: rumdpy.make_planar_calculator
 
 .. autofunction:: rumdpy.setup_planar_interactions
 
+.. autofunction:: rumdpy.make_fixed_interactions
+
+
 Calculators
------------
+***********
 
 .. autoclass:: rumdpy.CalculatorRadialDistribution
    :members:
@@ -84,15 +109,17 @@ Calculators
 
 
 Tools and helper functions
---------------------------
+**************************
 
-.. autofunction:: rumdpy.get_default_sim
+Mathematical functions
+======================
 
-.. autofunction:: rumdpy.generate_random_velocities
+.. autofunction:: rumdpy.make_function_constant
 
-.. autofunction:: rumdpy.generate_fcc_positions
+Input/output
+============
 
-.. autofunction:: rumdpy.make_configuration_fcc
+.. autofunction:: rumdpy.tools.save_configuration
 
 .. autofunction:: rumdpy.configuration_to_hdf5
 
@@ -103,5 +130,16 @@ Tools and helper functions
 .. autofunction:: rumdpy.configuration_from_rumd3
 
 .. autofunction:: rumdpy.configuration_to_lammps
+
+Miscellaneous
+=============
+
+.. autofunction:: rumdpy.get_default_sim
+
+.. autofunction:: rumdpy.generate_random_velocities
+
+.. autofunction:: rumdpy.generate_fcc_positions
+
+.. autofunction:: rumdpy.make_configuration_fcc
 
 .. autofunction:: rumdpy.tools.make_lattice

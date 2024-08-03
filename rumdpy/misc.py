@@ -11,6 +11,7 @@ import os
 
 
 def make_function_constant(value):
+    """ Return a function that returns a constant value. """
     value = np.float32(value)
     def function(x):
         return value

@@ -1,12 +1,12 @@
 
 import numpy as np
-import numba
-import math
 from numba import cuda
-from .make_fixed_interactions import make_fixed_interactions   
-import rumdpy as rp
 
-class Gravity():
+from .make_fixed_interactions import make_fixed_interactions
+
+
+class Gravity:
+    """ Gravity force on particles. """
 
     def __init__(self, *args, verbose=False):
 

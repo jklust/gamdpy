@@ -11,7 +11,7 @@ from .make_fixed_interactions import \
 #########################################################################
 
 def make_planar_calculator(configuration, potential_function) -> callable:
-    """ Returns a function that calculates a planar inteaction for particles
+    """ Returns a function that calculates a planar interaction for particles
 
     This function is used to create a planar interaction such as a smooth wall, gravity or an electric field.
 

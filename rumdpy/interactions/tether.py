@@ -1,13 +1,13 @@
 
-import numpy as np
 import numba
-import math
+import numpy as np
 from numba import cuda
-from .make_fixed_interactions import make_fixed_interactions   # tether is an example of 'fixed' interactions
-import rumdpy as rp
+
+from .make_fixed_interactions import make_fixed_interactions  # tether is an example of 'fixed' interactions
 
 
-class Tether():
+class Tether:
+    """ Connect particles to harmonic tethers anchored to points in space. """
 
     def __init__(self, spring_constants, configuration, pindices=None, anchor_points=None, ptypes=None, verbose=False):
 
