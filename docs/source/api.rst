@@ -14,6 +14,7 @@ The Configuration Class
 
 .. autoclass:: rumdpy.Configuration
    :members:
+   :undoc-members:
 
 Integrators
 ***********
@@ -114,7 +115,14 @@ Tools and helper functions
 Mathematical functions
 ======================
 
+The below returns functions that can be executed fast in a GPU kernel.
+As an example, they can be used to set a time-dependent target temperature.
+
 .. autofunction:: rumdpy.make_function_constant
+
+.. autofunction:: rumdpy.make_function_ramp
+
+.. autofunction:: rumdpy.make_function_sin
 
 Input/output
 ============
@@ -134,12 +142,7 @@ Input/output
 Miscellaneous
 =============
 
+.. autofunction:: rumdpy.get_default_compute_plan
+
 .. autofunction:: rumdpy.get_default_sim
 
-.. autofunction:: rumdpy.generate_random_velocities
-
-.. autofunction:: rumdpy.generate_fcc_positions
-
-.. autofunction:: rumdpy.make_configuration_fcc
-
-.. autofunction:: rumdpy.tools.make_lattice
