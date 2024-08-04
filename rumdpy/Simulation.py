@@ -171,20 +171,11 @@ class Simulation():
                 self.integrate_self(0.0, 1)
                 break
             except numba.cuda.cudadrv.driver.CudaAPIError as e:
-<<<<<<< HEAD
                 #print('Failed compute_plan : ', self.compute_plan)
                 if self.compute_plan['tp'] > 1:             # Most common problem tp is too big
                     self.compute_plan['tp'] -= 1            # ... so we reduce it and try again
                 elif self.compute_plan['gridsync'] == True: # Last resort: turn off gridsync
                     self.compute_plan['gridsync'] = False
-=======
-                print(f'Cuda error {e}')
-                print('Failed compute_plan : ', self.compute_plan)
-                if self.compute_plan['tp'] > 1:
-                    self.compute_plan['tp'] -= 1
-                elif self.compute_plan['gridsync'] == True:
-                    self.compute_plan['gridsync'] == False
->>>>>>> 44f0ae2 (First stab at autotuner)
                 else:
                     print(f'FAILURE. Can not handle cuda error {e}')
                     exit()
@@ -524,6 +515,7 @@ class Simulation():
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = False
         
         skin_times = []
+        total_min_time = 1e9
         for pb in pbs:
             if pb <= 256:
                 self.compute_plan['pb'] = pb
@@ -557,7 +549,17 @@ class Simulation():
                                 skin_times.append(time_elapsed)
                                 #print(self.compute_plan['tp'], skin, skin_times[-1])
                         max_TPS = repeats * timesteps / min_time * 1000
-                        print(pb, tp, min_skin, min_time, max_TPS)            
+                        print(pb, tp, min_skin, min_time, max_TPS)
+                    if min_time < total_min_time:
+                        total_min_time = min_time
+                        total_min_skin = min_skin
+                        total_min_pb = pb
+                        total_min_tp = tp    
+
+        self.compute_plan['pb'] = total_min_pb
+        self.compute_plan['tp'] = total_min_tp
+        self.compute_plan['skin'] = total_min_skin
+        print('Final compute_plan :', self.compute_plan)
         
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
