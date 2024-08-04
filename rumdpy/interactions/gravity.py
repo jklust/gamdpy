@@ -7,27 +7,32 @@ from .make_fixed_interactions import make_fixed_interactions
 
 class Gravity:
     """ Gravity force on particles. """
+    
+    def __init__(self, force, configuration, pindices=None, ptype = None, verbose=False):
 
-    def __init__(self, *args, verbose=False):
+        force_array, indices_array = [], []
 
-        nargin = len(args)
+        if pindices == None:
+            
+            if len(force) != len(ptype):
+                raise ValueError("Force and particle type arrays must have same length")
 
-        if nargin == 2:
-            force_array = args[0]
-            indices_array = args[1]
-
-        elif nargin == 3:
-            ptype = args[0] # e.g. 0
-            force = args[1] 
-            conf = args[2] 
-
-            force_array, indices_array = [], []
             counter = 0
-            for n in range(conf.N):
-                if conf.ptype[n]==ptype:
+            for n in range(configuration.N):
+                if configuration.ptype[n]==ptype:
                     indices_array.append( [counter, n] )
                     force_array.append( force )
                     counter = counter + 1
+
+        elif ptype == None:
+
+            if len(force) != len(pindices):
+                raise ValueError("Force and particle index arrays must have same length")
+
+            for n in range(len(pindices)):
+                indices_array.append( [n, pindices[n]] )
+                force_array.append( force[n] )
+
         else:
             raise ValueError("Incorrect number of arguments to constructor")
 

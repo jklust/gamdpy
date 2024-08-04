@@ -54,7 +54,7 @@ tether = rp.Tether(ptypes=[1], spring_constants=[300.0], configuration=configura
 # Alternative instantiation grav = rp.Gravity(<index array>, <force>, verbose=False)
 # where index array: [row index in param, particle/atom index], force:  scalar force
 # Currently the force can only act in the x-direction
-grav = rp.Gravity([0], [0.01], configuration)
+grav = rp.Gravity(ptype=[0], force=[0.01], configuration=configuration)
 
 # Temp relaxation for wall particles
 relax = rp.Relaxtemp(ptypes=[1], tau=[0.01], temperature=[2.0], configuration=configuration)
@@ -81,7 +81,7 @@ compute_plan = rp.get_default_compute_plan(configuration)
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pair_pot, tether, grav, relax], integrator,
                     num_timeblocks=100, steps_per_timeblock=64,
-                    steps_between_momentum_reset=0, storage='LJ_T0.70.h5', compute_plan=compute_plan)
+                    steps_between_momentum_reset=0, storage='memory', compute_plan=compute_plan)
 
 prof = rp.CalculatorHydrodynamicProfile(configuration, 0)
 
