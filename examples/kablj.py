@@ -28,7 +28,7 @@ sig = [[1.00, 0.80],
 eps = [[1.00, 1.50],
        [1.50, 0.50]]
 cut = np.array(sig)*2.5
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator
 dt = 0.004  # timestep

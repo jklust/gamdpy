@@ -119,7 +119,7 @@ configuration.randomize_velocities(T=0.7)
 # Setup pair potential: Single component Yukawa system
 pair_func = rp.apply_shifted_potential_cutoff(yukawa)  # Note: We use the above yukawa function here
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator: NVT
 integrator = rp.integrators.NVE(dt=0.005)

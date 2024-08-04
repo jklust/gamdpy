@@ -34,7 +34,7 @@ eps = [[1.000, 0.342],
        [0.342, 0.117]]
 cut = np.array(sig) * 2.5
 exclusions = bonds.get_exclusions(configuration)
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 # Make integrator
 dt = 0.002  # timestep

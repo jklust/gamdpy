@@ -28,7 +28,7 @@ configuration.randomize_velocities(T=my_T)
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # NVT equilibration for calculation of c_V and Thermal pressure coefficient
 # NOTE: steps_per_timeblock=15 generate a crash

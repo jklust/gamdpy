@@ -40,9 +40,9 @@ class CalculatorWidomsParticleInsertion:
         # Raise error if more than one interaction
         if len(self.sim.interactions) != 1:
             raise AttributeError('The simulation must have a pair interaction')
-        pair_pot: rp.PairPotential2 = self.sim.interactions[0]  # Assume only one pair potential
+        pair_pot: rp.PairPotential = self.sim.interactions[0]  # Assume only one pair potential
         # Assert that it is a pair potential
-        if not isinstance(pair_pot, rp.PairPotential2):
+        if not isinstance(pair_pot, rp.PairPotential):
             raise AttributeError('The pair potential must be a PairPotential object')
         pair_pot_func = pair_pot.pairpotential_function
 
@@ -81,7 +81,7 @@ configuration.randomize_velocities(T=0.7)
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=1.0, tau=0.2, dt=0.005)

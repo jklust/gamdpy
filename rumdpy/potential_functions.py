@@ -283,7 +283,7 @@ def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
         >>> import rumdpy as rp
         >>> pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
         >>> A12, A6, cut = 1.0, 1.0, 2.5
-        >>> pair_pot = rp.PairPotential2(pair_func, params=[A12, A6, cut], max_num_nbs=1000)
+        >>> pair_pot = rp.PairPotential(pair_func, params=[A12, A6, cut], max_num_nbs=1000)
 
     """
     pair_pot = numba.njit(pair_potential)

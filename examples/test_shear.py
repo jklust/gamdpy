@@ -12,7 +12,7 @@ run_NVT = False # True #
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+pairpot = rp.PairPotential(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
 temperature_low = 0.700
 gridsync = True

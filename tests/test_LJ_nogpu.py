@@ -20,7 +20,7 @@ class Test(unittest.TestCase):
         # Make pair potentials
         pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
         sig, eps, cut = 1.0, 1.0, 2.5
-        pairpot1 = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+        pairpot1 = rp.PairPotential(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
         pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
         sig = [[1.00, 0.80],
@@ -28,7 +28,7 @@ class Test(unittest.TestCase):
         eps = [[1.00, 1.50],
                [1.50, 0.50]]
         cut = np.array(sig)*2.5
-        pairpot2 = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+        pairpot2 = rp.PairPotential(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
         # Make integrators
         #dt = 0.005 # timestep 

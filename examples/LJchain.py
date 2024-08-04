@@ -23,7 +23,7 @@ bonds = rp.Bonds(bond_potential, bond_params, bond_indices)
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 exclusions = bonds.get_exclusions(configuration)
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 # Define molecules (to be implemented)
 molecules_A = [np.arange(0, 10) + j for j in range(0, configuration.N // 2, 10)]

@@ -33,7 +33,7 @@ pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
 eps = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
 cut = np.array(sig)*2.5 
-pair_pot = rp.PairPotential2(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Temperature
 configuration.randomize_velocities(T=2.0)

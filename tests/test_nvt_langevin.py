@@ -25,7 +25,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     # Setup pair potential.
     pairfunc = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
     sig, eps, cut = 1.0, 1.0, 2.5
-    pairpot = rp.PairPotential2(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
+    pairpot = rp.PairPotential(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
     # Setup integrator
     dt = 0.005
