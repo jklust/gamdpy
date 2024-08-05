@@ -1,5 +1,7 @@
 #  **rumdpy [rum-dee-pai]** 
 
+User Guide (precarious): [User Guide](http://dirac.ruc.dk/~urp/2024/rumdpy/)
+
 ## Roskilde University Molecular Dynamics Python Package
 
 Rumdpy implements molecular dynamics on GPU's in Python, relying heavily on the numba package ([numba.org](https://numba.pydata.org/)) which does JIT (Just-In-Time) compilation both to CPU and GPU (cuda). 
