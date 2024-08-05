@@ -1,6 +1,8 @@
-""" Minimal example of a Simulation using rumdpy.
+""" Minimal example of a Simulation using rumdpy on CPU.
 
 Simulation of a Lennard-Jones crystal in the NVT ensemble.
+This simulation uses the numba CUDA simulator to run on CPU:
+https://numba.pydata.org/numba-doc/dev/cuda/simulator.html
 
 """
 import os

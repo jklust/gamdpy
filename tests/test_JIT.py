@@ -35,6 +35,7 @@ def test_JIT():
                        rp.integrators.NVE_Toxvaerd(dt=dt), 
                        rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt), 
                        rp.integrators.NVT_Langevin(temperature=temperature, alpha=0.2, dt=dt, seed=2023), 
+                       rp.integrators.NPT_Atomic  (temperature=temperature, tau=0.4, pressure=pressure, tau_p=20, dt=dt),
                        rp.integrators.NPT_Langevin(temperature=temperature, pressure=pressure, 
                                                     alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001, 
                                                     volume_velocity=0.0, barostatModeISO = True , boxFlucCoord = 2,
@@ -49,7 +50,7 @@ def test_JIT():
                                         steps_between_momentum_reset=100,
                                         storage='memory')
                     print(sim.compute_plan)
-                    sim.run()
                     
 if __name__ == '__main__':
      test_JIT()
+

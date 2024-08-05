@@ -1,7 +1,7 @@
 """ Consistency check for NPT integrators.
 
 Simulation of a Lennard-Jones liquid in the NPT ensemble.
-It`s possible to switch between Langevin and Atomic NPT integrators.
+It's possible to switch between Langevin and Atomic NPT integrators.
 This script verifies that several thermodynamics quantity are properly produced.
 
 """
@@ -15,10 +15,12 @@ flag = "Atomic"
 my_T, my_rho, my_p = 2.0, 0.754289412611, 4.7     # Pressure should be P=4.7 for T=2.0 at this density
 
 # Choose integrator
-match flag:
-    case "Atomic"  : integrator = rp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
-    case "Langevin": integrator = rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=TODO, alpha_baro=TODO, mass_baro=TODO,
-                                                              volume_velocity=TODO, barostatModeISO=True, boxFlucCoord=TODO, dt=0.001, seed=TODO)
+if flag=="Atomic":
+    integrator = rp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
+elif flag=="Langevin":
+    rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001,
+                                                             volume_velocity=0.0, barostatModeISO=True, boxFlucCoord=2, dt=0.001, seed=2023)
+
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
@@ -31,7 +33,6 @@ sig, eps, cut = 1.0, 1.0, 2.5
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # NVT equilibration for calculation of c_V and Thermal pressure coefficient
-# NOTE: steps_per_timeblock=15 generate a crash
 integratorNVT = rp.integrators.NVT(temperature=my_T, tau=0.2, dt=0.001)
 sim = rp.Simulation(configuration, pair_pot, integratorNVT,
                     num_timeblocks=8, steps_per_timeblock=16384,

@@ -1,7 +1,7 @@
 """ Minimal example of a Simulation using rumdpy.
 
 Simulation of a Lennard-Jones liquid in the NPT ensemble.
-It`s possible to switch between Langevin and Atomic NPT integrators.
+It's possible to switch between Langevin and Atomic NPT integrators.
 
 """
 
@@ -16,14 +16,14 @@ my_T, my_rho, my_p = 2.0, 0.754289412611, 4.7     # Pressure should be P=4.7 for
 # Choose integrator
 #match flag:
 #    case "Atomic"  : integrator = rp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
-#    case "Langevin": integrator = rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=TODO, alpha_baro=TODO, mass_baro=TODO,
-#                                                              volume_velocity=TODO, barostatModeISO=True, boxFlucCoord=TODO, dt=0.001, seed=TODO)
+#    case "Langevin": integrator = rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001,
+#                                                              volume_velocity=0.0, barostatModeISO=True, boxFlucCoord=2, dt=0.001, seed=2023)
 
 if flag=="Atomic":
     integrator = rp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
 elif flag=="Langevin":
-    rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=TODO, alpha_baro=TODO, mass_baro=TODO,
-                                                             volume_velocity=TODO, barostatModeISO=True, boxFlucCoord=TODO, dt=0.001, seed=TODO)
+    rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001,
+                                                             volume_velocity=0.0, barostatModeISO=True, boxFlucCoord=2, dt=0.001, seed=2023)
 
 
 print(f"\nRunning an NPT simulation using the integrator NPT_{flag} at (P, T) = ({my_p}, {my_T})\n")
