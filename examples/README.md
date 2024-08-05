@@ -7,17 +7,17 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [minimal.py](minimal.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NVT integrator. 
 - [minimal_cpu.py](minimal_cpu.py) : Like minimal.py but running on the cpu using numba CUDA simulator.
 - [minimal_NPT.py](minimal_NPT.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NPT integrators.
-- [blocks.py](blocks.py) : Like minimal.py but specifying directly how simulation are performed in blocks.
+- [blocks.py](blocks.py) : Like minimal.py but specifying directly how a simulation is performed in blocks.
 
 ## Analysis
 
 - [thermodynamics.py](thermodynamics.py) : Calculate thermodynamic properties.
 - [isochore.py](isochore.py) : Performing several simulations in one script, here an isochore.
-- [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), usefull when a lot of short simulations are performed.
+- [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), useful when a lot of short simulations are performed.
 - [test_stress.py](test_stress.py) : Like blocks.py but calculates also the stress tensor and prints it after each block.
 - [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
 - [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'.
-- [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamics quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
+- [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
 
 ## Atomistic models
 
@@ -30,7 +30,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 
 ## Molecular models
 
-- [ASD.py](ASD.py) : ASymmetric Dumbbels (toy model of toluene).
+- [ASD.py](ASD.py) : ASymmetric Dumbbells (toy model of toluene).
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
 
 ## Input and output

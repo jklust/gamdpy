@@ -53,9 +53,9 @@ if run_NVT:
     for block in sim_NVT.timeblocks():
         print(block)
         print(sim_NVT.status(per_particle=True))
-        calc_rdf.update()
+        #calc_rdf.update()
 
-        rdf = calc_rdf.read()
+    #rdf = calc_rdf.read()
 
     # save both in hdf5 and rumd-3 formats
     rp.configuration_to_hdf5(configuration, 'LJ_cooled_0.70.h5')

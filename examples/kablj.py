@@ -19,7 +19,7 @@ configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=1.6)
 configuration.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
-#configuration['r'][27,2] += 0.01 # Pertube z-coordinate of particle 27
+#configuration['r'][27,2] += 0.01 # Perturb z-coordinate of particle 27
 
 # Setup pair potential: Binary Kob-Andersen LJ mixture.
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
