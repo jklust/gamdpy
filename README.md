@@ -1,6 +1,6 @@
 #  **rumdpy [rum-dee-pai]** 
 
-User Guide (precarious): [User Guide](http://dirac.ruc.dk/~urp/2024/rumdpy/)
+User Guide: [User Guide](http://dirac.ruc.dk/~urp/2024/rumdpy/)
 
 ## Roskilde University Molecular Dynamics Python Package
 
