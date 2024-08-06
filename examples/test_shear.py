@@ -23,13 +23,6 @@ if run_NVT:
     configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
     configuration.randomize_velocities(T=2.0)
 
-    # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
-                            num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                            steps_between_momentum_reset=100,
-                            storage='cool.h5', compute_plan=compute_plan)
-    
-
 
     # Setup integrator to melt the crystal
     dt = 0.005
@@ -45,7 +38,7 @@ if run_NVT:
     # Set simulation up. Total number of timesteps: num_blocks * steps_per_block
     sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
                             num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                            storage='cool.h5', compute_plan=compute_plan)
+                            storage='cool.h5')
 
 
     calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
