@@ -1,6 +1,7 @@
 """ Example of a Simulation using rumdpy, using explicit blocks.
 
-Simulation of a Lennard-Jones crystal in the NVT ensembl with Lees-Edwards boundary conditions
+Simulation of a Lennard-Jones crystal in the NVT ensemble followed by shearing with SLLOD 
+and Lees-Edwards boundary conditions
 
 """
 import numpy as np
