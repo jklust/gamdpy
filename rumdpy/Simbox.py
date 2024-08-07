@@ -16,6 +16,7 @@ class Simbox():
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
         self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume = self.make_simbox_functions()
+        self.dist_moved_sq_function = self.dist_sq_function
         return
 
     def copy_to_device(self):
@@ -84,10 +85,10 @@ class Simbox_LeesEdwards(Simbox):
         self.box_shift = box_shift
         print('Simbox_LeesEdwards, box_shift=', box_shift)
 
-        # have already called base class Simox.make_simbox_functions, and can re-use the volume
-        # so this version only has to override the first three
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift = self.make_simbox_functions_LE()
-        
+        # have already called base class Simox.make_simbox_functions, and can
+        # re-use the volume so this version only has to override the first
+        # three and dist_moved_sq_function
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift, self.dist_moved_sq_function = self.make_simbox_functions_LE()
 
         return
 
@@ -176,4 +177,10 @@ class Simbox_LeesEdwards(Simbox):
             if sim_box[D] < -Lx_half:
                 sim_box[D] += Lx
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift
+        def dist_moved_sq_function(r_current, r_last, sim_box):
+            # this needs to be updated with the correct function!
+            dist_moved2 = dist_sq_function(r_current, r_last, sim_box)
+
+            return dist_moved2
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift, dist_moved_sq_function
