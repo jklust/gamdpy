@@ -110,6 +110,7 @@ class Simulation():
         self.storage = storage
         self.timing = timing
 
+        # Create output objects
         if self.storage[-3:] == '.h5':  # Saving in hdf5 format
             with h5py.File(self.storage, "w") as f:
                 # Attributes for simulation (maybe save full configurations)
@@ -126,6 +127,7 @@ class Simulation():
         # Momentum reset
         if steps_between_momentum_reset == 'default':
             steps_between_momentum_reset = 100
+
         if steps_between_momentum_reset > 0:
             self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
         else:
@@ -134,23 +136,25 @@ class Simulation():
         # Scalar saving
         if scalar_output == 'default':
             scalar_output = 16
+
         if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
             self.output_calculator = None
         else:
             self.output_calculator = rp.ScalarSaver(configuration, scalar_output, num_timeblocks, steps_per_timeblock,
                                                     storage)
-            if self.storage[-3:] != '.h5':
-                self.output.update(self.output_calculator.output)
 
         # Saving of configurations
         if conf_output == 'default':
             self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage)
-            if self.storage[-3:] != '.h5':
-                self.output.update(self.conf_saver.output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
         else:
             raise RuntimeError('Did not understand conf_output = ', conf_output)
+
+        # Update state in case of memory
+        if self.storage[-3:] != '.h5':
+            if not self.output_calculator == None: self.output.update(self.output_calculator.output)
+            if not self.conf_saver        == None: self.output.update(self.conf_saver.output)
 
         self.vectors_list = []
         self.scalars_list = []

@@ -30,6 +30,8 @@ class ConfSaver():
 
         self.num_vectors = 2  # 'r' and 'r_im' (for now!)
 
+        self.sid = {"r":0, "v":1}
+
         # Setup output
         if self.storage[-3:] == '.h5':  # Saving in hdf5 format
             with h5py.File(self.storage, "a") as f:
@@ -39,11 +41,14 @@ class ConfSaver():
                 self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
                                       chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D),
                                       dtype=np.float32)
+                f.attrs['vectors_names'] = list(self.sid.keys())
         elif self.storage == 'memory':
             # Setup a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
             self.output = {}
             self.output['block'] = np.zeros((self.num_timeblocks, self.conf_per_block, self.num_vectors,
                                              self.configuration.N, self.configuration.D), dtype=np.float32)
+            #self.output['attrs']['vectors_names'] = list(self.sid.keys()) #LC: at one pint should be like this
+            self.output['vectors_names'] = list(self.sid.keys())
             if verbose:
                 print(
                     f'Storing results in memory. Expected footprint  {self.num_timeblocks * self.conf_per_block * self.num_vectors * self.configuration.N * self.configuration.D * 4 / 1024 / 1024:.2f} MB.')

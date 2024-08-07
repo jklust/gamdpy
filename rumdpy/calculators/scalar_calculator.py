@@ -35,21 +35,26 @@ class ScalarSaver():
         self.num_scalars = 6
         self.num_scalars += self.configuration.D #include CM momentum
         self.num_scalars += 1 #include XY component of stress (temporary!!!)
+        self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Pw':9}
 
         self.scalar_saves_per_block = self.steps_per_timeblock//self.steps_between_output
 
         # Setup output
         shape = (self.num_timeblocks, self.scalar_saves_per_block, self.num_scalars)
         if self.storage[-3:]=='.h5': # Saving in hdf5 format
-            with h5py.File(self.storage, "a") as f:
-                f.create_dataset("scalars", shape=shape,
+            with h5py.File(self.storage, 'a') as f:
+                f.create_dataset('scalars', shape=shape,
                                 chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
                 f.attrs['steps_between_output'] = self.steps_between_output
+                f.attrs['scalars_names'] = list(self.sid.keys())
         elif self.storage=='memory': 
             # Setup a dictionary that mirrors hdf5 file, so analysis programs can be (almost) the same
             self.output = {}
             self.output['scalars'] = np.zeros(shape=shape, dtype=np.float32)
+            #self.output['attrs']['steps_between_output'] = self.steps_between_output #LC: at one pint should be like this
+            #self.output['attrs']['scalars_names'] = list(self.sid.keys())            #LC: at one pint should be like this
             self.output['steps_between_output'] = self.steps_between_output
+            self.output['scalars_names'] = list(self.sid.keys())
     
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
