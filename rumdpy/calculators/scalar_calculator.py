@@ -35,7 +35,7 @@ class ScalarSaver():
         self.num_scalars = 6
         self.num_scalars += self.configuration.D #include CM momentum
         self.num_scalars += 1 #include XY component of stress (temporary!!!)
-        self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Pw':9}
+        self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Sxy':9} # 3D for now!!!
 
         self.scalar_saves_per_block = self.steps_per_timeblock//self.steps_between_output
 
@@ -130,9 +130,6 @@ class ScalarSaver():
                 if global_id == 0 and my_t == 0:
                     output_array[save_index][5] = volume_function(sim_box)
 
-                #if global_id == 0 and my_t == 0:
-                #    print('Step:', step, ' Volume:', output_array[save_index][5], output_array[save_index][0], output_array[save_index][1])
-
             return
         
         kernel = cuda.jit(device=gridsync)(kernel)
@@ -185,6 +182,8 @@ def extract_scalars(data, column_list, first_block=0, D=3):
         raise ValueError("Label for total momentum components not defined for dimensions greater than 4")
     for k in range(D):
         column_indices[momentum_id_str[k]] = 6+k
+
+    column_indices['Sxy'] = 6 + D
 
     output_list = []
     for column in column_list:

@@ -30,7 +30,7 @@ class ConfSaver():
 
         self.num_vectors = 2  # 'r' and 'r_im' (for now!)
 
-        self.sid = {"r":0, "v":1}
+        self.sid = {"r":0, "r_im":1}
 
         # Setup output
         if self.storage[-3:] == '.h5':  # Saving in hdf5 format
@@ -47,7 +47,7 @@ class ConfSaver():
             self.output = {}
             self.output['block'] = np.zeros((self.num_timeblocks, self.conf_per_block, self.num_vectors,
                                              self.configuration.N, self.configuration.D), dtype=np.float32)
-            #self.output['attrs']['vectors_names'] = list(self.sid.keys()) #LC: at one pint should be like this
+            #self.output['attrs']['vectors_names'] = list(self.sid.keys()) #LC: at one point should be like this
             self.output['vectors_names'] = list(self.sid.keys())
             if verbose:
                 print(
