@@ -62,7 +62,7 @@ print(sim.summary())
 
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
 with h5py.File(filename, "r") as f:
-       data = np.array(rp.extract_scalars(f, columns, first_block=1))
+       data = np.array(rp.extract_scalars(f, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 

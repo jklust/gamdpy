@@ -80,13 +80,15 @@ class ScalarSaver():
         self.params = (self.steps_between_output, self.d_output_array)
         return self.params
     
+    def initialize_before_timeblock(self):
+        self.zero_kernel(self.d_output_array)
+
     def update_at_end_of_timeblock(self, block:int):
         if self.storage[-3:]=='.h5':
             with h5py.File(self.storage, "a") as f:
                 f['scalars'][block,:] = self.d_output_array.copy_to_host()
         elif self.storage=='memory':
                 self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
-        self.zero_kernel(self.d_output_array)
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan

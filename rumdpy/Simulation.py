@@ -402,6 +402,8 @@ class Simulation():
         for block in range(num_timeblocks):
             if self.timing: start_block.record()
             self.current_block = block
+            if self.output_calculator != None:
+                self.output_calculator.initialize_before_timeblock()
             self.integrate_self(np.float32(block * self.steps_per_block * self.dt),self.steps_per_block)
             
             self.configuration.copy_to_host()
@@ -412,6 +414,8 @@ class Simulation():
 
             if self.output_calculator != None:
                 self.output_calculator.update_at_end_of_timeblock(block)
+                #self.output_calculator.initialize_before_timeblock()
+            
             if self.conf_saver != None:
                 self.conf_saver.update_at_end_of_timeblock(block)
 
