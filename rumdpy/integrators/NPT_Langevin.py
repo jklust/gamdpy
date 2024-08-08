@@ -7,10 +7,10 @@ from numba.cuda.random import xoroshiro128p_normal_float32
 import rumdpy as rp
 
 class NPT_Langevin():
-    """ 
-    NPT Langevin Leap-frog integrator
-    Based on N. Grønbech-Jensen and Oded Farago, J. Chem. Phys. 141, 194108 (2014). 
-    Ported from rumd.cu 
+    """ Constant NPT Langevin integrator
+    NPT Langevin Leap-frog integrator based on 
+    N. Grønbech-Jensen and Oded Farago, J. Chem. Phys. 141, 194108 (2014),
+    `doi:10.1063/1.4901303 <https://doi.org/10.1063/1.4901303>`_        
     """
 
     def __init__(self, temperature, pressure, alpha:float, alpha_baro, mass_baro,

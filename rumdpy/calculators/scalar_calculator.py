@@ -142,6 +142,39 @@ class ScalarSaver():
 
 
 def extract_scalars(data, column_list, first_block=0, D=3):
+    """ Extracts scalar data from simulation output.
+
+    Parameters
+    ----------
+
+    data : dict
+        Output from a Simulation object.
+    
+    column_list : list of str
+
+    first_block : int
+        Index of the first timeblock to extract data from.
+
+    D : int
+        Dimension of the simulation.
+
+    Returns
+    -------
+
+    tuple
+        Tuple of 1D numpy arrays containing the extracted scalar data.
+    
+    
+    Example
+    -------
+
+    >>> import numpy as np
+    >>> import rumdpy as rp
+    >>> sim = rp.get_default_sim()  # Replace with your simulation object
+    >>> sim.run()
+    >>> U, W = rp.extract_scalars(sim.output, ['U', 'W'], first_block=1)
+    """
+
     # Indices hardcoded for now (see scalar_calculator above)
 
     column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}

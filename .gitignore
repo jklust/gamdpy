@@ -8,3 +8,5 @@ examples/Data/*
 *.h5
 .venv
 venv
+docs/build
+*libcudadevrt.a
