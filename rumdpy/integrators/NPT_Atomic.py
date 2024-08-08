@@ -5,10 +5,29 @@ from numba import cuda
 import rumdpy as rp
 
 class NPT_Atomic():
-    """
+    """ Constant NPT integrator for atomic systems
+
         Integrator keeping N (number of particles), P (pressure), and T (temperature) constant, 
-        using the leapfrog algorithm and the thermostat-barostat by G Martyna, DJ Tobias and ML Klein in doi: 10.1063/1.46746.
-        Note that the thermostat and barostat states defined here are p_\\xi/Q and p_\\epsilon/W from Eq. 2.9 in the paper.
+        using the leapfrog algorithm and the thermostat-barostat by G Martyna, DJ Tobias and ML Klein.
+        Note that the thermostat and barostat states defined here are :math:`p_\\xi/Q` and :math:`p_\\epsilon/W` from Eq. 2.9 in the paper.
+
+        Parameters
+        ----------
+        temperature : float or function
+            Target temperature as a function of time or constant
+        
+        tau : float
+            Thermostat relaxation time
+        
+        pressure : float or function
+            Target pressure as a function of time or constant
+        
+        tau_p : float
+            Barostat relaxation time
+        
+        dt : float
+            Timestep size
+        
     """
 
     def __init__(self, temperature, tau: float, pressure, tau_p : float, dt: float) -> None: 

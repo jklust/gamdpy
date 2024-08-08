@@ -124,14 +124,17 @@ As an example, they can be used to set a time-dependent target temperature.
 
 .. autofunction:: rumdpy.make_function_sin
 
-Input/output
+Extract data
 ============
+
+.. autofunction:: rumdpy.extract_scalars
+
+Input/output of configurations
+==============================
 
 .. autofunction:: rumdpy.tools.save_configuration
 
 .. autofunction:: rumdpy.configuration_to_hdf5
-
-.. autofunction:: rumdpy.hdf5_to_configuration
 
 .. autofunction:: rumdpy.configuration_to_rumd3
 
