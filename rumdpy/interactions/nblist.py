@@ -47,6 +47,7 @@ class NbList2():
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_moved_sq_function = numba.njit(configuration.simbox.dist_moved_sq_function)
 
         @cuda.jit( device=gridsync )
         def update_strain_change(sim_box, cut, last_box_shift):
@@ -89,7 +90,7 @@ class NbList2():
                 #cuda.syncthreads()
             else:
                 if global_id < num_part and my_t==0:
-                    dist_sq = dist_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box)
+                    dist_sq = dist_moved_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box)
                     skin -= last_box_shift[2] # relevant for LE boundaries, should be zero otherwise
                     if skin < 0:
                         skin = 0. # otherwise wrong when you square!
@@ -168,6 +169,9 @@ class NbList2():
             @cuda.jit( device=gridsync )
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
                 max_cut, skin, nbflag, r_ref, exclusions, last_box_shift = nblist_parameters
+                if len(sim_box) == D+1: # Lees-Edwards BC
+                    update_strain_change(sim_box, max_cut, last_box_shift)
+                    grid.sync()
                 nblist_check(vectors, sim_box, skin, r_ref, nbflag, last_box_shift)
                 grid.sync()
                 nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, last_box_shift)
@@ -178,6 +182,8 @@ class NbList2():
             # A python function, making several kernel calls to syncronize  
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
                 max_cut, skin, nbflag, r_ref, exclusions, last_box_shift = nblist_parameters
+                if len(sim_box) == D+1: # Lees-Edwards BC
+                    update_strain_change(sim_box, max_cut, last_box_shift)
                 nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag, last_box_shift)
                 nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, last_box_shift)
                 return

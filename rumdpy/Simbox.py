@@ -178,9 +178,27 @@ class Simbox_LeesEdwards(Simbox):
                 sim_box[D] += Lx
 
         def dist_moved_sq_function(r_current, r_last, sim_box):
-            # this needs to be updated with the correct function!
-            dist_moved2 = dist_sq_function(r_current, r_last, sim_box)
+            # NEEDS TO BE MODIFIED TO GIVE THE CORRECT NON-AFFINE DISPALCEMENT!!!
+            box_shift = sim_box[D]
+            dist_moved_sq = numba.float32(0.0)
 
-            return dist_moved2
+            # first shift the x-component depending on whether the y-component is wrapped
+            dr1 = r_current[1] - r_last[1]
+            box_1 = sim_box[1]
+            x_shift = (-box_shift if numba.float32(2.0) * dr1 > box_1 else
+                      (+box_shift if numba.float32(2.0) * dr1 < -box_1 else
+                        numba.float32(0.0)))
+            # then wrap as usual for all components
+            for k in range(D):
+                dr_k = r_current[k] - r_last[k]
+                if k == 0:
+                    dr_k += x_shift
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
+                         (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))
+                dist_moved_sq = dist_moved_sq + dr_k * dr_k
+
+
+            return dist_moved_sq
 
         return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift, dist_moved_sq_function
