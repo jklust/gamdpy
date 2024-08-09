@@ -94,18 +94,17 @@ class Simbox_LeesEdwards(Simbox):
 
     def copy_to_device(self):
         D = self.D
-        data_array = np.zeros(D+1, dtype=np.float32)
+        data_array = np.zeros(D+4, dtype=np.float32) # extra entries are: box_shift, last box_shift (ie last time NB list was built, strain change since NB list was built, correction to skin due to strain change
         data_array[:D] = self.lengths[:]
         data_array[D] = self.box_shift
         self.d_data = cuda.to_device(data_array)
-        #self.d_data = cuda.to_device(np.append(self.lengths, self.box_shift))
 
     def copy_to_host(self):
         D = self.D
         box_data =  self.d_data.copy_to_host()
         self.lengths = box_data[:D].copy()
         self.box_shift = box_data[D]
-        
+        # don't need last_box_shift etc on the host except maybe occasionally for debugging
         
     def make_simbox_functions_LE(self):
         D = self.D
@@ -178,21 +177,29 @@ class Simbox_LeesEdwards(Simbox):
                 sim_box[D] += Lx
 
         def dist_moved_sq_function(r_current, r_last, sim_box):
-            # NEEDS TO BE MODIFIED TO GIVE THE CORRECT NON-AFFINE DISPALCEMENT!!!
+            zero = numba.float32(0.)
+            half = numba.float32(0.5)
+            one = numba.float32(1.0)
             box_shift = sim_box[D]
-            dist_moved_sq = numba.float32(0.0)
+            dist_moved_sq = zero
+            delta_strain = sim_box[D+2]
 
-            # first shift the x-component depending on whether the y-component is wrapped
+            # we will shift the x-component when the y-component is 'wrapped'
             dr1 = r_current[1] - r_last[1]
             box_1 = sim_box[1]
-            x_shift = (-box_shift if numba.float32(2.0) * dr1 > box_1 else
-                      (+box_shift if numba.float32(2.0) * dr1 < -box_1 else
-                        numba.float32(0.0)))
-            # then wrap as usual for all components
+            y_wrap = (one if dr1 > half*box_1 else
+                      -one if dr1 < -half*box_1 else zero)
+
+            x_shift = y_wrap * box_shift + (r_current[1] -
+                                            y_wrap*box_1) * delta_strain
+            # see the expression in Chatoraj Ph.D. thesis. Adjusted here to
+            # take into account BC wrapping (otherwise would use the images
+            # ie unwrapped positions)
+
             for k in range(D):
                 dr_k = r_current[k] - r_last[k]
                 if k == 0:
-                    dr_k += x_shift
+                    dr_k -= x_shift
                 box_k = sim_box[k]
                 dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
                          (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))

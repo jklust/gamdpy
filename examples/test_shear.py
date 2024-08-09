@@ -62,6 +62,8 @@ else:
 
 compute_plan = rp.get_default_compute_plan(configuration)
 compute_plan['gridsync'] = gridsync
+print('compute_plan')
+print(compute_plan)
 print("Now run SLLOD simulation on what should now be a glass or polycrystal")
 
 sc_output = 1
