@@ -4,11 +4,9 @@ from numba import cuda
 
 def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbose=True, ):
     """ Generate a kernel for fixed interactions between particles. """
-    D = configuration.D
-    num_part = configuration.N
-    pb = compute_plan['pb']
-    tp = compute_plan['tp']
-    gridsync = compute_plan['gridsync']
+    # Unpack parameters from configuration and compute_plan
+    D, num_part = configuration.D, configuration.N
+    pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
     num_blocks = (num_part - 1) // pb + 1
 
     if verbose:
@@ -16,14 +14,6 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
         print(f'\tNumber (virtual) particles: {num_blocks * pb}')
         print(f'\tNumber of threads {num_blocks * pb * tp}')
-
-    # Unpack indices for vectors and scalars
-    #for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
-    for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
-    for key in configuration.sid:
-        exec(f'{key}_id = {configuration.sid[key]}', globals())
 
     # Prepare user-specified functions for inclusion in kernel(s)
     # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 

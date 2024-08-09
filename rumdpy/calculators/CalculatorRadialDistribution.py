@@ -55,21 +55,13 @@ class CalculatorRadialDistribution():
         self.update_kernel = self.make_updater_kernel(configuration, self.compute_plan)
 
     def make_updater_kernel(self, configuration, compute_plan, verbose=False):
-        D = configuration.D
-        num_part = configuration.N
-        pb = compute_plan['pb']
-        tp = compute_plan['tp']
-        UtilizeNIII = compute_plan['UtilizeNIII']
-        gridsync = compute_plan['gridsync']
+        # Unpack parameters from configuration and compute_plan
+        D, num_part = configuration.D, configuration.N
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
         num_blocks = (num_part - 1) // pb + 1
 
-        # Unpack indices for vectors and scalars
-        # look up the indices needed instead (and throw error if not there)
-        for col in configuration.vectors.column_names:
-            exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
-
-        for key in configuration.sid:
-            exec(f'{key}_id = {configuration.sid[key]}', globals())
+        # Unpack indices for scalars to be compiled into kernel  
+        r_id, = [configuration.vectors.indices[key] for key in ['r', ]]
 
         # Prepare user-specified functions for inclusion in kernel(s)
         ptype_function = numba.njit(configuration.ptype_function)

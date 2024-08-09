@@ -21,11 +21,8 @@ class Evaluater():
         self.evaluater_func = self.make_evaluater_func(self.configuration, self.interactions_kernel, self.compute_plan, verbose)
         
     def make_evaluater_func(self, configuration, compute_interactions, compute_plan, verbose=True):
-        pb = compute_plan['pb']
-        tp = compute_plan['tp']
-        gridsync = compute_plan['gridsync']
-        D = configuration.D
-        num_part = configuration.N
+        D, num_part = configuration.D, configuration.N
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
         num_blocks = (num_part - 1) // pb + 1
     
         if gridsync:

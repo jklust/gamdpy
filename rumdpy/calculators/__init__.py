@@ -1,4 +1,3 @@
-from .rdf import *
 from .CalculatorRadialDistribution import *
 from .CalculatorStructureFactor import *
 from .scalar_calculator import *

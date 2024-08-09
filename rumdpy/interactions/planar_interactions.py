@@ -21,13 +21,9 @@ def make_planar_calculator(configuration, potential_function) -> callable:
     dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
 
-    # Unpack indices for vectors and scalars
-    #for key in configuration.vid:
-    #    exec(f'{key}_id = {configuration.vid[key]}', globals())
-    for col in configuration.vectors.column_names:
-        exec(f'{col}_id = {configuration.vectors.indices[col]}', globals())
-    for key in configuration.sid:
-        exec(f'{key}_id = {configuration.sid[key]}', globals())
+    # Unpack indices for vectors and scalars to be compiled into kernel
+    r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+    u_id, w_id, lap_id = [configuration.sid[key] for key in ['u', 'w', 'lap']] 
 
     def planar_calculator(vectors, scalars, ptype, sim_box, indices, values):
         particle = indices[0]

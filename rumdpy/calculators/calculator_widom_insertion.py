@@ -57,7 +57,7 @@ class CalculatorWidomInsertion():
     def make_updater_kernel(self, configuration, compute_plan, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
-        ghost_particles = sef.ghost_particles
+        ghost_particles = self.ghost_particles
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (ghost_particles - 1) // pb + 1  
 
