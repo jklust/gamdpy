@@ -85,7 +85,7 @@ class Simbox_LeesEdwards(Simbox):
         self.box_shift = box_shift
         print('Simbox_LeesEdwards, box_shift=', box_shift)
 
-        # have already called base class Simox.make_simbox_functions, and can
+        # have already called base class Simbox.make_simbox_functions, and can
         # re-use the volume so this version only has to override the first
         # three and dist_moved_sq_function
         self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift, self.dist_moved_sq_function = self.make_simbox_functions_LE()
