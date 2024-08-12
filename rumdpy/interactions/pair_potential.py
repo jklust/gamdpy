@@ -124,13 +124,14 @@ class PairPotential():
             virial_factor = numba.float32( 0.5/configuration.D )
             def pairpotential_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
                 u, s, umm = pairpotential_function(ij_dist, ij_params)
+                half = numba.float32(0.5)
                 for k in range(D):
                     my_f[k] = my_f[k] - dr[k]*s                         # Force
                     cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
                     if compute_stresses:
                         for k2 in range(D):
-                            my_stress[k,k2] -= dr[k]*dr[k2]*s
-                cscalars[u_id] += u*numba.float32( 0.5 )                # Potential energy
+                            my_stress[k,k2] -= half*dr[k]*dr[k2]*s      # stress tensor
+                cscalars[u_id] += half*u                                # Potential energy
                 cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
                 return
 

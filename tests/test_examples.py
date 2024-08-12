@@ -53,7 +53,7 @@ def test_examples(path_to_examples='examples'):
 
         # files = ['minimal.py']  # Uncomment and modify for debugging a few or a single file
         print(f"Found {len(files)} examples: {files}")
-        print(f"Excluding {len(exclude_files)} (if pressent): {exclude_files}")
+        print(f"Excluding {len(exclude_files)} (if present): {exclude_files}")
         for file in files:
             if os.path.basename(file) in exclude_files:
                 print(f"Skipping {file} (warning: may fail)")

@@ -62,6 +62,7 @@ else:
 
 compute_plan = rp.get_default_compute_plan(configuration)
 compute_plan['gridsync'] = gridsync
+compute_plan['UtilizeNIII'] = True # False #
 print('compute_plan')
 print(compute_plan)
 print("Now run SLLOD simulation on what should now be a glass or polycrystal")
