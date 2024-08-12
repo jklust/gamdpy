@@ -8,7 +8,8 @@ class NPT_Atomic():
     """ Constant NPT integrator for atomic systems
 
         Integrator keeping N (number of particles), P (pressure), and T (temperature) constant, 
-        using the leapfrog algorithm and the thermostat-barostat by G Martyna, DJ Tobias and ML Klein.
+        using the leapfrog algorithm and the thermostat-barostat by G Martyna, DJ Tobias and ML Klein in
+        Molecular Physics 87(5), 1117 (1996), `doi:10.1063/1.467468 <https://doi.org/10.1080/00268979600100761>`_
         Note that the thermostat and barostat states defined here are :math:`p_\\xi/Q` and :math:`p_\\epsilon/W` from Eq. 2.9 in the paper.
 
         Parameters
