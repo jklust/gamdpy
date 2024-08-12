@@ -119,10 +119,12 @@ class Simulation():
                 ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
                 ds[:] = configuration.ptype
         elif self.storage == 'memory':
-            # Set up a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
-            self.output = {}
-            self.output['attrs'] = {'dt': self.dt, 'simbox_initial': self.configuration.simbox.lengths.copy()}
-            self.output['ptype'] = configuration.ptype.copy()
+            # Set up a memory hdf5 file that mirrors the disk output so analysis programs can be the same
+            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+            self.output.attrs = {'dt': self.dt, 'simbox_initial': self.configuration.simbox.lengths.copy()}
+            ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
+            ds[:] = configuration.ptype
+            #self.output['ptype'] = configuration.ptype.copy()
 
         # Momentum reset
         if steps_between_momentum_reset == 'default':
