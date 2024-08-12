@@ -111,22 +111,32 @@ class Simulation():
         self.timing = timing
 
         # Create output objects
-        if self.storage[-3:] == '.h5':  # Saving in hdf5 format
-            with h5py.File(self.storage, "w") as f:
-                # Attributes for simulation (maybe save full configurations)
-                f.attrs['dt'] = self.dt
-                f.attrs['simbox_initial'] = self.configuration.simbox.lengths
-                ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
-                ds[:] = configuration.ptype
-        elif self.storage == 'memory':
+        #if self.storage == 'memory.h5':
             # Set up a memory hdf5 file that mirrors the disk output so analysis programs can be the same
-            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
-            self.output.attrs = {'dt': self.dt, 'simbox_initial': self.configuration.simbox.lengths.copy()}
-            ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
-            ds[:] = configuration.ptype
+        #    self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+        #    self.output.attrs['dt'] = self.dt 
+        #    self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
+        #    ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
+        #    ds[:] = configuration.ptype
             #self.output['ptype'] = configuration.ptype.copy()
+        #elif self.storage[-3:] == '.h5':  # Saving in hdf5 format
+        #    with h5py.File(self.storage, "w") as f:
+                # Attributes for simulation (maybe save full configurations)
+        #        f.attrs['dt'] = self.dt
+        #        f.attrs['simbox_initial'] = self.configuration.simbox.lengths
+        #        ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
+        #        ds[:] = configuration.ptype
+        if self.storage == 'memory.h5':
+            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+        else:
+            self.output = h5py.File(self.storage, "w")
+        # Save setup info
+        self.output.attrs['dt'] = self.dt
+        self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
+        ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
+        ds[:] = configuration.ptype
 
-        # Momentum reset
+        # Momentum reset (this should be saved to output, same for sim parameters)
         if steps_between_momentum_reset == 'default':
             steps_between_momentum_reset = 100
 

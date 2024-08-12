@@ -41,21 +41,26 @@ class ScalarSaver():
 
         # Setup output
         shape = (self.num_timeblocks, self.scalar_saves_per_block, self.num_scalars)
-        if self.storage[-3:]=='.h5': # Saving in hdf5 format
-            with h5py.File(self.storage, 'a') as f:
-                f.create_dataset('scalars', shape=shape,
-                                chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-                f.attrs['steps_between_output'] = self.steps_between_output
-                f.attrs['scalars_names'] = list(self.sid.keys())
-        elif self.storage=='memory': 
+        #if self.storage[-3:]=='.h5': # Saving in hdf5 format
+        #    with h5py.File(self.storage, 'a') as f:
+        #        f.create_dataset('scalars', shape=shape,
+        #                        chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+        #        f.attrs['steps_between_output'] = self.steps_between_output
+        #        f.attrs['scalars_names'] = list(self.sid.keys())
+        #elif self.storage=='memory': 
             # Setup a dictionary that mirrors hdf5 file, so analysis programs can be (almost) the same
-            self.output = {}
-            self.output['scalars'] = np.zeros(shape=shape, dtype=np.float32)
+        #    self.output = {}
+        #    self.output['scalars'] = np.zeros(shape=shape, dtype=np.float32)
             #self.output['attrs']['steps_between_output'] = self.steps_between_output #LC: at one pint should be like this
             #self.output['attrs']['scalars_names'] = list(self.sid.keys())            #LC: at one pint should be like this
-            self.output['steps_between_output'] = self.steps_between_output
-            self.output['scalars_names'] = list(self.sid.keys())
-    
+        #    self.output['steps_between_output'] = self.steps_between_output
+        #    self.output['scalars_names'] = list(self.sid.keys())
+        with h5py.File(self.storage, 'a') as f:
+            f.create_dataset('scalars', shape=shape,
+                    chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+            f.attrs['steps_between_output'] = self.steps_between_output
+            f.attrs['scalars_names'] = list(self.sid.keys())
+
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
         self.zero_kernel = self.make_zero_kernel()
@@ -84,11 +89,13 @@ class ScalarSaver():
         self.zero_kernel(self.d_output_array)
 
     def update_at_end_of_timeblock(self, block:int):
-        if self.storage[-3:]=='.h5':
-            with h5py.File(self.storage, "a") as f:
-                f['scalars'][block,:] = self.d_output_array.copy_to_host()
-        elif self.storage=='memory':
-                self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
+        #if self.storage[-3:]=='.h5':
+        #    with h5py.File(self.storage, "a") as f:
+        #        f['scalars'][block,:] = self.d_output_array.copy_to_host()
+        #elif self.storage=='memory':
+        #        self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
+        with h5py.File(self.storage, "a") as f:
+            f['scalars'][block,:] = self.d_output_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan
