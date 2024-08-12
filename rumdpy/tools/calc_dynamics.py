@@ -28,10 +28,11 @@ def calc_dynamics(trajectory, first_block, qvalues=None):
         qvalues = np.ones(1)*qvalues # Accept scalar (for single component systems) and upgrade to numpy array 
     
     ptype = trajectory['ptype'][:].copy()
-    if type(trajectory)==dict:
-        attributes = trajectory['attrs'] # Data stored in dictionary in memory
-    else:
-        attributes = trajectory.attrs    # Data stored in hdf5 file
+    #if type(trajectory)==dict:
+    #    attributes = trajectory['attrs'] # Data stored in dictionary in memory
+    #else:
+    #    attributes = trajectory.attrs    # Data stored in hdf5 file
+    attributes = trajectory.attrs
     
     simbox = attributes['simbox_initial'].copy()
     num_types = np.max(ptype) + 1
