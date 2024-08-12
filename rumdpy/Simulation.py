@@ -126,7 +126,7 @@ class Simulation():
         #        f.attrs['simbox_initial'] = self.configuration.simbox.lengths
         #        ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
         #        ds[:] = configuration.ptype
-        if self.storage == 'memory.h5':
+        if self.storage == 'memory.h5' or self.storage == 'memory':
             self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
         else:
             self.output = h5py.File(self.storage, "w")
@@ -135,6 +135,7 @@ class Simulation():
         self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
         ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
         ds[:] = configuration.ptype
+        self.output.close()
 
         # Momentum reset (this should be saved to output, same for sim parameters)
         if steps_between_momentum_reset == 'default':
@@ -164,15 +165,16 @@ class Simulation():
             raise RuntimeError('Did not understand conf_output = ', conf_output)
 
         # Update state in case of memory
-        if self.storage[-3:] != '.h5':
-            if not self.output_calculator == None: self.output.update(self.output_calculator.output)
-            if not self.conf_saver        == None: self.output.update(self.conf_saver.output)
+        #if self.storage[-3:] != '.h5':
+        #    if not self.output_calculator == None: self.output.update(self.output_calculator.output)
+        #    if not self.conf_saver        == None: self.output.update(self.conf_saver.output)
 
         self.vectors_list = []
         self.scalars_list = []
         self.simbox_data_list = []
 
         self.JIT_and_test_kernel()
+        #self.output_calculator.get_params(self.configuration, self.compute_plan)
 
     def JIT_and_test_kernel(self):
         while True:
@@ -261,8 +263,8 @@ class Simulation():
 
         # Configuration saving
         if self.conf_saver != None:
-            #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
             self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
+            #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
         else:
             #self.conf_saver_kernel = None
             self.conf_saver_params = (0,)

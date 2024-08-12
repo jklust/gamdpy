@@ -54,11 +54,15 @@ class ConfSaver():
 #                    f'Storing results in memory. Expected footprint  {self.num_timeblocks * self.conf_per_block * self.num_vectors * self.configuration.N * self.configuration.D * 4 / 1024 / 1024:.2f} MB.')
 #        else:
 #            print("WARNING: Results will not be stored. To change this use storage='filename.h5' or 'memory'")
-        with h5py.File(self.storage, "a") as f:
-            ds = f.create_dataset("block", shape=(
-                self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
-                chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
-            f.attrs['vectors_names'] = list(self.sid.keys())
+        if self.storage == 'memory.h5' or self.storage == 'memory':
+            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+        else:
+            self.output = h5py.File(self.storage, "w")
+        ds = self.output.create_dataset("block", shape=(
+            self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
+            chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
+        self.output.attrs['vectors_names'] = list(self.sid.keys())
+        self.output.close()
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -91,14 +95,12 @@ class ConfSaver():
         return zero_kernel[num_blocks, pb]
 
     def update_at_end_of_timeblock(self, block: int):
-        #if self.storage[-3:] == '.h5':
-        #    with h5py.File(self.storage, "a") as f:
-        #        f['block'][block, :] = self.d_conf_array.copy_to_host()
-        #elif self.storage == 'memory':
-        #    self.output['block'][block, :] = self.d_conf_array.copy_to_host()
-        with h5py.File(self.storage, "a") as f:
-            f['block'][block, :] = self.d_conf_array.copy_to_host()
-
+        if self.storage == 'memory' or self.storage == 'memory.h5':
+            with h5py.File(self.storage, "a", driver='core', backing_store=False) as f:
+                f['block'][block, :] = self.d_conf_array.copy_to_host()
+        elif self.storage[-3:] == '.h5':
+            with h5py.File(self.storage, "a") as f:
+                f['block'][block, :] = self.d_conf_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):

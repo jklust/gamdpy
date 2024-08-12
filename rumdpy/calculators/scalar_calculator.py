@@ -55,11 +55,15 @@ class ScalarSaver():
             #self.output['attrs']['scalars_names'] = list(self.sid.keys())            #LC: at one pint should be like this
         #    self.output['steps_between_output'] = self.steps_between_output
         #    self.output['scalars_names'] = list(self.sid.keys())
-        with h5py.File(self.storage, 'a') as f:
-            f.create_dataset('scalars', shape=shape,
-                    chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-            f.attrs['steps_between_output'] = self.steps_between_output
-            f.attrs['scalars_names'] = list(self.sid.keys())
+        if self.storage == 'memory.h5' or self.storage == 'memory':
+            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+        else:
+            self.output = h5py.File(self.storage, "w")
+        self.output.create_dataset('scalars', shape=shape, 
+                chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+        self.output.attrs['steps_between_output'] = self.steps_between_output
+        self.output.attrs['scalars_names'] = list(self.sid.keys())
+        self.output.close()
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -89,13 +93,12 @@ class ScalarSaver():
         self.zero_kernel(self.d_output_array)
 
     def update_at_end_of_timeblock(self, block:int):
-        #if self.storage[-3:]=='.h5':
-        #    with h5py.File(self.storage, "a") as f:
-        #        f['scalars'][block,:] = self.d_output_array.copy_to_host()
-        #elif self.storage=='memory':
-        #        self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
-        with h5py.File(self.storage, "a") as f:
-            f['scalars'][block,:] = self.d_output_array.copy_to_host()
+        if self.storage == 'memory' or self.storage == 'memory.h5':
+            with h5py.File(self.storage, "a", driver='core', backing_store=False) as f:
+                f['scalars'][block, :] = self.d_conf_array.copy_to_host()
+        elif self.storage[-3:] == '.h5':
+            with h5py.File(self.storage, "a") as f:
+                f['scalars'][block, :] = self.d_conf_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan
