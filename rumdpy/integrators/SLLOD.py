@@ -9,9 +9,9 @@ import math
 # 1. implement gridsync=False case and check that it runs DONE 20/6
 # 2. Check conservation of KE DONE 25/6
 # 3. Figure out how to run the initialization kernel separately DONE 24/6
-# 4. Correct check of whether nb list needs to be built
-# 5. Update images when box shift gets wrapped, or something equivalent
-# 6. compatibility wih Order-N NB-list
+# 4. Correct check of whether nb list needs to be built DONE 12/8
+# 5. Update images when box shift gets wrapped
+# 6. Save box-shift
 
 class SLLOD():
     """ The SLLOD integrator

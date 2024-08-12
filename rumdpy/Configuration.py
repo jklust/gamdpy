@@ -314,7 +314,7 @@ def configuration_to_hdf5(conf: Configuration, filename: str, meta_data=None):
 def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
     """ Read a configuration from a HDF5 file """
     if not filename.endswith('.h5'):
-        raise ValueError('Filename not inHDF5 format')
+        raise ValueError('Filename not in HDF5 format')
     with h5py.File(filename, "r") as f:
         lengths = f.attrs['simbox']
         r = f['r'][:]
