@@ -56,13 +56,15 @@ class ScalarSaver():
         #    self.output['steps_between_output'] = self.steps_between_output
         #    self.output['scalars_names'] = list(self.sid.keys())
         if self.storage == 'memory.h5' or self.storage == 'memory':
-            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
+            self.output = h5py.File(self.storage, "a", driver='core', backing_store=False)
         else:
-            self.output = h5py.File(self.storage, "w")
+            self.output = h5py.File(self.storage, "a")
         self.output.create_dataset('scalars', shape=shape, 
                 chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.output.attrs['steps_between_output'] = self.steps_between_output
         self.output.attrs['scalars_names'] = list(self.sid.keys())
+        [print(key) for key in self.output.keys()]
+        [print(key) for key in self.output.attrs.keys()]
         self.output.close()
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
