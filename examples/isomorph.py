@@ -76,6 +76,7 @@ for index, rho in enumerate(rhos):
         T = round((rhos[index+1]/rho)**gamma*T, 3) # Isomorph theory
     else:
         T = 2.00 # Last simulation Isothermal to first simulation
+    sim.output.close()
 
 with open('Data/isomorph.pkl', 'wb') as f:
     pickle.dump(data, f)

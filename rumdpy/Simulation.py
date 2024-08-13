@@ -110,6 +110,8 @@ class Simulation():
         self.storage = storage
         self.timing = timing
 
+        # Close output object if there
+        # Check https://stackoverflow.com/questions/610883/how-to-check-if-an-object-has-an-attribute
         # Create output objects
         if self.storage == 'memory.h5' or self.storage == 'memory':
             self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
@@ -347,7 +349,6 @@ class Simulation():
                 print(self.status(per_particle=True))
         if verbose:
             print(self.summary())
-        self.output.close()
 
     # generator for running simulation one block at a time
     def timeblocks(self, num_timeblocks=-1):
@@ -423,6 +424,8 @@ class Simulation():
                 block_times.append(cuda.event_elapsed_time(start_block, end_block))
             yield block
 
+        #if self.storage != 'memory.h5' and self.storage[-3:] == '.h5':
+        #    self.output.close()        # Doing this doen't allow for different sim.run() calls when saving to disk
         # Finalizing run
         if self.timing:
             end.record()

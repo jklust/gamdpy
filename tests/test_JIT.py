@@ -7,11 +7,11 @@ def test_JIT():
         
         # Generate configurations with a FCC lattice
         configuration1 = rp.make_configuration_fcc(nx= 8, ny= 8, nz=8,  rho=0.8442)
-        configuration1.randomize_velocities(T=1.44)
+        configuration1.randomize_velocities(T=1.44, seed=1234)
         configuration2 = rp.make_configuration_fcc(nx= 5, ny= 5, nz=13, rho=1.2000)
-        configuration2.randomize_velocities(T=0.44)
+        configuration2.randomize_velocities(T=0.44, seed=4123)
         configuration3 = rp.make_configuration_fcc(nx=16, ny=16, nz=32, rho=0.8442)
-        configuration3.randomize_velocities(T=2.44)
+        configuration3.randomize_velocities(T=2.44, seed=3412)
 
         # Make pair potentials
         pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

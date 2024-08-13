@@ -59,6 +59,7 @@ for block in sim.timeblocks():
     if block % 10 == 0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
+sim.output.close()
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
@@ -75,6 +76,7 @@ for block in sim.timeblocks():
         print(f'{block=:4}  {sim.status(per_particle=True)}')
     calc_rdf.update()
 print(sim.summary())
+sim.output.close()
 
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
 with h5py.File(filename, "r") as f:

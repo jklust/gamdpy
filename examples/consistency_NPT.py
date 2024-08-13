@@ -60,6 +60,7 @@ print(f"Pressure (mean): {my_rho*(2*np.mean(K)/3+np.mean(W))/configuration.N}")
 print(f"Thermal pressure coefficient: {P_th}")
 print(f"Specific heat at constant volume: {c_V}")
 print()
+sim.output.close()
 
 # NPT Simulation 
 sim = rp.Simulation(configuration, pair_pot, integrator,

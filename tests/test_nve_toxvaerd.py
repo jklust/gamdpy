@@ -44,6 +44,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     columns = ['U', 'W', 'lapU', 'Fsq', 'K']
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
     df_toxverd = pd.DataFrame(data.T, columns=columns) 
+    sim.output.close()
 
     # Run standard NVE Simulation
     integrator = rp.integrators.NVE(dt=dt)
