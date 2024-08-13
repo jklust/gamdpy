@@ -74,7 +74,8 @@ class PairPotential():
         self.params, max_cut = self.convert_user_params()
         self.d_params = cuda.to_device(self.params)
 
-        self.nblist = rp.NbList2(configuration, self.exclusions, self.max_num_nbs)        
+        #self.nblist = rp.NbList2(configuration, self.exclusions, self.max_num_nbs)
+        self.nblist = rp.NbListLinkedLists(configuration, self.exclusions, self.max_num_nbs)
         nblist_params = self.nblist.get_params(max_cut, compute_plan, verbose)
 
         return (self.d_params, self.nblist.d_nblist, nblist_params)

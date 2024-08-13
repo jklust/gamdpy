@@ -1,25 +1,27 @@
 import numpy as np
 import numba
+import math
 from numba import cuda
 
 class NbListLinkedLists():
     
-    def __init__(self, configuration, exclusions, max_num_nbs, cells_per_dimension):
-        N, D = configuration.N, configuration.D
+    def __init__(self, configuration, exclusions, max_num_nbs):
+        self.configuration = configuration
+        self.N, self.D = configuration.N, configuration.D
         self.nblist = np.zeros((configuration.N, max_num_nbs+1), dtype=np.int32) 
         self.nbflag = np.zeros(3, dtype=np.int32)
         self.r_ref = np.zeros_like(configuration['r']) # Inherents also data type
         self.exclusions = exclusions  # Should be able to be a list (eg from bonds, angles, etc), and merge
-        self.cells = -np.ones(cells_per_dimension, dtype=np.int32)
-        self.my_cell = np.zeros((N, D), dtype=np.int32)
-        self.next_particle_in_cell = -np.ones(N, dtype=np.int32)
 
     def copy_to_device(self):
         self.d_nblist = cuda.to_device(self.nblist)
         self.d_nbflag = cuda.to_device(self.nbflag)
         self.d_r_ref = cuda.to_device(self.r_ref)
         self.d_exclusions = cuda.to_device(self._exclusions)
+        #self.d_cells_per_dimension = cuda.to_device(self.cells_per_dimension) # Redundant?: use shape instead
         self.d_cells = cuda.to_device(self.cells)
+        self.d_my_cell = cuda.to_device(self.my_cell)
+        self.d_next_particle_in_cell = cuda.to_device(self.next_particle_in_cell)
     
     def get_params(self, max_cut, compute_plan, verbose=True):
         self.max_cut = max_cut
@@ -30,8 +32,22 @@ class NbListLinkedLists():
         else:
             self._exclusions = np.zeros((self.r_ref.shape[0], 2), dtype=np.int32)
 
+        cells_per_dimension = np.zeros((self.D), dtype=np.int32)
+        min_cells_size = self.max_cut + self.skin
+        for i in range(self.D):
+            cells_per_dimension[i] = int(self.configuration.simbox.lengths[i]/min_cells_size)
+            assert cells_per_dimension[i] > 2
+            # TODO: Take care of
+            # - changing simbox size during simulation (compression)
+            # - LEBC
+        
+        self.cells = -np.ones(cells_per_dimension, dtype=np.int32)
+        print(self.cells.shape)
+        self.my_cell = np.zeros((self.N, self.D), dtype=np.int32)
+        self.next_particle_in_cell = -np.ones(self.N, dtype=np.int32) # -1 = no further particles in list
         self.copy_to_device()                     
-        return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, self.d_cells)
+        return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, 
+                self.d_cells, self.d_my_cell, self.d_next_particle_in_cell)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
 
@@ -78,22 +94,34 @@ class NbListLinkedLists():
             return
    
         @cuda.jit(device=gridsync)
-        def put_particles_in_cells(vectors, sim_box, cut_plus_skin, nbflag, nblist, r_ref, exclusions):
+        def put_particles_in_cells(vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell):
             """ Each particle inserts itself in cell-list
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
 
             global_id, my_t = cuda.grid(2)
-            local_id = cuda.threadIdx.x 
+            if global_id < num_part and my_t == 0:
+                for k in range(D):
+                    my_cell[global_id,k] = math.floor(vectors[r_id][global_id,k]*cells.shape[k]/sim_box[k])%cells.shape[k]
+                ### cells[my_cell] = global_id : we need to do this with an atomic operation :
+                index = my_cell[global_id,0], my_cell[global_id,1], my_cell[global_id,2] # D=3. Needs tuple!!! 
+                next_particle_in_cell[global_id] = cuda.atomic.exch(cells, index, global_id)
 
-            if nbflag[0] > 0:
-                if global_id < num_part and my_t == 0:
-                    pass
-                    #index = (idx, idy, ) = function_of(vectors[r_id][global_id])
-                    ### cells[idx, idy, ...] = global_id ..... we need to do this with an atomic operation :
-                    #next_particle_in_cell[global_id] = numba.exch(cells, index, global_id)
+        @cuda.jit(device=gridsync)
+        def clear_cells(vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell):
+            """ Particles clears cell-list (only one (e.g. tail) actually needs to do this)
+                Kernel configuration: [num_blocks, (pb, tp)]
+            """
 
+            global_id, my_t = cuda.grid(2)
+            local_id = cuda.threadIdx.x
+            if global_id < num_part and my_t == 0:
+                #if next_particle_in_cell[global_id] == -1: # I am the tail, so it is my job to reset my cell
+                #    cells[my_cell[global_id]] = -1
+                cells[my_cell[global_id]] = -1              # Every body writes...
 
+            if local_id == 0 and my_t==0: # nbflag[0] = 0 by when all blocks are done
+                cuda.atomic.add(nbflag, 0, -1) 
 
         @cuda.jit(device=gridsync)
         def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist, r_ref, exclusions):
@@ -104,65 +132,76 @@ class NbListLinkedLists():
             global_id, my_t = cuda.grid(2)
             local_id = cuda.threadIdx.x 
 
-            if nbflag[0] > 0:
-                max_nbs = nblist.shape[1]-1 # Last index is used for storing number of neighbors
+            max_nbs = nblist.shape[1]-1 # Last index is used for storing number of neighbors
 
-                if global_id < num_part and my_t==0:
-                    nblist[global_id, max_nbs] = 0  # Set number of neighbors (stored at index max_nbs) to zero
-                    
-                cuda.syncthreads() # wait for nblist[global_id, max_nbs] to be ready ready
+            if global_id < num_part and my_t==0:
+                nblist[global_id, max_nbs] = 0  # Set number of neighbors (stored at index max_nbs) to zero
                 
-                if global_id < num_part:
-                    my_num_exclusions = exclusions[global_id,-1]
-                    for i in range(0, num_part, pb*tp): # Loop over blocks
-                        for j in range(pb):             # Loop over particles the pb in block
-                            other_global_id = j + i + my_t*pb   
-                            if UtilizeNIII:
-                                TwodN = 2*(other_global_id - global_id)
-                                flag = other_global_id < num_part and (0 < TwodN <= num_part or TwodN < -num_part)
-                            else:
-                                flag = other_global_id != global_id and other_global_id < num_part
-                            if flag:  
-                                dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id], sim_box)
-                                if dist_sq < cut_plus_skin*cut_plus_skin:
-                                    not_excluded = True  # Check exclusion list
-                                    for k in range(my_num_exclusions):
-                                        if exclusions[global_id, k] ==  other_global_id:
-                                            not_excluded = False
-                                    if not_excluded:
-                                        my_num_nbs = cuda.atomic.add(nblist, (global_id, max_nbs), 1)   # Find next free index in nblist
-                                        if my_num_nbs < max_nbs:                         
-                                            nblist[global_id, my_num_nbs] = other_global_id     # Last entry is number of neighbors
+            cuda.syncthreads() # wait for nblist[global_id, max_nbs] to be ready ready
+            
+            if global_id < num_part:
+                my_num_exclusions = exclusions[global_id,-1]
+                for i in range(0, num_part, pb*tp): # Loop over blocks
+                    for j in range(pb):             # Loop over particles the pb in block
+                        other_global_id = j + i + my_t*pb   
+                        if UtilizeNIII:
+                            TwodN = 2*(other_global_id - global_id)
+                            flag = other_global_id < num_part and (0 < TwodN <= num_part or TwodN < -num_part)
+                        else:
+                            flag = other_global_id != global_id and other_global_id < num_part
+                        if flag:  
+                            dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id], sim_box)
+                            if dist_sq < cut_plus_skin*cut_plus_skin:
+                                not_excluded = True  # Check exclusion list
+                                for k in range(my_num_exclusions):
+                                    if exclusions[global_id, k] ==  other_global_id:
+                                        not_excluded = False
+                                if not_excluded:
+                                    my_num_nbs = cuda.atomic.add(nblist, (global_id, max_nbs), 1)   # Find next free index in nblist
+                                    if my_num_nbs < max_nbs:                         
+                                        nblist[global_id, my_num_nbs] = other_global_id     # Last entry is number of neighbors
 
-                # Various house-keeping
-                if global_id < num_part and my_t==0:
-                    for k in range(D):    
-                        r_ref[global_id, k] = vectors[r_id][global_id, k]   # Store positions for wich nblist was updated ( used in nblist_check() ) 
-                if local_id == 0 and my_t==0:
-                    cuda.atomic.add(nbflag, 0, -1)              # nbflag[0] = 0 by when all blocks are done
-                if global_id == 0 and my_t==0:
-                    cuda.atomic.add(nbflag, 2, 1)               # Count how many updates are done in nbflag[2]
-                if my_num_nbs >= max_nbs:                       # Overflow detected, nbflag[1] should be checked later, and then
-                    cuda.atomic.max(nbflag, 1, my_num_nbs)      # re-allocate larger nb-list, and redo computations from last safe state
-    
+            # Various house-keeping
+            if global_id < num_part and my_t==0:
+                for k in range(D):    
+                    r_ref[global_id, k] = vectors[r_id][global_id, k]   # Store positions for wich nblist was updated ( used in nblist_check() ) 
+            #if local_id == 0 and my_t==0:
+            #    cuda.atomic.add(nbflag, 0, -1)              # nbflag[0] = 0 by when all blocks are done
+            if global_id == 0 and my_t==0:
+                cuda.atomic.add(nbflag, 2, 1)               # Count how many updates are done in nbflag[2]
+            if my_num_nbs >= max_nbs:                       # Overflow detected, nbflag[1] should be checked later, and then
+                cuda.atomic.max(nbflag, 1, my_num_nbs)      # re-allocate larger nb-list, and redo computations from last safe state
+
             return 
         
         if gridsync==True:
             # A device function, calling a number of device functions, using gridsync to syncronize
             @cuda.jit( device=gridsync )
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
-                max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
+                max_cut, skin, nbflag, r_ref, exclusions, cells, my_cell, next_particle_in_cell = nblist_parameters
                 nblist_check(vectors, sim_box, skin, r_ref, nbflag)
                 grid.sync()
-                nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
+                if nbflag[0] > 0:
+                    put_particles_in_cells(vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
+                    grid.sync()
+                    nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
+                    grid.sync()
+                    clear_cells(vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
                 return
             return check_and_update
         
         else:
             # A python function, making several kernel calls to syncronize  
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
-                max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
-                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
-                nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
+                max_cut, skin, nbflag, r_ref, exclusions, cells, my_cell, next_particle_in_cell = nblist_parameters
+                nblist_check(vectors, sim_box, skin, r_ref, nbflag)
+                if nbflag[0] > 0:
+                    put_particles_in_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
+                    nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions) # Maybe tp = 1 ???
+                    clear_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
+                return
+                #max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
+                #nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
+                #nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
                 return
             return check_and_update
