@@ -111,21 +111,6 @@ class Simulation():
         self.timing = timing
 
         # Create output objects
-        #if self.storage == 'memory.h5':
-            # Set up a memory hdf5 file that mirrors the disk output so analysis programs can be the same
-        #    self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
-        #    self.output.attrs['dt'] = self.dt 
-        #    self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
-        #    ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
-        #    ds[:] = configuration.ptype
-            #self.output['ptype'] = configuration.ptype.copy()
-        #elif self.storage[-3:] == '.h5':  # Saving in hdf5 format
-        #    with h5py.File(self.storage, "w") as f:
-                # Attributes for simulation (maybe save full configurations)
-        #        f.attrs['dt'] = self.dt
-        #        f.attrs['simbox_initial'] = self.configuration.simbox.lengths
-        #        ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
-        #        ds[:] = configuration.ptype
         if self.storage == 'memory.h5' or self.storage == 'memory':
             self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
         else:
@@ -135,7 +120,6 @@ class Simulation():
         self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
         ds = self.output.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
         ds[:] = configuration.ptype
-        self.output.close()
 
         # Momentum reset (this should be saved to output, same for sim parameters)
         if steps_between_momentum_reset == 'default':
@@ -154,11 +138,11 @@ class Simulation():
             self.output_calculator = None
         else:
             self.output_calculator = rp.ScalarSaver(configuration, scalar_output, num_timeblocks, steps_per_timeblock,
-                                                    storage)
+                                                    self.output)
 
         # Saving of configurations
         if conf_output == 'default':
-            self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage)
+            self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, self.output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
         else:
@@ -174,7 +158,6 @@ class Simulation():
         self.simbox_data_list = []
 
         self.JIT_and_test_kernel()
-        #self.output_calculator.get_params(self.configuration, self.compute_plan)
 
     def JIT_and_test_kernel(self):
         while True:
