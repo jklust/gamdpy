@@ -42,14 +42,18 @@ def test_JIT():
                                                     dt=dt, seed=2023)]
 
         for configuration in [configuration1, configuration2, configuration3]:
+            print("conf #:", [configuration1, configuration2, configuration3].index(configuration))
             for pairpot in [pairpot1, pairpot2]:
+                print("pairpot #:", [pairpot1, pairpot2].index(pairpot))
                 ev = rp.Evaluater(configuration, pairpot)
                 for integrator in integrators:
+                    print(integrator)
                     sim = rp.Simulation(configuration, pairpot, integrator,
                                         num_timeblocks=2, steps_per_timeblock=1024, 
                                         steps_between_momentum_reset=100,
                                         storage='memory')
-                    print(sim.compute_plan)
+                    print(sim.compute_plan, "\n")
+                    sim.output.close()
                     
 if __name__ == '__main__':
      test_JIT()

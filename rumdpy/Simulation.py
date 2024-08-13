@@ -347,6 +347,7 @@ class Simulation():
                 print(self.status(per_particle=True))
         if verbose:
             print(self.summary())
+        self.output.close()
 
     # generator for running simulation one block at a time
     def timeblocks(self, num_timeblocks=-1):
