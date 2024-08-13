@@ -2,7 +2,7 @@
 
 Simulation of a Lennard-Jones liquid in the NPT ensemble.
 After equilibration, the simulation runs and calculates the mean potential energy, 
-pressure, density and isothermal compressibility. The latter is done by calculating
+pressure, density and isothermal compressibility.
 
 """
 
