@@ -1,7 +1,8 @@
 
 import numpy as np
 from numba import cuda
-
+import numba
+import math
 from .make_fixed_interactions import make_fixed_interactions
 
 
@@ -58,14 +59,24 @@ class Gravity:
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
-        f_id = configuration.vectors.indices['f'] 
-        
+        #f_id = configuration.vectors.indices['f'] 
+        r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+       
         def gravity_calculator(vectors, scalars, ptype, sim_box, indices, values):
        
             f = vectors[f_id][indices[1]]
-            extforce = values[indices[0]][0]
+            r = vectors[r_id][indices[1]]
+            
+            z0 = numba.float32(3.2)
+            z1 = numba.float32(15.8)
+            L = z1 - z0
 
-            f[0] = f[0] + extforce
+            n = numba.float32(2.0)
+            hL = numba.float32(0.5)*z1
+
+            amplitude = values[indices[0]][0]
+            
+            f[0] = f[0] + amplitude*math.sin( n*3.1416*(r[2] + hL - z0)/L )
 
             return
     
