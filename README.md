@@ -82,7 +82,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [~] Testing using gitlab CI, Lorenzo: status is that we need single tests
+- [ ] Testing using gitlab CI, Lorenzo: status is that we need single tests
 - [X] Include scalar column names in output, Lorenzo
 - [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
@@ -92,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
-- [~] Post analysis for multicomponents, Lorenzo/Danqui
+- [ ] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
 
 ## Output Branch (branch origin/output)
