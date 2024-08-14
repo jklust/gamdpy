@@ -82,8 +82,9 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [ ] Testing using gitlab CI, Lorenzo
-- [ ] Include scalar column names in output, Lorenzo
+- [~] Testing using gitlab CI, Lorenzo: status is that we need single tests
+- [X] Include scalar column names in output, Lorenzo
+- [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda? Thomas
 - [X] Generalize make_configuration to different lattices, Ulf
@@ -91,8 +92,18 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
-- [ ] Post analysis for multicomponents, Lorenzo
+- [~] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
+
+## Output Branch (branch origin/output)
+# This branch is an attempt to make memory and disk output identical from user prospective
+# Points to discuss/issues to address
+- [X] sim.output is an h5py file, if in memory it uses driver='core'
+- [X] sim.output can be generalized to be a different file type easily (only change in the Simulation().__init__)
+- [ ] issue/feature 0: the output file is created when Simulation is initiated and stays there until close
+- [ ] issue 1: the output file needs to be closed by the user before instantiating a new Simulation object
+- [ ] fix   1: the Simulation obejct might create a new file every time (might cause memory problems)
+- [ ] structure inside h5py: static info + a group for each evaluator
 
 ## TODO or decide not necessary, before paper
 - [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
