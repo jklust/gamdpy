@@ -83,7 +83,8 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
 - [ ] Testing using gitlab CI, Lorenzo
-- [ ] Include scalar column names in output, Lorenzo
+- [X] Include scalar column names in output, Lorenzo
+- [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
 - [ ] Reserve name on pypi, conda? Thomas
 - [X] Generalize make_configuration to different lattices, Ulf
@@ -91,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
-- [ ] Post analysis for multicomponents, Lorenzo
+- [ ] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
 
 ## TODO or decide not necessary, before paper
@@ -106,7 +107,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Auto-tuner
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [ ] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/)
+- [X] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Thermostat on subsets of particles
 - [ ] Benchmarking
