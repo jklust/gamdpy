@@ -5,8 +5,10 @@ import rumdpy as rp
 
 # Sim. params 
 rho, temperature = 1.0, 1.5
-NVE = False  # If True -> k small
-angle0, k = 2.0, 500.0
+NVE = True  # If True -> k small
+angle0, k = 2.0, 10.0
+#rbcoef=[15.5000,  20.3050, -21.9170, -5.1150,  43.8340, -52.6070]
+rbcoef=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 # Generate configuration with a FCC lattice
 configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
@@ -32,6 +34,14 @@ for n in range(0, configuration.N, 4):
 
 angles = rp.Angels(angle_indices, angle_params) 
 
+# Dihedrals
+dihedral_params = [rbcoef, ]
+dihedral_indices = []
+for n in range(0, configuration.N, 4):
+    dihedral_indices.append([n, n+1, n+2, n+3, 0])
+
+dihedrals = rp.Dihedrals(dihedral_indices, dihedral_params)
+
 # Make pair potential
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
@@ -52,7 +62,7 @@ else:
 compute_plan = rp.get_default_compute_plan(configuration)
 
 # Setup simulation
-sim = rp.Simulation(configuration, [pair_pot, bonds, angles], integrator,
+sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator,
                     num_timeblocks=10, steps_per_timeblock=200,
                     steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
