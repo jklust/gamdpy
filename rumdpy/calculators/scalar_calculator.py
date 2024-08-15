@@ -88,7 +88,7 @@ class ScalarSaver():
             with h5py.File(self.storage, "a") as f:
                 f['scalars'][block,:] = self.d_output_array.copy_to_host()
         elif self.storage=='memory':
-                self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
+            self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan

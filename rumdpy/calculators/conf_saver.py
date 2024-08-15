@@ -11,8 +11,9 @@ class ConfSaver():
         - for now only logarithmic saving
     """
 
-    def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, storage: str, verbose=False) -> None:
+    def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, storage: str, include_simbox=False, verbose=False) -> None:
         self.configuration = configuration
+        self.include_simbox = include_simbox
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
             raise ValueError(f'num_timeblocks ({num_timeblocks}) should be non-negative integer.')
@@ -41,6 +42,8 @@ class ConfSaver():
                 self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
                                       chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D),
                                       dtype=np.float32)
+                if self.include_simbox:
+                    ds_sim_box = f.create_dataset('sim_box', shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data))
                 f.attrs['vectors_names'] = list(self.sid.keys())
         elif self.storage == 'memory':
             # Setup a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
@@ -48,6 +51,8 @@ class ConfSaver():
             self.output['block'] = np.zeros((self.num_timeblocks, self.conf_per_block, self.num_vectors,
                                              self.configuration.N, self.configuration.D), dtype=np.float32)
             #self.output['attrs']['vectors_names'] = list(self.sid.keys()) #LC: at one point should be like this
+            if self.include_simbox:
+                self.output['sim_box'] = np.zeros((self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data), dtype=np.float32)
             self.output['vectors_names'] = list(self.sid.keys())
             if verbose:
                 print(
@@ -64,7 +69,14 @@ class ConfSaver():
         self.conf_array = np.zeros((self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
                                    dtype=np.float32)
         self.d_conf_array = cuda.to_device(self.conf_array)
-        return (self.d_conf_array,)
+
+        if self.include_simbox:
+            self.sim_box_output_array = np.zeros((self.conf_per_block, self.configuration.simbox.len_sim_box_data), dtype=np.float32)
+            self.d_sim_box_output_array = cuda.to_device(self.sim_box_output_array)
+
+            return (self.d_conf_array, self.d_sim_box_output_array)
+        else:
+            return (self.d_conf_array,)
 
     def make_zero_kernel(self):
         # Unpack parameters from configuration and compute_plan
@@ -89,9 +101,12 @@ class ConfSaver():
         if self.storage[-3:] == '.h5':
             with h5py.File(self.storage, "a") as f:
                 f['block'][block, :] = self.d_conf_array.copy_to_host()
+                if self.include_simbox:
+                    f['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
         elif self.storage == 'memory':
             self.output['block'][block, :] = self.d_conf_array.copy_to_host()
-
+            if self.include_simbox:
+                self.output['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
@@ -99,12 +114,16 @@ class ConfSaver():
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
         num_blocks = (num_part - 1) // pb + 1
-
+        sim_box_array_length = configuration.simbox.len_sim_box_data
+        include_simbox = self.include_simbox
         # Unpack indices for scalars to be compiled into kernel  
         r_id, = [configuration.vectors.indices[key] for key in ['r', ]]
 
         def kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params):
-            conf_array, = conf_saver_params
+            if include_simbox:
+                conf_array, sim_box_output_array = conf_saver_params
+            else:
+                conf_array, = conf_saver_params
 
             Flag = False
             if step == 0:
@@ -123,6 +142,9 @@ class ConfSaver():
                     for k in range(D):
                         conf_array[save_index, 0, global_id, k] = vectors[r_id][global_id, k]
                         conf_array[save_index, 1, global_id, k] = np.float32(r_im[global_id, k])
+                    if include_simbox and global_id == 0:
+                        for k in range(sim_box_array_length):
+                            sim_box_output_array[save_index, k] = sim_box[k]
             return
 
         kernel = cuda.jit(device=gridsync)(kernel)

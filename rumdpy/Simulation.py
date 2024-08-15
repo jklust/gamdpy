@@ -70,7 +70,7 @@ class Simulation():
     def __init__(self, configuration: rp.Configuration, interactions, integrator, 
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
-                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True):
+                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True, include_simbox_in_output=False):
 
         self.configuration = configuration
         if compute_plan == None:
@@ -145,7 +145,7 @@ class Simulation():
 
         # Saving of configurations
         if conf_output == 'default':
-            self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage)
+            self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage, include_simbox=include_simbox_in_output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
         else:
