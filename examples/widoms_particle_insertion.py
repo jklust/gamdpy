@@ -91,8 +91,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
                     num_timeblocks=2,
                     steps_per_timeblock=128,
-                    storage='memory'
-                    )
+                    storage='memory')
 
 # Equilibrate the system
 sim.run()

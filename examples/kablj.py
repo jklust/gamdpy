@@ -49,6 +49,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
 for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
+sim.output.close()
 
 print('Production:')
 integrator = rp.integrators.NVT(temperature, tau=0.2, dt=dt)
@@ -61,8 +62,10 @@ for block in sim.timeblocks():
 print(sim.summary())
 
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
-with h5py.File(filename, "r") as f:
-       data = np.array(rp.extract_scalars(f, columns, first_block=0))
+#with h5py.File(filename, "r") as f:
+#       data = np.array(rp.extract_scalars(f, columns, first_block=0))
+data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
+df = pd.DataFrame(data.T, columns=columns)
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
 
@@ -86,8 +89,9 @@ if rho==1.200 and temperature==0.800:
 
 rp.plot_scalars(df, configuration.N,  configuration.D, figsize=(10,8), block=False)
 
-with h5py.File(filename, "r") as f:
-       dyn = rp.tools.calc_dynamics(f, first_block=0, qvalues=[7.5, 5.5])
+#with h5py.File(filename, "r") as f:
+#    dyn = rp.tools.calc_dynamics(f, first_block=0, qvalues=[7.5, 5.5])
+dyn = rp.tools.calc_dynamics(sim.output, first_block=0, qvalues=[7.5, 5.5])
 
 fig, axs = plt.subplots(1, 1, figsize=(6,4))
 axs.loglog(dyn['times'], dyn['msd'], '.-', label=['A (rumdpy)', 'B (rumdpy)'])

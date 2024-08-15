@@ -141,3 +141,5 @@ plt.ylabel('Estimated error (95% confidence interval)')
 plt.show()
 
 print(f'Potential energy per particle {np.mean(U) / N:.4f} ± {error:.4f} (95% confidence interval)')
+sim.output.close()
+del sim

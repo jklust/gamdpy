@@ -29,6 +29,7 @@ def test_examples(path_to_examples='examples'):
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
         'LJchain_wall.py',  # ImportError: cannot import name 'nvt_nh' from 'rumdpy.integrators'
         'calc_rdf_from_rumd3.py',  # This example needs TrajectoryFiles to be present
+        'widoms_particle_insertion.py', # is excluded in this branch because is an outdated version of the example
         'minimal_cpu.py',
     ]
 
