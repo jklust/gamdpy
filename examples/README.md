@@ -18,6 +18,8 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
 - [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'.
 - [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
+- [widoms_particle_insertion.py](widoms_particle_insertion.py) Widom's particle insertion method for calculating the chemical potential.
+
 
 ## Atomistic models
 
