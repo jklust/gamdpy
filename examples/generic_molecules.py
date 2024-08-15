@@ -5,10 +5,10 @@ import rumdpy as rp
 
 # Sim. params 
 rho, temperature = 1.0, 1.5
-NVE = True  # If True -> k small
-angle0, k = 2.0, 10.0
+NVE = False  # If True -> k small
+angle0, k = 2.0, 500.0
 #rbcoef=[15.5000,  20.3050, -21.9170, -5.1150,  43.8340, -52.6070]
-rbcoef=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+rbcoef=[.0, 50.0, .0, .0, .0, .0]
 
 # Generate configuration with a FCC lattice
 configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
@@ -42,14 +42,15 @@ for n in range(0, configuration.N, 4):
 
 dihedrals = rp.Dihedrals(dihedral_indices, dihedral_params)
 
+# Exlusion list
+#exclusions = angles.get_exclusions(configuration)
+#exclusions = bonds.get_exclusions(configuration)
+exclusions = dihedrals.get_exclusions(configuration)
+
+
 # Make pair potential
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-
-# Exlusion list
-exclusions = angles.get_exclusions(configuration)
-#exclusions = bonds.get_exclusions(configuration)
-
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 # Make integrator
@@ -67,10 +68,11 @@ sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integra
                     steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
 
-angles_array = []
+angles_array, dihedrals_array = [], []
 for block in sim.timeblocks():     
     print(sim.status(per_particle=True))     
     angles_array.append( angles.get_angle(10, configuration) )
+    dihedrals_array.append( dihedrals.get_dihedral(10, configuration) )
 
 print(sim.summary()) 
 
@@ -83,4 +85,5 @@ Etot_std = np.std(Etot)/configuration.N
 
 print("Temp:  %.2f  Etot: %.2e (%.2e)" % (temp,  Etot_mean, Etot_std))
 print("Angle: %.2f (%.2f) " % (np.mean(angles_array), np.std(angles_array)))
+print("Dihedral: %.2f (%.2f) " % (np.mean(dihedrals_array), np.std(dihedrals_array)))
 

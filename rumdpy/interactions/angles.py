@@ -83,29 +83,19 @@ class Angels():
                 offset = exclusions[pidx[k]][-1]
                 if offset > max_number_exclusions-2:
                     raise ValueError("Number of max. exclusion breached")
-
+                
                 if k==0:
+                    idx = [1, 2]
+                elif k==1:
+                    idx = [0, 2]
+                else:
+                    idx = [0, 1]
+
+                for kk in idx:
                     if angles_entry_not_exists(pidx[1], exclusions[pidx[k]],offset):
                         exclusions[pidx[k]][offset] = pidx[1]
                         offset += 1
-                    if angles_entry_not_exists(pidx[2], exclusions[pidx[k]],offset): 
-                        exclusions[pidx[k]][offset] = pidx[2]
-                        offset += 1
-                elif k==1:
-                    if angles_entry_not_exists(pidx[0], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[0]
-                        offset += 1
-                    if angles_entry_not_exists(pidx[2], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[2]
-                        offset += 1
-                else:
-                    if angles_entry_not_exists(pidx[0], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[0]
-                        offset += 1 
-                    if angles_entry_not_exists(pidx[1],exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[1]
-                        offset += 1
-
+                    
                 exclusions[pidx[k]][-1] = offset
 
         return exclusions  

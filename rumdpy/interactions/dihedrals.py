@@ -83,77 +83,79 @@ class Dihedrals():
 
             u = p[0]+(p[1]+(p[2]+(p[3]+(p[4]+p[5]*cc)*cc)*cc)*cc)*cc           
             u_per_part = numba.float32(0.25)*u    
-
+            
             for n in range(4):
                 cuda.atomic.add(scalars, (indices[n], u_id), u_per_part) 
 
             return
         
         return make_fixed_interactions(configuration, dihedral_calculator, compute_plan, verbose=False)
-    '''
+    
+
     def get_exclusions(self, configuration, max_number_exclusions=20):
             
         exclusions = np.zeros( (configuration.N, max_number_exclusions+1), dtype=np.int32 ) 
         
         nangles = len(self.indices)
         for n in range(nangles):
-            pidx = self.indices[n][:3]
-            for k in range(3):
+            pidx = self.indices[n][:4]
+            for k in range(4):
 
                 offset = exclusions[pidx[k]][-1]
                 if offset > max_number_exclusions-2:
                     raise ValueError("Number of max. exclusion breached")
 
                 if k==0:
-                    if angles_entry_not_exists(pidx[1], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[1]
-                        offset += 1
-                    if angles_entry_not_exists(pidx[2], exclusions[pidx[k]],offset): 
-                        exclusions[pidx[k]][offset] = pidx[2]
-                        offset += 1
+                    idx = [1, 2, 3]
                 elif k==1:
-                    if angles_entry_not_exists(pidx[0], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[0]
-                        offset += 1
-                    if angles_entry_not_exists(pidx[2], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[2]
-                        offset += 1
+                    idx = [0, 2, 3]
+                elif k==2:
+                    idx = [0, 1, 3]
                 else:
-                    if angles_entry_not_exists(pidx[0], exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[0]
-                        offset += 1 
-                    if angles_entry_not_exists(pidx[1],exclusions[pidx[k]],offset):
-                        exclusions[pidx[k]][offset] = pidx[1]
-                        offset += 1
+                    idx = [0, 1, 2]
 
+                for kk in idx:
+                    if dihedrals_entry_not_exists(pidx[kk], exclusions[pidx[k]], offset):
+                        exclusions[pidx[k]][offset] = pidx[kk]
+                        offset += 1
+                
                 exclusions[pidx[k]][-1] = offset
 
         return exclusions  
                  
-    def get_angle(self, angle_idx, configuration):
-        
-        pidx = self.indices[angle_idx][:3]
 
-        r1 = configuration['r'][pidx[0]]
-        r2 = configuration['r'][pidx[1]]
-        r3 = configuration['r'][pidx[2]]
+    def get_dihedral(self, dihedral_idx, configuration):
         
-        dr_1 = angles_get_dist_vector(r1, r2, configuration.simbox)
-        dr_2 = angles_get_dist_vector(r3, r2, configuration.simbox)
+        pidx = self.indices[dihedral_idx][:4]
+
+        r0 = configuration['r'][pidx[0]]
+        r1 = configuration['r'][pidx[1]]
+        r2 = configuration['r'][pidx[2]]
+        r3 = configuration['r'][pidx[3]]
+
+        dr_1 = dihedrals_get_dist_vector(r1, r0, configuration.simbox)
+        dr_2 = dihedrals_get_dist_vector(r2, r1, configuration.simbox)
+        dr_3 = dihedrals_get_dist_vector(r3, r2, configuration.simbox)
 
         c11 = dr_1[0]*dr_1[0] + dr_1[1]*dr_1[1] + dr_1[2]*dr_1[2]
         c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
+        c13 = dr_1[0]*dr_3[0] + dr_1[1]*dr_3[1] + dr_1[2]*dr_3[2]
         c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
+        c23 = dr_2[0]*dr_3[0] + dr_2[1]*dr_3[1] + dr_2[2]*dr_3[2]
+        c33 = dr_3[0]*dr_3[0] + dr_3[1]*dr_3[1] + dr_3[2]*dr_3[2]
 
-        cD = math.sqrt(c11*c22)
-        cc = c12/cD 
-
-        angle = math.acos(cc)
+        cA = c13*c22 - c12*c23
+        cB1 = c11*c22 - c12*c12
+        cB2 = c22*c33 - c23*c23
+        cD = math.sqrt(cB1*cB2)
+        cc = cA/cD
         
-        return angle
+        dihedral = math.pi - math.acos(cc)
+      
+        return dihedral 
  
-# Helpers 
-def angles_get_dist_vector(ri, rj, simbox):
+# Helpers (copies of angles helpers: This should be centralized somehow)
+def dihedrals_get_dist_vector(ri, rj, simbox):
     dr = np.zeros(3)
     for k in range(simbox.D): 
         dr[k] = ri[k] - rj[k]
@@ -163,12 +165,11 @@ def angles_get_dist_vector(ri, rj, simbox):
 
     return dr
 
-def angles_entry_not_exists(idx, exclusion_list, nentries):
+def dihedrals_entry_not_exists(idx, exclusion_list, nentries):
 
     for n in range(nentries):
         if exclusion_list[n]==idx:
             return False
 
     return True
-    '''
 
