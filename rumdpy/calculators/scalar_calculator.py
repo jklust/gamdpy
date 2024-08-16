@@ -39,7 +39,7 @@ class ScalarSaver():
         shape = (self.num_timeblocks, self.scalar_saves_per_block, self.num_scalars)
         if 'scalars' in self.output.keys():
             del self.output['scalars']
-        self.output.create_dataset('scalars', shape=shape, 
+        self.output.create_dataset('scalars', shape=shape,
                 chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         self.output.attrs['steps_between_output'] = self.steps_between_output
         self.output.attrs['scalars_names'] = list(self.sid.keys())

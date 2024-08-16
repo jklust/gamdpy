@@ -113,7 +113,7 @@ class Simulation():
         # Close output object if there
         # Check https://stackoverflow.com/questions/610883/how-to-check-if-an-object-has-an-attribute
         # Create output objects
-        if self.storage == 'memory':	
+        if self.storage == 'memory':
             # Creates a memory h5 file with named id(self).h5; id(self) is ensured to be unique
             self.output = h5py.File(f"{id(self)}.h5", "w", driver='core', backing_store=False)
         elif self.storage[-3:] == '.h5':
@@ -144,13 +144,13 @@ class Simulation():
         if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
             self.output_calculator = None
         else:
-            self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output, 
+            self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
                                                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                                                     output=self.output)
 
         # Saving of configurations
         if conf_output == 'default':
-            self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks, 
+            self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks,
                                            steps_per_timeblock=steps_per_timeblock, output=self.output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
@@ -422,9 +422,9 @@ class Simulation():
             
             if self.conf_saver != None:
                 self.conf_saver.update_at_end_of_timeblock(block)
-        
+
             if self.storage[-3:] == '.h5':
-                self.output.flush()        
+                self.output.flush()
 
             if self.timing:
                 end_block.record()
