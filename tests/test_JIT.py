@@ -49,7 +49,7 @@ def test_JIT():
                                         num_timeblocks=2, steps_per_timeblock=1024, 
                                         steps_between_momentum_reset=100,
                                         storage='memory')
-                    print(sim.compute_plan, "\n")
+                    print(sim.compute_plan)
                     
 if __name__ == '__main__':
      test_JIT()

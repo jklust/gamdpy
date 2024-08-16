@@ -65,7 +65,6 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     columns = ['U', 'W', 'lapU', 'Fsq', 'K']
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
     df = pd.DataFrame(data.T, columns=columns)
-    sim.output.close()
     return df
 
 def get_results_from_df(df, N, D):
