@@ -56,11 +56,7 @@ class NbList2():
 
             if global_id == 0 and my_t == 0:
                 strain_change = sim_box[D] - sim_box[D+2] # change in box-shift
-                # take PBC into account:
-                if strain_change > 0.5*sim_box[0]:
-                    strain_change -= sim_box[0]
-                if strain_change < -0.5*sim_box[0]:
-                    strain_change += sim_box[0]
+                strain_change += (sim_box[D+1] - sim_box[D+3]) * sim_box[0] # add contribution from box_shift_image
                 strain_change /= sim_box[1] # convert to (xy) strain
 
                 sim_box[D+4] = strain_change
