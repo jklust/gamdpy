@@ -1,14 +1,14 @@
 """ Example of a Simulation using rumdpy, using explicit blocks.
 
 Simulation of a Lennard-Jones crystal in the NVT ensemble followed by shearing with SLLOD 
-and Lees-Edwards boundary conditions
+and Lees-Edwards boundary conditions. Runs one shear rate but easy to make a loop over shear rates.
 
 """
 import numpy as np
 import rumdpy as rp
 import matplotlib.pyplot as plt
 
-run_NVT = False # True # 
+run_NVT = True # False # 
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -27,7 +27,7 @@ if run_NVT:
 
     # Setup integrator to melt the crystal
     dt = 0.005
-    num_blocks = 10 # 50
+    num_blocks = 10
     steps_per_block = 2048
     running_time = dt*num_blocks*steps_per_block
 
@@ -39,38 +39,31 @@ if run_NVT:
     # Set simulation up. Total number of timesteps: num_blocks * steps_per_block
     sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
                             num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                            storage='cool.h5')
+                            storage='memory')
 
 
-    calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
     for block in sim_NVT.timeblocks():
         print(block)
         print(sim_NVT.status(per_particle=True))
-        #calc_rdf.update()
-
-    #rdf = calc_rdf.read()
 
     # save both in hdf5 and rumd-3 formats
     rp.configuration_to_hdf5(configuration, 'LJ_cooled_0.70.h5')
-    rp.configuration_to_rumd3(configuration, 'LJ_cooled_0.70.xyz.gz')
 
 else:
-    configuration0 = rp.configuration_from_hdf5('LJ_cooled_0.70.h5')
-    configuration1 = rp.configuration_from_rumd3('LJ_cooled_0.70.xyz.gz')
-    configuration = configuration1
+    configuration = rp.configuration_from_hdf5('LJ_cooled_0.70.h5')
 
 compute_plan = rp.get_default_compute_plan(configuration)
 compute_plan['gridsync'] = gridsync
-compute_plan['UtilizeNIII'] = True # False #
 print('compute_plan')
 print(compute_plan)
 print("Now run SLLOD simulation on what should now be a glass or polycrystal")
 
-sc_output = 1
+sc_output = 8
 
-sr = 0.005
+
 dt = 0.01
+sr = 0.02 # restuls for different values shown in comments below. This value only takes 4 seconds to run so good for running as a test
 
 configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simbox.lengths)
 
@@ -81,10 +74,19 @@ integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 configuration.set_kinetic_temperature(temperature_low, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE
 
 # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
+totalStrain = 10.0
+steps_per_block = 4096
+total_steps = int(totalStrain / (sr*dt)) + 1
+num_blocks = total_steps // steps_per_block + 1
+strain_transient = 1.0 # how much of the output to ignore
+num_steps_transient = int(strain_transient / (sr*dt) ) + 1
+
+
+print(f'num_blocks={num_blocks}')
 sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
-                          num_timeblocks=10, steps_per_timeblock=512, scalar_output=sc_output,
+                          num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block, scalar_output=sc_output,
                           steps_between_momentum_reset=100,
-                          storage='memory', compute_stresses=True, compute_plan=compute_plan)
+                          storage='memory', compute_stresses=True, compute_plan=compute_plan, include_simbox_in_output=True)
 
 # Run simulation one block at a time
 for block in sim_SLLOD.timeblocks():
@@ -96,17 +98,20 @@ for block in sim_SLLOD.timeblocks():
 print(sim_SLLOD.summary())
 
 
-u = sim_SLLOD.output['scalars'][:,:,0].flatten()/configuration.N
-k = sim_SLLOD.output['scalars'][:,:,4].flatten()/configuration.N
-sxy = sim_SLLOD.output['scalars'][:,:,9].flatten()/configuration.get_volume()
+U, K, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'Sxy'])
+N = configuration.N
+u, k, sxy = U/N,K/N, V_sxy / configuration.get_volume()
 times = np.arange(len(u)) * sc_output *  dt
 stacked_output = np.column_stack((times, u, k, sxy))
 np.savetxt('shear_run.txt', stacked_output, delimiter=' ', fmt='%f')
 
-
 strains = times * sr
 
-sxy_mean = np.mean(sxy)
+num_items_transient = num_steps_transient // sc_output
+print(f'num_items_transient={num_items_transient}')
+sxy_SS = sxy[num_items_transient:]
+
+sxy_mean = np.mean(sxy_SS)
 print(f'{sr:.2g} {sxy_mean:.6f}')
 
 #plt.figure(1)
@@ -119,17 +124,17 @@ print(f'{sr:.2g} {sxy_mean:.6f}')
 # STRAINRATE VS MEAN STRESS
 
 
-# 0.001 0.014872
-# 0.0025 0.043739
-# 0.005 0.069240
-# 0.0075 0.103628
-# 0.01 0.139017
-# 0.02 0.253017
-# 0.03 0.348075
+# 0.001 0.014687
+# 0.0025 0.037265
+# 0.005 0.071615
+# 0.0075 0.111890
+# 0.01 0.140723
+# 0.02 0.264056
+# 0.03 0.363014
 
 
 # quadratic fit gives the following
-# 0.0027409 + 14.438 * x - 97.323 * x^2
+# -0.00083871 + 15.436 * x - 110.19*x^2
 
-# The small value of the stress at zero, 0.0027409 is consistent with zero
-# which is promising and we can read the Newtonian viscosity off as 14.438
+# The small value of the stress at zero is consistent with zero
+# which is promising and we can read the Newtonian viscosity off as 15.436
