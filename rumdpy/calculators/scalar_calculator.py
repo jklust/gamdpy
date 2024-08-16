@@ -72,7 +72,7 @@ class ScalarSaver():
         self.zero_kernel(self.d_output_array)
 
     def update_at_end_of_timeblock(self, block:int):
-         self.output['scalars'][block, :] = self.d_output_array.copy_to_host()
+        self.output['scalars'][block, :] = self.d_output_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan

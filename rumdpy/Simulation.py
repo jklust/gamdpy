@@ -119,13 +119,6 @@ class Simulation():
         elif self.storage[-3:] == '.h5':
             # The append is important for repeated istances of sim with same self.storage
             self.output = h5py.File(self.storage, "a")
-#            try: # Fails if file exists
-#                self.output = h5py.File(self.storage, "w-")
-#            except:
-#                try: # Fails if file is open by other istance of sim
-#                    self.output = h5py.File(self.storage, "w")
-#                except: # Desperate last attempt
-#                    self.output = h5py.File(self.storage, "a")
         else:
             print("Simulation data will not be saved")
         # Save setup info
