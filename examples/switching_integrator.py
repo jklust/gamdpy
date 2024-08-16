@@ -54,7 +54,6 @@ for block in sim1.timeblocks():
 print(sim1.status(per_particle=True))
 U2, K2 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E2 = U2 + K2 
-sim1.output.close()
 
 sim2 = rp.Simulation(configuration, pair_pot, integrator2,
                      num_timeblocks=4,

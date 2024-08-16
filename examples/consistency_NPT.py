@@ -25,7 +25,7 @@ elif flag=="Langevin":
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=my_T)
+configuration.randomize_velocities(T=my_T, seed=0)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -60,7 +60,6 @@ print(f"Pressure (mean): {my_rho*(2*np.mean(K)/3+np.mean(W))/configuration.N}")
 print(f"Thermal pressure coefficient: {P_th}")
 print(f"Specific heat at constant volume: {c_V}")
 print()
-sim.output.close()
 
 # NPT Simulation 
 sim = rp.Simulation(configuration, pair_pot, integrator,

@@ -60,7 +60,6 @@ for block in sim.timeblocks():
     if block % 10 == 0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
-sim.output.close()
 
 runtime_action = 128
 #runtime_action=1024*8 # to see effect of momentum resetting

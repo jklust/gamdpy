@@ -49,7 +49,6 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
 for block in sim.timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
-sim.output.close()
 
 print('Production:')
 integrator = rp.integrators.NVT(temperature, tau=0.2, dt=dt)

@@ -133,4 +133,3 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
 
 # Run simulation
 sim.run()
-sim.output.close()

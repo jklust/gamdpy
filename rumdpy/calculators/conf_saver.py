@@ -12,6 +12,7 @@ class ConfSaver():
     """
 
     def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
+
         self.configuration = configuration
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
@@ -22,8 +23,6 @@ class ConfSaver():
             raise ValueError(f'steps_per_timeblock ({steps_per_timeblock}) should be non-negative integer.')
         self.steps_per_timeblock = steps_per_timeblock
 
-#        if storage != 'memory' and storage[-3:] != '.h5':  # Either in-memory or hdf5 (others could be added)
-#            raise ValueError(f'storage({storage}) needs to be "memory" or end at ".h5"')
         self.output = output
 
         self.conf_per_block = int(math.log2(self.steps_per_timeblock)) + 2  # Should be user controllable
@@ -33,11 +32,9 @@ class ConfSaver():
         self.sid = {"r":0, "r_im":1}
 
         # Setup output
-#        if self.storage == 'memory.h5' or self.storage == 'memory':
-#            self.output = h5py.File(self.storage, "w", driver='core', backing_store=False)
-#        else:
-#            self.output = h5py.File(self.storage, "w")
-        ds = self.output.create_dataset("block", shape=(
+        if 'block' in self.output.keys():
+            del self.output['block']
+        self.output.create_dataset("block", shape=(
             self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
             chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
         self.output.attrs['vectors_names'] = list(self.sid.keys())
@@ -73,12 +70,6 @@ class ConfSaver():
         return zero_kernel[num_blocks, pb]
 
     def update_at_end_of_timeblock(self, block: int):
-#        if self.storage == 'memory' or self.storage == 'memory.h5':
-#            with h5py.File(self.storage, "a", driver='core', backing_store=False) as f:
-#                f['block'][block, :] = self.d_conf_array.copy_to_host()
-#        elif self.storage[-3:] == '.h5':
-#            with h5py.File(self.storage, "a") as f:
-#                f['block'][block, :] = self.d_conf_array.copy_to_host()
         self.output['block'][block, :] = self.d_conf_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
