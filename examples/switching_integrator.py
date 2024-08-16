@@ -33,7 +33,6 @@ integrator1 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 integrator2 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
 # Setup Simulations
-# NOTE: there is an issue with creating two simulation objects with memory storage
 sim1 = rp.Simulation(configuration, pair_pot, integrator1,
                      num_timeblocks=4,
                      steps_per_timeblock=512,

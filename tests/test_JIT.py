@@ -7,11 +7,11 @@ def test_JIT():
         
         # Generate configurations with a FCC lattice
         configuration1 = rp.make_configuration_fcc(nx= 8, ny= 8, nz=8,  rho=0.8442)
-        configuration1.randomize_velocities(T=1.44, seed=1234)
+        configuration1.randomize_velocities(T=1.44)
         configuration2 = rp.make_configuration_fcc(nx= 5, ny= 5, nz=13, rho=1.2000)
-        configuration2.randomize_velocities(T=0.44, seed=4123)
+        configuration2.randomize_velocities(T=0.44)
         configuration3 = rp.make_configuration_fcc(nx=16, ny=16, nz=32, rho=0.8442)
-        configuration3.randomize_velocities(T=2.44, seed=3412)
+        configuration3.randomize_velocities(T=2.44)
 
         # Make pair potentials
         pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -42,18 +42,14 @@ def test_JIT():
                                                     dt=dt, seed=2023)]
 
         for configuration in [configuration1, configuration2, configuration3]:
-            print("conf #:", [configuration1, configuration2, configuration3].index(configuration))
             for pairpot in [pairpot1, pairpot2]:
-                print("pairpot #:", [pairpot1, pairpot2].index(pairpot))
                 ev = rp.Evaluater(configuration, pairpot)
                 for integrator in integrators:
-                    print(integrator)
                     sim = rp.Simulation(configuration, pairpot, integrator,
                                         num_timeblocks=2, steps_per_timeblock=1024, 
                                         steps_between_momentum_reset=100,
                                         storage='memory')
                     print(sim.compute_plan, "\n")
-                    sim.output.close()
                     
 if __name__ == '__main__':
      test_JIT()
