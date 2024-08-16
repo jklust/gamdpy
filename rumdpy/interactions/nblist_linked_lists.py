@@ -231,12 +231,12 @@ class NbListLinkedLists():
         else:
             # A python function, making several kernel calls to syncronize  
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
-                max_cut, skin, nbflag, r_ref, exclusions, cells_per_dimension, cells, my_cell, next_particle_in_cell = nblist_parameters
-                nblist_check(vectors, sim_box, skin, r_ref, nbflag)
+                max_cut, skin, nbflag, r_ref, exclusions, cells_per_dimension, cells, next_particle_in_cell = nblist_parameters
+                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
                 if nbflag[0] > 0:
-                    put_particles_in_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
+                    put_particles_in_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag, cells_per_dimension, cells, next_particle_in_cell)
                     nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions) # Maybe tp = 1 ???
-                    clear_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag, cells, my_cell, next_particle_in_cell)
+                    clear_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag,  cells_per_dimension, cells, next_particle_in_cell)
                 return
                 #max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
                 #nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
