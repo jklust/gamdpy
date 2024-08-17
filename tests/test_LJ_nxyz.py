@@ -11,7 +11,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     
     # Generate configuration with a FCC lattice
     configuration = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho)
-    configuration.randomize_velocities(T=1.44)
+    configuration.randomize_velocities(T=1.44, seed=0)
     assert configuration.N==nx*ny*nz*4, f'Wrong number particles (FCC), {configuration.N} <> {nx*ny*nz*4}'
     assert configuration.D==3, f'Wrong dimension (FCC), {configuration.D} <> {3}'
 
