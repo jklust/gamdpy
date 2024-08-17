@@ -15,6 +15,7 @@ class Simbox():
     def __init__(self, D, lengths):
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
+        self.len_sim_box_data = D # not true for other Simbox classes
         self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume = self.make_simbox_functions()
         self.dist_moved_sq_function = self.dist_sq_function
         return
@@ -47,7 +48,7 @@ class Simbox():
                          (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
-        
+
         def apply_PBC(r, image, sim_box):
             for k in range(D):
                 if r[k] * numba.float32(2.0) > +sim_box[k]:
@@ -74,15 +75,17 @@ class Simbox():
             return vol
 
         return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume
-    
-    
-    
+
+
+
 class Simbox_LeesEdwards(Simbox):
     def __init__(self, D, lengths, box_shift=0.):
         if D < 2:
             raise ValueError("Cannot use Simbox_LeesEdwards with dimension smaller than 2")
         Simbox.__init__(self, D, lengths)
         self.box_shift = box_shift
+        self.box_shift_image = 0.
+        self.len_sim_box_data = D+2 # for saving purposes; we don't include the last four items (last_box_shift etc) here
         print('Simbox_LeesEdwards, box_shift=', box_shift)
 
         # have already called base class Simbox.make_simbox_functions, and can
@@ -93,10 +96,13 @@ class Simbox_LeesEdwards(Simbox):
         return
 
     def copy_to_device(self):
+        # Here it assumed this is being done for the first time
         D = self.D
-        data_array = np.zeros(D+4, dtype=np.float32) # extra entries are: box_shift, last box_shift (ie last time NB list was built, strain change since NB list was built, correction to skin due to strain change
+        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, last box_shift, 
+        # last_box_shift_image (ie last time NB list was built), strain change since NB list was built, correction to skin due to strain change
         data_array[:D] = self.lengths[:]
         data_array[D] = self.box_shift
+        data_array[D+1] = self.box_shift_image
         self.d_data = cuda.to_device(data_array)
 
     def copy_to_host(self):
@@ -104,8 +110,9 @@ class Simbox_LeesEdwards(Simbox):
         box_data =  self.d_data.copy_to_host()
         self.lengths = box_data[:D].copy()
         self.box_shift = box_data[D]
+        self.boxshift_image = box_data[D+1]
         # don't need last_box_shift etc on the host except maybe occasionally for debugging
-        
+ 
     def make_simbox_functions_LE(self):
         D = self.D
 
