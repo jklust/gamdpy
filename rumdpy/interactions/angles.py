@@ -1,0 +1,142 @@
+import numpy as np
+import numba
+import math
+from numba import cuda
+from .make_fixed_interactions import make_fixed_interactions   # bonds is an example of 'fixed' interactions
+
+class Angels(): 
+
+    def __init__(self, indices, parameters):
+        
+        self.indices = np.array(indices, dtype=np.int32) 
+        self.params = np.array(parameters, dtype=np.float32)
+
+
+    def get_params(self, configuration, compute_plan, verbose=False):
+
+        self.d_indices = cuda.to_device(self.indices)
+        self.d_params = cuda.to_device(self.params);
+        
+        return (self.d_indices, self.d_params)
+
+ 
+    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+        # Unpack parameters from configuration and compute_plan
+        D, N = configuration.D, configuration.N
+        pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
+        num_blocks = (N - 1) // pb + 1
+
+        # Unpack indices for vectors and scalars to be compiled into kernel
+        r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+        u_id = configuration.sid['u']
+
+        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+    
+        def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
+           
+            kspring = values[indices[3]][0]
+            angle = values[indices[3]][1]
+
+            dr_1 = cuda.local.array(shape=D,dtype=numba.float32)
+            dr_2 = cuda.local.array(shape=D,dtype=numba.float32)
+
+            dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr_1)
+            dist_sq_dr_function(vectors[r_id][indices[2]], vectors[r_id][indices[1]], sim_box, dr_2)
+
+            c11 = dr_1[0]*dr_1[0] + dr_1[1]*dr_1[1] + dr_1[2]*dr_1[2]
+            c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
+            c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
+
+            cCon = math.cos(math.pi - angle);
+            cD = math.sqrt(c11*c22)
+            cc = c12/cD 
+
+            f = -kspring*(cc - cCon)
+            for k in range(D):
+                f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
+                f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
+                
+                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      # Force
+                cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
+                cuda.atomic.add(vectors, (f_id, indices[2], k), f_2)
+            
+            u = numba.float32(0.5)*kspring*(cc-cCon)*(cc-cCon)
+            onethird = numba.float32(1.0/3.0);    
+            cuda.atomic.add(scalars, (indices[0], u_id), u*onethird) 
+            cuda.atomic.add(scalars, (indices[1], u_id), u*onethird)
+            cuda.atomic.add(scalars, (indices[2], u_id), u*onethird)
+
+
+            return
+        
+        return make_fixed_interactions(configuration, angle_calculator, compute_plan, verbose=False)
+    
+    def get_exclusions(self, configuration, max_number_exclusions=20):
+            
+        exclusions = np.zeros( (configuration.N, max_number_exclusions+1), dtype=np.int32 ) 
+        
+        nangles = len(self.indices)
+        for n in range(nangles):
+            pidx = self.indices[n][:3]
+            for k in range(3):
+
+                offset = exclusions[pidx[k]][-1]
+                if offset > max_number_exclusions-2:
+                    raise ValueError("Number of max. exclusion breached")
+                
+                if k==0:
+                    idx = [1, 2]
+                elif k==1:
+                    idx = [0, 2]
+                else:
+                    idx = [0, 1]
+
+                for kk in idx:
+                    if angles_entry_not_exists(pidx[1], exclusions[pidx[k]],offset):
+                        exclusions[pidx[k]][offset] = pidx[1]
+                        offset += 1
+                    
+                exclusions[pidx[k]][-1] = offset
+
+        return exclusions  
+                 
+    def get_angle(self, angle_idx, configuration):
+        
+        pidx = self.indices[angle_idx][:3]
+
+        r1 = configuration['r'][pidx[0]]
+        r2 = configuration['r'][pidx[1]]
+        r3 = configuration['r'][pidx[2]]
+        
+        dr_1 = angles_get_dist_vector(r1, r2, configuration.simbox)
+        dr_2 = angles_get_dist_vector(r3, r2, configuration.simbox)
+
+        c11 = dr_1[0]*dr_1[0] + dr_1[1]*dr_1[1] + dr_1[2]*dr_1[2]
+        c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
+        c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
+
+        cD = math.sqrt(c11*c22)
+        cc = c12/cD 
+
+        angle = math.acos(cc)
+        
+        return angle
+ 
+# Helpers 
+def angles_get_dist_vector(ri, rj, simbox):
+    dr = np.zeros(3)
+    for k in range(simbox.D): 
+        dr[k] = ri[k] - rj[k]
+        box_k = simbox.lengths[k]
+        #PP
+        dr[k] += (-box_k if 2.0*dr[k] > +box_k else (+box_k if 2.0*dr[k] < -box_k else 0.0)) 
+
+    return dr
+
+def angles_entry_not_exists(idx, exclusion_list, nentries):
+
+    for n in range(nentries):
+        if exclusion_list[n]==idx:
+            return False
+
+    return True

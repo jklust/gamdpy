@@ -98,7 +98,7 @@ class Simbox_LeesEdwards(Simbox):
     def copy_to_device(self):
         # Here it assumed this is being done for the first time
         D = self.D
-        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, last box_shift, 
+        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift,
         # last_box_shift_image (ie last time NB list was built), strain change since NB list was built, correction to skin due to strain change
         data_array[:D] = self.lengths[:]
         data_array[D] = self.box_shift
@@ -111,7 +111,7 @@ class Simbox_LeesEdwards(Simbox):
         self.lengths = box_data[:D].copy()
         self.box_shift = box_data[D]
         self.boxshift_image = box_data[D+1]
-        # don't need last_box_shift etc on the host except maybe occasionally for debugging
+        # don't need last_box_shift etc on the host except maybe occasionally for debugging?
  
     def make_simbox_functions_LE(self):
         D = self.D
@@ -120,7 +120,7 @@ class Simbox_LeesEdwards(Simbox):
             box_shift = sim_box[D]
             for k in range(D):
                 dr[k] = ri[k] - rj[k]
-            
+
             dist_sq = numba.float32(0.0)
             box_1 = sim_box[1]
             dr[0] += (-box_shift if numba.float32(2.0) * dr[1] > +box_1 else
@@ -154,7 +154,7 @@ class Simbox_LeesEdwards(Simbox):
                          (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
-        
+
         def apply_PBC(r, image, sim_box):
 
             # first shift the x-component depending on whether the y-component is outside the box
@@ -172,16 +172,19 @@ class Simbox_LeesEdwards(Simbox):
                 if r[k] * numba.float32(2.0) < -sim_box[k]:
                     r[k] += sim_box[k]
                     image[k] -= 1
-    
-    
+
+
         def update_box_shift(sim_box, shift):
-            sim_box[D] += shift
+            # carry out the addition in double precision
+            sim_box[D] = numba.float32(sim_box[D] + numba.float64(shift))
             Lx = sim_box[0]
             Lx_half = Lx*numba.float32(0.5)
             if sim_box[D] > +Lx_half:
                 sim_box[D] -= Lx
+                sim_box[D+1] += 1
             if sim_box[D] < -Lx_half:
                 sim_box[D] += Lx
+                sim_box[D+1] -= 1
 
         def dist_moved_sq_function(r_current, r_last, sim_box):
             zero = numba.float32(0.)
@@ -189,7 +192,7 @@ class Simbox_LeesEdwards(Simbox):
             one = numba.float32(1.0)
             box_shift = sim_box[D]
             dist_moved_sq = zero
-            delta_strain = sim_box[D+2]
+            delta_strain = sim_box[D+4]
 
             # we will shift the x-component when the y-component is 'wrapped'
             dr1 = r_current[1] - r_last[1]

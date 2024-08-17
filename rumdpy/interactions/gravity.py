@@ -1,7 +1,8 @@
 
 import numpy as np
 from numba import cuda
-
+import numba
+import math
 from .make_fixed_interactions import make_fixed_interactions
 
 
@@ -59,13 +60,14 @@ class Gravity:
         num_blocks = (N - 1) // pb + 1
     
         f_id = configuration.vectors.indices['f'] 
-        
+       
         def gravity_calculator(vectors, scalars, ptype, sim_box, indices, values):
        
             f = vectors[f_id][indices[1]]
-            extforce = values[indices[0]][0]
-
-            f[0] = f[0] + extforce
+            
+            amplitude = values[indices[0]][0]
+            
+            f[0] = f[0] + amplitude
 
             return
     
