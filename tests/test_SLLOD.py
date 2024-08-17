@@ -4,6 +4,9 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble followed by shearing w
 and Lees-Edwards boundary conditions
 
 """
+
+from pathlib import Path
+
 import numpy as np
 import rumdpy as rp
 import matplotlib.pyplot as plt
@@ -50,7 +53,11 @@ if run_NVT:
 
 
 else:
-    configuration = rp.configuration_from_hdf5('Data/LJ_cooled_0.70.h5')
+    possible_file_paths = ['Data/LJ_cooled_0.70.h5', 'tests/Data/LJ_cooled_0.70.h5']
+    for path in possible_file_paths:
+        if Path(path).is_file():
+            configuration = rp.configuration_from_hdf5(path)
+            break
 
 compute_plan = rp.get_default_compute_plan(configuration)
 compute_plan['gridsync'] = gridsync
