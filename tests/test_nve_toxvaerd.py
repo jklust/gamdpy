@@ -100,3 +100,4 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
 
 if __name__ == '__main__':
     test_nve_toxvaerd(verbose=True, plot_figures=True)
+

@@ -116,7 +116,6 @@ for label in ['Px', 'Py', 'Pz']:
 axs.legend()
 plt.show(block=False)
 
-print("Alive")
 rdf = calc_rdf.read()
 rdf['rdf'] = np.mean(rdf['rdf'], axis=0)
 fig, axs = plt.subplots(1, 1, figsize=(8, 4))
@@ -126,3 +125,4 @@ axs.grid(linestyle='--', alpha=0.5)
 axs.plot(rdf['distances'], rdf['rdf'], '-')
 axs.set_xlim([0.5, 3.5])
 plt.show(block=True)
+
