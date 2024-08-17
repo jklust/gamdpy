@@ -7,7 +7,6 @@
 """
 
 import numpy as np
-
 import rumdpy as rp
 
 # Setup a default fcc configuration
@@ -17,16 +16,20 @@ configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
 configuration['m'] = 1.0
 
 # Fluid/free particles have type '0', tethered particles '1' and '2'
+hLx = configuration.simbox.lengths[0]*0.5
+hLz = configuration.simbox.lengths[2]*0.5
 for n in range(configuration.N):
-    if -3 < configuration['r'][n][2] < -1:
+    if -3 < configuration['r'][n][2] - hLz < -1:
         configuration.ptype[n] = 1
-    elif -1 < configuration['r'][n][0] < 1:
+    elif -1 < configuration['r'][n][0] - hLx < 1:
         configuration.ptype[n] = 2
 
 rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
-tether = rp.Tether(ptypes=[1, 2], spring_constants=[300, 500], configuration=configuration)
+tether = rp.Tether()
+tether.set_anchor_points_from_types(particle_types=[1, 2], spring_constants=[300, 500], configuration=configuration)
+
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -43,6 +46,7 @@ integrator = rp.integrators.NVT(temperature=2.0, tau=0.2, dt=0.005)
 
 # Compute plan
 #compute_plan = rp.get_default_compute_plan(configuration)
+
 
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pair_pot, tether], integrator,
