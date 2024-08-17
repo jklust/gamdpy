@@ -11,7 +11,7 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     import numpy as np
     import numba
     from numba import cuda
-    print(f"Testing configuration={nconf}, integrator_type={integrator_type} and potential={potential}, nunba version: {numba.__version__}")
+    print(f"Testing configuration={nconf}, integrator_type={integrator_type} and potential={potential}, numba version: {numba.__version__}")
         
     # Generate configurations with a FCC lattice
     # NOTE: if nx,ny,nz are lower than 4,2,4 fails (in any order)
@@ -82,10 +82,16 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
         print("wrong input")
         exit()
 
+    if configuration.N > 128:
+        steps_in_kernel_test = 0
+    else:
+        steps_in_kernel_test = 1
+    
     ev = rp.Evaluater(configuration, pairpot)
     sim = rp.Simulation(configuration, pairpot, integrator,
                         steps_between_momentum_reset=100,
-                        num_timeblocks=64, steps_per_timeblock=1024, storage='memory')
+                        num_timeblocks=64, steps_per_timeblock=1024, storage='memory',
+                        steps_in_kernel_test=steps_in_kernel_test)
     assert isinstance(sim, rp.Simulation)
     #cuda.simulator.reset()
     #del os.environ["NUMBA_ENABLE_CUDASIM"]

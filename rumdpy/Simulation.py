@@ -70,7 +70,8 @@ class Simulation():
     def __init__(self, configuration: rp.Configuration, interactions, integrator, 
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
-                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True, include_simbox_in_output=False):
+                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True, 
+                 include_simbox_in_output=False, steps_in_kernel_test=1):
 
         self.configuration = configuration
         if compute_plan == None:
@@ -109,6 +110,7 @@ class Simulation():
         self.steps_per_block = steps_per_timeblock
         self.storage = storage
         self.timing = timing
+        self.steps_in_kernel_test = steps_in_kernel_test
 
         # Create output objects
         if self.storage[-3:] == '.h5':  # Saving in hdf5 format
@@ -172,7 +174,7 @@ class Simulation():
                                                 self.compute_plan, True)
         
                 self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
-                self.integrate_self(0.0, 1)
+                self.integrate_self(0.0, self.steps_in_kernel_test)
                 break
             except numba.cuda.cudadrv.driver.CudaAPIError as e:
                 #print('Failed compute_plan : ', self.compute_plan)
