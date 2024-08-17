@@ -1,23 +1,32 @@
 import pytest
 
+# check on personalized pytest mark
 @pytest.mark.rumdpy_ci
-def test_cpu(nconf=1, integrator_type='NVE', potential='KABLJ'):
+def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     import os
     os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
     os.environ["NUMBA_DISABLE_JIT"] = "1"
     os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
     import rumdpy as rp
     import numpy as np
+    from numba import cuda
+    print(f"Testing configuration={nconf}, integrator_type={integrator_type} and potential={potential}")
         
     # Generate configurations with a FCC lattice
-    if   nconf == 1:
-        configuration = rp.make_configuration_fcc(nx= 4, ny= 4, nz= 4,  rho=0.8442)
+    # NOTE: if nx,ny,nz are lower than 4,2,4 fails (in any order)
+    # NOTE: some combinations systematically fails as 4,5,4
+    configuration = rp.Configuration(D=3)
+    if   nconf == '1':
+        configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 2], rho=0.8442)
+        configuration['m'] = 1.0
         configuration.randomize_velocities(T=1.44)
-    elif nconf == 2:
-        configuration = rp.make_configuration_fcc(nx= 3, ny= 4, nz= 5, rho=1.2000)
+    elif nconf == '2':
+        configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 3, 4], rho=1.2000)
+        configuration['m'] = 1.0
         configuration.randomize_velocities(T=0.44)
-    elif nconf == 3:
-        configuration = rp.make_configuration_fcc(nx= 6, ny= 2, nz= 2, rho=0.8442)
+    elif nconf == '3':
+        configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=0.8442)
+        configuration['m'] = 1.0
         configuration.randomize_velocities(T=2.44)
     else:
         print("wrong input")
@@ -77,9 +86,15 @@ def test_cpu(nconf=1, integrator_type='NVE', potential='KABLJ'):
                         steps_between_momentum_reset=100,
                         num_timeblocks=64, steps_per_timeblock=1024, storage='memory')
     assert isinstance(sim, rp.Simulation)
-    del os.environ["NUMBA_ENABLE_CUDASIM"]
-    del os.environ["NUMBA_DISABLE_JIT"]
-    del os.environ["NUMBA_CUDA_DEBUGINFO"]
+    #cuda.simulator.reset()
+    #del os.environ["NUMBA_ENABLE_CUDASIM"]
+    #del os.environ["NUMBA_DISABLE_JIT"]
+    #del os.environ["NUMBA_CUDA_DEBUGINFO"]
 
 if __name__ == '__main__':
-    test_cpu()
+    #import sys
+    #test_cpu(*sys.argv[1:])
+    for configuration in ['1', '2', '3']:
+        for integrator in ['NVE', 'NVT', 'NPT_Atomic']:
+            for potential in ['LJ', 'KABLJ']:
+                test_cpu(nconf=configuration, integrator_type=integrator, potential=potential)
