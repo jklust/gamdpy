@@ -152,7 +152,7 @@ class Simulation():
 
         # Saving of configurations
         if conf_output == 'default':
-            self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks,
+            self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks,
                                            steps_per_timeblock=steps_per_timeblock, output=self.output, include_simbox=include_simbox_in_output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
