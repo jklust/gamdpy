@@ -31,6 +31,7 @@ variables:
     - coverage run --source rumdpy -m unittest discover -s tests
     - coverage report -m
     - python3 tests_ci/test_LJ_cpu.py
+    - python3 tests_ci/test_LJ_gpu.py
   artifacts:
     paths:
       - .coverage
