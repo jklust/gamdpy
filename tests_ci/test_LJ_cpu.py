@@ -9,8 +9,9 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
     import rumdpy as rp
     import numpy as np
+    import numba
     from numba import cuda
-    print(f"Testing configuration={nconf}, integrator_type={integrator_type} and potential={potential}")
+    print(f"Testing configuration={nconf}, integrator_type={integrator_type} and potential={potential}, nunba version: {numba.__version__}")
         
     # Generate configurations with a FCC lattice
     # NOTE: if nx,ny,nz are lower than 4,2,4 fails (in any order)
