@@ -118,7 +118,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Auto-tuner
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [X] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/) Lorenzo/output branch
+- [X] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Thermostat on subsets of particles
 - [ ] Benchmarking
