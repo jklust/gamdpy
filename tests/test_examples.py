@@ -6,16 +6,19 @@ When debugging, you can change variable files to a few or a single file.
 """
 import glob
 import os
+import subprocess
 import time
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import pytest
-
-mpl.use('Agg')  # Static backend that does not halt on plt.show()
 
 @pytest.mark.slow
 def test_examples(path_to_examples='examples'):
+    import matplotlib
+    import matplotlib.pyplot as plt
+    matplotlib.get_backend()
+    os.environ['MPLBACKEND'] = 'Agg' # Reduced warnings from 94 to 62
+    os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0' # Reduced warnings from 62 to 59
+    matplotlib.use('Agg')  # Static backend that does not halt on plt.show()
     # List of scripts to exclude
 
     run_first = [  # These examples generate files that are used by other examples
@@ -59,12 +62,15 @@ def test_examples(path_to_examples='examples'):
                 print(f"Skipping {file} (warning: may fail)")
                 continue
 
-            with open(file) as example:
-                print(f"Executing {file}")
-                tic = time.perf_counter()
-                exec(example.read(), {})
-                toc = time.perf_counter()
-                print(f"Execution time for {file}: {toc - tic:.3} s")
+            #with open(file) as example:
+            print(f"Executing {file}")
+            tic = time.perf_counter()
+            print(os.getcwd())
+            torun = subprocess.Popen(["python3", f"{file}"])
+            stdout, stderr = torun.communicate()
+            #exec(example.read(), {})
+            toc = time.perf_counter()
+            print(f"Execution time for {file}: {toc - tic:.3} s")
     except FileNotFoundError as e:
         print(f"Warning: Cannot find needed file to run {file}. Running another example may provide it.")
         print(f"FileNotFoundError: {e}")

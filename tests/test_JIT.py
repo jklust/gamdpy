@@ -1,9 +1,11 @@
 import pytest
+import os
 
 @pytest.mark.slow
 def test_JIT():
         import rumdpy as rp
         import numpy as np
+        os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
         
         # Generate configurations with a FCC lattice
         configuration1 = rp.make_configuration_fcc(nx= 8, ny= 8, nz=8,  rho=0.8442)
