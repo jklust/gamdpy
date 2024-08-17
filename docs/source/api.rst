@@ -46,6 +46,9 @@ Interactions
 Pair potentials
 ===============
 
+.. autoclass:: rumdpy.PairPotential
+   :members:
+
 Functions
 ---------
 
@@ -106,6 +109,9 @@ Calculators
    :members:
 
 .. autoclass:: rumdpy.CalculatorStructureFactor
+   :members:
+
+.. autoclass:: rumdpy.CalculatorWidomInsertion
    :members:
 
 

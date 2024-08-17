@@ -82,7 +82,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [ ] Testing using gitlab CI, Lorenzo: status is that we need single tests
+- [ ] Testing using gitlab CI, Lorenzo
 - [X] Include scalar column names in output, Lorenzo
 - [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
@@ -118,7 +118,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Requirements/dependencies, especially to use grid-sync 
 - [ ] Auto-tuner
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [ ] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/)
+- [X] Define hdf5 'template' (discuss if h5md https://www.nongnu.org/h5md/) Lorenzo/output branch
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Thermostat on subsets of particles
 - [ ] Benchmarking
