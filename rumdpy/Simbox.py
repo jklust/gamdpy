@@ -97,6 +97,7 @@ class Simbox_LeesEdwards(Simbox):
 
     def copy_to_device(self):
         # Here it assumed this is being done for the first time
+
         D = self.D
         data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift,
         # last_box_shift_image (ie last time NB list was built), strain change since NB list was built, correction to skin due to strain change
@@ -112,7 +113,7 @@ class Simbox_LeesEdwards(Simbox):
         self.box_shift = box_data[D]
         self.boxshift_image = box_data[D+1]
         # don't need last_box_shift etc on the host except maybe occasionally for debugging?
- 
+
     def make_simbox_functions_LE(self):
         D = self.D
 
@@ -185,6 +186,7 @@ class Simbox_LeesEdwards(Simbox):
             if sim_box[D] < -Lx_half:
                 sim_box[D] += Lx
                 sim_box[D+1] -= 1
+
 
         def dist_moved_sq_function(r_current, r_last, sim_box):
             zero = numba.float32(0.)

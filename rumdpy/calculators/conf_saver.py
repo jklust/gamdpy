@@ -11,7 +11,7 @@ class ConfSaver():
         - for now only logarithmic saving
     """
 
-    def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output,include_simbox=False, verbose=False) -> None:
+    def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output, include_simbox=False, verbose=False) -> None:
 
         self.configuration = configuration
         self.include_simbox = include_simbox
@@ -33,6 +33,8 @@ class ConfSaver():
         self.sid = {"r":0, "r_im":1}
 
         # Setup output
+        if verbose:
+            print(f'Storing results in memory. Expected footprint {self.num_timeblocks * self.conf_per_block * self.num_vectors * self.configuration.N * self.configuration.D * 4 / 1024 / 1024:.2f} MB.')
         if 'block' in self.output.keys():
             del self.output['block']
         self.output.create_dataset("block", shape=(
@@ -96,7 +98,6 @@ class ConfSaver():
                 conf_array, sim_box_output_array = conf_saver_params
             else:
                 conf_array, = conf_saver_params
-            conf_array, = conf_saver_params
 
             Flag = False
             if step == 0:
@@ -118,7 +119,6 @@ class ConfSaver():
                     if include_simbox and global_id == 0:
                         for k in range(sim_box_array_length):
                             sim_box_output_array[save_index, k] = sim_box[k]
-            self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
             return
 
         kernel = cuda.jit(device=gridsync)(kernel)

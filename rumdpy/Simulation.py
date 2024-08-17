@@ -67,7 +67,7 @@ class Simulation():
 
     """
 
-    def __init__(self, configuration: rp.Configuration, interactions, integrator, 
+    def __init__(self, configuration: rp.Configuration, interactions, integrator,
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
                  steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True,
