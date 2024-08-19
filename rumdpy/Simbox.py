@@ -99,7 +99,7 @@ class Simbox_LeesEdwards(Simbox):
         # Here it assumed this is being done for the first time
 
         D = self.D
-        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift, 
+        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift,
         # last_box_shift_image (ie last time NB list was built), strain change since NB list was built, correction to skin due to strain change
         data_array[:D] = self.lengths[:]
         data_array[D] = self.box_shift

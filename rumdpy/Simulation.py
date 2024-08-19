@@ -67,10 +67,10 @@ class Simulation():
 
     """
 
-    def __init__(self, configuration: rp.Configuration, interactions, integrator, 
+    def __init__(self, configuration: rp.Configuration, interactions, integrator,
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
-                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True, 
+                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True,
                  include_simbox_in_output=False, steps_in_kernel_test=1):
 
         self.configuration = configuration
@@ -112,21 +112,25 @@ class Simulation():
         self.timing = timing
         self.steps_in_kernel_test = steps_in_kernel_test
 
+        # Close output object if there
+        # Check https://stackoverflow.com/questions/610883/how-to-check-if-an-object-has-an-attribute
         # Create output objects
-        if self.storage[-3:] == '.h5':  # Saving in hdf5 format
-            with h5py.File(self.storage, "w") as f:
-                # Attributes for simulation (maybe save full configurations)
-                f.attrs['dt'] = self.dt
-                f.attrs['simbox_initial'] = self.configuration.simbox.lengths
-                ds = f.create_dataset("ptype", shape=(self.configuration.N), dtype=np.int32)
-                ds[:] = configuration.ptype
-        elif self.storage == 'memory':
-            # Set up a dictionary that exactly mirrors hdf5 file, so analysis programs can be the same
-            self.output = {}
-            self.output['attrs'] = {'dt': self.dt, 'simbox_initial': self.configuration.simbox.lengths.copy()}
-            self.output['ptype'] = configuration.ptype.copy()
+        if self.storage == 'memory':
+            # Creates a memory h5 file with named id(self).h5; id(self) is ensured to be unique
+            self.output = h5py.File(f"{id(self)}.h5", "w", driver='core', backing_store=False)
+        elif self.storage[-3:] == '.h5':
+            # The append is important for repeated istances of sim with same self.storage
+            self.output = h5py.File(self.storage, "a")
+        else:
+            print("Simulation data will not be saved")
+        # Save setup info
+        self.output.attrs['dt'] = self.dt
+        self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
+        if 'ptype' in self.output.keys():
+            del self.output['ptype']
+        self.output.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
 
-        # Momentum reset
+        # Momentum reset (this should be saved to output, same for sim parameters)
         if steps_between_momentum_reset == 'default':
             steps_between_momentum_reset = 100
 
@@ -142,27 +146,27 @@ class Simulation():
         if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
             self.output_calculator = None
         else:
-            self.output_calculator = rp.ScalarSaver(configuration, scalar_output, num_timeblocks, steps_per_timeblock,
-                                                    storage)
+            self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
+                                                    num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
+                                                    output=self.output)
 
         # Saving of configurations
         if conf_output == 'default':
-            self.conf_saver = rp.ConfSaver(self.configuration, num_timeblocks, steps_per_timeblock, storage, include_simbox=include_simbox_in_output)
+            self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks,
+                                           steps_per_timeblock=steps_per_timeblock, output=self.output, include_simbox=include_simbox_in_output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
         else:
             raise RuntimeError('Did not understand conf_output = ', conf_output)
-
-        # Update state in case of memory
-        if self.storage[-3:] != '.h5':
-            if not self.output_calculator == None: self.output.update(self.output_calculator.output)
-            if not self.conf_saver        == None: self.output.update(self.conf_saver.output)
 
         self.vectors_list = []
         self.scalars_list = []
         self.simbox_data_list = []
 
         self.JIT_and_test_kernel()
+
+    # __del__ is supposed to work also if __init__ fails. This means you can't use attributed defined in __init__
+    # https://www.algorithm.co.il/programming/python-gotchas-1-__del__-is-not-the-opposite-of-__init__/
 
     def JIT_and_test_kernel(self):
         while True:
@@ -251,8 +255,8 @@ class Simulation():
 
         # Configuration saving
         if self.conf_saver != None:
-            #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
             self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
+            #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
         else:
             #self.conf_saver_kernel = None
             self.conf_saver_params = (0,)
@@ -420,6 +424,9 @@ class Simulation():
             
             if self.conf_saver != None:
                 self.conf_saver.update_at_end_of_timeblock(block)
+
+            if self.storage[-3:] == '.h5':
+                self.output.flush()
 
             if self.timing:
                 end_block.record()

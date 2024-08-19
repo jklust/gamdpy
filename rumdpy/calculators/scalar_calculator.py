@@ -6,14 +6,9 @@ import h5py
 
 class ScalarSaver():
 
-    def __init__(self, configuration,
-                 steps_between_output:int, num_timeblocks:int, steps_per_timeblock:int, storage:str) -> None:
+    def __init__(self, configuration, num_timeblocks:int, steps_per_timeblock:int, steps_between_output:int, output, verbose=False) -> None:
 
         self.configuration = configuration
-
-        if type(steps_between_output) != int or steps_between_output < 0:
-            raise ValueError(f'steps_between_output ({steps_between_output}) should be non-negative integer.')
-        self.steps_between_output = steps_between_output
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
             raise ValueError(f'num_timeblocks ({num_timeblocks}) should be non-negative integer.')
@@ -23,15 +18,16 @@ class ScalarSaver():
             raise ValueError(f'steps_per_timeblock ({steps_per_timeblock}) should be non-negative integer.')
         self.steps_per_timeblock = steps_per_timeblock
 
+        if type(steps_between_output) != int or steps_between_output < 0:
+            raise ValueError(f'steps_between_output ({steps_between_output}) should be non-negative integer.')
+        self.steps_between_output = steps_between_output
+
         if steps_between_output >= steps_per_timeblock:
             raise ValueError(f'scalar_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
 
-        if storage != 'memory' and storage[-3:] != '.h5': # Either in-memory or hdf5 (others could be added)
-            raise ValueError(f'storage({storage}) needs to be "memory" or end at ".h5"')
-        self.storage = storage
+        self.output = output
 
-
-        # per block storage of scalars
+        # per block saving of scalars
         self.num_scalars = 6
         self.num_scalars += self.configuration.D #include CM momentum
         self.num_scalars += 1 #include XY component of stress (temporary!!!)
@@ -41,21 +37,13 @@ class ScalarSaver():
 
         # Setup output
         shape = (self.num_timeblocks, self.scalar_saves_per_block, self.num_scalars)
-        if self.storage[-3:]=='.h5': # Saving in hdf5 format
-            with h5py.File(self.storage, 'a') as f:
-                f.create_dataset('scalars', shape=shape,
-                                chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-                f.attrs['steps_between_output'] = self.steps_between_output
-                f.attrs['scalars_names'] = list(self.sid.keys())
-        elif self.storage=='memory': 
-            # Setup a dictionary that mirrors hdf5 file, so analysis programs can be (almost) the same
-            self.output = {}
-            self.output['scalars'] = np.zeros(shape=shape, dtype=np.float32)
-            #self.output['attrs']['steps_between_output'] = self.steps_between_output #LC: at one pint should be like this
-            #self.output['attrs']['scalars_names'] = list(self.sid.keys())            #LC: at one pint should be like this
-            self.output['steps_between_output'] = self.steps_between_output
-            self.output['scalars_names'] = list(self.sid.keys())
-    
+        if 'scalars' in self.output.keys():
+            del self.output['scalars']
+        self.output.create_dataset('scalars', shape=shape,
+                chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
+        self.output.attrs['steps_between_output'] = self.steps_between_output
+        self.output.attrs['scalars_names'] = list(self.sid.keys())
+
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
         self.zero_kernel = self.make_zero_kernel()
@@ -84,11 +72,7 @@ class ScalarSaver():
         self.zero_kernel(self.d_output_array)
 
     def update_at_end_of_timeblock(self, block:int):
-        if self.storage[-3:]=='.h5':
-            with h5py.File(self.storage, "a") as f:
-                f['scalars'][block,:] = self.d_output_array.copy_to_host()
-        elif self.storage=='memory':
-            self.output['scalars'][block,:] = self.d_output_array.copy_to_host()
+        self.output['scalars'][block, :] = self.d_output_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan
