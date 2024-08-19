@@ -16,8 +16,7 @@ class Simbox():
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
         self.len_sim_box_data = D # not true for other Simbox classes
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume = self.make_simbox_functions()
-        self.dist_moved_sq_function = self.dist_sq_function
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume, self.dist_moved_sq_function = self.make_simbox_functions()
         return
 
     def make_device_copy(self):
@@ -79,7 +78,18 @@ class Simbox():
                 vol *= sim_box[i]
             return vol
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume
+        def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
+            dist_sq = numba.float32(0.0)
+            for k in range(D):
+                dr_k = r_current[k] - r_last[k]
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
+                         (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
+                dist_sq = dist_sq + dr_k * dr_k
+
+            return dist_sq
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume, dist_moved_sq_function
 
 
 
@@ -205,13 +215,18 @@ class Simbox_LeesEdwards(Simbox):
                 sim_box[D+1] -= 1
 
 
-        def dist_moved_sq_function(r_current, r_last, sim_box):
+        def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
             zero = numba.float32(0.)
             half = numba.float32(0.5)
             one = numba.float32(1.0)
             box_shift = sim_box[D]
             dist_moved_sq = zero
-            delta_strain = sim_box[D+4]
+
+
+            strain_change = sim_box[D] - sim_box_last[D] # change in box-shift
+            strain_change += (sim_box[D+1] - sim_box_last[D+1]) * sim_box[0] # add contribution from box_shift_image
+            strain_change /= sim_box[1] # convert to (xy) strain
+            #strain_change = sim_box[D+4]
 
             # we will shift the x-component when the y-component is 'wrapped'
             dr1 = r_current[1] - r_last[1]
@@ -220,7 +235,7 @@ class Simbox_LeesEdwards(Simbox):
                       -one if dr1 < -half*box_1 else zero)
 
             x_shift = y_wrap * box_shift + (r_current[1] -
-                                            y_wrap*box_1) * delta_strain
+                                            y_wrap*box_1) * strain_change
             # see the expression in Chatoraj Ph.D. thesis. Adjusted here to
             # take into account BC wrapping (otherwise would use the images
             # ie unwrapped positions)
