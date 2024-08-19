@@ -7,13 +7,23 @@ from .make_fixed_interactions import make_fixed_interactions  # tether is an exa
 
 
 class Tether:
-    """ Connect particles to harmonic tethers anchored to points in space. """
+    """ Connect particles to anchor-points in space with a harmonic spring force. 
+        
+        Parameters
+        ----------
+        Points and spring constants are defined using
+        (a) A list of particle indices to be tethered and associated list of spring constants
+        (b) A list of particle types to be tethered and associated list of spring constants
 
+        See examples/tethered_particles.py
+    """
+
+    
     def __init__(self):
         anchor_points_set = False
 
 
-    def set_anchor_points_from_lists(self, particle_indices, ksprings):
+    def set_anchor_points_from_lists(self, particle_indices, ksprings, configuration):
     
         nsprings, nparticles = len(ksprings), len(particle_indices)
         
@@ -22,8 +32,8 @@ class Tether:
 
         indices, tether_params = [], []
         for n in range(nparticles):
-            indices.append([n, pindices[n]])
-            pos = configuration['r'][n]
+            indices.append([n, particle_indices[n]])
+            pos = configuration['r'][particle_indices[n]]
             tether_params.append( [pos[0], pos[1], pos[2], ksprings[n]] )
         
         self.tether_params = np.array(tether_params, dtype=np.float32)
@@ -71,9 +81,7 @@ class Tether:
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
-        # Get indices values (instead of dictonary entries) 
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        #u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         
@@ -83,24 +91,12 @@ class Tether:
             dist_sq = dist_sq_dr_function(values[indices[0]][:D], vectors[r_id][indices[1]], sim_box, dr)
             
             spring = values[indices[0]][3]
-            #u = numba.float32(0.5)*spring*dist_sq
-            #s = -spring
-            #umm = spring
-            
+           
             f=vectors[f_id][indices[1]];
 
             for k in range(D):
                 f[k] = f[k] + dr[k]*spring
-               # cuda.atomic.add(vectors, (f_id, indices[1], k), -dr[k]*s)      # Force
-               # cuda.atomic.add(scalars, (indices[0], w_id), dr[k]*dr[k]*s*virial_factor)    # Virial
-               # cuda.atomic.add(scalars, (indices[1], w_id), dr[k]*dr[k]*s*virial_factor)                      
-        
-            #cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5)) # Potential energy 
-            #cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5))
-            #lap = numba.float32(1-D)*s + umm                                   # Laplacian  
-            #cuda.atomic.add(scalars, (indices[0], lap_id), lap)               
-            #cuda.atomic.add(scalars, (indices[1], lap_id), lap)                
-        
+       
             return
     
         return make_fixed_interactions(configuration, tether_calculator, compute_plan, verbose=False)
