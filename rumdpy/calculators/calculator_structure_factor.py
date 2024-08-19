@@ -45,11 +45,10 @@ class CalculatorStructureFactor:
         n-vectors defining q-vectors.
         The shape of n_vectors, if specified, must be (N, D)
         where N is the number of q vectors and D is the number of dimensions.
-        Either q_max or n_vectors must be not None,
-        If n_vectors is None, then the q-vectors are auto generated from q_max.
+        If None, then use generate_q_vectors method.
 
     backend : str
-        The backend to use for the calculation. Either 'parallel' or 'single core'.
+        The backend to use for the calculation. Either 'CPU parallel' or 'CPU single core'.
 
     See also
     --------
@@ -58,40 +57,56 @@ class CalculatorStructureFactor:
 
     """
 
-    def __init__(self, configuration: rp.Configuration,
-                 q_max: float = None, n_vectors: np.ndarray = None, backend='parallel') -> None:
+    BACKENDS = ['CPU multi core', 'CPU single core']
+
+    def __init__(self, 
+                 configuration: rp.Configuration, 
+                 n_vectors: np.ndarray = None, 
+                 backend='CPU multi core') -> None:
+        if backend not in self.BACKENDS:
+            raise ValueError(f'Unknown backend, {backend}. The known backends are {self.BACKENDS}.')
         self.update_count = 0
         self.configuration = configuration
-        self.L = self.configuration.simbox.lengths.copy()
-        dimension_of_space = self.configuration.D
+        self.L = self.configuration.simbox.lengths.copy()  # Copy box lengths so that it is not changed
         if n_vectors is not None:
-            if q_max is not None:
-                raise ValueError('Only one of q_max or n_vectors must be specified.')
-            if not isinstance(n_vectors, np.ndarray):
-                raise ValueError('n_vectors must be a numpy array.')
-            if n_vectors.shape[1] != dimension_of_space:
-                raise ValueError('n_vectors must have the same number of columns as the number of dimensions.')
-            self.n_vectors = n_vectors
-            self.q_vectors = np.array(2 * np.pi * self.n_vectors / self.L, dtype=np.float32)
-        else:
             # n_vectors = [[0, 0, 1], [0, 0, 2], ..., [0, 1, 0], [0, 1, 1] ..., [18, 18, 18], ...]
-            if q_max is None:
-                raise ValueError('q_max or n_vectors must be specified.')
-            n_max = int(np.ceil(q_max * max(self.L) / (2 * np.pi)))
-            self.n_vectors = np.array(list(itertools.product(range(n_max), repeat=dimension_of_space)), dtype=int)
-            self.n_vectors = self.n_vectors[1:]  # Remove the first vector [0, 0, 0]
+            self.n_vectors = np.array(n_vectors)
+            dimension_of_space = self.configuration.D
+            if self.n_vectors.shape[1] != dimension_of_space:
+                raise ValueError('n_vectors must have the same number of columns as the number of dimensions.')
             self.q_vectors = np.array(2 * np.pi * self.n_vectors / self.L, dtype=np.float32)
-            # Remove q_vectors where the length is greater than q_max
-            self.q_vectors = self.q_vectors[np.linalg.norm(self.q_vectors, axis=1) < q_max]
-        self.q_lengths = np.linalg.norm(self.q_vectors, axis=1)
+            self.q_lengths = np.linalg.norm(self.q_vectors, axis=1)
+            self.sum_S_q = np.zeros_like(self.q_lengths)
+        
+        # List for storing data
         self.list_of_rho_q = []
         self.list_of_rho_S_q = []
+            
+        # if first 3 letters is CPU then generate the compute_rho_q function
+        if backend[:3] == 'CPU':
+            self._compute_rho_q_CPU = self._generate_compute_rho_q(backend)
+
+    def generate_q_vectors(self, q_max:float):
+        """ Generate q-vectors inside a sphere of radius q_max """
+        dimension_of_space = self.configuration.D
+        if q_max<0.0:
+            raise ValueError(f'{q_max=} must be posetive')
+        n_max = int(np.ceil(q_max * max(self.L) / (2 * np.pi)))
+        n_vectors = np.array(list(itertools.product(range(n_max), repeat=dimension_of_space)), dtype=int)
+        n_vectors = n_vectors[1:]  # Remove the first vector [0, 0, 0]
+        self.q_vectors = np.array(2 * np.pi * n_vectors / self.L, dtype=np.float32)
+
+        # Remove q_vectors where the length is greater than q_max
+        selection = np.linalg.norm(self.q_vectors, axis=1) < q_max
+        self.q_vectors = self.q_vectors[selection]
+        self.n_vectors = n_vectors[selection]
+        self.q_lengths = np.linalg.norm(self.q_vectors, axis=1)
         self.sum_S_q = np.zeros_like(self.q_lengths)
-        self.compute_rho_q = self._generate_compute_rho_q(backend)
+
 
     @staticmethod
-    def _generate_compute_rho_q(backend='parallel'):
-        if backend == 'parallel':
+    def _generate_compute_rho_q(backend):
+        if backend == 'CPU multi core':  # May raise "ImportError: scipy 0.16+ is required for linear algebra" if scipy is not installed
             def func(r_vec: np.ndarray, q_vec: np.ndarray):
                 num_particles = r_vec.shape[0]
                 number_of_q_vectors = q_vec.shape[0]
@@ -101,21 +116,19 @@ class CalculatorStructureFactor:
                     rho_q[i] = np.sum(np.exp(1j * r_dot_q))*num_particles**(-1/2)
                 return rho_q
             return numba.njit(parallel=True)(func)
-        elif backend == 'single core':
+        elif backend == 'CPU single core':
             def func(r_vec: np.ndarray, q_vec: np.ndarray):
                 N = r_vec.shape[0]
                 r_dot_q = np.dot(r_vec, q_vec.T)
                 rho_q = np.sum(np.exp(1j * r_dot_q), axis=0)*N**(-1/2)
                 return rho_q
             return numba.njit(func)
-        else:
-            raise ValueError(f'Unknown backend, {backend}')
 
     def update(self) -> None:
         """ Update the structure factor with the current configuration. """
         if not np.allclose(self.L, self.configuration.simbox.lengths):
             raise ValueError('Box length has changed. Recreate the S(q) object.')
-        this_rho_q = self.compute_rho_q(self.configuration['r'], self.q_vectors)
+        this_rho_q = self._compute_rho_q_CPU(self.configuration['r'], self.q_vectors)
         self.list_of_rho_q.append(this_rho_q)
         self.list_of_rho_S_q.append(np.abs(this_rho_q)**2)
         self.sum_S_q += np.abs(this_rho_q) ** 2

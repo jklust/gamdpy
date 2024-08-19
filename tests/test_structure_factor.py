@@ -26,7 +26,8 @@ def test_structure_factor(verbose=False, plot=False):
     if verbose:
         print('Calculating structure factor in production run ...')
     q_max: float = 16.0
-    calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=q_max)
+    calc_struct_fact = rp.CalculatorStructureFactor(configuration)
+    calc_struct_fact.generate_q_vectors(q_max=q_max)
     for _ in sim.timeblocks():
         calc_struct_fact.update()
         if verbose:
@@ -120,6 +121,25 @@ def test_structure_factor(verbose=False, plot=False):
     if verbose:
         print('All tests passed successfully')
 
+def test_structure_factor_backends():
+    # Test structure factor calculation with different backends
+    backends = ['CPU multi core', 'CPU single core']
+    sim = rp.get_default_sim()
+    for backend in backends:
+        print(f'Testing backend: {backend}')
+        
+        # Test direct 
+        n_vectors = [[5,6,7], [0, 0, 1], [2, -2, -5]]
+        calc_struct_fact = rp.CalculatorStructureFactor(sim.configuration, backend=backend, n_vectors=n_vectors)
+        calc_struct_fact.update()
+        struc_fact = calc_struct_fact.read(bins=8)
+
+        # Test generated q_vectors
+        calc_struct_fact = rp.CalculatorStructureFactor(sim.configuration, backend=backend)
+        calc_struct_fact.generate_q_vectors(q_max=10.0)
+        calc_struct_fact.update()
+        struc_fact = calc_struct_fact.read(bins=128)
 
 if __name__ == '__main__':
     test_structure_factor(verbose=True, plot=True)
+    test_structure_factor_backends()

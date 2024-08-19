@@ -30,7 +30,8 @@ sim.run()
 
 print("Production run")
 q_max = 12.0  # Change to 18.0 to include second peak
-calc_struct_fact = rp.CalculatorStructureFactor(configuration, q_max=q_max)
+calc_struct_fact = rp.CalculatorStructureFactor(configuration)
+calc_struct_fact.generate_q_vectors(q_max=q_max)
 for block in sim.timeblocks():
     print(sim.status(per_particle=True))
     calc_struct_fact.update()
@@ -68,3 +69,4 @@ plt.ylabel(r'Static structure factor, $S(|q|)$')
 plt.ylim(1e-2, 10)
 plt.xlim(0, max(q))
 plt.show()
+
