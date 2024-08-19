@@ -7,7 +7,7 @@
     Both ways of defining the anchor points (from particle indices and types)
     are shown.
 """
-
+import os
 import numpy as np
 import rumdpy as rp
 
@@ -66,3 +66,8 @@ for block in sim.timeblocks():
 print(sim.summary())
 
 rp.tools.save_configuration(configuration, "final.xyz")
+# Removes the created files if the script is run from test_examples
+if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
+    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
+        os.remove("initial.xyz")
+        os.remove("final.xyz")

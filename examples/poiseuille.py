@@ -49,7 +49,9 @@ rp.tools.save_configuration(configuration, "initial.xyz")
 # Tether specifications. 
 # Alternative instantiation tether=rp.Tether(<index array>, <tether params>, verbose=False)
 # where  index array: [row index in param, particle/atom index], tether parameters: [x0, y0, z0, kspring] 
-tether = rp.Tether(ptypes=[1], spring_constants=[300.0], configuration=configuration)
+tether = rp.Tether()
+tether.set_anchor_points_from_types(particle_types=[1], spring_constants=[300.0], configuration=configuration)
+
 
 # Add gravity force 
 # Alternative instantiation grav = rp.Gravity(<index array>, <force>, verbose=False)
