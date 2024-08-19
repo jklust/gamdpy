@@ -6,6 +6,7 @@ def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
     The `cells` are the number of unit cells in each direction.
 
     Returns a list of positions of the atoms in the lattice, and the box vector of the lattice.
+    The returned positions are in a box of size -L/2 to L/2 for each direction.
 
     Example
     -------
@@ -52,4 +53,8 @@ def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
         scale_factor = (target_volume_per_particle / volume_per_particle) ** (1.0 / 3.0)
         positions *= scale_factor
         box_vector *= scale_factor
+
+    # Center the box (-L/2 to L/2)
+    positions -= box_vector/2.0
+    
     return positions, box_vector
