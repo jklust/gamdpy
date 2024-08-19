@@ -20,6 +20,11 @@ class Simbox():
         self.dist_moved_sq_function = self.dist_sq_function
         return
 
+    def make_device_copy(self):
+        """ Creates a new device copy of the simbox data and returns it to the caller.
+        To be used by neighbor list for recording the box state at time of last rebuild"""
+        return cuda.to_device(self.lengths)
+
     def copy_to_device(self):
         self.d_data = cuda.to_device(self.lengths)
 
@@ -99,12 +104,24 @@ class Simbox_LeesEdwards(Simbox):
         # Here it assumed this is being done for the first time
 
         D = self.D
-        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift,
+        # will become a D+2-length array when we start using simbox_last_rebuild
+        data_array = np.zeros(D+6, dtype=np.float32) # extra entries are: box_shift, box_shift_image, last box_shift, 
         # last_box_shift_image (ie last time NB list was built), strain change since NB list was built, correction to skin due to strain change
         data_array[:D] = self.lengths[:]
         data_array[D] = self.box_shift
         data_array[D+1] = self.box_shift_image
         self.d_data = cuda.to_device(data_array)
+
+    def make_device_copy(self):
+        """ Creates a new device copy of the simbox data and returns it to the caller.
+        To be used by neighbor list for recording the box state at time of last rebuild"""
+        #host_copy = self.d_data.copy_to_host()
+        D = self.D
+        host_copy = np.zeros(D+2)
+        host_copy[:D] = self.lengths[:]
+        host_copy[D] = self.box_shift
+        host_copy[D+1] = self.box_shift_image
+        return cuda.to_device(host_copy)
 
     def copy_to_host(self):
         D = self.D

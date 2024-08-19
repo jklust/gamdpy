@@ -9,6 +9,7 @@ class NbList2():
         self.nbflag = np.zeros(3, dtype=np.int32)
         self.r_ref = np.zeros_like(configuration['r']) # Inherits also data type
         self.exclusions = exclusions  # Should be able to be a list (eg from bonds, angles, etc), and merge        
+        self.d_simbox_last_rebuild = configuration.simbox.make_device_copy()
 
     def copy_to_device(self):
         self.d_nblist = cuda.to_device(self.nblist)
@@ -26,7 +27,7 @@ class NbList2():
         else:
             self._exclusions = np.zeros((self.r_ref.shape[0], 2), dtype=np.int32)
         self.copy_to_device()                     
-        return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions)
+        return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, self.d_simbox_last_rebuild)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
 
@@ -63,7 +64,7 @@ class NbList2():
                 sim_box[D+5] = abs(strain_change)*cut
 
         @cuda.jit( device=gridsync )
-        def nblist_check(vectors, sim_box, skin, r_ref, nbflag):
+        def nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild):
             """ Check validity of nblist, i.e. did any particle mode more than skin/2 since last nblist update?
                 Each thread-block checks the assigned particles (global_id)
                 nbflag[0] = 0          : No update needed
@@ -100,7 +101,7 @@ class NbList2():
             return
    
         @cuda.jit(device=gridsync)
-        def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist, r_ref, exclusions):
+        def nblist_update(vectors, sim_box, cut_plus_skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild):
             """ N^2 Update neighbor-list using numba.cuda 
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
@@ -153,6 +154,9 @@ class NbList2():
                         # (like a generic function for the simbox to update itself after NB rebuild)
                         sim_box[D+2] = sim_box[D]
                         sim_box[D+3] = sim_box[D+1]
+                        # NEW place to store simbox from last rebuild
+                        for k in range(len(simbox_last_rebuild)):
+                            simbox_last_rebuild[k] = sim_box[k]
 
                 if my_num_nbs >= max_nbs:                       # Overflow detected, nbflag[1] should be checked later, and then
                     cuda.atomic.max(nbflag, 1, my_num_nbs)      # re-allocate larger nb-list, and redo computations from last safe state
@@ -163,23 +167,23 @@ class NbList2():
             # A device function, calling a number of device functions, using gridsync to syncronize
             @cuda.jit( device=gridsync )
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
-                max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
+                max_cut, skin, nbflag, r_ref, exclusions, simbox_last_rebuild = nblist_parameters
                 if len(sim_box) == D+6: # Lees-Edwards BC
                     update_strain_change(sim_box, max_cut)
                     grid.sync()
-                nblist_check(vectors, sim_box, skin, r_ref, nbflag)
+                nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild)
                 grid.sync()
-                nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
+                nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
                 return
             return check_and_update
         
         else:
             # A python function, making several kernel calls to syncronize  
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
-                max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
+                max_cut, skin, nbflag, r_ref, exclusions, simbox_last_rebuild  = nblist_parameters
                 if len(sim_box) == D+6: # Lees-Edwards BC
                     update_strain_change[num_blocks, (1, 1)](sim_box, max_cut)
-                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
-                nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
+                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild)
+                nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
                 return
             return check_and_update
