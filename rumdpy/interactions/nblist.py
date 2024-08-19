@@ -45,6 +45,7 @@ class NbList2():
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
         dist_moved_sq_function = numba.njit(configuration.simbox.dist_moved_sq_function)
+        dist_moved_exceeds_limit_function = numba.njit(configuration.simbox.dist_moved_exceeds_limit_function)
 
         @cuda.jit( device=gridsync )
         def update_strain_change(sim_box, cut, sim_box_last):
@@ -65,7 +66,7 @@ class NbList2():
                 sim_box[D+5] = abs(strain_change)*cut
 
         @cuda.jit( device=gridsync )
-        def nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild):
+        def nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, cut):
             """ Check validity of nblist, i.e. did any particle mode more than skin/2 since last nblist update?
                 Each thread-block checks the assigned particles (global_id)
                 nbflag[0] = 0          : No update needed
@@ -87,8 +88,10 @@ class NbList2():
                     dist_sq = dist_moved_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild)
                     if len(sim_box) == D+6:  # LE boundaries (J. Chattoraj. Ph.D. thesis (2011))
                         skin -= sim_box[D+5]
-                        if skin < 0:
-                            skin = 0. # otherwise wrong when you square!
+                        if skin < numba.float32(0.):
+                            skin = numba.float32(0.) # otherwise wrong when you square!
+                    #if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
+                    #    nbflag[0] = num_blocks
                     if dist_sq > skin*skin*numba.float32(0.25):
                         nbflag[0] = num_blocks
 
@@ -151,13 +154,10 @@ class NbList2():
                 if global_id == 0 and my_t==0:
                     cuda.atomic.add(nbflag, 2, 1)               # Count how many updates are done in nbflag[2]
                     # the following is for Lees-Edwards boundary conditions
-                    if len(sim_box) == D+6: # we need a more elegant way to check which kind of simbox we have!
-                        # (like a generic function for the simbox to update itself after NB rebuild)
-                        #sim_box[D+2] = sim_box[D]
-                        #sim_box[D+3] = sim_box[D+1]
-                        # NEW place to store simbox from last rebuild
-                        for k in range(len(simbox_last_rebuild)):
-                            simbox_last_rebuild[k] = sim_box[k]
+                    #if len(sim_box) == D+6: # we need a more elegant way to check which kind of simbox we have!
+                    #    # (like a generic function for the simbox to update itself after NB rebuild)
+                    for k in range(len(simbox_last_rebuild)):
+                        simbox_last_rebuild[k] = sim_box[k]
 
                 if my_num_nbs >= max_nbs:                       # Overflow detected, nbflag[1] should be checked later, and then
                     cuda.atomic.max(nbflag, 1, my_num_nbs)      # re-allocate larger nb-list, and redo computations from last safe state
@@ -172,7 +172,7 @@ class NbList2():
                 if len(sim_box) == D+6: # Lees-Edwards BC
                     update_strain_change(sim_box, max_cut, simbox_last_rebuild)
                     grid.sync()
-                nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild)
+                nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, max_cut)
                 grid.sync()
                 nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
                 return
@@ -184,7 +184,7 @@ class NbList2():
                 max_cut, skin, nbflag, r_ref, exclusions, simbox_last_rebuild  = nblist_parameters
                 if len(sim_box) == D+6: # Lees-Edwards BC
                     update_strain_change[num_blocks, (1, 1)](sim_box, max_cut, simbox_last_rebuild)
-                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild)
+                nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, max_cut)
                 nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
                 return
             return check_and_update

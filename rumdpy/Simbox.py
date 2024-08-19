@@ -16,7 +16,7 @@ class Simbox():
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
         self.len_sim_box_data = D # not true for other Simbox classes
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume, self.dist_moved_sq_function = self.make_simbox_functions()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume, self.dist_moved_sq_function, self.dist_moved_exceeds_limit_function = self.make_simbox_functions()
         return
 
     def make_device_copy(self):
@@ -70,8 +70,6 @@ class Simbox():
                 r[dimension] += sim_box[dimension]
                 image[dimension] -= 1
 
-
-
         def volume(sim_box):
             vol = sim_box[0]
             for i in range(1,D):
@@ -89,7 +87,20 @@ class Simbox():
 
             return dist_sq
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume, dist_moved_sq_function
+
+        def dist_moved_exceeds_limit_function(r_current, r_last, sim_box, sim_box_last, skin, cut):
+            """ Parameters sim_box_last and cut are not used here, but is needed for the Lees-Edwards type of Simbox"""
+            dist_sq = numba.float32(0.0)
+            for k in range(D):
+                dr_k = r_current[k] - r_last[k]
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
+                         (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
+                dist_sq = dist_sq + dr_k * dr_k
+
+            return dist_sq > skin*skin*numba.float32(0.25)
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume, dist_moved_sq_function, dist_moved_exceeds_limit_function
 
 
 
@@ -106,7 +117,7 @@ class Simbox_LeesEdwards(Simbox):
         # have already called base class Simbox.make_simbox_functions, and can
         # re-use the volume so this version only has to override the first
         # three and dist_moved_sq_function
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift, self.dist_moved_sq_function = self.make_simbox_functions_LE()
+        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift, self.dist_moved_sq_function, self.dist_moved_exceeds_limit_function = self.make_simbox_functions_LE()
 
         return
 
@@ -252,4 +263,43 @@ class Simbox_LeesEdwards(Simbox):
 
             return dist_moved_sq
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift, dist_moved_sq_function
+        def dist_moved_exceeds_limit_function(r_current, r_last, sim_box, sim_box_last, skin, cut):
+            zero = numba.float32(0.)
+            half = numba.float32(0.5)
+            one = numba.float32(1.0)
+            box_shift = sim_box[D]
+            dist_moved_sq = zero
+
+
+            strain_change = sim_box[D] - sim_box_last[D] # change in box-shift
+            strain_change += (sim_box[D+1] - sim_box_last[D+1]) * sim_box[0] # add contribution from box_shift_image
+            strain_change /= sim_box[1] # convert to (xy) strain
+
+            # we will shift the x-component when the y-component is 'wrapped'
+            dr1 = r_current[1] - r_last[1]
+            box_1 = sim_box[1]
+            y_wrap = (one if dr1 > half*box_1 else
+                      -one if dr1 < -half*box_1 else zero)
+
+            x_shift = y_wrap * box_shift + (r_current[1] -
+                                            y_wrap*box_1) * strain_change
+            # see the expression in Chatoraj Ph.D. thesis. Adjusted here to
+            # take into account BC wrapping (otherwise would use the images
+            # ie unwrapped positions)
+
+            for k in range(D):
+                dr_k = r_current[k] - r_last[k]
+                if k == 0:
+                    dr_k -= x_shift
+                box_k = sim_box[k]
+                dr_k += (-box_k if numba.float32(2.0) * dr_k > +box_k else
+                         (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))
+                dist_moved_sq = dist_moved_sq + dr_k * dr_k
+
+            skin_corrected = skin - abs(strain_change)*cut
+            if skin_corrected < zero:
+                skin_corrected = zero
+
+            return dist_moved_sq > skin_corrected*skin_corrected*numba.float32(0.25)
+
+        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift, dist_moved_sq_function, dist_moved_exceeds_limit_function
