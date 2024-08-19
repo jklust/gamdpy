@@ -213,6 +213,62 @@ class Configuration:
         self.simbox = Simbox(self.D, box_vector)
         return
 
+    def make_positions(self, N, rho):
+        """
+        Generate particle positions in D dimensions.
+
+        Positions are generated in a simple cubic configuration in D dimensions.
+        Takes the number of particles N and the density rho as inputs
+
+        Example
+        -------
+
+        >>> import rumdpy as rp
+        >>> conf = rp.Configuration(D=3)
+        >>> conf.make_positions(N=27, rho=0.2)
+        """
+
+        D = self.D
+        part_per_line = np.ceil(pow(N, 1./D))
+
+        box_lenght = pow(N/rho, 1./D)
+        box_vector = np.array(D*[box_lenght])
+        
+        index = 0
+        x = []      # empty list
+
+        # This loop places particles in a simple cubic configuration
+        # The first particle is in D*[0]
+        while index < N:
+            dcurrent = D - 1
+            i_d = D*[float(0)]
+            i_d[dcurrent] = (index / pow(part_per_line, dcurrent))
+            rest = index % (pow(part_per_line, dcurrent))
+            while dcurrent != 0:
+                dcurrent = dcurrent - 1
+                i_d[dcurrent] = (rest/pow(part_per_line,dcurrent))
+                rest = index % (pow(part_per_line, dcurrent))
+            x.append(i_d)
+            index = index + 1
+        pos = np.array(x)
+        # Centering the array
+        dcurrent = 1
+        remove = 0
+        while dcurrent < D:
+            remove += D**(D-dcurrent)
+            pos[:, dcurrent] -= remove/N
+            dcurrent = dcurrent + 1
+        pos -= np.array(D*[int(0.5*part_per_line)]) # center cube at 0
+        # Scaling for density
+        pos *= box_lenght/part_per_line
+        # Saving to Configuration object
+        self['r'] = pos
+        self.simbox = Simbox(self.D, box_vector)
+        # Check all particles are in the box (-L/2, L/2)
+        assert np.any(np.abs(pos))<0.5*box_lenght
+
+        return
+
 
 # Helper functions
 
@@ -229,7 +285,6 @@ def generate_random_velocities(N, D, T, seed, m=1, dtype=np.float32):
         CM_drift = np.mean(m * v[:, k]) / np.mean(m)
         v[:, k] -= CM_drift
     return dtype(v)
-
 
 @numba.njit
 def generate_fcc_positions(nx, ny, nz, rho, dtype=np.float32):
