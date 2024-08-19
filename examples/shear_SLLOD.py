@@ -4,6 +4,7 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble followed by shearing w
 and Lees-Edwards boundary conditions. Runs one shear rate but easy to make a loop over shear rates.
 
 """
+import os
 import numpy as np
 import rumdpy as rp
 import matplotlib.pyplot as plt
@@ -113,6 +114,10 @@ sxy_SS = sxy[num_items_transient:]
 
 sxy_mean = np.mean(sxy_SS)
 print(f'{sr:.2g} {sxy_mean:.6f}')
+
+if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
+    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
+        os.remove('shear_run.txt')
 
 #plt.figure(1)
 #plt.plot(strains, k)

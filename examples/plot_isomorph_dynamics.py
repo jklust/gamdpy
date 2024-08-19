@@ -3,6 +3,7 @@
 """
 
 import pickle
+import os
 
 import matplotlib.pyplot as plt
 
@@ -47,3 +48,6 @@ fig.tight_layout()
 #fig.subplots_adjust(hspace=0.00) # Remove vertical space between axes
 fig.savefig('isomorph_dynamics.pdf')
 #plt.show()
+if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
+    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
+        os.remove('isomorph_dynamics.pdf')

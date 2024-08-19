@@ -10,6 +10,7 @@ import subprocess
 import time
 
 import pytest
+import numba
 
 @pytest.mark.slow
 def test_examples(path_to_examples='examples'):
@@ -18,6 +19,7 @@ def test_examples(path_to_examples='examples'):
     matplotlib.get_backend()
     os.environ['MPLBACKEND'] = 'Agg' # Reduced warnings from 94 to 62
     os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0' # Reduced warnings from 62 to 59
+    os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES'] = '0' # used to avoid file creation when running pytest
     matplotlib.use('Agg')  # Static backend that does not halt on plt.show()
     # List of scripts to exclude
 
@@ -52,23 +54,21 @@ def test_examples(path_to_examples='examples'):
                 files.remove(file)
         files = run_first + files
 
-
-
-        # files = ['minimal.py']  # Uncomment and modify for debugging a few or a single file
+        #files = ["calc_sq_from_h5.py", "calc_rdf_from_rumd3.py", "calc_rdf_from_h5.py"]  # Uncomment and modify for debugging a few or a single file
         print(f"Found {len(files)} examples: {files}")
         print(f"Excluding {len(exclude_files)} (if present): {exclude_files}")
         for file in files:
+            numba.cuda.devices.reset()
             if os.path.basename(file) in exclude_files:
                 print(f"Skipping {file} (warning: may fail)")
                 continue
 
-            #with open(file) as example:
-            print(f"Executing {file}")
+            print(f"\n\nExecuting {file}")
             tic = time.perf_counter()
-            print(os.getcwd())
             torun = subprocess.Popen(["python3", f"{file}"])
+            torun.wait()
             stdout, stderr = torun.communicate()
-            #exec(example.read(), {})
+            assert torun.returncode==0, f"Example {file} failed.\n"
             toc = time.perf_counter()
             print(f"Execution time for {file}: {toc - tic:.3} s")
     except FileNotFoundError as e:
@@ -77,6 +77,7 @@ def test_examples(path_to_examples='examples'):
     finally:
         os.chdir(original_cwd)
         plt.close('all')
+    del os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']
 
 
 if __name__ == '__main__':

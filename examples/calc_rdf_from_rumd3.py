@@ -33,3 +33,7 @@ for pos in positions[nconfs-1::nconfs]:
 
 # Save rdf
 calc_rdf.save_average("rdf_rumd3.dat")
+if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
+    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
+        os.remove('rdf_rumd3.dat')
+

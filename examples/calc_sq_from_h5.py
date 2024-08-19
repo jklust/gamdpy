@@ -24,7 +24,8 @@ configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
 configuration.copy_to_device()
 
 # Call the rdf calculator
-calc_sq = rp.CalculatorStructureFactor(configuration, q_max=18.0)
+calc_sq = rp.CalculatorStructureFactor(configuration)
+calc_sq.generate_q_vectors(q_max=18)
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)
 #       the zero is to select the position array and discard images
@@ -37,5 +38,10 @@ for pos in positions[nconfs-1::nconfs]:
     configuration.copy_to_device()
     calc_sq.update()
 
-# Save rdf
+# Save sq
 calc_sq.save_average()
+# The if statements are to avoid pytest to write the file to disk)
+if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
+    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0': 
+        os.remove('sq.dat')
+
