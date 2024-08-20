@@ -95,7 +95,8 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
         plt.legend()
         plt.show()
 
-    assert np.isclose(T_kin_toxvaerd, T_conf_toxvaerd, atol=0.01)  # T_kin and T_conf should be the same
+    # T_kin and T_conf should be the same
+    assert np.isclose(T_kin_toxvaerd, T_conf_toxvaerd, atol=0.01), print(f"{T_kin_toxvaerd=} {T_conf_toxvaerd=}")  
 
 
 if __name__ == '__main__':
