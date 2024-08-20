@@ -8,56 +8,70 @@ from .make_fixed_interactions import make_fixed_interactions  # tether is an exa
 
 
 class Relaxtemp:
-    """ Relaxation of temperature of particles. """
+    """ Thermostat using simple kinetic temperature relaxation of each particles. 
+ 
+        Parameters
+        ----------
+        (a) A list of particle indices to be thermostated and associated list of relaxation time 
+        (b) A list of particle types to be thermostated and associated list of relaxation times
 
-    def __init__(self, tau, temperature, configuration, pindices=None, ptypes=None, verbose=False):
+        See examples/poiseuille.py
+    """
+    
+    def __init__(self):
+        self.indices_set = False
 
-        indices_array, relax_params = [], []
+    
+    def set_relaxation_from_lists(self, particle_indices,  temperature, relax_times):
 
-        if pindices is None:
+        ntau, npart, ntemp = len(tau), len(pindices), len(temperature)
 
-            ntypes, ntau, ntemp = len(ptypes), len(tau), len(temperature)
+        if ntau != npart or ntau != ntemp or npart != ntemp:
+            raise ValueError(
+                "Each particle must have exactly one relax time and temperature - arrays must be same length")
 
-            if ntypes != ntau or ntypes != ntemp or ntemp != ntau:
-                raise ValueError("Each type must have exactly one relax time - arrays must be same length")
+        indices, params = [], []
+        for n in range(npart):
+            indices.append([n, particle_indices[n]])
+            params.append([temperature(n), relax_times[n]])
 
-            counter = 0
-            for n in range(configuration.N):
-                for m in range(ntypes):
-                    if configuration.ptype[n] == ptypes:
-                        indices_array.append([counter, n])
-                        relax_params.append([temperature[m], tau[m]])
-                        counter = counter + 1
-                        break
+        self.relax_params = np.array(params, dtype=np.float32)
+        self.indices = np.array(indices, dtype=np.int32)
 
-        elif ptypes is None:
+        self.indices_set = True
 
-            ntau, npart, ntemp = len(tau), len(pindices), len(temperature)
+    
+    def set_relaxation_from_types(self, particle_types, temperature, relax_times, configuration): 
+        
+        ntypes, ntau, ntemp = len(particle_types), len(relax_times), len(temperature)
 
-            if ntau != npart or ntau != ntemp or npart != ntemp:
-                raise ValueError(
-                    "Each particle must have exactly one relax time and temperature - arrays must be same length")
+        if ntypes != ntau or ntypes != ntemp or ntemp != ntau:
+            raise ValueError("Each type must have exactly one relax time - arrays must be same length")
+       
+        indices, params = [], []
+        counter = 0
+        for n in range(configuration.N):
+            for m in range(ntypes):
+                if configuration.ptype[n] == particle_types[m]:
+                    indices.append([counter, n])
+                    params.append([temperature[m], relax_times[m]])
+                    counter = counter + 1
+                    break
 
-            for n in range(npart):
-                indices.append([n, pindices[n]])
-                tether_params.append([temperature(n), tau[n]])
+        self.relax_params = np.array(params, dtype=np.float32)
+        self.indices = np.array(indices, dtype=np.int32)
 
-        else:
-            raise ValueError("Incorrect number of arguments to constructor")
+        self.indices_set = True
 
-        self.relax_params = np.array(relax_params, dtype=np.float32)
-        self.indices_array = np.array(indices_array, dtype=np.int32)
-
-        if verbose:
-            print(f"{self.relax_params} \n {self.indices_array}")
-
+    
     def get_params(self, configuration, compute_plan, verbose=False):
 
-        self.d_pindices = cuda.to_device(self.indices_array)
+        self.d_pindices = cuda.to_device(self.indices)
         self.d_relax_params = cuda.to_device(self.relax_params);
 
         return (self.d_pindices, self.d_relax_params)
 
+    
     def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N

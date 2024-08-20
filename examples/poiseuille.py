@@ -17,14 +17,12 @@ import numpy as np
 import rumdpy as rp
 
 # Setup a default fcc configuration
-#nx, ny, nz = 6, 6, 10
-#rhoWall = 1.0
-#rhoFluid = 0.7
-#configuration = rp.Configuration(D=3)
-#configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoFluid)
-#configuration['m'] = 1.0
-nxUnits, nyUnits, nzUnits, rhoWall, rhoFluid = 6, 6, 10, 1.0, 0.7;
-configuration = rp.make_configuration_fcc(nxUnits, nyUnits, nzUnits, rhoWall)
+nx, ny, nz = 6, 6, 10
+rhoWall = 1.0
+rhoFluid = 0.7
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoFluid)
+configuration['m'] = 1.0
 
 
 # Fluid particles have type '0', wall particles '1', dummy particles '2'
@@ -47,8 +45,6 @@ while nfluid > nfluidWanted:
 rp.tools.save_configuration(configuration, "initial.xyz")
 
 # Tether specifications. 
-# Alternative instantiation tether=rp.Tether(<index array>, <tether params>, verbose=False)
-# where  index array: [row index in param, particle/atom index], tether parameters: [x0, y0, z0, kspring] 
 tether = rp.Tether()
 tether.set_anchor_points_from_types(particle_types=[1], spring_constants=[300.0], configuration=configuration)
 
@@ -60,7 +56,10 @@ tether.set_anchor_points_from_types(particle_types=[1], spring_constants=[300.0]
 grav = rp.Gravity(ptype=[0], force=[0.01], configuration=configuration)
 
 # Temp relaxation for wall particles
-relax = rp.Relaxtemp(ptypes=[1], tau=[0.01], temperature=[2.0], configuration=configuration)
+relax = rp.Relaxtemp()
+relax.set_relaxation_from_types(particle_types=[1], temperature=[2.],
+                                relax_times=[0.01],configuration=configuration); 
+
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -83,7 +82,7 @@ compute_plan = rp.get_default_compute_plan(configuration)
 
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pair_pot, tether, grav, relax], integrator,
-                    num_timeblocks=100, steps_per_timeblock=64,
+                    num_timeblocks=1000, steps_per_timeblock=64,
                     steps_between_momentum_reset=0, storage='memory', compute_plan=compute_plan)
 
 prof = rp.CalculatorHydrodynamicProfile(configuration, 0)

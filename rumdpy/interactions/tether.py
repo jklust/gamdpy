@@ -11,7 +11,7 @@ class Tether:
         
         Parameters
         ----------
-        Points and spring constants are defined using
+        Points and spring constants are defined using either 
         (a) A list of particle indices to be tethered and associated list of spring constants
         (b) A list of particle types to be tethered and associated list of spring constants
 
@@ -20,7 +20,7 @@ class Tether:
 
     
     def __init__(self):
-        anchor_points_set = False
+        self.anchor_points_set = False
 
 
     def set_anchor_points_from_lists(self, particle_indices, ksprings, configuration):
@@ -66,7 +66,7 @@ class Tether:
 
     def get_params(self, configuration, compute_plan, verbose=False):
 
-        if self.anchor_points_set==False:
+        if self.anchor_points_set == False:
             raise ValueError("Anchor points not defined")
 
         self.d_pindices = cuda.to_device(self.indices)
