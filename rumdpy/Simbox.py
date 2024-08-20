@@ -197,12 +197,14 @@ class Simbox_LeesEdwards(Simbox):
         def apply_PBC(r, image, sim_box):
 
             # first shift the x-component depending on whether the y-component is outside the box
-            box_shift = sim_box[D]
+            box_shift, bs_image = sim_box[D], int(sim_box[D+1])
             box1_half = sim_box[1] * numba.float32(0.5)
             if r[1] > + box1_half:
                 r[0] -= box_shift
+                image[0] -= bs_image
             if r[1] < -box1_half:
                 r[0] += box_shift
+                image[0] += bs_image
             # then put everything back in the box as usual
             for k in range(D):
                 if r[k] * numba.float32(2.0) > +sim_box[k]:
