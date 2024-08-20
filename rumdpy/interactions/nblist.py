@@ -44,26 +44,9 @@ class NbList2():
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
-        dist_moved_sq_function = numba.njit(configuration.simbox.dist_moved_sq_function)
+        #dist_moved_sq_function = numba.njit(configuration.simbox.dist_moved_sq_function)
         dist_moved_exceeds_limit_function = numba.njit(configuration.simbox.dist_moved_exceeds_limit_function)
 
-        @cuda.jit( device=gridsync )
-        def update_strain_change(sim_box, cut, sim_box_last):
-            # this could also be something every thread (or at least my_t==0) does for themselves, so avoiding
-            # the need for extra synchronization
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x
-            global_id = my_block*pb + local_id
-            my_t = cuda.threadIdx.y
-
-            if global_id == 0 and my_t == 0:
-                strain_change = sim_box[D] - sim_box_last[D] # change in box-shift
-                strain_change += (sim_box[D+1] - sim_box_last[D+1]) * sim_box[0] # add contribution from box_shift_image
-                strain_change /= sim_box[1] # convert to (xy) strain
-
-                #sim_box[D+4] = strain_change NO LONGER NEEDED
-                # FOLLOWING STILL NEEDED FOR NOW
-                sim_box[D+5] = abs(strain_change)*cut
 
         @cuda.jit( device=gridsync )
         def nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, cut):
@@ -85,14 +68,7 @@ class NbList2():
                 #cuda.syncthreads()
             else:
                 if global_id < num_part and my_t==0:
-                    dist_sq = dist_moved_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild)
-                    if len(sim_box) == D+6:  # LE boundaries (J. Chattoraj. Ph.D. thesis (2011))
-                        skin -= sim_box[D+5]
-                        if skin < numba.float32(0.):
-                            skin = numba.float32(0.) # otherwise wrong when you square!
-                    #if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
-                    #    nbflag[0] = num_blocks
-                    if dist_sq > skin*skin*numba.float32(0.25):
+                    if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
                         nbflag[0] = num_blocks
 
             if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
@@ -153,9 +129,6 @@ class NbList2():
                     cuda.atomic.add(nbflag, 0, -1)              # nbflag[0] = 0 by when all blocks are done
                 if global_id == 0 and my_t==0:
                     cuda.atomic.add(nbflag, 2, 1)               # Count how many updates are done in nbflag[2]
-                    # the following is for Lees-Edwards boundary conditions
-                    #if len(sim_box) == D+6: # we need a more elegant way to check which kind of simbox we have!
-                    #    # (like a generic function for the simbox to update itself after NB rebuild)
                     for k in range(len(simbox_last_rebuild)):
                         simbox_last_rebuild[k] = sim_box[k]
 
@@ -169,9 +142,6 @@ class NbList2():
             @cuda.jit( device=gridsync )
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
                 max_cut, skin, nbflag, r_ref, exclusions, simbox_last_rebuild = nblist_parameters
-                if len(sim_box) == D+6: # Lees-Edwards BC
-                    update_strain_change(sim_box, max_cut, simbox_last_rebuild)
-                    grid.sync()
                 nblist_check(vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, max_cut)
                 grid.sync()
                 nblist_update(vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
@@ -182,8 +152,6 @@ class NbList2():
             # A python function, making several kernel calls to syncronize  
             def check_and_update(grid, vectors, scalars, ptype, sim_box, nblist, nblist_parameters):
                 max_cut, skin, nbflag, r_ref, exclusions, simbox_last_rebuild  = nblist_parameters
-                if len(sim_box) == D+6: # Lees-Edwards BC
-                    update_strain_change[num_blocks, (1, 1)](sim_box, max_cut, simbox_last_rebuild)
                 nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag, simbox_last_rebuild, max_cut)
                 nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions, simbox_last_rebuild)
                 return
