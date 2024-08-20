@@ -11,8 +11,11 @@ def load_output(name : str) -> dict:
     -------
 
     >>> import rumdpy as rp
+	>>> import h5py
     >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5") 
     Found .h5 file, loading to rumdpy as output dictionary
+	>>> isinstance(output.file, h5py.File)
+	True
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
     >>> assert (N, D) == (2048, 3), "Error reading N and D from LJ_r0.973_T0.70.h5" 
     """
@@ -30,28 +33,19 @@ def load_output(name : str) -> dict:
 # Load from h5 (std rumpdy output)
 def load_h5(name:str) -> dict:
     import h5py
-    output = dict()
-    with h5py.File(name, "r") as f:
-        # Import simulation data from .h5
-        output = {i : np.array(f[i]) for i in f.parent.keys()}
-        # Import metadata from h5
-        # NOTE: .h5 has "steps_between_output" in f.attrs while sim.output['attrs'] has no that item. 
-        # "steps_between_output" is a separate entry of sim.output
-        output['attrs'] = {i: f.attrs.get(i) for i in f.attrs.keys()}
-        output['steps_between_output'] = output['attrs'].pop('steps_between_output')
-    return output
+    return h5py.File(name, "r")
 
 # Load from TrajectoryFiles (std rumd3 output)
 # It assumes trajectories are spaced in log2
 def load_rumd3(name:str) -> dict:
     import os, gzip, glob
     import pandas as pd
+    import h5py
     # Check what's there
     energy, traj  = True, True
+
     # Rumd3 output is always in D=3
     dim = 3
-    # Defining output dictionary
-    output = dict()
     if "LastComplete_energies.txt" not in os.listdir(name):
         print("LastComplete_energies.txt not present")
         energy = False
@@ -63,11 +57,18 @@ def load_rumd3(name:str) -> dict:
         exit()
     if not energy: nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_energies.txt", dtype=np.int32)
     else         : nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_trajectory.txt", dtype=np.int32)
-    # Create list of files to read
+
+    # Defining output memory .h5 file
+    fullpath = f"{os.getcwd()}/{name}"
+    output   = h5py.File(f"{id(fullpath)}.h5", "w", driver='core', backing_store=False)
+    assert isinstance(output, h5py.File)
+
+    # Read and copy trajectories
     if traj:
         traj_files = sorted(glob.glob(f"{name}/trajectory*"))
-        # Read metadata from first file in the list
+		# Remove last block if incomplete
         if traj_files[-1]==f"{name}/trajectory{nblocks+1:04d}.xyz.gz": traj_files = traj_files[:-1]
+        # Read metadata from first file in the list
         with gzip.open(f"{traj_files[0]}", "r") as f:
             npart = int(f.readline())
             cmt_line = f.readline().decode().split()
@@ -89,7 +90,6 @@ def load_rumd3(name:str) -> dict:
                 lengths = np.array(sim_box_params, dtype=np.float32)
                 integrator_data = meta_data['integrator'].split(',')
                 timestep = integrator_data[1]
-        #print(npart, num_types, masses, sim_box_params, timestep, np.log2(blocksize))
         # Loop over the files and read them assuming each line is type, x, y, z, imx, imy, imz
         ntrajinblock = int(1+np.log2(blocksize))
         toskip1 = np.array([  (npart+2)*x for x in range(1+ntrajinblock)])
@@ -105,20 +105,20 @@ def load_rumd3(name:str) -> dict:
             img_array  = np.c_[tmp_data['imx'].to_numpy(), tmp_data['imy'].to_numpy(), tmp_data['imz'].to_numpy()]
             positions.append(pos_array.reshape((1+ntrajinblock,npart,dim)))
             images.append(pos_array.reshape((1+ntrajinblock,npart,dim)))
-        # Saving data in output dictionary
-        output['block'] = np.zeros((len(traj_files), 1+ntrajinblock, 2, npart, dim))
+        # Saving data in output h5py
+        output.attrs['dt'] =  timestep 
+        output.attrs['simbox_initial'] = lengths 
+        output.attrs['vectors_names'] = ["r", "r_im"]
+        output.create_dataset("block", shape=(len(traj_files), 1+ntrajinblock, 2, npart, dim))
         output['block'][:,:,0,:,:] = np.array(positions) 
-        output['block'][:,:,0,:,:] = np.array(images) 
-        output['ptype'] = type_array[:npart]
-        output['attrs'] = {'dt': timestep, 'simbox_initial': lengths}
-    else:
-        output['block'] = None
-        output['ptype'] = None
-        output['attrs'] = None
+        output.create_dataset("ptype", data=type_array[:npart], shape=(npart), dtype=np.int32)
+
+    # Read and copy trajectories
     if energy:
         energy_files = sorted(glob.glob(f"{name}/energies*"))
-        # Read metadata from first file in the list
+		# Remove last block if incomplete
         if energy_files[-1]==f"{name}/energies{nblocks+1:04d}.dat.gz": energy_files = energy_files[:-1]
+        # Read metadata from first file in the list
         with gzip.open(f"{energy_files[0]}", "r") as f:
             # ioformat=2 N=4096 Dt=147.266830 columns=ke,pe,p,T,Etot,W
             cmt_line = f.readline().decode().split()[1:]
@@ -129,15 +129,16 @@ def load_rumd3(name:str) -> dict:
             npart = meta_data['N']
             save_interval = meta_data['Dt']
             col_names = meta_data['columns'].split(",")
-            all_energies = list()
-            for energies in energy_files:
-                tmp_data   = pd.read_csv(energies, names=col_names, delimiter=" ")
-                all_energies.append(tmp_data)
-            if output['attrs']!=None : output['steps_between_output'] = float(save_interval)/float(output['attrs']['dt'])
-            else                     : output['steps_between_output'] = None
-    else:
-        output['scalars'] = None
-        output['steps_between_output'] = None
+        all_energies = list()
+        for energies in energy_files:
+            tmp_data   = pd.read_csv(energies, skiprows=1, names=col_names, usecols = [i for i in range(len(col_names))], delimiter=" ")
+            all_energies.append(tmp_data.to_numpy())
+        # Saving data in output h5py
+        if output.attrs!=None : output.attrs['dt'] = timestep 
+        output.attrs['steps_between_output'] = float(save_interval)/float(output.attrs['dt'])
+        output.attrs['scalars_names'] = list(col_names)
+        output.create_dataset('scalars', data=np.vstack(all_energies))
+
     return output
 
 if __name__ == '__main__':

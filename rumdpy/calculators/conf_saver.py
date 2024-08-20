@@ -35,12 +35,17 @@ class ConfSaver():
         # Setup output
         if verbose:
             print(f'Storing results in memory. Expected footprint {self.num_timeblocks * self.conf_per_block * self.num_vectors * self.configuration.N * self.configuration.D * 4 / 1024 / 1024:.2f} MB.')
+
         if 'block' in self.output.keys():
             del self.output['block']
         self.output.create_dataset("block", shape=(
             self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
             chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
         self.output.attrs['vectors_names'] = list(self.sid.keys())
+        if self.include_simbox:
+            if 'sim_box' in self.output.keys():
+                del self.output['sim_box']
+            self.output.create_dataset('sim_box', shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data))
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -80,6 +85,8 @@ class ConfSaver():
 
     def update_at_end_of_timeblock(self, block: int):
         self.output['block'][block, :] = self.d_conf_array.copy_to_host()
+        if self.include_simbox:
+            self.output['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):

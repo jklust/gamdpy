@@ -4,7 +4,7 @@ import os
 
 import rumdpy as rp
 
-file_to_read = "LJ_T0.70.h5"
+file_to_read = "Data/LJ_r0.973_T0.70.h5"
 
 if file_to_read not in os.listdir(os.getcwd()):
     print("This example needs a the file LJ_T0.70.h5 to be present")
@@ -18,7 +18,7 @@ nblocks, nconfs, _ , N, D = output['block'].shape
 
 # Create configuration object
 configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
+configuration.simbox = rp.Simbox(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
