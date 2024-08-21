@@ -249,6 +249,23 @@ def plot_scalars(df, N, D, figsize, block=True):
 def get_default_sim():
     """ Return a sim object of the single component LJ crystal in the NVT ensemble.
     The purpose of this function is to provide a default simulation for testing and simplifying examples.
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> import os
+    >>> os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'   # Removes warnings from low occupacy
+    >>> import rumdpy as rp
+    >>> sim = rp.get_default_sim()
+    >>> isinstance(sim.integrator, rp.integrators.NVT)          # Check that integrator obejct is created
+    True
+    >>> isinstance(sim.interactions[0], rp.PairPotential)       # Check that pair potential obejct is created
+    True
+    >>> isinstance(sim.configuration, rp.Configuration)         # Check that configuration obejct is created
+    True
+    >>> isinstance(sim, rp.Simulation)                          # Check that simulation obejct is created
+    True
     """
     import rumdpy as rp
 
