@@ -103,7 +103,7 @@ plt.show(block=True)
 
 if rho==1.200 and temperature==0.800:
      print('Testing complience with Rumd3:')
-     assert abs(mu - mu3) < 0.01
-     assert abs(cvex - cvex3) < 0.1
-     assert abs(mw - mw3) < 0.03
+     assert abs(mu - mu3)     < 0.01, f"{mu=} but in rumd3 is {mu3=}"
+     assert abs(cvex - cvex3) < 0.1 , f"{cvex=} but in rumd3 is {cvex3=}"
+     assert abs(mw - mw3)     < 0.03, f"{mw=} but in rumd3 is {mw3=}"
      print('Passed')

@@ -3,8 +3,21 @@ import numba
 import math
 from numba import cuda
 
-
+# NOTE: LC this should be a class
 def make_runtime_action_executor(configuration, steps_between_action, compute_plan, verbose=False):
+    ''' This function create the kernel for runtime actions
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> conf = rp.Configuration(D=3, N=1000)
+    >>> plan = rp.get_default_compute_plan(conf)
+    >>> runtime = rp.make_runtime_action_executor(configuration=conf, steps_between_action=10, compute_plan=plan)
+
+    '''
+    # LC: when runtime is a class add above:
+    # >>> assert (conf.D, conf.N) == (runtime.D, runtime.N)
 
     # Unpack parameters from configuration and compute_plan
     D, num_part = configuration.D, configuration.N
