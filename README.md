@@ -146,6 +146,38 @@ A good place to see how this is done without implementing all functions twice is
 - Write documentation in the docstrings of the code (run doctests to check that it works).
 - Include the new feature in the documentation, e.g. you may need to edit docs/source/api.rst
 
+## Some git cmd which might be useful
+
+Getting hash of your master (Head)
+```sh
+git log --pretty=format:'%h' -n 1
+```
+
+Creating a public branch (on the repository) starting from current master/branch
+```sh
+git checkout -b your_branch
+git push -u origin your_branch
+```
+
+Difference in a single file between branches. Can use hash instead of master/branch
+```sh
+git diff origin branch -- rumdpy/Simulation.py
+git diff hash1 hash2 -- rumdpy/Simulation.py
+```
+List the files that are different in two branches
+```sh
+git diff --name-only origin branch 
+```
+Show version of a file in another branch
+```sh
+git show branch:file
+```
+
+Reset last commit. It will not delete any file but will go back removing last commit and the add related to that commit
+```sh
+git reset HEAD~
+```
+
 ## How to test the code
 Running `pytest` in root (rumdpy) directory will run all tests.
 This will use the settings in the file `pytest.ini`.
@@ -167,6 +199,16 @@ Slow tests can be skipped by running (test functions decorated with `@pytest.mar
 
 ```sh
 python3 -m pytest -m "not slow"
+```
+
+Running pytest with -x option makes pytest stop after first failure
+```sh
+pytest -x
+```
+
+Running pytest starting from last failed test
+```sh
+pytest --lf
 ```
 
 ### Test of specific features
