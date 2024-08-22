@@ -18,13 +18,6 @@ variables:
 #     - env/
 
 .test:
-  # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
-  # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
-  rules: 
-    #- if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    #  when: never
-    - if: '$CI_MERGE_REQUEST_APPROVED'
-    - if: '$CI_PIPELINE_SOURCE == "push"'
   script:
 #    - apt-get update
 #    - apt-get -q -q -y install g++
@@ -39,6 +32,13 @@ variables:
       #    - coverage report -m
     - python3 tests_ci/test_LJ_cpu.py
     - python3 tests_ci/test_LJ_gpu.py
+  # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
+  # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
+  rules: 
+    - if: '$CI_MERGE_REQUEST_APPROVED'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
   artifacts:
     paths:
       - .coverage
