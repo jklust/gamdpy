@@ -24,6 +24,7 @@ variables:
     #- if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     #  when: never
     - if: '$CI_MERGE_REQUEST_APPROVED'
+    - elif: '$CI_PIPELINE_SOURCE == "push"'
   script:
 #    - apt-get update
 #    - apt-get -q -q -y install g++
