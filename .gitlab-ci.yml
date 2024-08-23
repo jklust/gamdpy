@@ -35,10 +35,11 @@ variables:
   # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
   # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
   rules: 
-    - if: '$CI_MERGE_REQUEST_APPROVED'
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-    - if: '$CI_COMMIT_TAG'
-    - if: '$CI_COMMIT_BRANCH'
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
   artifacts:
     paths:
       - .coverage
