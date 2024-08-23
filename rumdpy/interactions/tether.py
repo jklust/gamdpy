@@ -82,6 +82,7 @@ class Tether:
         num_blocks = (N - 1) // pb + 1
     
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+        u_id = configuration.sid['u'] 
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         
@@ -97,8 +98,13 @@ class Tether:
             for k in range(D):
                 f[k] = f[k] + dr[k]*spring
        
+            Epot = numba.float32(0.5)*spring*dist_sq
+            cuda.atomic.add(scalars, (indices[0], u_id), Epot)
+            
             return
-    
+            
+                
+
         return make_fixed_interactions(configuration, tether_calculator, compute_plan, verbose=False)
     
 
