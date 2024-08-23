@@ -161,6 +161,10 @@ class Configuration:
 
         return ptype_function
 
+    def get_potential_energy(self) -> float:
+        """ Get total potential energy of the configuration """
+        return float(np.sum(self['u']))
+
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
         return self.simbox.volume(self.simbox.lengths)

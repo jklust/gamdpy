@@ -102,6 +102,12 @@ Generators
 .. autofunction:: rumdpy.make_fixed_interactions
 
 
+The Evaluator Class
+===================
+
+.. autoclass:: rumdpy.Evaluator
+   :members:
+
 Calculators
 ***********
 

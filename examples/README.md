@@ -19,7 +19,7 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'.
 - [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
 - [widoms_particle_insertion.py](widoms_particle_insertion.py) Widom's particle insertion method for calculating the chemical potential.
-
+- [evaluator_inverse_powerlaw.py](evaluator_inverse_powerlaw.py) Simulate Lennard-Jones system and evaluate the inverse power law potential.
 
 ## Atomistic models
 

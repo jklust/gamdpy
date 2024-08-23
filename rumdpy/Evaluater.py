@@ -6,8 +6,37 @@ from numba import cuda
 # rumdpy
 import rumdpy as rp
 
-class Evaluater():
-    """ Evaluates interactions between particles in a configuration."""
+class Evaluater:
+    """ Evaluates interactions between particles in a configuration.
+    
+    This class can be used to evaluate interactions between particles in a configuration
+    that are different from the ones of the Simulation class.
+
+    Parameters
+    ----------
+
+    configuration : rumd.Configuration
+        The configuration for which the interactions are to be evaluated.
+
+    interactions : an interaction
+        Interactions such as pair potentials, bonds, external fields, etc.
+
+    compute_plan : dict, optional
+         A dictionary with the compute plan for the simulation. If None, a default compute plan is used.
+
+    verbose : bool, optional
+        If True, print information about the interactions.
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> sim = rp.get_default_sim()  # Replace with your simulation
+    >>> pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6)
+    >>> ipl12 = rp.PairPotential(pair_func, [1.0, 0.0, 2.5], max_num_nbs=1000)
+    >>> evaluater = rp.Evaluater(sim.configuration, ipl12)
+    
+    """
     def __init__(self, configuration, interactions, compute_plan=None, verbose=True):
                 
         self.configuration = configuration
@@ -52,7 +81,7 @@ class Evaluater():
                             configuration.d_scalars, 
                             configuration.d_ptype, 
                             configuration.d_r_im, 
-                            configuration.simbox.d_data,       
+                            configuration.simbox.d_data, 
                             self.interactions_params, 
                             )
         configuration.copy_to_host()
