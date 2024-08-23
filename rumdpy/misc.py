@@ -64,6 +64,7 @@ def get_default_compute_plan(configuration):
     - 'gridsync': Boolean indicating if syncronization should be done by grid.sync() calls
     - 'skin': used when updating nblist
     - 'UtilizeNIII': Boolean indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
+    - 'nblist' : 'N squared' (default) or 'linked lists'. Determines algorithm updating nblist
 
     """
     N = configuration.N
@@ -129,7 +130,10 @@ def get_default_compute_plan(configuration):
     if N * tp > 4 * num_cc_cores:  # Heuristic
         gridsync = False
 
-    return {'pb': pb, 'tp': tp, 'skin': skin, 'UtilizeNIII': UtilizeNIII, 'gridsync': gridsync}
+    nblist = 'N squared' # Alternative: "linked lists"
+
+    return {'pb': pb, 'tp': tp, 'skin': skin, 
+            'UtilizeNIII': UtilizeNIII, 'gridsync': gridsync, 'nblist': nblist}
 
 
 def plot_scalars_old(df, N, D, figsize, block=True):

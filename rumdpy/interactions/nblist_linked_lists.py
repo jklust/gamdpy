@@ -33,7 +33,7 @@ class NbListLinkedLists():
             self._exclusions = np.zeros((self.r_ref.shape[0], 2), dtype=np.int32)
 
         self.cells_per_dimension = np.zeros((self.D), dtype=np.int32)
-        min_cells_size = self.max_cut + self.skin
+        min_cells_size = (self.max_cut + self.skin)/2
         for i in range(self.D):
             self.cells_per_dimension[i] = int(self.configuration.simbox.lengths[i]/min_cells_size)
             assert self.cells_per_dimension[i] > 2
@@ -41,11 +41,11 @@ class NbListLinkedLists():
             # - changing simbox size during simulation (NPT, compression)
             # - LEBC
         
-        print(self.cells_per_dimension)
+        #print(self.cells_per_dimension)
         self.my_cell = np.zeros((self.N, self.D), np.int32) # my_cell[:, -1] 1d index
         self.cells = -np.ones(self.cells_per_dimension, dtype=np.int32)
         #self.cells = -np.ones(np.prod(self.cells_per_dimension), dtype=np.int32) # Map to 1D array
-        print(self.cells.shape)
+        #print(self.cells.shape)
 
         self.next_particle_in_cell = -np.ones(self.N, dtype=np.int32) # -1 = no further particles in list
         self.copy_to_device()                     
@@ -126,17 +126,22 @@ class NbListLinkedLists():
                 my_num_nbs = 0
                 my_num_exclusions = exclusions[global_id, -1]
 
-                for ix in range(-1,2,1):
-                    for iy in range(-1,2,1):
-                        for iz in range(-1,2,1):
+                for ix in range(-2,3,1):
+                    for iy in range(-2,3,1):
+                        for iz in range(-2,3,1):
                             other_index = (
                                 (my_cell[global_id, 0]+ix)%cells_per_dimension[0],
                                 (my_cell[global_id, 1]+iy)%cells_per_dimension[1],
                                 (my_cell[global_id, 2]+iz)%cells_per_dimension[2])
-                            #print(global_id, other_index[0], other_index[1], other_index[2])
                             other_global_id = cells[other_index]
                             while other_global_id >= 0: # To use tp>1: read tp particles ahead, and pick yours
-                                if other_global_id != global_id:
+                                if UtilizeNIII: # Could be done per cell basis...
+                                    #flag = other_global_id < global_id
+                                    TwodN = 2*(other_global_id - global_id)
+                                    flag = other_global_id < num_part and (0 < TwodN <= num_part or TwodN < -num_part)
+                                else:
+                                    flag = other_global_id != global_id
+                                if flag:
                                     dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id], sim_box)
                                     if dist_sq < cut_plus_skin*cut_plus_skin:
                                         not_excluded = True  # Check exclusion list
@@ -264,9 +269,5 @@ class NbListLinkedLists():
                     nblist_update_from_linked_lists[num_blocks, (pb, 1)](vectors, sim_box, max_cut+skin, nbflag,  cells_per_dimension, cells, my_cell, next_particle_in_cell, nblist, r_ref, exclusions)           
                     #nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions) # Maybe tp = 1 ???
                     clear_cells[num_blocks, (pb, 1)](vectors, sim_box, nbflag,  cells_per_dimension, cells,  my_cell, next_particle_in_cell)
-                return
-                #max_cut, skin, nbflag, r_ref, exclusions = nblist_parameters
-                #nblist_check[num_blocks, (pb, 1)](vectors, sim_box, skin, r_ref, nbflag)
-                #nblist_update[num_blocks, (pb, tp)](vectors, sim_box, max_cut+skin, nbflag, nblist, r_ref, exclusions)
                 return
             return check_and_update

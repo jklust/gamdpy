@@ -582,19 +582,20 @@ class Simulation():
                                     min_time = time_elapsed
                                     min_skin = skin
                                 skin_times.append(time_elapsed)
-                                #print(self.compute_plan['tp'], skin, skin_times[-1])
+                                print(f"({skin}, {skin_times[-1]:.3})", end=' ', flush=True)
                         max_TPS = repeats * timesteps / min_time * 1000
-                        print(pb, tp, min_skin, min_time, max_TPS)
-                    if min_time < total_min_time:
-                        total_min_time = min_time
-                        total_min_skin = min_skin
-                        total_min_pb = pb
-                        total_min_tp = tp    
+                        print('\n', pb, tp, min_skin, min_time, max_TPS)
+                        if min_time < total_min_time:
+                            total_min_time = min_time
+                            total_min_skin = min_skin
+                            total_min_pb = pb
+                            total_min_tp = tp
 
         self.compute_plan['pb'] = total_min_pb
         self.compute_plan['tp'] = total_min_tp
         self.compute_plan['skin'] = total_min_skin
         print('Final compute_plan :', self.compute_plan)
+        self.JIT_and_test_kernel()
         
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
