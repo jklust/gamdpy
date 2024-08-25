@@ -16,12 +16,14 @@ import numpy as np
 
 import rumdpy as rp
 
-# Setup a default fcc configuration
+# Some system parameters
 nx, ny, nz = 6, 6, 10
 rhoWall = 1.0
 rhoFluid = 0.7
+
+# Setup a default fcc configuration
 configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoFluid)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rhoWall)
 configuration['m'] = 1.0
 
 
@@ -48,18 +50,14 @@ rp.tools.save_configuration(configuration, "initial.xyz")
 tether = rp.Tether()
 tether.set_anchor_points_from_types(particle_types=[1], spring_constants=[300.0], configuration=configuration)
 
-
 # Add gravity force 
-# Alternative instantiation grav = rp.Gravity(<index array>, <force>, verbose=False)
-# where index array: [row index in param, particle/atom index], force:  scalar force
-# Currently the force can only act in the x-direction
-grav = rp.Gravity(ptype=[0], force=[0.01], configuration=configuration)
+grav = rp.Gravity()
+grav.set_gravity_from_types(particle_types=[0], forces=[0.01], configuration=configuration)
 
 # Temp relaxation for wall particles
 relax = rp.Relaxtemp()
 relax.set_relaxation_from_types(particle_types=[1], temperature=[2.],
                                 relax_times=[0.01],configuration=configuration); 
-
 
 # Set the pair interactions
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -76,9 +74,6 @@ integrator = rp.integrators.NVE(dt=0.005)
 
 # Compute plan
 compute_plan = rp.get_default_compute_plan(configuration)
-# Some compute plan settings for old cards 
-#compute_plan['gridsync']=True
-#compute_plan['tp']=6 
 
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
 sim = rp.Simulation(configuration, [pair_pot, tether, grav, relax], integrator,
