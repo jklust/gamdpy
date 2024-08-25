@@ -66,6 +66,10 @@ class Relaxtemp:
     
     def get_params(self, configuration, compute_plan, verbose=False):
 
+        if self.indices_set == False:
+            raise ValueError("Indices not defined")
+
+
         self.d_pindices = cuda.to_device(self.indices)
         self.d_relax_params = cuda.to_device(self.relax_params);
 
