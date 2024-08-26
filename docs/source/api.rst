@@ -105,8 +105,8 @@ Generators
 The Evaluator Class
 ===================
 
-.. autoclass:: rumdpy.Evaluator
-   :members:
+.. autoclass:: rumdpy.Evaluater
+
 
 Calculators
 ***********

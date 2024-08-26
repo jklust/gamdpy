@@ -6,6 +6,11 @@ from numba import cuda
 
 # Define pair-potentials.
 
+#  Problem with potential. Maybe becaus it has no parameters.
+#def non_interacting(dist, params):
+#    """ A pair potential for non-interacting particles (ideal gas or einstein crystal) """
+#    return 0.0, 0.0, 0.0
+
 def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
     """ The 12-6 Lennard-Jones potential
 

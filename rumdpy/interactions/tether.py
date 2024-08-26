@@ -17,15 +17,28 @@ class Tether:
 
         See examples/tethered_particles.py
     """
-
     
     def __init__(self):
         self.anchor_points_set = False
 
+    def set_anchor_points_from_lists(self, particle_indices, spring_constants, configuration):
+        """ Set anchor points and spring constants for tethered particles.
+        
+        Parameters
+        ----------
 
-    def set_anchor_points_from_lists(self, particle_indices, ksprings, configuration):
-    
-        nsprings, nparticles = len(ksprings), len(particle_indices)
+        particle_indices : list of int
+            List of particle indices to be tethered.
+        
+        spring_constants : list of float
+            List of spring constants.
+
+        configuration : rumd.Configuration
+            Configuration object containing particle thether positions.
+        
+        """
+
+        nsprings, nparticles = len(spring_constants), len(particle_indices)
         
         if nsprings != nparticles:
             raise ValueError("Each particle must have exactly one spring connection - array must be same length");
@@ -34,7 +47,7 @@ class Tether:
         for n in range(nparticles):
             indices.append([n, particle_indices[n]])
             pos = configuration['r'][particle_indices[n]]
-            tether_params.append( [pos[0], pos[1], pos[2], ksprings[n]] )
+            tether_params.append( [pos[0], pos[1], pos[2], spring_constants[n]] )
         
         self.tether_params = np.array(tether_params, dtype=np.float32)
         self.indices = np.array(indices, dtype=np.int32) 
@@ -107,8 +120,3 @@ class Tether:
 
         return make_fixed_interactions(configuration, tether_calculator, compute_plan, verbose=False)
     
-
-
-
-    
-

@@ -26,27 +26,27 @@ class Evaluater:
 
     verbose : bool, optional
         If True, print information about the interactions.
-
-    Example
-    -------
-
-    >>> import rumdpy as rp
-    >>> sim = rp.get_default_sim()  # Replace with your simulation
-    >>> pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6)
-    >>> ipl12 = rp.PairPotential(pair_func, [1.0, 0.0, 2.5], max_num_nbs=1000)
-    >>> evaluater = rp.Evaluater(sim.configuration, ipl12)
     
     """
     def __init__(self, configuration, interactions, compute_plan=None, verbose=True):
-                
+        
         self.configuration = configuration
+
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
-
-        self.interactions = interactions
-        self.interactions_params = self.interactions.get_params(self.configuration, self.compute_plan, verbose)
-        self.interactions_kernel = self.interactions.get_kernel(self.configuration, self.compute_plan, verbose)
         
+        # Make sure interactions is a list
+        if type(interactions) == list:
+            self.interactions = interactions
+        else:
+            self.interactions = [interactions, ]
+
+        self.interactions_kernel, self.interactions_params = rp.add_interactions_list(
+            self.configuration,
+            self.interactions,
+            compute_plan=self.compute_plan,
+            verbose=verbose)
+
         self.evaluater_func = self.make_evaluater_func(self.configuration, self.interactions_kernel, self.compute_plan, verbose)
         
     def make_evaluater_func(self, configuration, compute_interactions, compute_plan, verbose=True):
