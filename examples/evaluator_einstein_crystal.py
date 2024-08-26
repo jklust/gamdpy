@@ -8,6 +8,7 @@ An evaluator is created to calculate the potential energy of the system
 using a none-interacting potential (eps=0.0) and harmonic springs. 
 The simulation is then performed, and the mean potential energy of the reference
 einstein crystal (harmonic springs) is calculated and printed.
+The mean displacement from the ideal lattice, sqrt(2*u_spring), is calculated and printed.
 
 """
 
@@ -20,6 +21,7 @@ configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
+#  anchor_points = np.array(configuration['r']).copy()
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -42,7 +44,7 @@ sim = rp.Simulation(
 # Create evaluator for einstein crystal
 #     (replace with your potential of interest)
 none_interacting = pair_pot = rp.PairPotential(pair_func, params=[0.0, 1.0, 2.5], max_num_nbs=1000)
-harmonic_springs = rp.Tether()
+harmonic_springs = rp.Tether()  #  U = 0.5*k*(r-r0)^2
 harmonic_springs.set_anchor_points_from_lists(
     particle_indices=list(range(configuration.N)),
     spring_constants=[1.0]*configuration.N,
@@ -51,10 +53,18 @@ harmonic_springs.set_anchor_points_from_lists(
 evaluator = rp.Evaluater(sim.configuration, [none_interacting, harmonic_springs])
 
 # Run simulation
-u_ipl = []
+u_spring = []
+displacements = []
 for block in sim.timeblocks():
     evaluator.evaluate(sim.configuration)
-    u_ipl.append(np.sum(evaluator.configuration['u']))
+    this_u_spring = evaluator.configuration['u']
+    u_spring.append(np.sum(this_u_spring))
 
-print(f'Mean IPL potential energy: {np.mean(u_ipl)}')
+    # Use the harmonic potential energy to calculate 
+    #   the displacement relative to the ideal lattice
+    dr = np.sqrt(2*this_u_spring)
+    displacements.append(dr)
+
+print(f'Mean harmonic potential energy: {np.mean(u_spring)}')
+print(f'Mean displacement from ideal lattice: {np.mean(displacements)}')
 
