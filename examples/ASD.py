@@ -1,5 +1,7 @@
 """ Simulate a system of asymmetric dumbbells (ASD) with a Lennard-Jones potential and a harmonic bond potential. """
 
+import os
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import numba
 import numpy as np
@@ -50,47 +52,57 @@ compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
 #compute_plan['tp'] = 6
 
-sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
-                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    steps_between_momentum_reset=100,
-                    compute_plan=compute_plan, storage='memory')
+output_path = "examples/Data/ASD_out.h5"
+if not os.path.exists(output_path):
+    if not os.path.exists(os.path.dirname(output_path)):
+        os.makedirs(os.path.dirname(output_path))
+    sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=100,
+                        compute_plan=compute_plan, storage='memory')
 
-print('High Temperature followed by cooling and equilibration:')
-for block in sim.timeblocks():
-    if block % 10 == 0:
-        print(f'{block=:4}  {sim.status(per_particle=True)}')
-print(sim.summary())
+    print('High Temperature followed by cooling and equilibration:')
+    for block in sim.timeblocks():
+        if block % 10 == 0:
+            print(f'{block=:4}  {sim.status(per_particle=True)}')
+    print(sim.summary())
 
-runtime_action = 128
-#runtime_action=1024*8 # to see effect of momentum resetting
-#runtime_action=0 # Turn off momentum resetting (at own risk!)
+    runtime_action = 128
+    #runtime_action=1024*8 # to see effect of momentum resetting
+    #runtime_action=0 # Turn off momentum resetting (at own risk!)
 
-integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
-sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
-                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    steps_between_momentum_reset=runtime_action,
-                    compute_plan=compute_plan, storage='memory')
+    integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
+    sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
+                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        steps_between_momentum_reset=runtime_action,
+                        compute_plan=compute_plan, storage=output_path)
+    print('Production:')
+    for block in sim.timeblocks():
+        if block % 10 == 0:
+            print(f'{block=:4}  {sim.status(per_particle=True)}')
+    print(sim.summary())
+
+output = rp.tools.load_output(output_path)
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
-
-print('Production:')
-for block in sim.timeblocks():
-    if block % 10 == 0:
-        print(f'{block=:4}  {sim.status(per_particle=True)}')
+positions = output["block"][:, :, 0, :, ]
+for i in range(positions.shape[0]):
+    pos = positions[i, -1, :, :]
+    configuration["r"] = pos
+    configuration.copy_to_device()
     calc_rdf.update()
-print(sim.summary())
 
 # scalars
 columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol', 'Px', 'Py', 'Pz']
-data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
+data = np.array(rp.extract_scalars(output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U'])) * dt * sim.output_calculator.steps_between_output  # should be build in
+df['t'] = np.arange(len(df['U'])) * dt * output.attrs["steps_between_output"]  # should be build in
 if callable(temperature):
     df['Ttarget'] = numba.vectorize(temperature)(np.array(df['t']))
 rp.plot_scalars(df, configuration.N, configuration.D, figsize=(10, 8), block=False)
 
-dynamics = rp.tools.calc_dynamics(sim.output, 0, qvalues=(7.5, 7.5))
+dynamics = rp.tools.calc_dynamics(output, 0, qvalues=(7.5, 7.5))
 fig, axs = plt.subplots(3, 1, figsize=(8, 9), sharex=True)
 fig.subplots_adjust(hspace=0.00)  # Remove vertical space between axes
 axs[0].set_ylabel('MSD')
@@ -117,12 +129,25 @@ axs.legend()
 plt.show(block=False)
 
 rdf = calc_rdf.read()
-rdf['rdf'] = np.mean(rdf['rdf'], axis=0)
-fig, axs = plt.subplots(1, 1, figsize=(8, 4))
-axs.set_ylabel('RDF')
-axs.set_xlabel('Distance')
-axs.grid(linestyle='--', alpha=0.5)
-axs.plot(rdf['distances'], rdf['rdf'], '-')
-axs.set_xlim([0.5, 3.5])
-plt.show(block=True)
+total_rdf = np.mean(rdf['rdf'], axis=0)
+fig = plt.figure(figsize=(8, 7))
+gs = gridspec.GridSpec(3, 2, wspace=.5, hspace=1)
+ax0 = fig.add_subplot(gs[0, :])
+ax0.set_ylabel('RDF')
+ax0.set_xlabel('Distance')
+ax0.grid(linestyle='--', alpha=0.5)
+ax0.plot(rdf['distances'], total_rdf, '-')
+ax0.set_xlim([0.5, 3.5])
+
+for i in range(2):
+    for j in range(2):
+        rdf_ij = np.mean(rdf['rdf_ptype'][:, i, j, :], axis=0)
+        ax = fig.add_subplot(gs[i+1, j])
+        ax.set_ylabel('RDF')
+        ax.set_xlabel('Distance')
+        ax.grid(linestyle='--', alpha=0.5)
+        ax.plot(rdf['distances'], rdf_ij, '-')
+        ax.set_xlim([0.5, 3.5])
+        ax.set_title(f"$g(r)$ between particle {i} and {j}")
+plt.show(block=False)
 
