@@ -117,18 +117,18 @@ class Simulation():
         # Create output objects
         if self.storage == 'memory':
             # Creates a memory h5 file with named id(self).h5; id(self) is ensured to be unique
-            self.output = h5py.File(f"{id(self)}.h5", "w", driver='core', backing_store=False)
+            self.memory = h5py.File(f"{id(self)}.h5", "w", driver='core', backing_store=False)
         elif self.storage[-3:] == '.h5':
             # The append is important for repeated istances of sim with same self.storage
-            self.output = h5py.File(self.storage, "a")
+            self.memory = h5py.File(self.storage, "w")
         else:
             print("Simulation data will not be saved")
         # Save setup info
-        self.output.attrs['dt'] = self.dt
-        self.output.attrs['simbox_initial'] = self.configuration.simbox.lengths
-        if 'ptype' in self.output.keys():
-            del self.output['ptype']
-        self.output.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
+        self.memory.attrs['dt'] = self.dt
+        self.memory.attrs['simbox_initial'] = self.configuration.simbox.lengths
+        if 'ptype' in self.memory.keys():
+            del self.memory['ptype']
+        self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
 
         # Momentum reset (this should be saved to output, same for sim parameters)
         if steps_between_momentum_reset == 'default':
@@ -148,12 +148,12 @@ class Simulation():
         else:
             self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
                                                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                                                    output=self.output)
+                                                    output=self.memory)
 
         # Saving of configurations
         if conf_output == 'default':
             self.conf_saver = rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks,
-                                           steps_per_timeblock=steps_per_timeblock, output=self.output, include_simbox=include_simbox_in_output)
+                                           steps_per_timeblock=steps_per_timeblock, output=self.memory, include_simbox=include_simbox_in_output)
         elif conf_output == None or conf_output == 'none':
             self.conf_saver = None
         else:
@@ -165,8 +165,26 @@ class Simulation():
 
         self.JIT_and_test_kernel()
 
+        if self.storage[-3:] == '.h5':
+            self.memory.close()
+
     # __del__ is supposed to work also if __init__ fails. This means you can't use attributed defined in __init__
     # https://www.algorithm.co.il/programming/python-gotchas-1-__del__-is-not-the-opposite-of-__init__/
+
+    def get_output(self, mode="r"):
+        if self.storage[-3:] == '.h5':
+            output = h5py.File(self.storage, mode)
+        elif self.storage == 'memory':
+            output = self.memory
+        else:
+            print(f"Warning: self.output can't recognize self.storage option, returning None")
+            output = None
+        return output
+
+    # might be worth looking into cache_property https://www.reddit.com/r/learnpython/comments/184kqzp/in_class_properties_defined_in_functions/
+    @property
+    def output(self):
+        return self.get_output()
 
     def JIT_and_test_kernel(self):
         while True:
@@ -419,14 +437,14 @@ class Simulation():
             #self.scalars_t.append(self.d_output_array.copy_to_host())              # same
 
             if self.output_calculator != None:
-                self.output_calculator.update_at_end_of_timeblock(block)
+                self.output_calculator.update_at_end_of_timeblock(block, self.get_output(mode="a"))
                 #self.output_calculator.initialize_before_timeblock()
             
             if self.conf_saver != None:
-                self.conf_saver.update_at_end_of_timeblock(block)
+                self.conf_saver.update_at_end_of_timeblock(block, self.get_output(mode="a"))
 
             if self.storage[-3:] == '.h5':
-                self.output.flush()
+                self.output.close()
 
             if self.timing:
                 end_block.record()

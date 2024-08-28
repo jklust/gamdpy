@@ -25,8 +25,6 @@ class ScalarSaver():
         if steps_between_output >= steps_per_timeblock:
             raise ValueError(f'scalar_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
 
-        self.output = output
-
         # per block saving of scalars
         self.num_scalars = 6
         self.num_scalars += self.configuration.D #include CM momentum
@@ -37,12 +35,12 @@ class ScalarSaver():
 
         # Setup output
         shape = (self.num_timeblocks, self.scalar_saves_per_block, self.num_scalars)
-        if 'scalars' in self.output.keys():
-            del self.output['scalars']
-        self.output.create_dataset('scalars', shape=shape,
+        if 'scalars' in output.keys():
+            del output['scalars']
+        output.create_dataset('scalars', shape=shape,
                 chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
-        self.output.attrs['steps_between_output'] = self.steps_between_output
-        self.output.attrs['scalars_names'] = list(self.sid.keys())
+        output.attrs['steps_between_output'] = self.steps_between_output
+        output.attrs['scalars_names'] = list(self.sid.keys())
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -71,8 +69,8 @@ class ScalarSaver():
     def initialize_before_timeblock(self):
         self.zero_kernel(self.d_output_array)
 
-    def update_at_end_of_timeblock(self, block:int):
-        self.output['scalars'][block, :] = self.d_output_array.copy_to_host()
+    def update_at_end_of_timeblock(self, block:int, output):
+        output['scalars'][block, :] = self.d_output_array.copy_to_host()
     
     def get_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan

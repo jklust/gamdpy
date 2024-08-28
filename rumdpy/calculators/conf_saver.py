@@ -24,8 +24,6 @@ class ConfSaver():
             raise ValueError(f'steps_per_timeblock ({steps_per_timeblock}) should be non-negative integer.')
         self.steps_per_timeblock = steps_per_timeblock
 
-        self.output = output
-
         self.conf_per_block = int(math.log2(self.steps_per_timeblock)) + 2  # Should be user controllable
 
         self.num_vectors = 2  # 'r' and 'r_im' (for now!)
@@ -36,16 +34,16 @@ class ConfSaver():
         if verbose:
             print(f'Storing results in memory. Expected footprint {self.num_timeblocks * self.conf_per_block * self.num_vectors * self.configuration.N * self.configuration.D * 4 / 1024 / 1024:.2f} MB.')
 
-        if 'block' in self.output.keys():
-            del self.output['block']
-        self.output.create_dataset("block", shape=(
+        if 'block' in output.keys():
+            del output['block']
+        output.create_dataset("block", shape=(
             self.num_timeblocks, self.conf_per_block, self.num_vectors, self.configuration.N, self.configuration.D),
             chunks=(1, 1, self.num_vectors, self.configuration.N, self.configuration.D), dtype=np.float32)
-        self.output.attrs['vectors_names'] = list(self.sid.keys())
+        output.attrs['vectors_names'] = list(self.sid.keys())
         if self.include_simbox:
-            if 'sim_box' in self.output.keys():
-                del self.output['sim_box']
-            self.output.create_dataset('sim_box', shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data))
+            if 'sim_box' in output.keys():
+                del output['sim_box']
+            output.create_dataset('sim_box', shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data))
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -83,10 +81,10 @@ class ConfSaver():
         zero_kernel = cuda.jit(zero_kernel)
         return zero_kernel[num_blocks, pb]
 
-    def update_at_end_of_timeblock(self, block: int):
-        self.output['block'][block, :] = self.d_conf_array.copy_to_host()
+    def update_at_end_of_timeblock(self, block: int, output):
+        output['block'][block, :] = self.d_conf_array.copy_to_host()
         if self.include_simbox:
-            self.output['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
+            output['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
     def get_kernel(self, configuration, compute_plan, verbose=False):
