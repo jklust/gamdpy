@@ -12,12 +12,14 @@ def load_output(name : str) -> dict:
 
     >>> import rumdpy as rp
 	>>> import h5py
-    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5") 
+    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5")               # Testing input from .h5
     Found .h5 file, loading to rumdpy as output dictionary
 	>>> isinstance(output.file, h5py.File)
 	True
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
     >>> assert (N, D) == (2048, 3), "Error reading N and D from LJ_r0.973_T0.70.h5" 
+    >>> output = rp.tools.load_output("file.abc")                                       # Testing input from unsupported format
+    Input not recognized, unsupported format
     """
 
     if name[-3:]==".h5":
@@ -27,7 +29,7 @@ def load_output(name : str) -> dict:
         print("Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary")
         return load_rumd3(name)
     else:
-        print("Input not recognized")
+        print("Input not recognized, unsupported format")
         return
 
 # Load from h5 (std rumpdy output)
