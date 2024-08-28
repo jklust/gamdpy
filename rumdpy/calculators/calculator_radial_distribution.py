@@ -22,6 +22,9 @@ class CalculatorRadialDistribution():
         The number of bins in the radial distribution function.
 
     compute_plan : dict
+    
+    ptype : optional
+        If specified, array ptypes used to calculate g(r). If not specfified default is configuration.ptype
 
     Example
     -------
@@ -36,8 +39,9 @@ class CalculatorRadialDistribution():
     >>> rdf = rdf_data['rdf']      # Radial distribution function
     """
 
-    def __init__(self, configuration, num_bins, compute_plan=None) -> None:
+    def __init__(self, configuration, num_bins, compute_plan=None, ptype=None) -> None:
         self.configuration = configuration
+        self.d_ptype = cuda.to_device(ptype) if ptype is not None else None
         self.num_bins = num_bins
         self.count = 0  # How many times have statistics been added to?
 
@@ -47,7 +51,8 @@ class CalculatorRadialDistribution():
 
             # Allocate space for statistics
         self.rdf_list = []
-        self.gr_bins = np.zeros(self.num_bins, dtype=np.float64)
+        nptypes = int(np.max(ptype if ptype is not None else configuration.ptype)) + 1
+        self.gr_bins = np.zeros((nptypes, nptypes, self.num_bins), dtype=np.float64)
         self.d_gr_bins = cuda.to_device(self.gr_bins)
         self.host_array_zeros = np.zeros(self.d_gr_bins.shape, dtype=self.d_gr_bins.dtype)
 
@@ -73,7 +78,7 @@ class CalculatorRadialDistribution():
             Kernel configuration: [num_blocks, (pb, tp)]
         """
 
-            num_bins = d_gr_bins.shape[0]  # reading number of bins from size of the device array
+            num_bins = d_gr_bins.shape[2]  # reading number of bins from size of the device array
             min_box_dim = min(sim_box[0], sim_box[1], sim_box[2])  # max distance for rdf can 0.5*Smallest dimension
             bin_width = (min_box_dim / 2) / num_bins  # TODO: Chose more directly!
 
@@ -83,9 +88,11 @@ class CalculatorRadialDistribution():
             my_t = cuda.threadIdx.y
 
             if global_id < num_part:
+                ptype1 = ptype[global_id]
                 for i in range(0, num_part, pb * tp):
                     for j in range(pb):
                         other_global_id = j + i + my_t * pb
+                        ptype2 = ptype[other_global_id]
                         if other_global_id != global_id and other_global_id < num_part:
                             dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id],
                                                        sim_box)
@@ -95,7 +102,7 @@ class CalculatorRadialDistribution():
                                 dist = math.sqrt(dist_sq)
                                 if dist < min_box_dim / 2:
                                     bin_index = int(dist / bin_width)
-                                    cuda.atomic.add(d_gr_bins, bin_index, 1)
+                                    cuda.atomic.add(d_gr_bins, (ptype1, ptype2, bin_index), 1)
 
             return
 
@@ -106,7 +113,7 @@ class CalculatorRadialDistribution():
         self.count += 1
         self.update_kernel(self.configuration.d_vectors,
                            self.configuration.simbox.d_data,
-                           self.configuration.d_ptype,
+                           self.d_ptype if self.d_ptype is not None else self.configuration.d_ptype,
                            self.d_gr_bins)
         self.rdf_list.append(self.d_gr_bins.copy_to_host())
         self.d_gr_bins = cuda.to_device(self.host_array_zeros)
@@ -120,11 +127,11 @@ class CalculatorRadialDistribution():
         dict
             A dictionary containing the distances and the radial distribution function.
         """
-        num_bins = self.rdf_list[0].shape[0]
+        num_bins = self.rdf_list[0].shape[2]
         min_box_dim = min(self.configuration.simbox.lengths[0], self.configuration.simbox.lengths[1],
                           self.configuration.simbox.lengths[2])
         bin_width = (min_box_dim / 2) / num_bins
-        rdf = np.array(self.rdf_list)
+        rdf_ptype = np.array(self.rdf_list)
 
         # Normalize the g(r) lengths # Compute in setup and normalize om the fly 
         rho = self.configuration.N / np.prod(self.configuration.simbox.lengths)
@@ -133,10 +140,17 @@ class CalculatorRadialDistribution():
             r_inner = i * bin_width
             shell_volume = (4.0 / 3.0) * np.pi * (r_outer ** 3 - r_inner ** 3)
             expected_num = rho * shell_volume
-            rdf[:, i] /= (expected_num * self.configuration.N)
-
+            rdf_ptype[:, :, :, i] /= (expected_num * self.configuration.N)
+        rdf = rdf_ptype.sum(axis=1).sum(axis=1)
+        ptype = self.d_ptype.copy_to_host() if self.d_ptype is not None else self.configuration.d_ptype.copy_to_host()
+        for j in range(rdf_ptype.shape[1]):
+            n_j = np.sum(ptype == j) / len(ptype)
+            rdf_ptype[:, j, :, :] /= n_j
+        for k in range(rdf_ptype.shape[2]):
+            n_k = np.sum(ptype == k) / len(ptype)
+            rdf_ptype[:, :, k, :] /= n_k
         distances = np.arange(0, num_bins) * bin_width
-        return {'distances': distances, 'rdf': rdf}
+        return {'distances': distances, 'rdf': rdf, 'rdf_ptype': rdf_ptype, "ptype": ptype}
 
     def save_average(self, output_filename="rdf.dat") -> None:
         """ Save the average radial distribution function to a file
@@ -149,4 +163,12 @@ class CalculatorRadialDistribution():
         """
 
         rdf_dict = self.read()
-        np.savetxt(output_filename, np.c_[rdf_dict['distances'], np.mean(rdf_dict['rdf'], axis=0)], header="r g(r)")
+        rdf_total = np.mean(rdf_dict['rdf'], axis=0)
+        rdf_ij = []
+        header_ij = " "
+        for i in range(rdf_dict["rdf_ptype"].shape[1]):
+            for j in range(rdf_dict["rdf_ptype"].shape[2]):
+                rdf_ij.append(np.mean(rdf_dict['rdf_ptype'][:, i, j, :], axis=0))
+                header_ij += f"g[{i}-{j}](r) "
+        np.savetxt(output_filename, np.array([rdf_dict['distances'], rdf_total, *rdf_ij, rdf_dict["ptype"]]).T, header="r g(r)" + header_ij + "ptype")
+
