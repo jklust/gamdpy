@@ -152,7 +152,7 @@ class CalculatorRadialDistribution():
         distances = np.arange(0, num_bins) * bin_width
         return {'distances': distances, 'rdf': rdf, 'rdf_ptype': rdf_ptype, "ptype": ptype}
 
-    def save_average(self, output_filename="rdf.dat") -> None:
+    def save_average(self, output_filename="rdf.dat", save_ptype=False) -> None:
         """ Save the average radial distribution function to a file
 
         Parameters
@@ -170,5 +170,6 @@ class CalculatorRadialDistribution():
             for j in range(rdf_dict["rdf_ptype"].shape[2]):
                 rdf_ij.append(np.mean(rdf_dict['rdf_ptype'][:, i, j, :], axis=0))
                 header_ij += f"g[{i}-{j}](r) "
-        np.savetxt(output_filename, np.array([rdf_dict['distances'], rdf_total, *rdf_ij, rdf_dict["ptype"]]).T, header="r g(r)" + header_ij + "ptype")
+        np.savetxt(output_filename, np.array([rdf_dict['distances'], rdf_total, *rdf_ij]).T, header=f"r g(r) {header_ij} ptype")
+        np.savetxt(f"ptype_{output_filename}", np.array(rdf_dict["ptype"]).T, header="ptype")
 

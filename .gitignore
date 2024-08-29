@@ -4,9 +4,12 @@ __pycache__
 *~
 benchmark_*_This_run.csv
 examples/Data/LJ_trajectory/*
-examples/Data/*
+examples/Data/*.h5
+examples/Data/*.pkl
 *.h5
 .venv
 venv
 docs/build
 *libcudadevrt.a
+examples/rumdpy
+.coverage

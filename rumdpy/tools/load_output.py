@@ -4,6 +4,7 @@ import numpy as np
 
 # This function is a wrapper for several possible inputs
 def load_output(name : str) -> dict:
+    import os
     """
     This function takes a saved simulation and returns it as sim.output object.
 
@@ -20,13 +21,25 @@ def load_output(name : str) -> dict:
     >>> assert (N, D) == (2048, 3), "Error reading N and D from LJ_r0.973_T0.70.h5" 
     >>> output = rp.tools.load_output("file.abc")                                       # Testing input from unsupported format
     Input not recognized, unsupported format
+	>>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")
+	Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
+	>>> assert (N, D) == (4000, 3), "Error reading N and D from examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
+	>>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_trajonly")
+	Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
+    LastComplete_energies.txt not present
+	>>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_eneronly")
+	Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
+    LastComplete_trajectory.txt not present
     """
 
     if name[-3:]==".h5":
         print("Found .h5 file, loading to rumdpy as output dictionary")
         return load_h5(name)
-    elif name=="TrajectoryFiles":
+    elif "TrajectoryFiles" in name:
         print("Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary")
+        if not os.path.isdir(name):
+            print(f"Folder {name} doesn't exists")
+            exit()
         return load_rumd3(name)
     else:
         print("Input not recognized, unsupported format")
@@ -57,8 +70,8 @@ def load_rumd3(name:str) -> dict:
     if not energy and not traj:
         print("No LastComplete file found, exiting")
         exit()
-    if not energy: nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_energies.txt", dtype=np.int32)
-    else         : nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_trajectory.txt", dtype=np.int32)
+    if energy: nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_energies.txt", dtype=np.int32)
+    else     : nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_trajectory.txt", dtype=np.int32)
 
     # Defining output memory .h5 file
     fullpath = f"{os.getcwd()}/{name}"
@@ -136,8 +149,9 @@ def load_rumd3(name:str) -> dict:
             tmp_data   = pd.read_csv(energies, skiprows=1, names=col_names, usecols = [i for i in range(len(col_names))], delimiter=" ")
             all_energies.append(tmp_data.to_numpy())
         # Saving data in output h5py
-        if output.attrs!=None : output.attrs['dt'] = timestep 
-        output.attrs['steps_between_output'] = float(save_interval)/float(output.attrs['dt'])
+        if 'dt' in output.attrs.keys() : 
+            output.attrs['steps_between_output'] = float(save_interval)/float(output.attrs['dt'])
+        output.attrs['time_between_output'] = save_interval
         output.attrs['scalars_names'] = list(col_names)
         output.create_dataset('scalars', data=np.vstack(all_energies))
 

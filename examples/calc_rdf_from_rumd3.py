@@ -4,9 +4,9 @@ import os
 
 import rumdpy as rp
 
-file_to_read = "TrajectoryFiles"
+file_to_read = "examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
 
-if file_to_read not in os.listdir(os.getcwd()):
+if not os.path.isdir(file_to_read):
     print(f"This example needs {file_to_read} to be present")
     exit()
 
@@ -16,17 +16,17 @@ output = rp.tools.load_output(file_to_read)
 nblocks, nconfs, _ , N, D = output['block'].shape
 # Set up the configuration object
 configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Simbox(D, output['attrs']['simbox_initial'])
+configuration.simbox = rp.Simbox(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
-calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000, ptype=output['ptype'])
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)
 #       the zero is to select the position array and discard images
 positions = output['block'][:,:,0,:,:]
 positions = positions.reshape(nblocks*nconfs,N,D)
 # Loop over saved configurations
-for pos in positions[nconfs-1::nconfs]:
+for pos in positions[nconfs-1::int(nconfs/8)]:
     configuration['r'] = pos
     configuration.copy_to_device()
     calc_rdf.update()
@@ -36,4 +36,5 @@ calc_rdf.save_average("rdf_rumd3.dat")
 if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
     if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
         os.remove('rdf_rumd3.dat')
+        os.remove('ptype_rdf_rumd3.dat')
 
