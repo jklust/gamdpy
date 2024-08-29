@@ -149,5 +149,5 @@ for i in range(2):
         ax.plot(rdf['distances'], rdf_ij, '-')
         ax.set_xlim([0.5, 3.5])
         ax.set_title(f"$g(r)$ between particle {i} and {j}")
-plt.show(block=False)
+plt.show(block=True)
 
