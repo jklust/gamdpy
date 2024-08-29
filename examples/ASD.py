@@ -83,6 +83,7 @@ if not os.path.exists(output_path):
     print(sim.summary())
 
 output = rp.tools.load_output(output_path)
+output = output.get_h5()
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)

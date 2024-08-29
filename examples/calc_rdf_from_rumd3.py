@@ -12,6 +12,7 @@ if not os.path.isdir(file_to_read):
 
 # Load existing data
 output = rp.tools.load_output(file_to_read)
+output = output.get_h5()
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
 # Set up the configuration object
