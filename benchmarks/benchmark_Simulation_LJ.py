@@ -5,6 +5,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import numba
 from numba import cuda, config
 
 import rumdpy as rp
@@ -25,6 +26,8 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
 
     # Setup pair potential.
     pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    #pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+    #pair_func = numba.njit(rp.LJ_12_6_sigma_epsilon) # numba.njit should not be necessarry!
     sig, eps, cut = 1.0, 1.0, 2.5
     pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
@@ -50,8 +53,10 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
     sim = rp.Simulation(c1, pair_pot, integrator,
                         num_timeblocks=1, steps_per_timeblock=steps,
+    #                    steps_between_momentum_reset=200,
                         conf_output=None, scalar_output=None,
-                        storage='None', verbose=False)
+                        compute_plan=compute_plan,
+                        storage='memory', verbose=False)
 
     # Run simulation one block at a time
     for block in sim.timeblocks():
@@ -68,12 +73,16 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
     #assert nbflag[0] == 0
     #assert nbflag[1] == 0
 
-    tps = sim.last_num_blocks * sim.steps_per_block / sim.timing_numba * 1000
+    tps = sim.last_num_blocks * sim.steps_per_block / np.sum(sim.timing_numba_blocks) * 1000
     time_in_sec = sim.timing_numba / 1000
 
     #print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
-    print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan)
+    #print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan, pair_pot.nblist.d_nbflag.copy_to_host())
+    nbflag = pair_pot.nblist.d_nbflag.copy_to_host()
 
+    print(f"{c1.N:7} {tps:.2e} {steps:.1e} {time_in_sec:.1e}  {nbflag[2]:6} {2*steps/nbflag[2]:.1f} {compute_plan}")
+    assert nbflag[0] == 0
+    assert nbflag[1] == 0
     return tps, time_in_sec
 
 
@@ -82,23 +91,34 @@ def main(integrator):
     print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
         (4, 4, 8), (6, 6, 6), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
-        (32, 32, 32))
+        (32, 32, 32), (32, 32, 64), (32, 64, 64), (64, 64, 64))
     Ns = []
     tpss = []
     magic_number = 1e7
+    print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:
         c1, LJ_func = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
         while time_in_sec < 1.0:  # At least 1s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
-            # compute_plan['tp'] = 1
+            #compute_plan['tp'] = 1
+            #compute_plan['tp'] = int(compute_plan['tp']*1.5)
+            if c1.N > 2000:
+                compute_plan['nblist'] = 'linked lists'
+                compute_plan['skin'] = 0.3
+                #compute_plan['pb'] = 128
+                #if c1.N < 50000:
+                #    compute_plan['gridsync'] = True
             tps, time_in_sec = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
             magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
 
+    # Save this run to csv file
+
     df = pd.DataFrame({'N': Ns, 'TPS': tpss})
+    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
     files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
 
     plt.figure()
@@ -116,9 +136,7 @@ def main(integrator):
     plt.savefig('Data/benhcmarks.pdf')
     plt.show()
 
-    # Save this run to csv file
-    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
-
+    
 
 if __name__ == "__main__":
     if len(sys.argv) == 1 or 'NVE' in sys.argv:

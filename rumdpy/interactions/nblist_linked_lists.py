@@ -36,7 +36,7 @@ class NbListLinkedLists():
         min_cells_size = (self.max_cut + self.skin)/2
         for i in range(self.D):
             self.cells_per_dimension[i] = int(self.configuration.simbox.lengths[i]/min_cells_size)
-            assert self.cells_per_dimension[i] > 2
+            assert self.cells_per_dimension[i] > 4
             # TODO: Take care of
             # - changing simbox size during simulation (NPT, compression)
             # - LEBC
@@ -52,7 +52,7 @@ class NbListLinkedLists():
         return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, 
                 self.d_cells_per_dimension, self.d_cells, self.d_my_cell, self.d_next_particle_in_cell)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, verbose=False, force_update=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -78,14 +78,14 @@ class NbListLinkedLists():
             """
 
             global_id, my_t = cuda.grid(2)
-            if nbflag[0]>0: # nblist update can be forced by setting nbflag[0]>0
+            if force_update: # nblist update forced (for benchmark or similar)
                 if global_id==0 and my_t==0:
                     nbflag[0]=num_blocks
-            else:
-                if global_id < num_part and my_t==0:
-                    dist_sq = dist_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box)
-                    if dist_sq > skin*skin*numba.float32(0.25):
-                        nbflag[0]=num_blocks
+
+            if global_id < num_part and my_t==0:
+                dist_sq = dist_sq_function(vectors[r_id][global_id], r_ref[global_id], sim_box)
+                if dist_sq > skin*skin*numba.float32(0.25):
+                    nbflag[0]=num_blocks
 
             if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
                 for k in range(D):
@@ -104,10 +104,10 @@ class NbListLinkedLists():
 
             global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
-                for k in range(D): # CHECK THIS !!!
+                for k in range(D):
                     my_cell[global_id,k] = int(math.floor(vectors[r_id][global_id,k]*cells_per_dimension[k]/sim_box[k]))%cells_per_dimension[k]
-                    if my_cell[global_id,k]<0:
-                        print(global_id,k, my_cell[global_id,k],vectors[r_id][global_id,k]) 
+                    #if my_cell[global_id,k]<0:
+                    #    print(global_id,k, my_cell[global_id,k],vectors[r_id][global_id,k]) 
                 index = (my_cell[global_id,0], my_cell[global_id,1], my_cell[global_id,2])      # 3D 
                 next_particle_in_cell[global_id] = cuda.atomic.exch(cells, index, global_id)    # index needs to be tuple when multidim
                 

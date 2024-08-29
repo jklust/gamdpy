@@ -29,7 +29,7 @@ class NbList2():
         self.copy_to_device()                     
         return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, self.d_simbox_last_rebuild)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, verbose=False, force_update=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -57,19 +57,14 @@ class NbList2():
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
 
-            my_block = cuda.blockIdx.x
-            local_id = cuda.threadIdx.x 
-            global_id = my_block*pb + local_id
-            my_t = cuda.threadIdx.y
-
-            if nbflag[0]>0: # nblist update can be forced by setting nbflag[0]>0
+            global_id, my_t = cuda.grid(2)
+            if force_update: # nblist update forced (for benchmark or similar)
                 if global_id==0 and my_t==0:
                     nbflag[0]=num_blocks
-                #cuda.syncthreads()
-            else:
-                if global_id < num_part and my_t==0:
-                    if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
-                        nbflag[0] = num_blocks
+
+            if global_id < num_part and my_t==0:
+                if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
+                    nbflag[0] = num_blocks
 
             if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
                 for k in range(D):

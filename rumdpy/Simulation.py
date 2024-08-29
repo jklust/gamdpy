@@ -424,12 +424,18 @@ class Simulation():
         zero = np.float32(0.0)
 
         for block in range(num_timeblocks):
-            if self.timing: start_block.record()
+            #if self.timing: start_block.record()
             self.current_block = block
             if self.output_calculator != None:
                 self.output_calculator.initialize_before_timeblock()
-            self.integrate_self(np.float32(block * self.steps_per_block * self.dt),self.steps_per_block)
             
+            if self.timing: start_block.record()
+            self.integrate_self(np.float32(block * self.steps_per_block * self.dt),self.steps_per_block)
+            if self.timing:
+                end_block.record()
+                end_block.synchronize()
+                block_times.append(cuda.event_elapsed_time(start_block, end_block))
+
             self.configuration.copy_to_host()
             self.vectors_list.append(self.configuration.vectors.copy())  # Needed for 3D viz, should use memory/hdf5
             self.scalars_list.append(self.configuration.scalars.copy())  # same
@@ -446,10 +452,10 @@ class Simulation():
             if self.storage[-3:] == '.h5':
                 self.output.close()
 
-            if self.timing:
-                end_block.record()
-                end_block.synchronize()
-                block_times.append(cuda.event_elapsed_time(start_block, end_block))
+            #if self.timing:
+            #    end_block.record()
+            #    end_block.synchronize()
+            #    block_times.append(cuda.event_elapsed_time(start_block, end_block))
             yield block
 
         # Finalizing run

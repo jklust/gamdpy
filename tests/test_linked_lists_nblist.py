@@ -21,7 +21,7 @@ def run_nblist(configuration, nblist, cut, compute_plan):
 
         
         params = nblist.get_params(max_cut=cut, compute_plan=compute_plan)
-        kernel = nblist.get_kernel(configuration, compute_plan)
+        kernel = nblist.get_kernel(configuration, compute_plan, force_update=False)
     
         if compute_plan['gridsync']:
             kernel = kernel_from_devicefunc(kernel)
@@ -38,8 +38,10 @@ def run_nblist(configuration, nblist, cut, compute_plan):
                                            configuration.simbox.d_data,
                                            nblist.d_nblist, 
                                            params)
-        print(compute_plan, nblist.d_nbflag.copy_to_host())
-
+        #print(compute_plan, nblist.d_nbflag.copy_to_host())
+        nbflag = nblist.d_nbflag.copy_to_host()
+        assert nbflag[0] == 0
+        assert nbflag[1] == 0
 
 def nblist_test(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, UtilizeNIII=None, cut=2.5, verbose=True):
     
@@ -77,19 +79,21 @@ def nblist_test(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=No
     run_nblist(configuration, nblist, cut, compute_plan)
     nblist_N_squared = nblist.d_nblist.copy_to_host()
     
-    return nblist_linked_list, nblist_N_squared
+    return nblist_linked_list, nblist_N_squared, compute_plan
 
 
 @pytest.mark.experimental
-@settings(deadline=200_000, max_examples = 6)
+@settings(deadline=200_000, max_examples = 8)
 @given(nx=st.integers(min_value=12, max_value=32), ny=st.integers(min_value=12, max_value=32), nz=st.integers(min_value=12, max_value=32))
 def test_nblist(nx, ny, nz):
     N = nx*ny*nz*4
     D = 3
-    nblist_linked_list, nblist_N_squared = nblist_test(nx, ny, nz, cut=2.5, verbose=False)
+    nblist_linked_list, nblist_N_squared, compute_plan = nblist_test(nx, ny, nz, cut=2.5, verbose=False)
     total_num_nbs_linked_list = np.sum(nblist_linked_list[:,-1])
     total_num_nbs_N_squared = np.sum(nblist_N_squared[:,-1])
-    print(N, nx, ny, nz, total_num_nbs_linked_list, total_num_nbs_N_squared, total_num_nbs_linked_list/N)
+    print(N, nx, ny, nz,
+          compute_plan,
+          total_num_nbs_linked_list, total_num_nbs_N_squared, total_num_nbs_linked_list/N)
     assert total_num_nbs_linked_list == total_num_nbs_N_squared
     assert np.all(nblist_linked_list[:,-1] == nblist_N_squared[:,-1]) # Num nbs for each particle
     assert np.all(np.sort(nblist_linked_list, axis=1) == np.sort(nblist_N_squared, axis=1)) # Same nbs, order allowed to differ
