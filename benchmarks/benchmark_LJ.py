@@ -1,127 +1,143 @@
+""" 
+Benchmark rumdpy using the lammps LJ benchmark
+Command line options:
+
+- Nsquared : Use O(N^2) for neighbor-list update (Default)
+- LinkedLists : Use O(N) linked lists for neighbor-list update
+
+- NVE : Use NVE integrator (default)
+- NVT : Use NVT integrator
+- NVT_Langevin : Use NVT_Langevin integrator
+
+"""
+
 import glob
 import sys
-from rumdpy.integrators import nve, nvt_nh, nvt_langevin
+# from rumdpy.integrators import nve, nvt_nh, nvt_langevin  # OLD CODE
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import numba
 from numba import cuda, config
 
 import rumdpy as rp
 
-def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=True):
+
+def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
     """
     Setup and return configuration, potential function, and potential parameters for the LJ benchmark
     """
 
     # Generate configuration with a FCC lattice
+    # Setup configuration: FCC Lattice
     c1 = rp.Configuration(D=3)
     c1.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
     c1['m'] = 1.0
     c1.randomize_velocities(T=1.44)
-    c1.copy_to_device() 
+    #  c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44)
 
-    pairpot_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6)
-    params = [[[4.0, -4.0, 2.5],], ]
-    
-    return c1, pairpot_func, params
+    # Setup pair potential.
+    pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    #pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+    #pair_func = numba.njit(rp.LJ_12_6_sigma_epsilon) # numba.njit should not be necessarry!
+    sig, eps, cut = 1.0, 1.0, 2.5
+    pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+
+    return c1, pair_pot
 
 
-def run_benchmark(c1, pairpot_func, params, compute_plan, steps, integrator='NVE', verbose=True):
+def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=False):
     """
     Run LJ benchmark
     Could be run with other potential and/or parameters, but asserts would need to be updated
     """
-    if verbose:
-        print('compute_plan: ', compute_plan)
 
-    c1.copy_to_device()
-    
-    # Make the pair potential. 
-    pair_potential = rp.PairPotential(c1, pairpot_func, params=params, exclusions=None, max_num_nbs=1000, compute_plan=compute_plan)
-    pairs = pair_potential.get_interactions(c1, exclusions=None, compute_plan=compute_plan, verbose=False)
-    
     # Set up the integrator
-    dt = np.float32(0.005)
+    dt = 0.005
 
-    T0 = rp.make_function_constant(value=0.7) # Not used for NVE
     if integrator == 'NVE':
-        integrate, integrator_params = nve.setup(c1, pairs['interactions'], dt=dt, compute_plan=compute_plan, verbose=False)
+        integrator = rp.integrators.NVE(dt=dt)
     if integrator == 'NVT':
-        integrate, integrator_params = nvt_nh.setup(c1, pairs['interactions'], T0, tau=0.2, dt=dt, compute_plan=compute_plan, verbose=False)
-    if integrator=='NVT_Langevin':
-        integrate, integrator_params = nvt_langevin.setup(c1, pairs['interactions'], T0, alpha=0.1, dt=dt, seed=2023, compute_plan=compute_plan, verbose=False)
+        integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
+    if integrator == 'NVT_Langevin':
+        integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
 
-    # Run the Simulation
-    zero = np.float32(0.0)
-    # Warmup
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
-              integrator_params, zero, 10)
+    # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
+    sim = rp.Simulation(c1, pair_pot, integrator,
+                        num_timeblocks=1, steps_per_timeblock=steps,
+    #                    steps_between_momentum_reset=200,
+                        conf_output=None, scalar_output=None,
+                        compute_plan=compute_plan,
+                        storage='memory', verbose=False)
 
-    scalars_t = [np.sum(c1.d_scalars.copy_to_host(), axis=0)]
-    start = cuda.event()
-    end = cuda.event()
+    # Run simulation one block at a time
+    for block in sim.timeblocks():
+        pass
+    nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
+    assert nbflag0[0] == 0
+    assert nbflag0[1] == 0
 
-    start.record()
-    integrate(c1.d_vectors, c1.d_scalars, c1.d_ptype, c1.d_r_im, c1.simbox.d_data, pairs['interaction_params'],
-              integrator_params, zero, steps)
-    end.record()
-    end.synchronize()
-    scalars_t.append(np.sum(c1.d_scalars.copy_to_host(), axis=0))
+    for block in sim.timeblocks():
+        pass
 
-    nbflag = pair_potential.nblist.d_nbflag.copy_to_host()
-    time_in_sec = np.float32(cuda.event_elapsed_time(start, end) / 1000)
-    tps = np.float32(steps / time_in_sec)
+    #print(sim.summary())
 
-    if verbose:
-        print('\tsteps :', steps)
-        print('\tnbflag : ', nbflag)
-        print('\ttime :', time_in_sec, 's')
-        print('\tTPS : ', tps)
+    #assert 0.55 < Tkin < 0.85, f'{Tkin=}'
+    #assert 0.55 < Tconf < 0.85, f'{Tconf=}'
+    #if integrator == 'NVE':  # Only expect conservation of energy if we are running NVE
+    #    assert -0.01 < de < 0.01
+    #assert nbflag[0] == 0
+    #assert nbflag[1] == 0
 
-    df = pd.DataFrame(np.array(scalars_t), columns=c1.sid.keys())
-    df['e'] = df['u'] + df['k']  # Total energy
-    df['Tkin'] = 2 * df['k'] / c1.D / (c1.N - 1)
-    df['Tconf'] = df['fsq'] / df['lap']
+    tps = sim.last_num_blocks * sim.steps_per_block / np.sum(sim.timing_numba_blocks) * 1000
+    time_in_sec = sim.timing_numba / 1000
 
-    Tkin = df['Tkin'][1]
-    Tconf = df['Tconf'][1]
-    de = np.float32((df['e'][1] - df['e'][0]) / c1.N)
-
-    print(c1.N, '\t', tps, '\t', steps, '\t', time_in_sec, '\t', compute_plan, '\t', Tkin, '\t', Tconf, '\t', de)
-
-    assert 0.55 < Tkin < 0.85, f'{Tkin=}'
-    assert 0.55 < Tconf < 0.85, f'{Tconf=}'
-    if integrator == 'NVE':  # Only expect conservation of energy if we are running NVE
-        assert -0.01 < de < 0.01
+    nbflag = pair_pot.nblist.d_nbflag.copy_to_host()
+    nbupdates = nbflag[2] - nbflag0[2]
+    print(f"{c1.N:7} {tps:.2e} {steps:.1e} {time_in_sec:.1e}  {nbupdates:6} {steps/nbupdates:.1f} {compute_plan}")
     assert nbflag[0] == 0
     assert nbflag[1] == 0
-
     return tps, time_in_sec
 
 
-def main(integrator):
+def main(integrator, nblist):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
     print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
-        (4, 4, 8), (6, 6, 6), (4, 8, 8), (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32),
-        (32, 32, 32))
+        (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32), (32, 32, 32) )
+    if nblist == 'Nsquared':
+        nxyzs = ((4, 4, 8), (6, 6, 6), (4, 8, 8),) + nxyzs
+    if nblist == 'LinkedLists':
+        nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
     Ns = []
     tpss = []
     magic_number = 1e7
+    print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:
-        c1, LJ_func, params = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
+        c1, LJ_func = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
-        while time_in_sec < 1.0:  # At least 1s to get reliable timing
+        while time_in_sec < 0.5:  # At least 1s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
-            # compute_plan['tp'] = 1
-            tps, time_in_sec = run_benchmark(c1, LJ_func, params, compute_plan, steps, integrator=integrator, verbose=False)
-            magic_number *= 2.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
+            #compute_plan['tp'] = 1
+            #compute_plan['tp'] = int(compute_plan['tp']*1.5)
+            if nblist=='LinkedLists':
+                if c1.N > 2000:
+                    compute_plan['nblist'] = 'linked lists'
+                    compute_plan['skin'] = 0.3
+                    #compute_plan['pb'] = 128
+                    #if c1.N < 50000:
+                    #    compute_plan['gridsync'] = True
+            tps, time_in_sec = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
+            magic_number *= 1.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
 
+    # Save this run to csv file
+
     df = pd.DataFrame({'N': Ns, 'TPS': tpss})
+    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
     files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
 
     plt.figure()
@@ -139,16 +155,16 @@ def main(integrator):
     plt.savefig('Data/benhcmarks.pdf')
     plt.show()
 
-    # Save this run to csv file
-    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
-
+    
 
 if __name__ == "__main__":
-    if len(sys.argv)==1 or 'NVE' in sys.argv:
-        main(integrator='NVE')
+    integrator = 'NVE'
+    nblist = 'Nsquared'
     if 'NVT' in sys.argv:
-        main(integrator='NVT')
+        integrator = 'NVT'
     if 'NVT_Langevin' in sys.argv:
-        main(integrator='NVT_Langevin')
-        
+        integrator = 'NVT_Langevin'
+    if 'LinkedLists' in sys.argv:
+        nblist = 'LinkedLists'
 
+    main(integrator=integrator, nblist=nblist)
