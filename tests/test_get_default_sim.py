@@ -8,7 +8,8 @@ def test_get_default_sim():
     assert sim.configuration['r'] is not None
     assert sim.configuration['m'] is not None
     assert sim.configuration['v'] is not None
-
+    assert isinstance(sim.integrator, rp.integrators.NVT)
+    assert isinstance(sim.interactions[0], rp.PairPotential)
 
 if __name__ == '__main__':
     test_get_default_sim()

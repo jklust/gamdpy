@@ -160,6 +160,10 @@ class CalculatorRadialDistribution():
 
         output_filename : str
             The name of the file to which the radial distribution function is saved.
+
+        save_ptype : bool
+            Save the type of each particle in a file name ptype_* (default False)
+
         """
 
         rdf_dict = self.read()

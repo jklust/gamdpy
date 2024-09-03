@@ -259,17 +259,10 @@ def get_default_sim():
 
     >>> import rumdpy as rp
     >>> import os
-    >>> os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'   # Removes warnings from low occupacy
+    >>> os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'   # Removes warnings from low occupacy (optional)
     >>> import rumdpy as rp
     >>> sim = rp.get_default_sim()
-    >>> isinstance(sim.integrator, rp.integrators.NVT)          # Check that integrator obejct is created
-    True
-    >>> isinstance(sim.interactions[0], rp.PairPotential)       # Check that pair potential obejct is created
-    True
-    >>> isinstance(sim.configuration, rp.Configuration)         # Check that configuration obejct is created
-    True
-    >>> isinstance(sim, rp.Simulation)                          # Check that simulation obejct is created
-    True
+
     """
     import rumdpy as rp
 

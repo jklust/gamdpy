@@ -1,4 +1,4 @@
-"""Test the class load_outputi. """
+"""Test the class load_output. """
 
 def test_load_output():
     import rumdpy as rp
