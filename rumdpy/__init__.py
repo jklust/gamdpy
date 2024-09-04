@@ -1,6 +1,7 @@
 """ The rumdpy main module """
 from . import integrators, tools, unit_cells
 
+# Import integrators from integrators folder
 from .integrators import *
 from .interactions import *
 from .potential_functions import *
