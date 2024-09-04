@@ -213,7 +213,7 @@ class Configuration:
         {'fractional_coordinates': [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]], 'lattice_constants': [1.0, 1.0, 1.0]}
 
         """
-        from rumdpy.tools import make_lattice
+        from .make_lattice import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
         self.simbox = Simbox(self.D, box_vector)

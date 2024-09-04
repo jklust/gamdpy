@@ -50,7 +50,7 @@ harmonic_springs.set_anchor_points_from_lists(
     spring_constants=[1.0]*configuration.N,
     configuration=configuration
 )
-evaluator = rp.Evaluater(sim.configuration, [none_interacting, harmonic_springs])
+evaluator = rp.Evaluator(sim.configuration, [none_interacting, harmonic_springs])
 
 # Run simulation
 u_spring = []

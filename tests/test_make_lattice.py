@@ -83,7 +83,7 @@ EXPECTED_HEXAGONAL_POSITIONS = np.array([
 
 def test_fcc_lattice(verbose=False, plot=False):
     cells = [2, 2, 2]
-    positions, box_vector = rp.tools.make_lattice(rp.unit_cells.FCC, cells)
+    positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.FCC, cells)
     configuration = rp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
@@ -117,7 +117,7 @@ def test_fcc_lattice_method(verbose=False, plot=False):
 
 def test_bcc_lattice(verbose=False, plot=False):
     cells = [2, 2, 2]
-    positions, box_vector = rp.tools.make_lattice(rp.unit_cells.BCC, cells)
+    positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.BCC, cells)
     configuration = rp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
@@ -140,7 +140,7 @@ def test_bcc_lattice(verbose=False, plot=False):
 
 def test_hexagonal(verbose=False, plot=False):
     cells = [4, 2]
-    positions, box_vector = rp.tools.make_lattice(rp.unit_cells.HEXAGONAL, cells=cells)
+    positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.HEXAGONAL, cells=cells)
     configuration = rp.Configuration(D=2)
     configuration['r'] = positions
     configuration.simbox = rp.Simbox(configuration.D, box_vector)
