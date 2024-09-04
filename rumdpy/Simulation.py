@@ -5,6 +5,8 @@ from numba import cuda
 
 # rumdpy
 import rumdpy as rp
+#from rumdpy.configuration.colarray import colarray as colarray
+#from rumdpy.configuration.Simbox import Simbox as Simbox
 
 # IO
 import h5py

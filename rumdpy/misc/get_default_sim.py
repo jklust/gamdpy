@@ -7,7 +7,6 @@ def get_default_sim():
     Example
     -------
 
-    >>> import rumdpy as rp
     >>> import os
     >>> os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'   # Removes warnings from low occupacy (optional)
     >>> import rumdpy as rp

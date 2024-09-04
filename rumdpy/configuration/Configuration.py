@@ -2,8 +2,9 @@ import numpy as np
 import numba
 import math
 from numba import cuda
-from rumdpy.colarray import colarray
-from rumdpy.Simbox import Simbox
+from .colarray import colarray
+from .Simbox import Simbox
+#import .Simbox
 
 # IO
 import h5py
