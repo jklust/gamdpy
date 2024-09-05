@@ -5,8 +5,9 @@ from numba import cuda
 
 # rumdpy
 import rumdpy as rp
-#from rumdpy.configuration.colarray import colarray as colarray
-#from rumdpy.configuration.Simbox import Simbox as Simbox
+# TODO: to remove import above you need to add a lot of lines are the following
+#from ..simulation.get_default_compute_plan import get_default_compute_plan
+#from ..configuration.Configuration import Configuration
 
 # IO
 import h5py

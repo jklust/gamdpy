@@ -1,9 +1,9 @@
 import numpy as np
-import rumdpy as rp
 import numba
 import math
 from numba import cuda
 
+from ..simulation.get_default_compute_plan import get_default_compute_plan
 
 #############################################################
 #### Radial Distribution Function  
@@ -47,7 +47,7 @@ class CalculatorRadialDistribution():
 
         self.compute_plan = compute_plan
         if self.compute_plan is None:
-            self.compute_plan = rp.get_default_compute_plan(configuration=configuration)
+            self.compute_plan = get_default_compute_plan(configuration=configuration)
 
             # Allocate space for statistics
         self.rdf_list = []

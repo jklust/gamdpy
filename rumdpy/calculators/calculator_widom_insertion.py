@@ -4,8 +4,7 @@ import numpy as np
 import numba
 from numba import cuda
 
-import rumdpy as rp
-
+from ..simulation.get_default_compute_plan import get_default_compute_plan
 
 class CalculatorWidomInsertion:
     """ Calculator class for Widom's particle insertion method for computing chemical potentials
@@ -85,7 +84,7 @@ class CalculatorWidomInsertion:
 
         self.compute_plan = compute_plan
         if self.compute_plan is None:
-            self.compute_plan = rp.get_default_compute_plan(configuration=configuration)
+            self.compute_plan = get_default_compute_plan(configuration=configuration)
 
         self.backend = backend
         self.boltzmann_factors = np.zeros(len(self.ghost_positions), dtype=np.float64)
