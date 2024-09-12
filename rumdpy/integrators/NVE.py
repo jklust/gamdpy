@@ -25,11 +25,11 @@ class NVE():
     def __init__(self, dt):
         self.dt = dt
   
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         return (dt,)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -49,7 +49,7 @@ class NVE():
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
    
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVE timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """

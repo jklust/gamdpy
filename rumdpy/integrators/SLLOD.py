@@ -32,7 +32,7 @@ class SLLOD():
         self.shear_rate = shear_rate
         self.dt = dt
   
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         sr = np.float32(self.shear_rate)
 
@@ -53,7 +53,7 @@ class SLLOD():
 
         return (dt,sr, self.d_thermostat_sums)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -244,7 +244,7 @@ class SLLOD():
 
 
         if gridsync:
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 integrate_sllod_b1(grid, vectors, scalars, integrator_params, time)
                 grid.sync()
                 integrate_sllod_b2(grid, vectors, scalars, integrator_params, time)
@@ -260,7 +260,7 @@ class SLLOD():
             return cuda.jit(device=gridsync)(kernel)
         else:
 
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 integrate_sllod_b1[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
                 integrate_sllod_b2[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
                 call_update_box_shift[1, (1, 1)](sim_box, integrator_params)

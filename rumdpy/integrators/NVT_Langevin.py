@@ -39,7 +39,7 @@ class NVT_Langevin():
         self.dt = dt
         self.seed = seed
 
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         alpha = np.float32(self.alpha)
         rng_states = create_xoroshiro128p_states(configuration.N, seed=self.seed)
@@ -48,7 +48,7 @@ class NVT_Langevin():
         return (dt, alpha, rng_states, d_old_beta) # Needs to be compatible with unpacking in
                                                    # step() below
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -75,7 +75,7 @@ class NVT_Langevin():
         temperature_function = numba.njit(temperature_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
     
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVT Langevin timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
                 REF: https://arxiv.org/pdf/1303.7011.pdf

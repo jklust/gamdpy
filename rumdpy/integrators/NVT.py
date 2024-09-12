@@ -29,14 +29,14 @@ class NVT():
         self.thermostat_state = np.zeros(2, dtype=np.float32)           # Right time to allocate and copy to device?
         self.d_thermostat_state = cuda.to_device(self.thermostat_state) # - or in get_params
   
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         omega2 = np.float32(4.0 * np.pi * np.pi / self.tau / self.tau)
         degrees = configuration.N * configuration.D - configuration.D    
         return (dt, omega2, degrees, self.d_thermostat_state)   # Needs to be compatible with unpacking in
                                                                 # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -114,14 +114,14 @@ class NVT():
         update_thermostat_state = cuda.jit(device=gridsync)(update_thermostat_state)
 
         if gridsync: # construct and return device function
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 grid.sync()
                 update_thermostat_state(integrator_params, time)
                 return
             return cuda.jit(device=gridsync)(kernel)
         else: # return python function, which makes kernel-calls
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 update_thermostat_state[1, (1, 1)](integrator_params, time)
                 return
