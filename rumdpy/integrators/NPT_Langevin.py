@@ -41,7 +41,7 @@ class NPT_Langevin():
                 self.barostatModeISO, np.int32(self.boxFlucCoord), 
                 rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)
     
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

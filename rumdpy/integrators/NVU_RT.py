@@ -25,28 +25,13 @@ class NVU_RT():
     target_u : float
         Target Potential Energy (U_0) to maintain constant along the simulation
 
-    max_abs_val : float
-        [Iterative Metod] Some potential energy functions increas rapidly at a certain configurations.
-        To prevent numerical errors, if the absolute potential energy of a given configuration, |U|, 
-        is above U_0 * max_abs_val, the iterative method will discard that configuration as invalid and reach
-        "less far" into configurational space. For example: 2.
-
     threshold : float
+        Width of the potential energy "shell" relative to U_0.
         [Iterative Method] When the potential energy of a certain configuration is within threshold if the potential energy 
         of the fist step, iteration is finished. |U(t) / U_0 - 1| < threshold. It needs to be small enough so that the 
         iterative method is precise enough (it can get very chaotic if it is too high). For example: 1e-6.
 
-    max_steps : int
-        [Iterative Method] Maximum calls to the interactions kernel to find a point outside the hypersurface. 
-        Good enough value is maybe 20 for parabola method and 100 for bisection method.
-    
-    max_initial_step_corrections : int
-        [Iterative Method] If initial_step is too big the algorithm will try to correct it this amount of times.
-        At the nth correction step initial_step_n = initial_step_0  * (1/2)^n. In the first iteration if U > U0
-        then initial step is corrected to make it bigger (s_n = s_0 * 2^n). For example: 10 (max correction will
-        be approximately 1000).
-
-    initial_step : float
+    initial_step : float, default=0.1
         [Iterative Metod] Initial step in configuration space so that x = positions + d * initial_step 
         is the initial guess for the root algorithm. `d` is the velocity normalized. For method bisection,
         it needs to be big enough so that it steps away from the initial position but small enough so that it doesn't 
@@ -54,15 +39,32 @@ class NVU_RT():
         to be as big as possible but it needs to be a point that is below U_0. For example: 0.01. 
         It is better to be based on the density so a good value is something like 0.5 / rho^(1/3).
 
-    initial_step_if_high : float
+    initial_step_if_high : float, default=0.01
         [Iterative Metod] Initial step if the potential energy of the initial configuration (time == 0) is higher than the
         target potential energy. It should be high enough to "enter" the potential energy surface U = U_0. For example: same 
         setting as initial step.
 
-    step : float
+    step : float, default=1
         [Iterative Method] (only for bisection method) Step to look for a point with u > u0. For example: 1.
+        As in initial it is better for it to based on the density.
 
-    eps : float
+    max_steps : int, default=20
+        [Iterative Method] Maximum calls to the interactions kernel to find a point outside the hypersurface. 
+        Good enough value is maybe 10 for parabola method and 100 for bisection method.
+    
+    max_initial_step_corrections : int, default=20
+        [Iterative Method] If initial_step is too big the algorithm will try to correct it this amount of times.
+        At the nth correction step initial_step_n = initial_step_0  * (1/2)^n. In the first iteration if U > U0
+        then initial step is corrected to make it bigger (s_n = s_0 * 2^n). For example: 10 (max correction will
+        be approximately 1000).
+
+    max_abs_val : float, default=2
+        [Iterative Metod] (only for bisection) Some potential energy functions increas rapidly at a certain configurations.
+        To prevent numerical errors, if the absolute potential energy of a given configuration, |U|, 
+        is above U_0 * max_abs_val, the iterative method will discard that configuration as invalid and reach
+        "less far" into configurational space. For example: 2.
+
+    eps : float, default=1e-7
         [Iterative Method] Because of numerical inaccuracies, it could happen that the same value calculated twice 
         once is positive and once is negative. Values of the potential energy relative to the target potential enery
         with |x| < eps are considered neither positive or negative in the algo. Needs to be smaller than threshold.
@@ -70,10 +72,13 @@ class NVU_RT():
     debug_print : bool, default=False
         If a root is not found, the 0th thread prints useful debugging information if debug_print is enabled.
 
-    mode : {"reflection", "no-inertia", "reflection-mass_scaling"}, default = "reflection"
-        [Research] Instead of reflecitng velocities in the hyper surface the new velocities follow the direction
-        of the normal vector (the force). "reflection-mass_scaling" applies a correction that takes into account the mass of 
-        each particle.
+    mode : {"reflection", "no-inertia", "reflection-mass_scaling"}, default = "reflection-mass_scaling"
+        Mode to perform the reflection. 
+        `reflection-mass_scaling` applies a correction that takes into account the mass of 
+        each particle. If the setup does not include particles with different masses, ``reflection`` 
+        will be faster (not that much).
+        `no-inertia` is a testing feature: instead of reflecitng velocities in the hyper surface the new velocities 
+        follow the direction of the normal vector (the force). 
 
     save_path_u : optional, default=False
         Save the potential energy between two consecutive points in the iteration
@@ -83,23 +88,24 @@ class NVU_RT():
 
     float_type : {"64", "32"}, default = "64"
         Float type for the potential energy. Higher threshold can work with float32
+
     """
 
-    outputs = ("its", "cos_v_f", "time", )
+    outputs = ("its", "cos_v_f", "time", "dt", )
 
     def __init__(
         self, 
         target_u: float,
-        max_abs_val: float, 
         threshold: float, 
-        max_steps: int, 
-        max_initial_step_corrections: int,
-        initial_step: float, 
-        initial_step_if_high: float, 
-        eps: float,
-        step: float,
+        initial_step: float = 0.1, 
+        initial_step_if_high: float = 0.01, 
+        step: float = 1,
+        max_steps: int = 20, 
+        max_initial_step_corrections: int = 20,
+        max_abs_val: float = 2, 
+        eps: float = 1e-7,
         debug_print: bool = False,
-        mode: Literal["reflection", "no-inertia", "reflection-mass_scaling"] = "reflection",
+        mode: Literal["reflection", "no-inertia", "reflection-mass_scaling"] = "reflection-mass_scaling",
         save_path_u: bool = False,
         raytracing_method: Literal["parabola", "parabola-newton", "bisection"] = "parabola",
         float_type: Literal["32", "64"] = "64"
@@ -128,10 +134,6 @@ class NVU_RT():
         self.initial_step_if_high = np.float32(initial_step_if_high)
         # Simluation requires that integrators have dt
         self.dt = 1
-        self.dt_array = np.array([1], dtype=np.float32)
-        self.its_array = np.array([1], dtype=np.float32)
-        self.d_dt = cuda.to_device(self.dt_array)
-        self.d_its = cuda.to_device(self.its_array)
         self.d_scalars_shared = cuda.device_array(16, dtype=np.float32)  # type: ignore
         self.output_ids = {name: idx for idx, name in enumerate(self.outputs)}
         self.d_integrator_output = cuda.device_array(len(self.outputs), dtype=np.float32)  # type: ignore
@@ -148,7 +150,7 @@ class NVU_RT():
     def get_params(self, configuration, interaction_params, verbose = False):
         # NOTE: for some reason the first param has to be delta time
         return (
-            self.d_dt,
+            self.dt,
             self.d_integrator_output,
             self.d_initial_step,
             interaction_params,
@@ -205,7 +207,7 @@ class NVU_RT():
         ) = range(self.d_scalars_shared.shape[0])
         debug_ids = tuple(debug_ids)
 
-        o_its, o_cos_v_f, o_time, = (self.output_ids[name] for name in ["its", "cos_v_f", "time", ])
+        o_its, o_cos_v_f, o_time, o_dt = (self.output_ids[name] for name in ["its", "cos_v_f", "time", "dt", ])
 
         # JIT compile functions to be compiled into kernel
         apply_PBC = nb.jit(configuration.simbox.apply_PBC)
@@ -220,7 +222,7 @@ class NVU_RT():
                 grid, vectors, scalars, r_im, sim_box, 
                 integrator_params, time, ptype,
             ):
-                (d_dt, d_integrator_output, d_initial_step, interaction_params, d_scalars_shared, d_pot_energy, d_path_u,
+                (dt, d_integrator_output, d_initial_step, interaction_params, d_scalars_shared, d_pot_energy, d_path_u,
                     d_step, d_broken_simulation, d_last_a, d_u_higher_than_target_in_time_0) = integrator_params
                 if time > 0:
                     d_u_higher_than_target_in_time_0[0] = False
@@ -308,7 +310,7 @@ class NVU_RT():
                     copy_positions_and_images(save_my_r, save_my_r_im, my_r, my_r_im)
                     calculate_potential_energy(interactions_kernel, grid, vectors, scalars, ptype, sim_box, interaction_params, d_pot_energy, its)
                 if global_id == 0 and my_t == 0:
-                    d_dt[0] = step_x / vel_l
+                    d_integrator_output[o_dt] = step_x / vel_l
                     d_integrator_output[o_its] = its[0]
         else:
             raise NotImplementedError()
@@ -509,7 +511,7 @@ class NVU_RT():
                 grid, vectors, scalars, r_im, sim_box, 
                 integrator_params, ptype,
             ):
-                (d_dt, d_integrator_output, d_initial_step, interaction_params, d_scalars_shared, d_pot_energy, d_path_u,
+                (dt, d_integrator_output, d_initial_step, interaction_params, d_scalars_shared, d_pot_energy, d_path_u,
                     d_step, d_broken_simulation, d_last_a, d_u_higher_than_target_in_time_0) = integrator_params
                 global_id, my_t = cuda.grid(2)  # type: ignore
 
