@@ -2,13 +2,15 @@ import numpy as np
 import numba
 import math
 from numba import cuda
-from rumdpy.colarray import colarray
-from rumdpy.Simbox import Simbox
+from .colarray import colarray
+from .Simbox import Simbox
+#import .Simbox
 
 # IO
 import h5py
 import gzip
 
+# TODO: add possibility of "with ... as conf:" TypeError: 'Configuration' object does not support the context manager protocol
 
 class Configuration:
     """ The configuration class
@@ -211,7 +213,7 @@ class Configuration:
         {'fractional_coordinates': [[0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5]], 'lattice_constants': [1.0, 1.0, 1.0]}
 
         """
-        from rumdpy.tools import make_lattice
+        from .make_lattice import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
         self.simbox = Simbox(self.D, box_vector)
@@ -348,30 +350,81 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
     return configuration
 
 
-def configuration_to_hdf5(conf: Configuration, filename: str, meta_data=None):
-    """ Write a configuration to a HDF5 file """
+def configuration_to_hdf5(configuration: Configuration, filename: str, meta_data=None) -> None:
+    """ Write a configuration to a HDF5 file
+
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        a rumdpy configuration object
+
+    filename : str
+        filename of the output file .h5
+
+    meta_data : str
+        not used in the function so far (default None)
+
+    Example
+    -------
+
+    >>> import os
+    >>> import rumdpy as rp
+    >>> conf = rp.Configuration(D=3)
+    >>> conf.make_positions(N=10, rho=1.0)
+    >>> rp.configuration_to_hdf5(configuration=conf, filename="final.h5")
+    >>> os.remove("final.h5")       # Removes file (for doctests)
+
+    """
+
     if not filename.endswith('.h5'):
         filename += '.h5'
     with h5py.File(filename, "w") as f:
-        f.attrs['simbox'] = conf.simbox.lengths
+        f.attrs['simbox'] = configuration.simbox.lengths
         if meta_data is not None:
             for item in meta_data:
                 f.attrs[item] = meta_data[item]
 
-        ds_r = f.create_dataset('r', shape=(conf.N, conf.D), dtype=np.float32)
-        ds_v = f.create_dataset('v', shape=(conf.N, conf.D), dtype=np.float32)
-        ds_p = f.create_dataset('ptype', shape=(conf.N), dtype=np.int32)
-        ds_m = f.create_dataset('m', shape=(conf.N), dtype=np.float32)
-        ds_r_im = f.create_dataset('r_im', shape=(conf.N, conf.D), dtype=np.int32)
-        ds_r[:] = conf['r']
-        ds_v[:] = conf['v']
-        ds_p[:] = conf.ptype
-        ds_m[:] = conf['m']
-        ds_r_im[:] = conf.r_im
+        ds_r = f.create_dataset('r', shape=(configuration.N, configuration.D), dtype=np.float32)
+        ds_v = f.create_dataset('v', shape=(configuration.N, configuration.D), dtype=np.float32)
+        ds_p = f.create_dataset('ptype', shape=(configuration.N), dtype=np.int32)
+        ds_m = f.create_dataset('m', shape=(configuration.N), dtype=np.float32)
+        ds_r_im = f.create_dataset('r_im', shape=(configuration.N, configuration.D), dtype=np.int32)
+        ds_r[:] = configuration['r']
+        ds_v[:] = configuration['v']
+        ds_p[:] = configuration.ptype
+        ds_m[:] = configuration['m']
+        ds_r_im[:] = configuration.r_im
 
 
 def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
-    """ Read a configuration from a HDF5 file """
+    """ Read a configuration from a HDF5 file
+
+    Parameters
+    ----------
+
+    filename : str
+        filename of the input file .h5
+
+    reset_images : bool
+        if True set the images to zero (deafult False)
+
+    Returns
+    -------
+
+    configuration : rumdpy.Configuration
+        a rumdpy configuration object
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> conf = rp.configuration_from_hdf5("examples/Data/final.h5")
+    >>> print(conf.D, conf.N, conf['r'][0])     # Print number of dimensions D, number of particles N and position of first particle
+    3 10 [-0.7181449 -1.3644753 -1.5799187]
+
+    """
+
     if not filename.endswith('.h5'):
         raise ValueError('Filename not in HDF5 format')
     with h5py.File(filename, "r") as f:
@@ -396,7 +449,28 @@ def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
 
 
 def configuration_to_rumd3(configuration: Configuration, filename: str) -> None:
-    """ Write a configuration to a RUMD3 file """
+    """ Write a configuration to a RUMD3 file 
+
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        a rumdpy configuration object
+
+    filename : str
+        filename of the output file .xyz.gz
+
+    Example
+    -------
+
+    >>> import os
+    >>> import rumdpy as rp
+    >>> conf = rp.Configuration(D=3)
+    >>> conf.make_positions(N=10, rho=1.0)
+    >>> rp.configuration_to_rumd3(configuration=conf, filename="restart.xyz.gz")
+    >>> os.remove("restart.xyz.gz")       # Removes file (for doctests)
+
+    """
     N = configuration.N
     if configuration.D != 3:
         raise ValueError("Only D==3 is compatibale with RUMD-3")
@@ -429,7 +503,7 @@ def configuration_to_rumd3(configuration: Configuration, filename: str) -> None:
         comment_line += '\n'
         f.write(comment_line)
         for idx in range(N):
-            line_out = '%d %f %f %f %d %d %d %f %f %f\n' % (
+            line_out = '%d %.9f %.9f %.9f %d %d %d %f %f %f\n' % (
                 ptype[idx], r[idx, 0], r[idx, 1], r[idx, 2], r_im[idx, 0], r_im[idx, 1], r_im[idx, 2], v[idx, 0],
                 v[idx, 1],
                 v[idx, 2])
@@ -437,7 +511,29 @@ def configuration_to_rumd3(configuration: Configuration, filename: str) -> None:
 
 
 def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration:
-    """ Read a configuration from a RUMD3 file """
+    """ Read a configuration from a RUMD3 file 
+
+    Parameters
+    ----------
+
+    filename : str
+        filename of the output file .xyz.gz
+
+    Returns
+    -------
+
+    configuration : rumdpy.Configuration
+        a rumdpy configuration object
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> conf = rp.configuration_from_rumd3("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles/restart0000.xyz.gz")
+    >>> print(conf.D, conf.N, conf['r'][0])     # Print number of dimensions D, number of particles N and position of first particle
+    3 4000 [ 7.197245   6.610052  -4.7467813]
+
+    """
     with gzip.open(filename) as f:
         line1 = f.readline().decode()
         N = int(line1)
@@ -492,18 +588,43 @@ def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration
     return configuration
 
 
-def configuration_to_lammps(conf, timestep=0) -> str:
-    """ Convert a configuration to a string formatted as LAMMPS dump file """
-    D = conf.D
+def configuration_to_lammps(configuration, timestep=0) -> str:
+    """ Convert a configuration to a string formatted as LAMMPS dump file 
+
+    Parameters
+    ----------
+
+    configuration : rumdpy.Configuration
+        a rumdpy configuration object
+
+    timestep : float
+        time at which the configuration is saved
+
+    Returns
+    -------
+
+    str
+        string formatted as LAMMPS dump file
+
+    Example
+    -------
+
+    >>> import rumdpy as rp
+    >>> conf = rp.Configuration(D=3)
+    >>> conf.make_positions(N=10, rho=1.0)
+    >>> lmp_dump = rp.configuration_to_lammps(configuration=conf)
+
+    """
+    D = configuration.D
     if D != 3:
         raise ValueError('Only 3D configurations are supported')
-    masses = conf['m']
-    positions = conf['r']
-    image_coordinates = conf.r_im
-    forces = conf['f']
-    velocities = conf['v']
-    ptypes = conf.ptype
-    simulation_box = conf.simbox.lengths
+    masses = configuration['m']
+    positions = configuration['r']
+    image_coordinates = configuration.r_im
+    forces = configuration['f']
+    velocities = configuration['v']
+    ptypes = configuration.ptype
+    simulation_box = configuration.simbox.lengths
 
     # Header
     header = f'ITEM: TIMESTEP\n{timestep:d}\n'

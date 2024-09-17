@@ -1,8 +1,6 @@
 """ Check CUDA availability, versions, and test if gridsync is supported. """
 
 
-
-
 def check_cuda(verbose=True):
     """ Check CUDA availability, versions, and test if gridsync is supported. Returns True if gridsync is supported."""
     import numba
@@ -82,8 +80,6 @@ def check_gpu(device_id=None):
         device = cuda.select_device(device_id)
         
     from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
-
-    from cc_cores_per_SM_dict import cc_cores_per_SM_dict 
     if device.compute_capability in cc_cores_per_SM_dict:
         cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
     else:

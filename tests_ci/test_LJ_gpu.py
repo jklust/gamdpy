@@ -88,7 +88,7 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     else:
         steps_in_kernel_test = 1
     
-    ev = rp.Evaluater(configuration, pairpot)
+    ev = rp.Evaluator(configuration, pairpot)
     sim = rp.Simulation(configuration, pairpot, integrator,
                         steps_between_momentum_reset=100,
                         num_timeblocks=64, steps_per_timeblock=1024, storage='memory',

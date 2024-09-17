@@ -36,7 +36,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
 #     (replace with your potential of interest)
 pair_func_ref = rp.apply_shifted_potential_cutoff(rp.LJ_12_6)
 ipl12 = rp.PairPotential(pair_func_ref, params=[4.0, 0.0, 2.5], max_num_nbs=1000)
-evaluator = rp.Evaluater(sim.configuration, ipl12)
+evaluator = rp.Evaluator(sim.configuration, ipl12)
 
 # Run simulation
 u_ipl = []

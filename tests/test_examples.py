@@ -11,6 +11,7 @@ import time
 
 import pytest
 import numba
+import numba.cuda
 
 @pytest.mark.slow
 def test_examples(path_to_examples='examples'):

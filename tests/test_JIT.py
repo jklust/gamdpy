@@ -45,7 +45,7 @@ def test_JIT():
 
         for configuration in [configuration1, configuration2, configuration3]:
             for pairpot in [pairpot1, pairpot2]:
-                ev = rp.Evaluater(configuration, pairpot)
+                ev = rp.Evaluator(configuration, pairpot)
                 for integrator in integrators:
                     sim = rp.Simulation(configuration, pairpot, integrator,
                                         num_timeblocks=2, steps_per_timeblock=1024, 

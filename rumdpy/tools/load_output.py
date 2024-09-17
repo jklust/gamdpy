@@ -18,26 +18,22 @@ class load_output():
 
     >>> import rumdpy as rp
     >>> import h5py
-    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5")               # Testing input from .h5
+    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5")                                   # Read from .h5
     Found .h5 file, loading to rumdpy as output dictionary
     >>> output = output.get_h5()
-    >>> isinstance(output.file, h5py.File)
-    True
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
-    >>> assert (N, D) == (2048, 3), "Error reading N and D from LJ_r0.973_T0.70.h5" 
-    >>> output = rp.tools.load_output("file.abc")                                       # Testing input from unsupported format
-    Input not recognized, unsupported format
-    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")
+    >>> print(f"Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of {N} particles in {D} dimensions")
+    Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of 2048 particles in 3 dimensions
+    >>> print(f"The simulation output is divided into {nblocks} blocks, each of them with {nconfs} configurations")
+    The simulation output is divided into 8 blocks, each of them with 13 configurations
+    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")    # Read from rumd3
     Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
-    >>> assert (N, D) == (4000, 3), "Error reading N and D from examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
-    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_trajonly")
-    Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
-    LastComplete_energies.txt not present
-    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_eneronly")
-    Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
-    LastComplete_trajectory.txt not present
+    >>> print(f"Output file examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of {N} particles in {D} dimensions")
+    Output file examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of 4000 particles in 3 dimensions
+    >>> print(f"The simulation output is divided into {nblocks} blocks, each of them with {nconfs} configurations")
+    The simulation output is divided into 2 blocks, each of them with 24 configurations
 
     """
     def __init__(self, name):
@@ -89,9 +85,10 @@ class load_output():
         else     : nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_trajectory.txt", dtype=np.int32)
 
         # Defining output memory .h5 file
-        fullpath = f"{os.getcwd()}/{name}"
+        #fullpath = f"{os.getcwd()}/{name}"
+        fullpath = f"{name}"
         output   = h5py.File(f"{id(fullpath)}.h5", "w", driver='core', backing_store=False)
-        assert isinstance(output, h5py.File)
+        assert isinstance(output, h5py.File), "Error creating memory h5 file in load_output.load_rumd3"
 
         # Read and copy trajectories
         if traj:

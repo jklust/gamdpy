@@ -6,7 +6,7 @@ from numba import cuda
 # rumdpy
 import rumdpy as rp
 
-class Evaluater:
+class Evaluator:
     """ Evaluates interactions between particles in a configuration.
     
     This class can be used to evaluate interactions between particles in a configuration
