@@ -75,14 +75,14 @@ A good place to see how this is done without implementing all functions twice is
 - [x] Move r_ref from Configuration to nblist
 
 ## TODO, before summer interns arrive
-- [ ] SLLOD (stress, LEBC), Nick
+- [X] SLLOD (stress, LEBC), Nick
 - [X] Bonds interface
 - [X] Implement other fixed interactions: point interactions (tethered particles). Jesper
 - [ ] Finish Atomic interface (runtime actions...) Thomas
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
-- [ ] Testing using gitlab CI, Lorenzo
+- [X] Testing using gitlab CI, Lorenzo
 - [X] Include scalar column names in output, Lorenzo
 - [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
@@ -92,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
-- [ ] Post analysis for multicomponents, Lorenzo/Danqui
+- [X] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
 
 ## Output Branch (branch origin/output)
@@ -102,31 +102,36 @@ A good place to see how this is done without implementing all functions twice is
 - [X] sim.output can be generalized to be a different file type easily (only change in the Simulation().__init__)
 - [ ] issue/feature 0: the output file is created when Simulation is initiated and stays there until close
 - [ ] issue 1: the output file needs to be closed by the user before instantiating a new Simulation object
-- [ ] fix   1: the Simulation obejct might create a new file every time (might cause memory problems)
+- [ ] fix   1: the Simulation object might create a new file every time (might cause memory problems)
 - [ ] issue 2: there is an issue if two Simulation object are initialized at the same time with memory saving
 - [ ] structure inside h5py: static info + a group for each evaluator
 
-## TODO or decide not necessary, before paper
-- [ ] Molecules (angles, dihedrals, Interface) Jesper, Ulf
+## TODO or decide not necessary, before paper/'going public'
+- [X] Molecules (angles, dihedrals) Jesper
+- [ ] Molecules (Interface) Jesper, Ulf
 - [ ] Settle on io format
-- [ ] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
-- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration
+- [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
+- [ ] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
+- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
 - [ ] make installable by pip for all, by uploading to pypi
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
 - [ ] Configuration: include r_im in vectors
-- [ ] Requirements/dependencies, especially to use grid-sync 
-- [ ] Auto-tuner
+- [ ] Requirements/dependencies, especially to use grid-sync, ADD LINK NUMBA DOC 
+- [ ] Auto-tuner, TBS
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [X] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
+- [ ] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
-- [ ] Thermostat on subsets of particles
 - [ ] Benchmarking
+- [ ] Charge (Water, SPCflexible), Jesper et al.
+
 
 ## TODO, long term:
 - [ ] Constraints
+- [ ] EAM metallic potentials
 - [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
 - [ ] Add CPU support (can it be done as a decorator?)
+- [ ] Thermostat on subsets of particles
 
 ## Various tools/strategies we will use
 - [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
