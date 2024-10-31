@@ -36,6 +36,9 @@ def calc_dynamics(trajectory, first_block, qvalues=None):
     blocks = trajectory['block']  # If picking out dataset in inner loop: Very slow!
 
     #print(num_types, first_block, num_blocks, conf_per_block, _, N, D, qvalues)
+    if first_block > num_blocks - 1:
+        print("Warning [calc_dynamics] first_block greater than number of blocks. Remainder will be taken")
+    first_block = first_block  % num_blocks # necessary to allow the pythonic idiom of negative indexes
 
     extra_times = int(math.log2(num_blocks - first_block)) - 1
     total_times = conf_per_block - 1 + extra_times
