@@ -237,8 +237,8 @@ class Configuration:
         D = self.D
         part_per_line = np.ceil(pow(N, 1./D))
 
-        box_lenght = pow(N/rho, 1./D)
-        box_vector = np.array(D*[box_lenght])
+        box_length = pow(N/rho, 1./D)
+        box_vector = np.array(D*[box_length])
         
         index = 0
         x = []      # empty list
@@ -266,12 +266,12 @@ class Configuration:
             dcurrent = dcurrent + 1
         pos -= np.array(D*[int(0.5*part_per_line)]) # center cube at 0
         # Scaling for density
-        pos *= box_lenght/part_per_line
+        pos *= box_length/part_per_line
         # Saving to Configuration object
         self['r'] = pos
         self.simbox = Simbox(self.D, box_vector)
         # Check all particles are in the box (-L/2, L/2)
-        assert np.any(np.abs(pos))<0.5*box_lenght
+        assert np.any(np.abs(pos))<0.5*box_length
 
         return
 

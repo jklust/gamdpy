@@ -11,7 +11,7 @@ def add_interactions_bak(configuration, interactions0,  interactions1, compute_p
         @cuda.jit( device=gridsync )
         def compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             interactions0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
-            grid.sync() # Not always necesarry !!!
+            grid.sync() # Not always necessary !!!
             interactions1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
         return compute_interactions
@@ -50,16 +50,16 @@ def add_interactions_list_bak(configuration, interactions_list, compute_plan, ve
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
             if length>1:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             if length>2:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i2(grid, vectors, scalars, ptype, sim_box, interaction_parameters[2])
             if length>3:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i3(grid, vectors, scalars, ptype, sim_box, interaction_parameters[3])
             if length>4:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i4(grid, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
         return interactions, tuple(interaction_params_list)
@@ -105,16 +105,16 @@ def add_interactions_list(configuration, interactions_list, compute_plan, comput
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
             i0(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
             if num_interactions>1:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i1(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             if num_interactions>2:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i2(grid, vectors, scalars, ptype, sim_box, interaction_parameters[2])
             if num_interactions>3:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i3(grid, vectors, scalars, ptype, sim_box, interaction_parameters[3])
             if num_interactions>4:
-                grid.sync() # Not always necesarry !!!
+                grid.sync() # Not always necessary !!!
                 i4(grid, vectors, scalars, ptype, sim_box, interaction_parameters[4])
             return
         return interactions, tuple(interaction_params_list)

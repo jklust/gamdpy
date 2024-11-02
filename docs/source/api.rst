@@ -148,6 +148,8 @@ Input/output of configurations
 
 .. autofunction:: rumdpy.configuration_to_hdf5
 
+.. autofunction:: rumdpy.configuration_from_hdf5
+
 .. autofunction:: rumdpy.configuration_to_rumd3
 
 .. autofunction:: rumdpy.configuration_from_rumd3
