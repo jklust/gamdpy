@@ -69,7 +69,7 @@ class Configuration:
 
     # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
     sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
-    num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
+    #num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
 
     def __init__(self, D: int, N: int = None, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
@@ -77,7 +77,9 @@ class Configuration:
         self.compute_stresses = compute_stresses
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
         if self.compute_stresses:
-            self.vector_columns += ['sx', 'sy', 'sz']  # D=3 ASSUMED HERE!!!!
+            if self.D > 4:
+                raise ValueError('compute_stresses should not be set for D>4')
+            self.vector_columns += ['sx', 'sy', 'sz','sw'][:self.D]
         self.scalar_columns = list(self.sid.keys())
         self.simbox = None
         self.ptype_function = self.make_ptype_function()

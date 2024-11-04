@@ -101,7 +101,15 @@ class PairPotential():
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         if compute_stresses:
-            sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']] # D=3 !!!
+            #sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']] # D=3 !
+            sx_id = configuration.vectors.indices['sx']
+            if D > 1:
+                sy_id = configuration.vectors.indices['sy']
+                if D > 2:
+                    sz_id = configuration.vectors.indices['sz']
+                    if D > 3:
+                        sw_id = configuration.vectors.indices['sw']
+
         u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
 
