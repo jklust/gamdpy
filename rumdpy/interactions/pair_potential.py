@@ -204,10 +204,14 @@ class PairPotential():
                 for k in range(D):
                     cuda.atomic.add(vectors[f_id], (global_id, k), my_f[k])
                     if compute_stresses:
-                        #for k2 in range(D):
                         cuda.atomic.add(vectors[sx_id], (global_id, k), my_stress[0,k])
-                        cuda.atomic.add(vectors[sy_id], (global_id, k), my_stress[1,k])
-                        cuda.atomic.add(vectors[sz_id], (global_id, k), my_stress[2,k])
+                        if D > 1:
+                            cuda.atomic.add(vectors[sy_id], (global_id, k), my_stress[1,k])
+                            if D > 2:
+                                cuda.atomic.add(vectors[sz_id], (global_id, k), my_stress[2,k])
+                                if D > 3:
+                                    cuda.atomic.add(vectors[sw_id], (global_id, k), my_stress[3,k])
+
                 for k in range(num_cscalars):
                     cuda.atomic.add(cscalars, (global_id, k), my_cscalars[k])
 
