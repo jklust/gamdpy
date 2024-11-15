@@ -85,7 +85,11 @@ class PairPotential():
         return (self.d_params, self.nblist.d_nblist, nblist_params)
 
     def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
-        num_cscalars = 3 # TODO: deal with this
+        num_cscalars = configuration.num_cscalars
+        compute_u = configuration.compute_flags['u']
+        compute_w = configuration.compute_flags['w']
+        compute_lap = configuration.compute_flags['lap']
+        compute_stresses = configuration.compute_flags['stresses']
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -100,8 +104,15 @@ class PairPotential():
                 print('\tIncluding computation of stress tensor in pair potential')
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
+
+        if compute_u:
+            u_id = configuration.sid['u']
+        if compute_w:
+            w_id = configuration.sid['w']
+        if compute_lap:
+            lap_id = configuration.sid['lap']
+
         if compute_stresses:
-            #sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']] # D=3 !
             sx_id = configuration.vectors.indices['sx']
             if D > 1:
                 sy_id = configuration.vectors.indices['sy']
@@ -110,7 +121,7 @@ class PairPotential():
                     if D > 3:
                         sw_id = configuration.vectors.indices['sw']
 
-        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
+#        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
 
         pairpotential_function = self.pairpotential_function
@@ -122,13 +133,16 @@ class PairPotential():
                 for k in range(D):
                     cuda.atomic.add(f, (other_id, k), dr[k]*s)
                     my_f[k] = my_f[k] - dr[k]*s                         # Force
-                    cscalars[w_id] += dr[k]*dr[k]*s*virial_factor_NIII  # Virial
+                    if compute_w:
+                        cscalars[w_id] += dr[k]*dr[k]*s*virial_factor_NIII  # Virial
                     if compute_stresses:
                         for k2 in range(D):
                             my_stress[k,k2] -= dr[k]*dr[k2]*s
 
-                cscalars[u_id] += u                                      # Potential energy
-                cscalars[lap_id] += (numba.float32(1-D)*s + umm)*numba.float32( 2.0 ) # Laplacian 
+                if compute_u:
+                    cscalars[u_id] += u                                      # Potential energy
+                if compute_lap:
+                    cscalars[lap_id] += (numba.float32(1-D)*s + umm)*numba.float32( 2.0 ) # Laplacian 
 
 
                 return
@@ -140,19 +154,22 @@ class PairPotential():
                 half = numba.float32(0.5)
                 for k in range(D):
                     my_f[k] = my_f[k] - dr[k]*s                         # Force
-                    cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
+                    if compute_w:
+                        cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
                     if compute_stresses:
                         for k2 in range(D):
                             my_stress[k,k2] -= half*dr[k]*dr[k2]*s      # stress tensor
-                cscalars[u_id] += half*u                                # Potential energy
-                cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
+                if compute_u:
+                    cscalars[u_id] += half*u                                # Potential energy
+                if compute_lap:
+                    cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
                 return
 
         ptype_function = numba.njit(configuration.ptype_function)
         params_function = numba.njit(self.params_function)
         pairpotential_calculator = numba.njit(pairpotential_calculator)
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
-        dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        #dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
     
         @cuda.jit( device=gridsync )  
         def calc_forces(vectors, cscalars, ptype, sim_box, nblist, params):
@@ -170,7 +187,7 @@ class PairPotential():
             if global_id < num_part and my_t==0: # Initialize global variables. Should be controlled by flag if more pair-potentials
                 for k in range(num_cscalars):
                     cscalars[global_id, k] = numba.float32(0.0)
-                
+
             my_f = cuda.local.array(shape=D,dtype=numba.float32)
             my_dr = cuda.local.array(shape=D,dtype=numba.float32)
             my_cscalars = cuda.local.array(shape=num_cscalars, dtype=numba.float32)

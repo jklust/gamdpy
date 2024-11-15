@@ -35,12 +35,11 @@ class NbList2():
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (num_part - 1) // pb + 1
-        compute_stresses = configuration.compute_stresses
+        compute_stresses = configuration.compute_flags['stresses']
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         if compute_stresses:
-            #sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']]
             sx_id = configuration.vectors.indices['sx']
             if D > 1:
                 sy_id = configuration.vectors.indices['sy']

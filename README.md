@@ -139,7 +139,7 @@ A good place to see how this is done without implementing all functions twice is
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
 - ... to be hosted on readthedocs ( https://about.readthedocs.com/ ). Model: https://numba.readthedocs.io.
 - Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
-- doctest (no more failing examples in examples/docs!, see colaaray.py for example).
+- doctest (no more failing examples in examples/docs!, see colarray.py for example).
 - Jupyter notebooks for tutorials. Testing: nbmake?, testbook?
 - Automatic testing upon uploading (CI). How to get acces to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
@@ -227,7 +227,7 @@ python3 tests/test_examples.py
 Running doctest of a single file:
 
 ```bash
-python3 -m doctest -v rumdpy/calculators/CalculatorRadialDistribution.py
+python3 -m doctest -v rumdpy/calculators/calculator_radial_distribution.py
 ```
 
 ### Coverage of tests

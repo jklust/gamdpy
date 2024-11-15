@@ -83,7 +83,7 @@ class Simulation():
             self.compute_plan = compute_plan
 
         self.compute_stresses = compute_stresses
-        if self.compute_stresses and not configuration.compute_stresses:
+        if self.compute_stresses and not configuration.compute_flags['stresses']:
             raise ValueError("Configuration must have compute_stresses set as well!")
 
         # Integrator

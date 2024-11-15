@@ -35,7 +35,7 @@ class Configuration:
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
     >>> print(conf.scalar_columns) # Print names of scalar columns
-    ['u', 'w', 'lap', 'm', 'k', 'fsq']
+    ['u', 'w', 'lap', 'k', 'fsq', 'm']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
     (1000, 3)
     >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
@@ -67,20 +67,53 @@ class Configuration:
 
     """
 
-    # vid = {'r':0, 'v':1, 'f':2, 'r_ref':3} # Superseeded by self.vector_columns
-    sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
-    #num_cscalars = 3  # Number of scalars to be updated by force calculator. Avoid this!
+    #sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
+    scalar_parameters = ['m']
+    scalar_computables_interactions = ['u', 'w', 'lap']
+    scalar_computables_integrator = ['k', 'fsq']
 
-    def __init__(self, D: int, N: int = None, compute_stresses=True, ftype=np.float32, itype=np.int32) -> None:
+    default_compute_flags = {'u':True, 'w':True, 'lap':True, 'k': True, 'fsq':True, 'stresses':True}
+
+    def __init__(self, D: int, N: int = None, compute_flags='default', ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
-        self.compute_stresses = compute_stresses
+        self.compute_flags = self.default_compute_flags
+        if compute_flags != 'default':
+            # only keys present in the default are processed
+            for k in self.default_compute_flags:
+                self.compute_flags[k] = compute_flags[k]
+
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
-        if self.compute_stresses:
+        if self.compute_flags['stresses']:
             if self.D > 4:
-                raise ValueError('compute_stresses should not be set for D>4')
+                raise ValueError("compute_flags['stresses'] should not be set for D>4")
             self.vector_columns += ['sx', 'sy', 'sz','sw'][:self.D]
-        self.scalar_columns = list(self.sid.keys())
+
+
+        self.num_cscalars = 0
+        self.sid = {}
+        self.scalar_columns = []
+        sid_index = 0
+
+        for label in self.scalar_computables_interactions:
+            if self.compute_flags[label]:
+                self.sid[label] = sid_index
+                self.scalar_columns.append(label)
+                sid_index += 1
+                self.num_cscalars += 1
+
+        for label in self.scalar_computables_integrator:
+            if self.compute_flags[label]:
+                self.sid[label] = sid_index
+                self.scalar_columns.append(label)
+                sid_index += 1
+
+
+        for label in self.scalar_parameters:
+            self.sid[label] = sid_index
+            self.scalar_columns.append(label)
+            sid_index += 1
+
         self.simbox = None
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
@@ -90,7 +123,7 @@ class Configuration:
 
     def __allocate_arrays(self):
         self.vectors = colarray(self.vector_columns, size=(self.N, self.D), dtype=self.ftype)
-        self.scalars = np.zeros((self.N, len(self.sid)), dtype=self.ftype)
+        self.scalars = np.zeros((self.N, len(self.scalar_columns)), dtype=self.ftype)
         self.r_im = np.zeros((self.N, self.D), dtype=self.itype)  # Move to vectors
         self.ptype = np.zeros(self.N, dtype=self.itype)  # Move to scalars
         return

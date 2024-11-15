@@ -7,7 +7,13 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 import rumdpy as rp
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
+
+my_compute_flags = rp.Configuration.default_compute_flags
+#my_compute_flags['lap'] = False
+#my_compute_flags['w'] = False
+
+
+configuration = rp.Configuration(D=3, compute_flags=my_compute_flags)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(T=0.7)
