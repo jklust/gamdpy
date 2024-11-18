@@ -55,7 +55,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
                         num_timeblocks=2, steps_per_timeblock=1024 * 4,
                         scalar_output=8, conf_output=None,
                         steps_between_momentum_reset=100,
-                        storage='memory', verbose=False, compute_stresses=False)
+                        storage='memory', verbose=False, compute_flags={'stresses':False})
 
     # Run simulation one block at a time
     for block in sim.timeblocks():

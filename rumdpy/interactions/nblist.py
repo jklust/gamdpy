@@ -29,13 +29,13 @@ class NbList2():
         self.copy_to_device()                     
         return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, self.d_simbox_last_rebuild)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False, force_update=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False, force_update=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (num_part - 1) // pb + 1
-        compute_stresses = configuration.compute_flags['stresses']
+        compute_stresses = compute_flags['stresses']
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]

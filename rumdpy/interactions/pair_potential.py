@@ -84,12 +84,13 @@ class PairPotential():
 
         return (self.d_params, self.nblist.d_nblist, nblist_params)
 
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         num_cscalars = configuration.num_cscalars
-        compute_u = configuration.compute_flags['u']
-        compute_w = configuration.compute_flags['w']
-        compute_lap = configuration.compute_flags['lap']
-        compute_stresses = configuration.compute_flags['stresses']
+
+        compute_u = compute_flags['u']
+        compute_w = compute_flags['w']
+        compute_lap = compute_flags['lap']
+        compute_stresses = compute_flags['stresses']
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -234,7 +235,7 @@ class PairPotential():
 
             return 
         
-        nblist_check_and_update = self.nblist.get_kernel(configuration, compute_plan, verbose)
+        nblist_check_and_update = self.nblist.get_kernel(configuration, compute_plan, compute_flags, verbose)
 
         if gridsync:
             # A device function, calling a number of device functions, using gridsync to syncronize

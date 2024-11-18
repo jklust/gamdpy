@@ -80,7 +80,7 @@ def add_interactions_list_bak(configuration, interactions_list, compute_plan, ve
             return
         return interactions, tuple(interaction_params_list)
 
-def add_interactions_list(configuration, interactions_list, compute_plan, compute_stresses=False, verbose=True,):
+def add_interactions_list(configuration, interactions_list, compute_plan, compute_flags, verbose=True,):
     gridsync = compute_plan['gridsync']
     num_interactions = len(interactions_list)
     assert 0 < num_interactions <= 5
@@ -89,15 +89,15 @@ def add_interactions_list(configuration, interactions_list, compute_plan, comput
     for interaction in interactions_list:
         interaction_params_list.append(interaction.get_params(configuration, compute_plan, verbose=verbose))
 
-    i0 = interactions_list[0].get_kernel(configuration, compute_plan, compute_stresses, verbose=verbose)
+    i0 = interactions_list[0].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
     if num_interactions>1:
-        i1 = interactions_list[1].get_kernel(configuration, compute_plan, compute_stresses, verbose=verbose)
+        i1 = interactions_list[1].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
     if num_interactions>2:
-        i2 = interactions_list[2].get_kernel(configuration, compute_plan, compute_stresses, verbose=verbose)
+        i2 = interactions_list[2].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
     if num_interactions>3:
-        i3 = interactions_list[3].get_kernel(configuration, compute_plan, compute_stresses, verbose=verbose)
+        i3 = interactions_list[3].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
     if num_interactions>4:
-        i4 = interactions_list[4].get_kernel(configuration, compute_plan, compute_stresses, verbose=verbose)
+        i4 = interactions_list[4].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
 
     if gridsync:
         # A device function, calling a number of device functions, using gridsync to syncronize

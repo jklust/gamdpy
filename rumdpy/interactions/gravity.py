@@ -75,12 +75,14 @@ class Gravity:
         return (self.d_pindices, self.d_force)
 
 
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
+        compute_u = compute_flags['u'] # PE should be included ?!?!
+        # Note virial, lapacian, stresses are zero for gravity
         f_id = configuration.vectors.indices['f'] 
        
         def gravity_calculator(vectors, scalars, ptype, sim_box, indices, values):

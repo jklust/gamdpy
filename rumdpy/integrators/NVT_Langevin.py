@@ -48,7 +48,7 @@ class NVT_Langevin():
         return (dt, alpha, rng_states, d_old_beta) # Needs to be compatible with unpacking in
                                                    # step() below
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -74,6 +74,9 @@ class NVT_Langevin():
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
     
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NVT Langevin timestep using Leap-frog
@@ -90,8 +93,10 @@ class NVT_Langevin():
                 my_v = vectors[v_id][global_id]
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
-                my_k = numba.float32(0.0)  # Kinetic energy
-                my_fsq = numba.float32(0.0)  # force squared energy
+                if compute_k:
+                    my_k = numba.float32(0.0)  # Kinetic energy
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)  # force squared energy
                 
 
                 for k in range(D):
@@ -103,16 +108,19 @@ class NVT_Langevin():
                     denominator = numba.float32(2.0)*my_m + alpha * dt
                     a = numerator / denominator
                     b_over_m = numba.float32(2.0) / denominator
-                    my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
-                    my_fsq += my_f[k] * my_f[k]
+                    if compute_k:
+                        my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  # Half step kinetic energy
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
                     my_v[k] = a * my_v[k] + b_over_m * my_f[k] * dt + b_over_m * np.float32(0.5)*(beta+old_beta[global_id,k])
                     old_beta[global_id,k] = beta # Store beta for next step
                     my_r[k] += my_v[k] * dt
 
                 apply_PBC(my_r, r_im[global_id], sim_box)
-
-                scalars[global_id][k_id] = my_k
-                scalars[global_id][fsq_id] = my_fsq
+                if compute_k:
+                    scalars[global_id][k_id] = my_k
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
             return
 
         step = cuda.jit(device=gridsync)(step)

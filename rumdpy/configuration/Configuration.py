@@ -4,6 +4,7 @@ import math
 from numba import cuda
 from .colarray import colarray
 from .Simbox import Simbox
+from ..simulation.get_default_compute_flags import get_default_compute_flags
 #import .Simbox
 
 # IO
@@ -72,16 +73,18 @@ class Configuration:
     scalar_computables_interactions = ['u', 'w', 'lap']
     scalar_computables_integrator = ['k', 'fsq']
 
-    default_compute_flags = {'u':True, 'w':True, 'lap':True, 'k': True, 'fsq':True, 'stresses':True}
 
-    def __init__(self, D: int, N: int = None, compute_flags='default', ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
-        self.compute_flags = self.default_compute_flags
-        if compute_flags != 'default':
+        self.compute_flags = get_default_compute_flags()
+        if compute_flags != None:
             # only keys present in the default are processed
-            for k in self.default_compute_flags:
-                self.compute_flags[k] = compute_flags[k]
+            for k in compute_flags:
+                if k in self.compute_flags:
+                    self.compute_flags[k] = compute_flags[k]
+                else:
+                    raise ValueError('Unknown key in compute_flags:%s' %k)
 
         self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
         if self.compute_flags['stresses']:
@@ -132,7 +135,7 @@ class Configuration:
         if self.N is None:  # First time setting particle data, so allocate arrays
             if type(data) != np.ndarray:
                 raise (TypeError)(
-                    f'Number of particles, N, not determined yet, so assignment needs to be with a numpy array')
+                    'Number of particles, N, not determined yet, so assignment needs to be with a numpy array')
             self.N = data.shape[0]
             self.__allocate_arrays()
 

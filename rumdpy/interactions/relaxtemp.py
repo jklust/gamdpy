@@ -76,11 +76,13 @@ class Relaxtemp:
         return (self.d_pindices, self.d_relax_params)
 
     
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']]
         num_blocks = (N - 1) // pb + 1
+
+        # Not sure if compute_flags is relevant here?? NB, Nov 2024
 
         # Get indices values (instead of dictonary entries) 
         v_id = configuration.vectors.indices['v']

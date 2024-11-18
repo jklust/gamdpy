@@ -53,7 +53,7 @@ class SLLOD():
 
         return (dt,sr, self.d_thermostat_sums)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -83,7 +83,10 @@ class SLLOD():
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
         update_box_shift = numba.njit(configuration.simbox.update_box_shift)
-    
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
+
         def call_update_box_shift(sim_box, integrator_params):
             dt, sr, thermostat_sums = integrator_params
             global_id, my_t = cuda.grid(2)
@@ -227,7 +230,8 @@ class SLLOD():
                 cuda.atomic.add(thermostat_sums, 1, my_pypy)
                 cuda.atomic.add(thermostat_sums, 2, my_p2)
                 # store ke of this particle
-                scalars[global_id][k_id] = numba.float32(0.5) * my_p2
+                if compute_k:
+                    scalars[global_id][k_id] = numba.float32(0.5) * my_p2
 
             # and reset group 1 sums to zero
             if global_id == 0 and my_t == 0:

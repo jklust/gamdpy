@@ -52,7 +52,7 @@ class NPT_Atomic():
         return (dt, mass_t, mass_p, degrees, self.d_thermostat_state, self.d_barostat_state)   # Needs to be compatible with unpacking in
                                                                                                # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -84,7 +84,10 @@ class NPT_Atomic():
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
-   
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
+
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NPT timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
@@ -107,10 +110,12 @@ class NPT_Atomic():
                 my_w = scalars[global_id][w_id] # Get virial from scalars
                 my_m = scalars[global_id][m_id]
                 my_k = numba.float32(0.0)       # Kinetic energy
-                my_fsq = numba.float32(0.0)     # force squared
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)     # force squared
 
                 for k in range(D):
-                    my_fsq += my_f[k] * my_f[k]
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
                     my_v[k] = plus * (minus * my_v[k] + my_f[k] / my_m * dt)
                     my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]       # This is kinetic energy at the half step
                     my_r[k] += my_v[k] * dt + rfactor*my_r[k]
@@ -118,9 +123,11 @@ class NPT_Atomic():
                 apply_PBC(my_r, r_im[global_id], sim_box)
 
                 cuda.atomic.add(thermostat_state, 1, my_k)   # Probably slow? Not really!
-                cuda.atomic.add(barostat_state  , 1, my_w)  
-                scalars[global_id][k_id] = my_k
-                scalars[global_id][fsq_id] = my_fsq
+                cuda.atomic.add(barostat_state  , 1, my_w)
+                if compute_k:
+                    scalars[global_id][k_id] = my_k
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
             return
 
         # This function update barostat (P) and thermostat (T) states
