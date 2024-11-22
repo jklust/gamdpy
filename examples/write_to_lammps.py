@@ -34,7 +34,7 @@ if os.path.exists(dump_filename):
     os.remove(dump_filename)
 
 # Run simulation and write configuration to LAMMPS dump file on the fly
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     lmp_dump = rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*block)
     print(lmp_dump, file=open(dump_filename, 'a'))
 

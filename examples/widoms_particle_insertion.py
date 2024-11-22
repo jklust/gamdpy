@@ -48,7 +48,7 @@ num_ghost_particles = 500_000
 ghost_positions = np.random.rand(num_ghost_particles, configuration.D) * configuration.simbox.lengths
 calc_widom = rp.CalculatorWidomInsertion(sim.configuration, pair_pot, temperature, ghost_positions)
 print('Production run:')
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     calc_widom.update()
     print('.', end='', flush=True)
 

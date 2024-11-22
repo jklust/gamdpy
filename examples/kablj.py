@@ -46,7 +46,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     steps_between_momentum_reset=100,
                     storage=filename) 
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
@@ -56,7 +56,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     steps_between_momentum_reset=100,
                     storage=filename)
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 

@@ -41,7 +41,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
                         conf_output=None, storage='memory', verbose=False)
 
     # Run simulation one block at a time
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass 
     print(sim.summary())
 

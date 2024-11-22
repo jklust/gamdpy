@@ -50,12 +50,12 @@ for index, rho in enumerate(rhos):
     calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
     print('Equilibration:', end='\t')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass
     print(sim.status(per_particle=True))
     
     print('Production:', end='\t')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         calc_rdf.update()
     print(sim.status(per_particle=True))
     

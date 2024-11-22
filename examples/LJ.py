@@ -61,7 +61,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_plan=compute_plan, storage='memory')
 
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
 

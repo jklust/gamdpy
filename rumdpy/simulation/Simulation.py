@@ -380,14 +380,14 @@ class Simulation():
         :func:`rumdpy.Simulation.timeblocks`
 
         """
-        for _ in self.timeblocks():
+        for _ in self.run_timeblocks():
             if verbose:
                 print(self.status(per_particle=True))
         if verbose:
             print(self.summary())
 
     # generator for running simulation one block at a time
-    def timeblocks(self, num_timeblocks=-1):
+    def run_timeblocks(self, num_timeblocks=-1):
         """ Generator for running the simulation one block at a time.
 
         Parameters
@@ -401,7 +401,7 @@ class Simulation():
 
         >>> import rumdpy as rp
         >>> sim = rp.get_default_sim()
-        >>> for block in sim.timeblocks(num_timeblocks=3):
+        >>> for block in sim.run_timeblocks(num_timeblocks=3):
         ...     print(f'{block=}')  # Replace with code to analyze the current configuration
         block=0
         block=1

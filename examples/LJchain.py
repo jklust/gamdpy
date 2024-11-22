@@ -55,7 +55,7 @@ sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
                     compute_plan=compute_plan, storage=filename)
 
 print('High Temperature followed by cooling and equilibration:')
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     if block % 10 == 0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
@@ -70,7 +70,7 @@ sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
 calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
 
 print('Production:')
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     if block % 10 == 0:
         print(f'{block=:4}  {sim.status(per_particle=True)}')
     calc_rdf.update()

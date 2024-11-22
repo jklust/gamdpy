@@ -58,7 +58,7 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
                         storage='memory', verbose=False, compute_flags={'stresses':False})
 
     # Run simulation one block at a time
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass 
 
     # Make conversion to dataframe a method at some point...

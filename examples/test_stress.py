@@ -27,7 +27,7 @@ sim = rp.Simulation(configuration, pairpot, integrator,
 print(sim.compute_plan)
 
 # Run simulation one block at a time
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
     vol = configuration.simbox.volume(configuration.simbox.lengths)
     

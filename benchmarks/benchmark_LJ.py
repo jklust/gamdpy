@@ -72,13 +72,13 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
                         storage='memory', verbose=False)
 
     # Run simulation one block at a time
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass
     nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
     assert nbflag0[0] == 0
     assert nbflag0[1] == 0
 
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass
 
     #print(sim.summary())

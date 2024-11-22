@@ -34,12 +34,12 @@ for temperature in ['0.70', '1.10', '1.50']:
                         storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         print(sim.status(per_particle=True))
     print(sim.summary())
     
     print('Production:')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         print(sim.status(per_particle=True))
     print(sim.summary())
 

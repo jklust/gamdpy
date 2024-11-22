@@ -53,7 +53,7 @@ class CalculatorWidomInsertion:
     >>> num_ghost_particles = 500_000
     >>> ghost_positions = np.random.rand(num_ghost_particles, sim.configuration.D) * sim.configuration.simbox.lengths
     >>> calc_widom = rp.CalculatorWidomInsertion(sim.configuration, pair_pot, sim.integrator.temperature, ghost_positions)
-    >>> for block in sim.timeblocks():
+    >>> for block in sim.run_timeblocks():
     ...     calc_widom.update()
     >>> calc_widom_data = calc_widom.read()  # Dictionary with chemical potential and more
     >>> calc_widom_data.keys()

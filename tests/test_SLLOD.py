@@ -44,7 +44,7 @@ def test_SLLOD(run_NVT=False):
                                 storage='memory')
 
 
-        for block in sim_NVT.timeblocks():
+        for block in sim_NVT.run_timeblocks():
             print(block)
             print(sim_NVT.status(per_particle=True))
 
@@ -85,7 +85,7 @@ def test_SLLOD(run_NVT=False):
                             storage='memory', compute_flags={'stresses':True}, compute_plan=compute_plan, include_simbox_in_output=True)
 
     # Run simulation one block at a time
-    for block in sim_SLLOD.timeblocks():
+    for block in sim_SLLOD.run_timeblocks():
         print(sim_SLLOD.status(per_particle=True))
         configuration.simbox.copy_to_host()
         box_shift = configuration.simbox.box_shift

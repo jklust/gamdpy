@@ -36,7 +36,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
                         conf_output=None, storage='memory', verbose=False)
     
     # Run simulation one block at a time
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass 
     print(sim.summary())
 
@@ -51,7 +51,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         steps_between_momentum_reset=100,
                         conf_output=None, storage='memory', verbose=False)
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         pass 
     print(sim.summary())
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))

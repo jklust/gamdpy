@@ -62,7 +62,7 @@ if not os.path.exists(output_path):
                         compute_plan=compute_plan, storage='memory')
 
     print('High Temperature followed by cooling and equilibration:')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         if block % 10 == 0:
             print(f'{block=:4}  {sim.status(per_particle=True)}')
     print(sim.summary())
@@ -77,7 +77,7 @@ if not os.path.exists(output_path):
                         steps_between_momentum_reset=runtime_action,
                         compute_plan=compute_plan, storage=output_path)
     print('Production:')
-    for block in sim.timeblocks():
+    for block in sim.run_timeblocks():
         if block % 10 == 0:
             print(f'{block=:4}  {sim.status(per_particle=True)}')
     print(sim.summary())
