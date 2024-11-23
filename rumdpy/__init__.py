@@ -15,7 +15,7 @@ from .configuration import unit_cells
 from .simulation.Simulation import Simulation
 from .simulation.get_default_sim import get_default_sim
 from .simulation.get_default_compute_plan import get_default_compute_plan
-
+from .simulation.get_default_compute_flags import get_default_compute_flags
 # Import from integrators subpackage
 from .integrators import *
 

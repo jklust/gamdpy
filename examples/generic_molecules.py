@@ -69,7 +69,7 @@ sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integra
                     compute_plan=compute_plan, storage='memory')
 
 angles_array, dihedrals_array = [], []
-for block in sim.timeblocks():     
+for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))     
     angles_array.append( angles.get_angle(10, configuration) )
     dihedrals_array.append( dihedrals.get_dihedral(10, configuration) )

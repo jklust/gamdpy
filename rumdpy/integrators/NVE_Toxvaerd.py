@@ -21,7 +21,7 @@ class NVE_Toxvaerd():
         dt = np.float32(self.dt)
         return (dt,)
 
-    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -40,8 +40,16 @@ class NVE_Toxvaerd():
         
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+<<<<<<< HEAD
    
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
+=======
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
+
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+>>>>>>> tbs/master
             """ Make one NVE timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
@@ -55,25 +63,31 @@ class NVE_Toxvaerd():
                 my_v = vectors[v_id][global_id]
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
-                my_k = numba.float32(0.0)  # Kinetic energy
-                my_fsq = numba.float32(0.0)  # force squared
+                if compute_k:
+                    my_k = numba.float32(0.0)  # Kinetic energy
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)  # force squared
 
                 for k in range(D):
-                    my_fsq += my_f[k] * my_f[k]
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
                     v_mean = numba.float32(0.0)
                     v_mean += my_v[k]  # v(t-dt/2)
                     my_v[k] += my_f[k] / my_m * dt
                     v_mean += my_v[k]  # v(t+dt/2)
                     v_mean /= numba.float32(2.0)  # v(t) = (v(t-dt/2) + v(t+dt/2))/2
-                    my_k += numba.float32(0.5) * my_m * v_mean * v_mean
+                    if compute_k:
+                        my_k += numba.float32(0.5) * my_m * v_mean * v_mean
                     # Toxvaerd correction to kinetic energy:  - 1/8 f(t)^2 dt^2 / m
                     my_k += numba.float32(1/8) * my_f[k] * my_f[k] * dt * dt / my_m
                     my_r[k] += my_v[k] * dt
-   
+
                 apply_PBC(my_r, r_im[global_id], sim_box)
-             
-                scalars[global_id][k_id] = my_k
-                scalars[global_id][fsq_id] = my_fsq
+
+                if compute_k:
+                    scalars[global_id][k_id] = my_k
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
             return
 
         step = cuda.jit(device=gridsync)(step)

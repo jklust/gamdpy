@@ -28,7 +28,7 @@ class NVT():
         self.dt = dt
         self.thermostat_state = np.zeros(2, dtype=np.float32)           # Right time to allocate and copy to device?
         self.d_thermostat_state = cuda.to_device(self.thermostat_state) # - or in get_params
-  
+
     def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         omega2 = np.float32(4.0 * np.pi * np.pi / self.tau / self.tau)
@@ -36,7 +36,7 @@ class NVT():
         return (dt, omega2, degrees, self.d_thermostat_state)   # Needs to be compatible with unpacking in
                                                                 # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -48,7 +48,7 @@ class NVT():
             temperature_function = self.temperature
         else:
             temperature_function = rp.make_function_constant(value=float(self.temperature))
-    
+
         if verbose:
             print(f'Generating NVT kernel for {num_part} particles in {D} dimensions:')
             print(f'\tpb: {pb}, tp:{tp}, num_blocks:{num_blocks}')
@@ -62,12 +62,15 @@ class NVT():
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
-   
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
+
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NVT timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
-            
+
             # Unpack parameters. MUST be compatible with get_params() above
             dt, omega2, degrees, thermostat_state = integrator_params  
 
@@ -82,10 +85,12 @@ class NVT():
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
                 my_k = numba.float32(0.0)    # Kinetic energy
-                my_fsq = numba.float32(0.0)  # force squared
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)  # force squared
 
                 for k in range(D):
-                    my_fsq += my_f[k] * my_f[k]
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
                     my_v[k] = plus * (minus * my_v[k] + my_f[k] / my_m * dt)
                     my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]
                     my_r[k] += my_v[k] * dt
@@ -93,8 +98,10 @@ class NVT():
                 apply_PBC(my_r, r_im[global_id], sim_box)
 
                 cuda.atomic.add(thermostat_state, 1, my_k)  # Probably slow? Not really!
-                scalars[global_id][k_id] = my_k
-                scalars[global_id][fsq_id] = my_fsq
+                if compute_k:
+                    scalars[global_id][k_id] = my_k
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
             return
 
         def update_thermostat_state(integrator_params, time):

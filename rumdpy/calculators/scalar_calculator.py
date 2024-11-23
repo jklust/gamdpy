@@ -152,7 +152,7 @@ def extract_scalars(data, column_list, first_block=0, D=3):
     >>> import numpy as np
     >>> import rumdpy as rp
     >>> sim = rp.get_default_sim()  # Replace with your simulation object
-    >>> for block in sim.timeblocks(): pass
+    >>> for block in sim.run_timeblocks(): pass
     >>> U, W = rp.extract_scalars(sim.output, ['U', 'W'], first_block=1)
     """
 

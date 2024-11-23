@@ -175,7 +175,7 @@ class NVU_RT():
             with h5py.File(storage, "a") as f:
                 f["path_u"][block, :] = self.d_path_u.copy_to_host()  # type: ignore
     
-    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
         # Unpack parameters from configuration and compute_plan
         num_dim, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 

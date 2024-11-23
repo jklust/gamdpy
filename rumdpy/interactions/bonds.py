@@ -48,12 +48,18 @@ class Bonds():
         self.d_params = cuda.to_device(self.potential_params_array)
         return (self.d_indices, self.d_params)
         
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
-        assert compute_stresses == False # For now...
+
+        compute_u = compute_flags['u']
+        compute_w = compute_flags['w']
+        compute_lap = compute_flags['lap']
+        compute_stresses = compute_flags['stresses']
+        if compute_stresses:
+            print('WARNING: computation of stresses is not implemented yet for bonds')
 
         if verbose:
             print('get_kernel: Bonds:')
@@ -65,7 +71,23 @@ class Bonds():
     
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
+
+        if compute_u:
+            u_id = configuration.sid['u']
+        if compute_w:
+            w_id = configuration.sid['w']
+        if compute_lap:
+            lap_id = configuration.sid['lap']
+
+        if compute_stresses:
+            sx_id = configuration.vectors.indices['sx']
+            if D > 1:
+                sy_id = configuration.vectors.indices['sy']
+                if D > 2:
+                    sz_id = configuration.vectors.indices['sz']
+                    if D > 3:
+                        sw_id = configuration.vectors.indices['sw']
+
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         bondpotential_function = numba.njit(self.bond_potential)

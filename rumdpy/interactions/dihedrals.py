@@ -19,11 +19,32 @@ class Dihedrals():
         
         return (self.d_indices, self.d_params)
 
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
+
+        compute_u = compute_flags['u']
+        compute_w = compute_flags['w']
+        compute_lap = compute_flags['lap']
+        compute_stresses = compute_flags['stresses']
+
+        if compute_u:
+            u_id = configuration.sid['u']
+        if compute_w:
+            w_id = configuration.sid['w']
+        if compute_lap:
+            lap_id = configuration.sid['lap']
+
+        if compute_stresses:
+            sx_id = configuration.vectors.indices['sx']
+            if D > 1:
+                sy_id = configuration.vectors.indices['sy']
+                if D > 2:
+                    sz_id = configuration.vectors.indices['sz']
+                    if D > 3:
+                        sw_id = configuration.vectors.indices['sw']
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]

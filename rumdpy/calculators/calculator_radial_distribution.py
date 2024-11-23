@@ -32,7 +32,7 @@ class CalculatorRadialDistribution():
     >>> import rumdpy as rp
     >>> sim = rp.get_default_sim()
     >>> calc_rdf = rp.CalculatorRadialDistribution(sim.configuration, num_bins=1000)
-    >>> for _ in sim.timeblocks():
+    >>> for _ in sim.run_timeblocks():
     ...     calc_rdf.update()      # Current configuration to rdf
     >>> rdf_data = calc_rdf.read() # Read the rdf data as a dictionary
     >>> r = rdf_data['distances']  # Pair distances

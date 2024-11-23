@@ -53,8 +53,8 @@ class Simulation():
     steps_between_momentum_reset : int
         Number of steps between momentum reset. If 'default', then a default value is used.
 
-    compute_stresses : bool
-        If True, stresses are computed.
+    compute_flags : dict
+        For each scalar quantity, and stresses, specifies whether to be calculated
 
     verbose : bool
         If True, print verbose output.
@@ -73,7 +73,7 @@ class Simulation():
     def __init__(self, configuration: rp.Configuration, interactions, integrator,
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5', scalar_output: int='default', conf_output='default',
-                 steps_between_momentum_reset: int='default', compute_stresses=False, verbose=False, timing=True,
+                 steps_between_momentum_reset: int='default', compute_flags=None, verbose=False, timing=True,
                  include_simbox_in_output=False, steps_in_kernel_test=1):
 
         self.configuration = configuration
@@ -82,9 +82,17 @@ class Simulation():
         else:
             self.compute_plan = compute_plan
 
-        self.compute_stresses = compute_stresses
-        if self.compute_stresses and not configuration.compute_stresses:
-            raise ValueError("Configuration must have compute_stresses set as well!")
+        self.compute_flags = rp.get_default_compute_flags() # configuration.compute_flags
+        if compute_flags is not None:
+            # only keys present in the default are processed
+            for k in compute_flags:
+                if k in self.compute_flags:
+                    self.compute_flags[k] = compute_flags[k]
+                else:
+                    raise ValueError('Unknown key in compute_flags:%s' %k)
+        for k in self.compute_flags:
+            if self.compute_flags[k] and not configuration.compute_flags[k]:
+                raise ValueError('compute_flags["%s]" set for Simulation but not in Configuration' % k)
 
         # Integrator
         if type(interactions) == list:
@@ -217,7 +225,7 @@ class Simulation():
         self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration,
                                                                                       self.interactions,
                                                                                       compute_plan=self.compute_plan,
-                                                                                      compute_stresses=self.compute_stresses,
+                                                                                      compute_flags=self.compute_flags,
                                                                                       verbose=verbose)
 
         # Momentum reset 
@@ -246,7 +254,7 @@ class Simulation():
 
         # Integrator
         self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params, verbose)
-        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.interactions_kernel, verbose)
+        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, self.interactions_kernel, verbose)
 
         return
 
@@ -255,7 +263,7 @@ class Simulation():
         _, self.interactions_params = rp.add_interactions_list(self.configuration,
                                                                 self.interactions,
                                                                 compute_plan=self.compute_plan,
-                                                                compute_stresses=self.compute_stresses,
+                                                                compute_flags=self.compute_flags,
                                                                 verbose=verbose)
 
         # Momentum reset 
@@ -384,14 +392,14 @@ class Simulation():
         :func:`rumdpy.Simulation.timeblocks`
 
         """
-        for _ in self.timeblocks():
+        for _ in self.run_timeblocks():
             if verbose:
                 print(self.status(per_particle=True))
         if verbose:
             print(self.summary())
 
     # generator for running simulation one block at a time
-    def timeblocks(self, num_timeblocks=-1):
+    def run_timeblocks(self, num_timeblocks=-1):
         """ Generator for running the simulation one block at a time.
 
         Parameters
@@ -405,7 +413,7 @@ class Simulation():
 
         >>> import rumdpy as rp
         >>> sim = rp.get_default_sim()
-        >>> for block in sim.timeblocks(num_timeblocks=3):
+        >>> for block in sim.run_timeblocks(num_timeblocks=3):
         ...     print(f'{block=}')  # Replace with code to analyze the current configuration
         block=0
         block=1

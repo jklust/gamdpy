@@ -40,7 +40,7 @@ evaluator = rp.Evaluator(sim.configuration, ipl12)
 
 # Run simulation
 u_ipl = []
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     evaluator.evaluate(sim.configuration)  # Evaluate IPL for final configuration of timeblock
     u_ipl.append(np.sum(evaluator.configuration['u']))
 

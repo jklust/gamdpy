@@ -39,7 +39,7 @@ class Tether:
         """
 
         nsprings, nparticles = len(spring_constants), len(particle_indices)
-        
+
         if nsprings != nparticles:
             raise ValueError("Each particle must have exactly one spring connection - array must be same length");
 
@@ -48,10 +48,10 @@ class Tether:
             indices.append([n, particle_indices[n]])
             pos = configuration['r'][particle_indices[n]]
             tether_params.append( [pos[0], pos[1], pos[2], spring_constants[n]] )
-        
+
         self.tether_params = np.array(tether_params, dtype=np.float32)
         self.indices = np.array(indices, dtype=np.int32) 
-    
+
         self.anchor_points_set = True
 
 
@@ -61,7 +61,7 @@ class Tether:
 
         if ntypes != nsprings:
             raise ValueError("Each type must have exactly one spring connection - arrays must be same length")
-            
+
         indices, tether_params, counter = [], [], 0
         for n in range(configuration.N):
             for m in range(ntypes):
@@ -74,7 +74,7 @@ class Tether:
          
         self.tether_params = np.array(tether_params, dtype=np.float32)
         self.indices = np.array(indices, dtype=np.int32) 
-    
+
         self.anchor_points_set = True
 
     def get_params(self, configuration, compute_plan, verbose=False):
@@ -88,14 +88,19 @@ class Tether:
         return (self.d_pindices, self.d_tether_params)
 
 
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
+        compute_u = compute_flags['u']
+        # Note w, lap, stresses not relevant here
+
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id = configuration.sid['u'] 
+
+        if compute_u:
+            u_id = configuration.sid['u']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         
@@ -105,18 +110,20 @@ class Tether:
             dist_sq = dist_sq_dr_function(values[indices[0]][:D], vectors[r_id][indices[1]], sim_box, dr)
             
             spring = values[indices[0]][3]
-           
+
             f=vectors[f_id][indices[1]];
 
             for k in range(D):
                 f[k] = f[k] + dr[k]*spring
-       
+
             Epot = numba.float32(0.5)*spring*dist_sq
+            # if compute_u:
+            # What's going on here? Why the atomic add?
             cuda.atomic.add(scalars, (indices[0], u_id), Epot)
-            
+
             return
-            
-                
+
+
 
         return make_fixed_interactions(configuration, tether_calculator, compute_plan, verbose=False)
-    
+

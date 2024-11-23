@@ -3,6 +3,8 @@ import numba
 import math
 from numba import cuda
 
+from ..simulation.get_default_compute_flags import get_default_compute_flags
+
 # rumdpy
 import rumdpy as rp
 
@@ -34,7 +36,9 @@ class Evaluator:
 
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
-        
+
+        compute_flags = get_default_compute_flags()
+
         # Make sure interactions is a list
         if type(interactions) == list:
             self.interactions = interactions
@@ -45,6 +49,7 @@ class Evaluator:
             self.configuration,
             self.interactions,
             compute_plan=self.compute_plan,
+            compute_flags=compute_flags,
             verbose=verbose)
 
         self.evaluater_func = self.make_evaluater_func(self.configuration, self.interactions_kernel, self.compute_plan, verbose)

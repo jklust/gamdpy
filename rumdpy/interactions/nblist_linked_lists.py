@@ -52,18 +52,25 @@ class NbListLinkedLists():
         return (np.float32(self.max_cut), np.float32(self.skin), self.d_nbflag, self.d_r_ref, self.d_exclusions, 
                 self.d_cells_per_dimension, self.d_cells, self.d_my_cell, self.d_next_particle_in_cell)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False, force_update=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False, force_update=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (num_part - 1) // pb + 1
-        compute_stresses = configuration.compute_stresses
+        compute_stresses = compute_flags['stresses']
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         if compute_stresses:
-            sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['sx', 'sy', 'sz']]
+            sx_id = configuration.vectors.indices['sx']
+            if D > 1:
+                sy_id = configuration.vectors.indices['sy']
+                if D > 2:
+                    sz_id = configuration.vectors.indices['sz']
+                    if D > 3:
+                        sw_id = configuration.vectors.indices['sw']
+
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
@@ -92,8 +99,13 @@ class NbListLinkedLists():
                     vectors[f_id][global_id, k] = numba.float32(0.0)
                     if  compute_stresses:
                         vectors[sx_id][global_id, k] =  numba.float32(0.0)
-                        vectors[sy_id][global_id, k] =  numba.float32(0.0)
-                        vectors[sz_id][global_id, k] =  numba.float32(0.0)
+                        if D > 1:
+                            vectors[sy_id][global_id, k] =  numba.float32(0.0)
+                            if D > 2:
+                                vectors[sz_id][global_id, k] =  numba.float32(0.0)
+                                if D > 3:
+                                    vectors[sw_id][global_id, k] =  numba.float32(0.0)
+
             return
    
         @cuda.jit(device=gridsync)

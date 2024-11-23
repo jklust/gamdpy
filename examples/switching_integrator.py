@@ -41,14 +41,14 @@ sim1 = rp.Simulation(configuration, pair_pot, integrator1,
 
 print(configuration['r'][1])
 print('Integrator1, Equilibration:', end='\t')
-for block in sim1.timeblocks():
+for block in sim1.run_timeblocks():
     pass
 print(sim1.status(per_particle=True))
 U1, K1 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E1 = U1 + K1
 
 print('Integrator1, Production:', end='\t')
-for block in sim1.timeblocks():
+for block in sim1.run_timeblocks():
     pass
 print(sim1.status(per_particle=True))
 U2, K2 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
@@ -61,7 +61,7 @@ sim2 = rp.Simulation(configuration, pair_pot, integrator2,
                      storage='memory')
 
 print('Integrator2, Production:', end='\t')
-for block in sim2.timeblocks():
+for block in sim2.run_timeblocks():
     pass
 print(sim2.status(per_particle=True))
 

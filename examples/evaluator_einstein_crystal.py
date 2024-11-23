@@ -55,7 +55,7 @@ evaluator = rp.Evaluator(sim.configuration, [none_interacting, harmonic_springs]
 # Run simulation
 u_spring = []
 displacements = []
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     evaluator.evaluate(sim.configuration)
     this_u_spring = evaluator.configuration['u']
     u_spring.append(np.sum(this_u_spring))

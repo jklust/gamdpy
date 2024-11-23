@@ -20,15 +20,36 @@ class Angels():
         return (self.d_indices, self.d_params)
 
  
-    def get_kernel(self, configuration, compute_plan, compute_stresses=False, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
+        compute_u = compute_flags['u']
+        compute_w = compute_flags['w']
+        compute_lap = compute_flags['lap']
+        compute_stresses = compute_flags['stresses']
+
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         u_id = configuration.sid['u']
+
+        if compute_u:
+            u_id = configuration.sid['u']
+        if compute_w:
+            w_id = configuration.sid['w']
+        if compute_lap:
+            lap_id = configuration.sid['lap']
+
+        if compute_stresses:
+            sx_id = configuration.vectors.indices['sx']
+            if D > 1:
+                sy_id = configuration.vectors.indices['sy']
+                if D > 2:
+                    sz_id = configuration.vectors.indices['sz']
+                    if D > 3:
+                        sw_id = configuration.vectors.indices['sw']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     
@@ -55,13 +76,13 @@ class Angels():
             for k in range(D):
                 f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
                 f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
-                
+
                 cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      # Force
                 cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
                 cuda.atomic.add(vectors, (f_id, indices[2], k), f_2)
             
             u = numba.float32(0.5)*kspring*(cc-cCon)*(cc-cCon)
-            onethird = numba.float32(1.0/3.0);    
+            onethird = numba.float32(1.0/3.0);
             cuda.atomic.add(scalars, (indices[0], u_id), u*onethird) 
             cuda.atomic.add(scalars, (indices[1], u_id), u*onethird)
             cuda.atomic.add(scalars, (indices[2], u_id), u*onethird)

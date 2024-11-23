@@ -27,7 +27,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     storage='LJ_T0.70.h5')
 
 # Run simulation one block at a time
-for block in sim.timeblocks():
+for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
 

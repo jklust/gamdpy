@@ -19,7 +19,7 @@ def test_structure_factor(verbose=False, plot=False):
 
     if verbose:
         print('Equilibrating...')
-    for _ in sim.timeblocks():
+    for _ in sim.run_timeblocks():
         if verbose:
             print(sim.status(per_particle=True))
 
@@ -28,7 +28,7 @@ def test_structure_factor(verbose=False, plot=False):
     q_max: float = 16.0
     calc_struct_fact = rp.CalculatorStructureFactor(configuration)
     calc_struct_fact.generate_q_vectors(q_max=q_max)
-    for _ in sim.timeblocks():
+    for _ in sim.run_timeblocks():
         calc_struct_fact.update()
         if verbose:
             print(sim.status(per_particle=True))

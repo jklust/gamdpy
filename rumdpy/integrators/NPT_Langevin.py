@@ -41,7 +41,7 @@ class NPT_Langevin():
                 self.barostatModeISO, np.int32(self.boxFlucCoord), 
                 rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)
     
-    def get_kernel(self, configuration, compute_plan, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -72,6 +72,9 @@ class NPT_Langevin():
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+
+        compute_k = compute_flags['k']
+        compute_fsq = compute_flags['fsq']
 
         def copyParticleVirial(scalars, integrator_params):
             dt, alpha, alpha_baro, mass_baro, barostatModeISO, boxFlucCoord, rng_states, barostat_state, barostatVirial, length_ratio  = integrator_params
@@ -158,8 +161,10 @@ class NPT_Langevin():
                 my_v = vectors[v_id][global_id]
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
-                my_k = numba.float32(0.0)  # Kinetic energy
-                my_fsq = numba.float32(0.0)  # force squared energy
+                if compute_k:
+                    my_k = numba.float32(0.0)  # Kinetic energy
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)  # force squared energy
                 
                 for k in range(D):
                     random_number = xoroshiro128p_normal_float32(rng_states, global_id + 1)  # +1 to avoid using the same random number state as the barostat
@@ -168,20 +173,25 @@ class NPT_Langevin():
                     scaled_dt = numba.float32(0.5) * dt * alpha * numba.float32(1.0)/my_m
                     prm_b = numba.float64(1.0) / (numba.float64(1.0) + scaled_dt)
                     prm_a = prm_b * (numba.float64(1.0) - scaled_dt)
-                    
-                    my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  #  ke before
-                    my_fsq += my_f[k] * my_f[k] 
+
+                    if compute_k:
+                        my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  #  ke before
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
 
                     my_v[k] = prm_a * my_v[k] + prm_b * (numba.float32(1.0)/my_m) * (my_f[k] * dt + beta)
-                    my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  #  ke after 
+                    if compute_k:
+                        my_k += numba.float32(0.5) * my_m * my_v[k] * my_v[k]  #  ke after
                     
                     L_factor = 2.*length_ratio[k] / (1. + length_ratio[k]) 
                     my_r[k] = length_ratio[k] * my_r[k] + L_factor * my_v[k] * dt             
                      
                 apply_PBC(my_r, r_im[global_id], sim_box)
-            
-                scalars[global_id][k_id] = numba.float32(0.5) * my_k
-                scalars[global_id][fsq_id] = my_fsq
+
+                if compute_k:
+                    scalars[global_id][k_id] = numba.float32(0.5) * my_k
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
 
             return
             

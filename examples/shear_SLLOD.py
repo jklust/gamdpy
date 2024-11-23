@@ -44,7 +44,7 @@ if run_NVT:
 
 
 
-    for block in sim_NVT.timeblocks():
+    for block in sim_NVT.run_timeblocks():
         print(block)
         print(sim_NVT.status(per_particle=True))
 
@@ -87,10 +87,10 @@ print(f'num_blocks={num_blocks}')
 sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
                           num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block, scalar_output=sc_output,
                           steps_between_momentum_reset=100,
-                          storage='memory', compute_stresses=True, compute_plan=compute_plan, include_simbox_in_output=True)
+                          storage='memory', compute_flags={'stresses':True}, compute_plan=compute_plan, include_simbox_in_output=True)
 
 # Run simulation one block at a time
-for block in sim_SLLOD.timeblocks():
+for block in sim_SLLOD.run_timeblocks():
     print(sim_SLLOD.status(per_particle=True))
     configuration.simbox.copy_to_host()
     box_shift = configuration.simbox.box_shift
