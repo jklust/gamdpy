@@ -40,16 +40,11 @@ class NVE_Toxvaerd():
         
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
-<<<<<<< HEAD
-   
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
-=======
 
         compute_k = compute_flags['k']
         compute_fsq = compute_flags['fsq']
 
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
->>>>>>> tbs/master
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVE timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
