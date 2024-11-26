@@ -65,7 +65,7 @@ def run_simulations():
             steps_per_timeblock=NVE_EQ_STEPS_PER_TIMEBLOCK,
             storage=NVE_EQ_OUTPUT)
 
-        for block in sim.timeblocks():
+        for block in sim.run_timeblocks():
             if block % 5 == 0:
                 print(f'{block=:4}  {sim.status(per_particle=True)}')
         print(sim.summary())
@@ -81,14 +81,14 @@ def run_simulations():
             steps_per_timeblock=NVE_PROD_STEPS_PER_TIMEBLOCK,
             storage=NVE_PROD_OUTPUT)
 
-        for block in sim.timeblocks():
+        for block in sim.run_timeblocks():
             if block % 5 == 0:
                 print(f'{block=:4}  {sim.status(per_particle=True)}')
         print(sim.summary())
         
         u, = rp.extract_scalars(sim.output, ["U"], first_block=0, D=conf.D)
         target_u = np.mean(u[len(u)*3//4:])
-        for block in sim.timeblocks():
+        for block in sim.run_timeblocks():
             ev = rp.Evaluator(conf, pair_pot)
             ev.evaluate()
             conf_u = np.sum(conf["u"])
@@ -124,7 +124,7 @@ def run_simulations():
             scalar_output=NVU_SCALAR_OUTPUT,
         )
 
-        for block in sim.timeblocks():
+        for block in sim.run_timeblocks():
             if block % 5 == 0:
                 print(f'{block=:4}  {sim.status(per_particle=True)}')
         print(sim.summary())
