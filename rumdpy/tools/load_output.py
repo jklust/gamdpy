@@ -5,13 +5,16 @@ import os
 
 # This function is a wrapper for several possible inputs
 class load_output():
-    """ This class takes a saved simulation and returns it as sim.output object.
+    """ 
+    This class handles loading and saving of simulation data.
+    When the class is instanciated with an output from a previous simulation, the data are saved in self.h5 in the same format of the sim.output object.
+    When the class is instanciated without input, self.h5 is None and can be assigned afterwards.
 
     Parameters
     ----------
 
     name : str
-        Name of the file or folder to read output from.
+        Name of the file or folder to read output from. Can be a rumdpy .h output or a rumd3 TrajectoryFiles folder.
 
     Examples
     --------
@@ -30,13 +33,16 @@ class load_output():
     Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
-    >>> print(f"Output file examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of {N} particles in {D} dimensions")
-    Output file examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of 4000 particles in 3 dimensions
+    >>> print(f"File examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of {N} particles in {D} dimensions")
+    File examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of 4000 particles in 3 dimensions
     >>> print(f"The simulation output is divided into {nblocks} blocks, each of them with {nconfs} configurations")
     The simulation output is divided into 2 blocks, each of them with 24 configurations
 
     """
-    def __init__(self, name):
+    
+    import h5py
+
+    def __init__(self, name=""):
         if name[-3:]==".h5":
             print("Found .h5 file, loading to rumdpy as output dictionary")
             self.h5 = self.load_h5(name)
@@ -46,6 +52,8 @@ class load_output():
                 print(f"Folder {name} doesn't exists")
                 exit()
             self.h5 = self.load_rumd3(name)
+        elif name=="":
+            print("Warning: class initialized without input data, set self.h5 manually")
         else:
             print("Input not recognized, unsupported format")
             self.h5 = None
@@ -53,20 +61,23 @@ class load_output():
     # check https://medium.com/@johnidouglasmarangon/using-call-method-to-invoke-class-instance-as-a-function-f61396145567
     # check metaclass
 
-    def get_h5(self):
+    def get_h5(self) -> h5py.File:
+        """ Returns self.h5 """
         return self.h5
 
     # Load from h5 (std rumpdy output)
-    def load_h5(self, name:str) -> dict:
+    def load_h5(self, name:str) -> h5py.File:
+        """ Makes self.h5 a view of the .h5 files """
         import h5py
         return h5py.File(name, "r")
 
     # Load from TrajectoryFiles (std rumd3 output)
     # It assumes trajectories are spaced in log2
-    def load_rumd3(self, name:str) -> dict:
+    def load_rumd3(self, name:str) -> h5py.File:
+        """ Reads a rumd3 TrajectoryFiles folder and convert it into rumdpy .h5 output. This function returns a memory .h5"""
+        import h5py
         import os, gzip, glob
         import pandas as pd
-        import h5py
         # Check what's there
         energy, traj  = True, True
 
@@ -168,6 +179,20 @@ class load_output():
             output.create_dataset('scalars', data=np.vstack(all_energies))
 
         return output
+
+    def save_h5(self, name:str):
+        """ This method saves self.h5 to disk """
+        import h5py
+        fout = h5py.File(name, "w") 
+        fout.attrs.update(self.h5.attrs)
+        for key in self.h5.keys():
+            print(f"Writing dataset {key}")
+            fout.create_dataset(key, data=self.h5[key], chunks=True)
+            fout[key].attrs.update(self.h5[key].attrs)
+        print("All written")
+        fout.close()
+        print("Output file closed")
+        return
 
 if __name__ == '__main__':
     load_output(sys.argv[1])
