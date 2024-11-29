@@ -45,6 +45,7 @@ default:
     - python3 -m pip install pytest
     - python3 -m pip install ipywidgets
     - python3 -m pip install k3d
+    - python3 -m pip install scipy
 
 .test_runs: &test_runs
       #    - coverage run --source rumdpy -m unittest discover -s tests
