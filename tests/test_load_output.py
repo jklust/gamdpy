@@ -1,4 +1,4 @@
-"""Test the class load_output. """
+""" Test the class load_output. """
 
 def test_load_output():
     import rumdpy as rp
@@ -20,15 +20,20 @@ def test_load_output():
     # Test read from rumd3 TrajectoryFiles, trajectory only
     output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_trajonly")
     output = output.get_h5()
-    isinstance(output.file, h5py.File)
+    assert isinstance(output.file, h5py.File), "Error with read from rumd3 trajectory only"
 
     # Test read from rumd3 TrajectoryFiles, energies only
     output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_eneronly")
     output = output.get_h5()
-    isinstance(output.file, h5py.File)
+    assert isinstance(output.file, h5py.File), "Error with read from rumd3 energy only"
 
+    # Test initialization without input
+    output = rp.tools.load_output()    
+    output = output.get_h5()
+    assert output == None, "Error with no input initialization"
+    
     # Test read from unsupported format
-    output = rp.tools.load_output("file.abc")                                                           # Testing input from unsupported format
+    output = rp.tools.load_output("file.abc")                                                           
     output = output.get_h5()
     assert output == None, "Error with not recognized input/unsupported format"
 

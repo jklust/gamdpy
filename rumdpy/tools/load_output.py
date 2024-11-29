@@ -43,6 +43,9 @@ class load_output():
     import h5py
 
     def __init__(self, name=""):
+        import importlib.util           # This python library can be used if module can be imported
+
+        ## Following lines defines the initialization behavior depending on given input
         if name[-3:]==".h5":
             print("Found .h5 file, loading to rumdpy as output dictionary")
             self.h5 = self.load_h5(name)
@@ -54,18 +57,28 @@ class load_output():
             self.h5 = self.load_rumd3(name)
         elif name=="":
             print("Warning: class initialized without input data, set self.h5 manually")
+            self.h5 = None
         else:
             print("Input not recognized, unsupported format")
             self.h5 = None
-    #    __metaclass__ = self.get_h5(self) 
-    # check https://medium.com/@johnidouglasmarangon/using-call-method-to-invoke-class-instance-as-a-function-f61396145567
-    # check metaclass
+
+        ## Following lines deals with the compression of the output
+        # The class is initialized with some default compression settings depending on what is available.
+        # These parameters can be changed by the user by changing the class attributes
+
+        # Checks if hdf5plugin lib is available
+        if importlib.util.find_spec("hdf5plugin")==None: 
+            self.compression_type = "gzip"
+            self.compression_opts = 6           # seems the best option in terms of compression and timing
+        else:
+            import hdf5plugin
+            # if hdf5plugin is available use BZip2 compression (slightly better and faster)
+            self.compression_type = hdf5plugin.BZip2()
 
     def get_h5(self) -> h5py.File:
         """ Returns self.h5 """
         return self.h5
 
-    # Load from h5 (std rumpdy output)
     def load_h5(self, name:str) -> h5py.File:
         """ Makes self.h5 a view of the .h5 files """
         import h5py
@@ -78,30 +91,38 @@ class load_output():
         import h5py
         import os, gzip, glob
         import pandas as pd
-        # Check what's there
-        energy, traj  = True, True
 
         # Rumd3 output is always in D=3
         dim = 3
+        # Checks if energy output is present
         if "LastComplete_energies.txt" not in os.listdir(name):
             print("LastComplete_energies.txt not present")
             energy = False
+        else:
+            energy = True
+
+        # Checks if trajectory output is present
         if "LastComplete_trajectory.txt" not in os.listdir(name):
             print("LastComplete_trajectory.txt not present")
             traj = False
+        else:
+            traj = True
+
+        # Exit if no output is found in TrajectoryFiles folder
         if not energy and not traj:
             print("No LastComplete file found, exiting")
             exit()
+
+        # Reads block information from LastComplete_*
         if energy: nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_energies.txt", dtype=np.int32)
         else     : nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_trajectory.txt", dtype=np.int32)
 
         # Defining output memory .h5 file
-        #fullpath = f"{os.getcwd()}/{name}"
         fullpath = f"{name}"
         output   = h5py.File(f"{id(fullpath)}.h5", "w", driver='core', backing_store=False)
         assert isinstance(output, h5py.File), "Error creating memory h5 file in load_output.load_rumd3"
 
-        # Read and copy trajectories
+        # Read trajectories
         if traj:
             traj_files = sorted(glob.glob(f"{name}/trajectory*"))
 		    # Remove last block if incomplete
@@ -133,7 +154,6 @@ class load_output():
             toskip1 = np.array([  (npart+2)*x for x in range(1+ntrajinblock)])
             toskip2 = np.array([1+(npart+2)*x for x in range(1+ntrajinblock)])
             toskip  = sorted(list(np.concatenate((toskip1, toskip2))))
-            #print(toskip)
             positions = list()
             images    = list()
             for trajectory in traj_files:
@@ -151,7 +171,7 @@ class load_output():
             output['block'][:,:,0,:,:] = np.array(positions) 
             output.create_dataset("ptype", data=type_array[:npart], shape=(npart), dtype=np.int32)
 
-        # Read and copy trajectories
+        # Read energies 
         if energy:
             energy_files = sorted(glob.glob(f"{name}/energies*"))
     		# Remove last block if incomplete
@@ -181,15 +201,32 @@ class load_output():
         return output
 
     def save_h5(self, name:str):
-        """ This method saves self.h5 to disk """
+        """ 
+        This method saves self.h5 to disk.
+        It can be used to save sim.output to file if class is initialized without arguments and then self.h5 = sim.output . 
+        By default output is compressed. This can be avoided setting self.compression_type = "gzip" and self.compression_opts=0 .
+        """
+
         import h5py
+        import importlib.util
+        if importlib.util.find_spec("hdf5plugin")!=None:
+            import hdf5plugin
         fout = h5py.File(name, "w") 
         fout.attrs.update(self.h5.attrs)
         for key in self.h5.keys():
-            print(f"Writing dataset {key}")
-            fout.create_dataset(key, data=self.h5[key], chunks=True)
+            print(f"Writing dataset {key} to {name}")
+            if importlib.util.find_spec("hdf5plugin")!=None:
+                if self.compression_type == "gzip":
+                    fout.create_dataset(key, data=self.h5[key], chunks=True, compression=self.compression_type, compression_opts=self.compression_opts, shuffle=True)
+                else:
+                    fout.create_dataset(key, data=self.h5[key], chunks=True, compression=self.compression_type, shuffle=True)
+            elif self.compression_type == "gzip":
+                fout.create_dataset(key, data=self.h5[key], chunks=True, compression=self.compression_type, compression_opts=self.compression_opts, shuffle=True)
+            else:
+                fout.create_dataset(key, data=self.h5[key], chunks=True, compression=self.compression_type)
             fout[key].attrs.update(self.h5[key].attrs)
-        print("All written")
+
+        print(f"All written using {self.compression_type}")
         fout.close()
         print("Output file closed")
         return
