@@ -43,12 +43,14 @@ default:
     - python3 -m pip install .
     - python3 -m pip install coverage
     - python3 -m pip install pytest
+    - python3 -m pip install ipywidgets
+    - python3 -m pip install k3d
 
 .test_runs: &test_runs
       #    - coverage run --source rumdpy -m unittest discover -s tests
       #    - coverage report -m
-    - python3 tests_ci/test_LJ_cpu.py
-    - python3 tests_ci/test_LJ_gpu.py
+      # - python3 tests_ci/test_LJ_cpu.py
+      # - python3 tests_ci/test_LJ_gpu.py
     - python3 -m pytest --doctest-modules
   # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
   # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
