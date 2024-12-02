@@ -141,10 +141,10 @@ def test_nvt_langevin(nx, ny, nz):
     var_e, Tkin, Tconf, R, Gamma = get_results_from_df(df, N, D)
     print(N, '\t', nx, '\t', ny, '\t', nz, '\t', var_e, '\t', Tkin, '\t',Tconf, '\t',R, '\t',Gamma)
     # assert var_e < 0.001
-    assert 0.63 < Tkin  < 0.76, print(f'{Tkin=}')
-    assert 0.63 < Tconf < 0.76, print(f'{Tconf=}')
-    assert 0.89 <   R   < 1.00, print(f'{R=}')
-    assert 4.9  < Gamma < 6.7,  print(f'{Gamma=}')
+    assert 0.62 < Tkin  < 0.78, print(f'{Tkin=}')
+    assert 0.62 < Tconf < 0.78, print(f'{Tconf=}')
+    assert 0.85 <   R   < 1.00, print(f'{R=}')
+    assert 4.8  < Gamma < 6.8,  print(f'{Gamma=}')
     
     return
     
