@@ -50,11 +50,12 @@ class load_output():
             print("Found .h5 file, loading to rumdpy as output dictionary")
             self.h5 = self.load_h5(name)
         elif "TrajectoryFiles" in name:
-            print("Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary")
-            if not os.path.isdir(name):
-                print(f"Folder {name} doesn't exists")
-                exit()
-            self.h5 = self.load_rumd3(name)
+            try: 
+                assert os.path.isdir(name)==True
+                print("Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary")
+                self.h5 = self.load_rumd3(name)
+            except:
+                raise Exception(f"Folder {name} doesn't exists")
         elif name=="":
             print("Warning: class initialized without input data, set self.h5 manually")
             self.h5 = None
@@ -110,8 +111,8 @@ class load_output():
 
         # Exit if no output is found in TrajectoryFiles folder
         if not energy and not traj:
-            print("No LastComplete file found, exiting")
-            exit()
+            print(f"The folder {name} has no LastComplete_*.txt files, returning None")
+            return None
 
         # Reads block information from LastComplete_*
         if energy: nblocks, blocksize = np.loadtxt(f"{name}/LastComplete_energies.txt", dtype=np.int32)
@@ -231,5 +232,5 @@ class load_output():
         print("Output file closed")
         return
 
-if __name__ == '__main__':
-    load_output(sys.argv[1])
+#if __name__ == '__main__':
+#    load_output(sys.argv[1])

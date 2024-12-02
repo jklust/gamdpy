@@ -186,6 +186,11 @@ Reset last commit. It will not delete any file but will go back removing last co
 git reset HEAD~
 ```
 
+Reset all changes.
+```sh
+git reset HEAD --hard
+```
+
 ## How to test the code
 Running `pytest` in root (rumdpy) directory will run all tests.
 This will use the settings in the file `pytest.ini`.
