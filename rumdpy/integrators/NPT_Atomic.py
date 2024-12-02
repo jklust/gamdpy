@@ -88,7 +88,7 @@ class NPT_Atomic():
         compute_k = compute_flags['k']
         compute_fsq = compute_flags['fsq']
 
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):       # pragma: no cover
             """ Make one NPT timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """
@@ -131,7 +131,7 @@ class NPT_Atomic():
             return
 
         # This function update barostat (P) and thermostat (T) states
-        def update_thermostat_barostat_state(vectors, sim_box, integrator_params, time):
+        def update_thermostat_barostat_state(vectors, sim_box, integrator_params, time):        # pragma: no cover
             # Unpack parameters. MUST be compatible with get_params() above
             dt, mass_t, mass_p, degrees, thermostat_state, barostat_state = integrator_params 
 
@@ -164,7 +164,7 @@ class NPT_Atomic():
             return
 
         # Scale the simulation box to the new density
-        def scale_box(vectors, sim_box, integrator_params):
+        def scale_box(vectors, sim_box, integrator_params):     # pragma: no cover
             # Unpack parameters. MUST be compatible with get_params() above
             dt, mass_t, mass_p, degrees, thermostat_state, barostat_state = integrator_params 
 
@@ -181,7 +181,8 @@ class NPT_Atomic():
         update_thermostat_barostat_state = cuda.jit(device=gridsync)(update_thermostat_barostat_state)
         scale_box = cuda.jit(device=gridsync)(scale_box)
 
-        if gridsync: # construct and return device function
+        if gridsync:        # pragma: no cover
+            # construct and return device function
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 grid.sync()
@@ -190,7 +191,8 @@ class NPT_Atomic():
                 update_thermostat_barostat_state(vectors, sim_box, integrator_params, time)
                 return
             return cuda.jit(device=gridsync)(kernel)
-        else: # return python function, which makes kernel-calls
+        else:       # pragma: no cover
+            # return python function, which makes kernel-calls
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 scale_box[num_blocks, (pb, 1)](vectors, sim_box, integrator_params)
