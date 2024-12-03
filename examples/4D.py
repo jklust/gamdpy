@@ -24,7 +24,8 @@ integrator = rp.integrators.NVT(temperature=temperature, tau=0.08, dt=0.001)
 # Setup Simulation
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
-                    num_steps=8*8192, storage='memory')
+                    num_timeblocks=16, steps_per_timeblock=4096,
+                    storage='memory')
 
 # Run simulation
 sim.run(verbose=False)
