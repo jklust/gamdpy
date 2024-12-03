@@ -87,7 +87,7 @@ class SLLOD():
         compute_k = compute_flags['k']
         compute_fsq = compute_flags['fsq']
 
-        def call_update_box_shift(sim_box, integrator_params):
+        def call_update_box_shift(sim_box, integrator_params):                              # pragma: no cover
             dt, sr, thermostat_sums = integrator_params
             global_id, my_t = cuda.grid(2)
             if global_id == 0 and my_t == 0:
@@ -95,7 +95,7 @@ class SLLOD():
                 update_box_shift(sim_box, delta_shift)
 
 
-        def integrate_sllod_b1(grid, vectors, scalars, integrator_params, time):
+        def integrate_sllod_b1(grid, vectors, scalars, integrator_params, time):            # pragma: no cover
             dt, sr, thermostat_sums = integrator_params
 
             global_id, my_t = cuda.grid(2)
@@ -138,7 +138,7 @@ class SLLOD():
                 thermostat_sums[8] = 0.
 
 
-        def integrate_sllod_b2(grid, vectors, scalars, integrator_params, time):
+        def integrate_sllod_b2(grid, vectors, scalars, integrator_params, time):            # pragma: no cover
             dt,sr, thermostat_sums = integrator_params
             
             global_id, my_t = cuda.grid(2)
@@ -184,7 +184,7 @@ class SLLOD():
                 thermostat_sums[2] = numba.float32(0.)
 
 
-        def integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time):   # pragma: no cover
             dt,sr, thermostat_sums = integrator_params
             global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
@@ -247,7 +247,7 @@ class SLLOD():
         integrate_sllod_a_b1 = cuda.jit(device=gridsync)(integrate_sllod_a_b1)
 
 
-        if gridsync:
+        if gridsync:    # pragma: no cover
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 integrate_sllod_b1(grid, vectors, scalars, integrator_params, time)
                 grid.sync()
@@ -260,10 +260,8 @@ class SLLOD():
                 grid.sync()
                 integrate_sllod_a_b1(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 return
-
             return cuda.jit(device=gridsync)(kernel)
-        else:
-
+        else:           # pragma: no cover
             def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
                 integrate_sllod_b1[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
                 integrate_sllod_b2[num_blocks, (pb, 1)](grid, vectors, scalars, integrator_params, time)
