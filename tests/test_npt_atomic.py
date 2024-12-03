@@ -17,12 +17,13 @@ def test_npt_atomic() -> None:
     # Check initialization of barostat and thermostat state
     assert np.all(itg.thermostat_state == np.array([0,0])), "Integrator NPT_Atomic: error with thermostat_state initialization"
     assert np.all(itg.barostat_state == np.array([0,0,0])), "Integrator NPT_Atomic: error with barostat_state initialization"
-    assert isinstance(itg.get_params(configuration), tuple), "Integrator NPT_Atomic: error with get_params"
+    assert isinstance(itg.get_params(configuration, ()), tuple), "Integrator NPT_Atomic: error with get_params"
 
     # Test get_kernel
     itg.get_kernel(configuration=configuration,
             compute_plan = rp.get_default_compute_plan(configuration), 
             compute_flags = rp.get_default_compute_flags(),
+            interactions_kernel = None,
             verbose=True)
 
     # Test init for callable temperatures and pressures
@@ -34,6 +35,7 @@ def test_npt_atomic() -> None:
     itg.get_kernel(configuration=configuration,
             compute_plan = rp.get_default_compute_plan(configuration), 
             compute_flags = rp.get_default_compute_flags(),
+            interactions_kernel = None,
             verbose=True)
     return
 
