@@ -193,6 +193,7 @@ def plot_output():
     ax.grid()
     ax.set_xlabel(r"$r$")
     ax.set_ylabel(r"$g(r)$")
+    fig.savefig("rdf.svg")
 
     nve_msd = rp.tools.calc_dynamics(nve_prod_output, first_block=0)["msd"]
     nvu_msd = rp.tools.calc_dynamics(nvu_prod_output, first_block=NVU_EQ_BLOCKS)["msd"]
@@ -216,9 +217,10 @@ def plot_output():
     ax.grid()
     ax.set_xlabel(r"$t$")
     ax.set_ylabel(r"$MSD$")
+    fig.savefig("msd.svg")
 
 
 if __name__ == "__main__":
     run_simulations()
     plot_output()
-    plt.show()
+    # plt.show()
