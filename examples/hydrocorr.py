@@ -14,6 +14,7 @@
     """
 
 import rumdpy as rp
+import os
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3, compute_flags={'w':True})
@@ -50,6 +51,6 @@ print(sim.summary())
 hydrocorr.read()
 
 if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove("jacf.dat")
-        os.remove("dacf.dat")
+   if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
+       os.remove("jacf.dat")
+       os.remove("dacf.dat")

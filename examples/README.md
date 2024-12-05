@@ -30,11 +30,13 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [tethered_particles.py](tethered_particles.py) : Simulation of tethered particles.
 - [poiseuille.py](poiseuille.py) : Simulation of a nano-scale Poiseuille flow in a slit-pore.
 - [yukawa.py](yukawa.py) : Example of implementing a user-defined potential, exemplified by the Yukawa potential.
+- [hydrocorr.py] (hydrocorr.py): Calculation of the hydrodynamic correlation function for a LJ liquid
 
 ## Molecular models
 
 - [ASD.py](ASD.py) : ASymmetric Dumbbells (toy model of toluene).
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
+- [generic_molecules.py](generic_molecules.py): Simulation of a linear molecule with bond, angle, and dihedral potentials
 
 ## Input and output
 
