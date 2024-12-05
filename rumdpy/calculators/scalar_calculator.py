@@ -26,10 +26,30 @@ class ScalarSaver():
             raise ValueError(f'scalar_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
 
         # per block saving of scalars
-        self.num_scalars = 6
-        self.num_scalars += self.configuration.D #include CM momentum
-        self.num_scalars += 1 #include XY component of stress (temporary!!!)
-        self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Sxy':9} # 3D for now!!!
+        compute_flags = configuration.compute_flags
+        self.num_scalars = 0
+        #sid_list = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
+        sid_list = ['u', 'w', 'lap', 'k', 'fsq', 'Vol']
+        self.sid = {}
+        for item in sid_list:
+            if compute_flags[item]:
+                self.sid[item] = self.num_scalars
+                self.num_scalars += 1
+
+        if compute_flags['Ptot']:
+            self.sid['Px'] = self.num_scalars
+            self.sid['Py'] = self.num_scalars + 1
+            self.sid['Pz'] = self.num_scalars + 2
+            self.num_scalars += 3
+
+        if compute_flags['stresses']:
+            self.sid['Sxy'] = self.num_scalars
+            self.num_scalars += 1
+
+        #self.num_scalars = 6
+        #self.num_scalars += self.configuration.D #include CM momentum
+        #self.num_scalars += 1 #include XY component of stress (temporary!!!)
+        #self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Sxy':9} # 3D for now!!!
 
         self.scalar_saves_per_block = self.steps_per_timeblock//self.steps_between_output
 
@@ -40,7 +60,7 @@ class ScalarSaver():
         output.create_dataset('scalars', shape=shape,
                 chunks=(1, self.scalar_saves_per_block, self.num_scalars), dtype=np.float32)
         output.attrs['steps_between_output'] = self.steps_between_output
-        output.attrs['scalars_names'] = list(self.sid.keys())
+        output.attrs['scalar_names'] = list(self.sid.keys())
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -79,7 +99,42 @@ class ScalarSaver():
         num_blocks = (num_part - 1) // pb + 1
         
         # Unpack indices for scalars to be compiled into kernel  
-        u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
+        #u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
+        compute_u = configuration.compute_flags['u']
+        compute_w = configuration.compute_flags['w']
+        compute_lap = configuration.compute_flags['lap']
+        compute_fsq = configuration.compute_flags['fsq']
+        compute_k = configuration.compute_flags['k']
+        compute_vol = configuration.compute_flags['Vol']
+        compute_Ptot = configuration.compute_flags['Ptot']
+        compute_stresses = configuration.compute_flags['stresses']
+
+        if compute_u:
+            u_id = self.sid['u']
+
+        if compute_k:
+            k_id = self.sid['k']
+        if compute_w:
+            w_id = self.sid['w']
+
+        if compute_fsq:
+            fsq_id = self.sid['fsq']
+
+        if compute_lap:
+            lap_id = self.sid['lap']
+
+        if compute_vol:
+            vol_id = self.sid['Vol']
+
+        if compute_Ptot:
+            Px_id = self.sid['Px']
+            Py_id = self.sid['Py']
+            Pz_id = self.sid['Pz']
+
+        if compute_stresses:
+            Sxy_id = self.sid['Sxy']
+
+        m_id = configuration.sid['m']
         v_id, sx_id = [configuration.vectors.indices[key] for key in ['v', 'sx']]
 
         volume_function = numba.njit(configuration.simbox.volume)
@@ -93,24 +148,31 @@ class ScalarSaver():
             
                 global_id, my_t = cuda.grid(2)
                 if global_id < num_part and my_t == 0:
-                    cuda.atomic.add(output_array, (save_index, 0), scalars[global_id][u_id])   # Potential energy
-                    cuda.atomic.add(output_array, (save_index, 1), scalars[global_id][w_id])   # Virial
-                    cuda.atomic.add(output_array, (save_index, 2), scalars[global_id][lap_id]) # Laplace
-                    cuda.atomic.add(output_array, (save_index, 3), scalars[global_id][fsq_id]) # F**2
-                    cuda.atomic.add(output_array, (save_index, 4), scalars[global_id][k_id])   # Kinetic energy
-                
+                    if compute_u:
+                        cuda.atomic.add(output_array, (save_index, u_id), scalars[global_id][u_id])   # Potential energy
+                    if compute_w:
+                        cuda.atomic.add(output_array, (save_index, w_id), scalars[global_id][w_id])   # Virial
+                    if compute_lap:
+                        cuda.atomic.add(output_array, (save_index, lap_id), scalars[global_id][lap_id]) # Laplace
+                    if compute_fsq:
+                        cuda.atomic.add(output_array, (save_index, fsq_id), scalars[global_id][fsq_id]) # F**2
+                    if compute_k:
+                        cuda.atomic.add(output_array, (save_index, k_id), scalars[global_id][k_id])   # Kinetic energy
+
                     # Contribution to total momentum
-                    my_m = scalars[global_id][m_id]
-                    cuda.atomic.add(output_array, (save_index, 6), my_m*vectors[v_id][global_id][0])
-                    cuda.atomic.add(output_array, (save_index, 7), my_m*vectors[v_id][global_id][1])
-                    cuda.atomic.add(output_array, (save_index, 8), my_m*vectors[v_id][global_id][2])
+                    if compute_Ptot:
+                        my_m = scalars[global_id][m_id]
+                        cuda.atomic.add(output_array, (save_index, Px_id), my_m*vectors[v_id][global_id][0])
+                        cuda.atomic.add(output_array, (save_index, Py_id), my_m*vectors[v_id][global_id][1])
+                        cuda.atomic.add(output_array, (save_index, Pz_id), my_m*vectors[v_id][global_id][2])
 
-                    # XY component of stress
-                    cuda.atomic.add(output_array, (save_index, 9), vectors[sx_id][global_id][1] -
-                                    my_m * vectors[v_id][global_id][0]*vectors[v_id][global_id][1])
+                    if compute_stresses:
+                        # XY component of stress only for now
+                        cuda.atomic.add(output_array, (save_index, Sxy_id), vectors[sx_id][global_id][1] -
+                                        my_m * vectors[v_id][global_id][0]*vectors[v_id][global_id][1])
 
-                if global_id == 0 and my_t == 0:
-                    output_array[save_index][5] = volume_function(sim_box)
+                if compute_vol and global_id == 0 and my_t == 0:
+                    output_array[save_index][vol_id] = volume_function(sim_box)
 
             return
         
@@ -158,7 +220,7 @@ def extract_scalars(data, column_list, first_block=0, D=3):
 
     # Indices hardcoded for now (see scalar_calculator above)
 
-    column_indices = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5}
+    column_indices = {'U':0, 'W':1, 'lapU':2, 'K':3, 'Fsq':4, 'Vol':5}
     momentum_id_str = ['Px', 'Py', 'Pz', 'Pw']
     if D > 4:
         raise ValueError("Label for total momentum components not defined for dimensions greater than 4")

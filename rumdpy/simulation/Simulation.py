@@ -511,10 +511,11 @@ class Simulation():
         time = self.current_block * self.steps_per_block * self.dt
         st = f'{time= :<10.3f}'
         for name in self.configuration.sid:
-            data = np.sum(self.configuration[name])
-            if per_particle:
-                data /= self.configuration.N
-            st += f'{name}= {data:<10.3f}'
+            if name in self.configuration.compute_flags and self.configuration.compute_flags[name]:
+                data = np.sum(self.configuration[name])
+                if per_particle:
+                    data /= self.configuration.N
+                st += f'{name}= {data:<10.3f}'
         return st
 
     def summary(self) -> str:

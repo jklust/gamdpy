@@ -196,7 +196,7 @@ class load_output():
             if 'dt' in output.attrs.keys() : 
                 output.attrs['steps_between_output'] = float(save_interval)/float(output.attrs['dt'])
             output.attrs['time_between_output'] = save_interval
-            output.attrs['scalars_names'] = list(col_names)
+            output.attrs['scalar_names'] = list(col_names)
             output.create_dataset('scalars', data=np.vstack(all_energies))
 
         return output

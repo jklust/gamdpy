@@ -34,7 +34,7 @@ class Configuration:
     >>> import rumdpy as rp
     >>> conf = rp.Configuration(D=3, N=1000)
     >>> print(conf.vector_columns)  # Print names of vector columns
-    ['r', 'v', 'f', 'r_ref', 'sx', 'sy', 'sz']
+    ['r', 'v', 'f', 'sx', 'sy', 'sz']
     >>> print(conf.scalar_columns) # Print names of scalar columns
     ['u', 'w', 'lap', 'k', 'fsq', 'm']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
@@ -86,7 +86,7 @@ class Configuration:
                 else:
                     raise ValueError('Unknown key in compute_flags:%s' %k)
 
-        self.vector_columns = ['r', 'v', 'f', 'r_ref']  # Should be user modifiable. Move r_ref to nblist
+        self.vector_columns = ['r', 'v', 'f']  # Should be user modifiable
         if self.compute_flags['stresses']:
             if self.D > 4:
                 raise ValueError("compute_flags['stresses'] should not be set for D>4")
