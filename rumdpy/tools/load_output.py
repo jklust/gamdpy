@@ -21,7 +21,7 @@ class load_output():
 
     >>> import rumdpy as rp
     >>> import h5py
-    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70.h5")                                   # Read from .h5
+    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70_toread.h5")                                    # Read from .h5
     Found .h5 file, loading to rumdpy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
@@ -29,7 +29,7 @@ class load_output():
     Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of 2048 particles in 3 dimensions
     >>> print(f"The simulation output is divided into {nblocks} blocks, each of them with {nconfs} configurations")
     The simulation output is divided into 8 blocks, each of them with 13 configurations
-    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")    # Read from rumd3
+    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")            # Read from rumd3
     Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape

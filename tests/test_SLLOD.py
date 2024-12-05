@@ -74,6 +74,12 @@ def test_SLLOD(run_NVT=False):
 
     integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 
+    # Test get_kernel
+    integrator_SLLOD.get_kernel(configuration=configuration,
+                                compute_plan = rp.get_default_compute_plan(configuration),
+                                compute_flags = rp.get_default_compute_flags(),
+                                verbose=True)
+
     # set the kinetic temperature to the exact value associated with the desired
     # temperature since SLLOD uses an isokinetic thermostat
     configuration.set_kinetic_temperature(temperature_low, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE

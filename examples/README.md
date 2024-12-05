@@ -30,11 +30,13 @@ List of examples of simulations (mostly in order of increasing complexity).
 - [tethered_particles.py](tethered_particles.py) : Simulation of tethered particles.
 - [poiseuille.py](poiseuille.py) : Simulation of a nano-scale Poiseuille flow in a slit-pore.
 - [yukawa.py](yukawa.py) : Example of implementing a user-defined potential, exemplified by the Yukawa potential.
+- [hydrocorr.py](hydrocorr.py) : Calculation of the hydrodynamic correlation function for a LJ liquid
 
 ## Molecular models
 
 - [ASD.py](ASD.py) : ASymmetric Dumbbells (toy model of toluene).
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
+- [generic_molecules.py](generic_molecules.py): Simulation of a linear molecule with bond, angle, and dihedral potentials
 
 ## Input and output
 
@@ -50,3 +52,5 @@ Examples of postprocessing existing rumdpy/rumd3 data. This scripts require the 
 - [calc_rdf_from_rumd3.py](calc_rdf_from_rumd3.py) : Read a simulation saved as "TrajectoryFiles" from rumd3 and calculate the RDF.
 - [calc_sq_from_h5.py](calc_sq_from_h5.py) : Read a simulation saved as h5 and calculate the structure factor S(q).
 
+## Other
+- [NVU_RT_kob_andersen.py](NVU_RT_kob_andersen.py) : Use NVU ray tracing integrator
