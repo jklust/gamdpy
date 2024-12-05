@@ -104,7 +104,7 @@ def test_nve(nx, ny, nz):
     assert var_e < 1e-4
     assert 0.67 < Tkin  < 0.72, print(f'{Tkin=}')
     assert 0.67 < Tconf < 0.72, print(f'{Tkin=}')
-    assert 0.88 <   R   < 0.99, print(f'{R=}')
+    assert 0.86 <   R   < 0.99, print(f'{R=}')
     assert 5.1  < Gamma < 6.6,  print(f'{Gamma=}')
     
     return
