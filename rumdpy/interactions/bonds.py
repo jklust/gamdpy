@@ -54,9 +54,9 @@ class Bonds():
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
-        compute_u = compute_flags['u']
-        compute_w = compute_flags['w']
-        compute_lap = compute_flags['lap']
+        compute_u = compute_flags['U']
+        compute_w = compute_flags['W']
+        compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
         if compute_stresses:
             print('WARNING: computation of stresses is not implemented yet for bonds')
@@ -73,11 +73,11 @@ class Bonds():
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
 
         if compute_u:
-            u_id = configuration.sid['u']
+            u_id = configuration.sid['U']
         if compute_w:
-            w_id = configuration.sid['w']
+            w_id = configuration.sid['W']
         if compute_lap:
-            lap_id = configuration.sid['lap']
+            lap_id = configuration.sid['lapU']
 
         if compute_stresses:
             sx_id = configuration.vectors.indices['sx']

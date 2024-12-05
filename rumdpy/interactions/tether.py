@@ -94,13 +94,13 @@ class Tether:
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
-        compute_u = compute_flags['u']
+        compute_u = compute_flags['U']
         # Note w, lap, stresses not relevant here
 
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
 
         if compute_u:
-            u_id = configuration.sid['u']
+            u_id = configuration.sid['U']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
         

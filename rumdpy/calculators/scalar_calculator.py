@@ -28,8 +28,7 @@ class ScalarSaver():
         # per block saving of scalars
         compute_flags = configuration.compute_flags
         self.num_scalars = 0
-        #sid_list = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
-        sid_list = ['u', 'w', 'lap', 'k', 'fsq', 'Vol']
+        sid_list = ['U', 'W', 'lapU', 'K', 'Fsq', 'Vol']
         self.sid = {}
         for item in sid_list:
             if compute_flags[item]:
@@ -100,28 +99,28 @@ class ScalarSaver():
         
         # Unpack indices for scalars to be compiled into kernel  
         #u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
-        compute_u = configuration.compute_flags['u']
-        compute_w = configuration.compute_flags['w']
-        compute_lap = configuration.compute_flags['lap']
-        compute_fsq = configuration.compute_flags['fsq']
-        compute_k = configuration.compute_flags['k']
+        compute_u = configuration.compute_flags['U']
+        compute_w = configuration.compute_flags['W']
+        compute_lap = configuration.compute_flags['lapU']
+        compute_fsq = configuration.compute_flags['Fsq']
+        compute_k = configuration.compute_flags['K']
         compute_vol = configuration.compute_flags['Vol']
         compute_Ptot = configuration.compute_flags['Ptot']
         compute_stresses = configuration.compute_flags['stresses']
 
         if compute_u:
-            u_id = self.sid['u']
+            u_id = self.sid['U']
 
         if compute_k:
-            k_id = self.sid['k']
+            k_id = self.sid['K']
         if compute_w:
-            w_id = self.sid['w']
+            w_id = self.sid['W']
 
         if compute_fsq:
-            fsq_id = self.sid['fsq']
+            fsq_id = self.sid['Fsq']
 
         if compute_lap:
-            lap_id = self.sid['lap']
+            lap_id = self.sid['lapU']
 
         if compute_vol:
             vol_id = self.sid['Vol']
@@ -219,15 +218,16 @@ def extract_scalars(data, column_list, first_block=0, D=3):
     """
 
     # Indices hardcoded for now (see scalar_calculator above)
-
-    column_indices = {'U':0, 'W':1, 'lapU':2, 'K':3, 'Fsq':4, 'Vol':5}
-    momentum_id_str = ['Px', 'Py', 'Pz', 'Pw']
-    if D > 4:
-        raise ValueError("Label for total momentum components not defined for dimensions greater than 4")
-    for k in range(D):
-        column_indices[momentum_id_str[k]] = 6+k
-
-    column_indices['Sxy'] = 6 + D
+    column_indices = {}
+    try:
+        scalar_names = data.attrs['scalar_names']
+    except KeyError:
+        # try the old label
+        print("Data file uses old format (meta data labelled 'scalars_names' rather than 'scalar_names'); at some point suport for this format will be removed.")
+        scalar_names = data.attrs['scalars_names']
+    
+    for index, name in enumerate(scalar_names):
+        column_indices[name] = index
 
     output_list = []
     for column in column_list:

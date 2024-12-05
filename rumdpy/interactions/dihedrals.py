@@ -25,17 +25,17 @@ class Dihedrals():
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
-        compute_u = compute_flags['u']
-        compute_w = compute_flags['w']
-        compute_lap = compute_flags['lap']
+        compute_u = compute_flags['U']
+        compute_w = compute_flags['W']
+        compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
 
         if compute_u:
-            u_id = configuration.sid['u']
+            u_id = configuration.sid['U']
         if compute_w:
-            w_id = configuration.sid['w']
+            w_id = configuration.sid['W']
         if compute_lap:
-            lap_id = configuration.sid['lap']
+            lap_id = configuration.sid['lapU']
 
         if compute_stresses:
             sx_id = configuration.vectors.indices['sx']
@@ -48,7 +48,7 @@ class Dihedrals():
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id = configuration.sid['u']
+        #u_id = configuration.sid['U']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
     
@@ -104,9 +104,10 @@ class Dihedrals():
 
             u = p[0]+(p[1]+(p[2]+(p[3]+(p[4]+p[5]*cc)*cc)*cc)*cc)*cc           
             u_per_part = numba.float32(0.25)*u    
-            
-            for n in range(4):
-                cuda.atomic.add(scalars, (indices[n], u_id), u_per_part) 
+
+            if compute_u:
+                for n in range(4):
+                    cuda.atomic.add(scalars, (indices[n], u_id), u_per_part) 
 
             return
         

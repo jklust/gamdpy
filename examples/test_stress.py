@@ -39,7 +39,7 @@ for block in sim.run_timeblocks():
     print(sts_y_row)
     print(sts_z_row)
     mean_diagonal = (sts_x_row[0] + sts_y_row[1] + sts_z_row[2])/3
-    virial = np.mean(configuration['w'])
+    virial = np.mean(configuration['W'])
     print(f'Compare isotropic part with virial*rho: {mean_diagonal:.8f}  {virial*rho:.8f}' )
 
 print(sim.summary())

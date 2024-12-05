@@ -68,7 +68,7 @@ class SLLOD():
 
         # Unpack indices for vectors and scalars
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'fsq']]
+        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'Fsq']]
         # was thinking that using a function could avoid synchronization
         # issues for updating the boxshift. But now I'm not sure if it really
         # makes sense to use a function (the same way that NVT
@@ -84,8 +84,8 @@ class SLLOD():
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
         update_box_shift = numba.njit(configuration.simbox.update_box_shift)
 
-        compute_k = compute_flags['k']
-        compute_fsq = compute_flags['fsq']
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
 
         def call_update_box_shift(sim_box, integrator_params):                              # pragma: no cover
             dt, sr, thermostat_sums = integrator_params
@@ -146,7 +146,8 @@ class SLLOD():
                 my_v = vectors[v_id][global_id]
                 my_f = vectors[f_id][global_id]
                 my_m = scalars[global_id][m_id]
-
+                if compute_fsq:
+                    my_fsq = numba.float32(0.0)  # force squared
                 # read sums from group 1
                 sum_p2 = thermostat_sums[3]
                 sum_fp = thermostat_sums[4]
@@ -163,6 +164,8 @@ class SLLOD():
                 # update velocity
                 
                 for k in range(D):
+                    if compute_fsq:
+                        my_fsq += my_f[k] * my_f[k]
                     my_v[k] = integrate_coefficient1 * (my_v[k] + integrate_coefficient2 * my_f[k] / my_m)
 
                 # add to sums in group 2
@@ -176,6 +179,9 @@ class SLLOD():
                 cuda.atomic.add(thermostat_sums, 6, my_pxpy)
                 cuda.atomic.add(thermostat_sums, 7, my_pypy)
                 cuda.atomic.add(thermostat_sums, 8, my_p2)
+                
+                if compute_fsq:
+                    scalars[global_id][fsq_id] = my_fsq
 
             # and reset group 0 sums to zero
             if global_id == 0 and my_t == 0:
@@ -272,5 +278,5 @@ class SLLOD():
                 integrate_sllod_a_b1[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 return
 
-        return kernel
+            return kernel
 

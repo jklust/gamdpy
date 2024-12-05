@@ -7,7 +7,7 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 import rumdpy as rp
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3, compute_flags={'w':True, 'lap':True})
+configuration = rp.Configuration(D=3, compute_flags={'W':True, 'lapU':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
@@ -23,7 +23,7 @@ integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 # Setup Simulation. 
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
-                    compute_flags={'w':True, 'lap':True},
+                    compute_flags={'W':True, 'lapU':True},
                     num_timeblocks=32,
                     steps_per_timeblock=1024,
                     storage='LJ_T0.70.h5')

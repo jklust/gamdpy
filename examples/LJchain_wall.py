@@ -215,7 +215,7 @@ if include_springs:
     plt.show(block=False)
 
 plt.figure()
-plt.plot(df['Ttarget'], df['u'])
+plt.plot(df['Ttarget'], df['U'])
 plt.xlabel('Ttarget')
 plt.xlabel('Potential energy')
 plt.show(block=False)

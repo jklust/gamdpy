@@ -57,7 +57,7 @@ u_spring = []
 displacements = []
 for block in sim.run_timeblocks():
     evaluator.evaluate(sim.configuration)
-    this_u_spring = evaluator.configuration['u']
+    this_u_spring = evaluator.configuration['U']
     u_spring.append(np.sum(this_u_spring))
 
     # Use the harmonic potential energy to calculate 

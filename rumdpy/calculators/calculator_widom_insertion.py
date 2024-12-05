@@ -130,7 +130,7 @@ class CalculatorWidomInsertion:
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [self.configuration.vectors.indices[key] for key in ['r', 'f']]
-        u_id, w_id, lap_id, m_id = [self.configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
+        u_id, w_id, lap_id, m_id = [self.configuration.sid[key] for key in ['U', 'W', 'lapU', 'm']]
         
         # Prepare user-specified functions for inclusion in kernel(s)
         ptype_function = numba.njit(self.configuration.ptype_function)

@@ -23,7 +23,7 @@ def make_planar_calculator(configuration, potential_function) -> callable:
 
     # Unpack indices for vectors and scalars to be compiled into kernel
     r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
-    u_id, w_id, lap_id = [configuration.sid[key] for key in ['u', 'w', 'lap']] 
+    u_id, w_id, lap_id = [configuration.sid[key] for key in ['U', 'W', 'lapU']] 
 
     def planar_calculator(vectors, scalars, ptype, sim_box, indices, values):
         particle = indices[0]

@@ -81,7 +81,7 @@ class Gravity:
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
     
-        compute_u = compute_flags['u'] # PE should be included ?!?!
+        compute_u = compute_flags['U'] # PE should be included ?!?!
         # Note virial, lapacian, stresses are zero for gravity
         f_id = configuration.vectors.indices['f'] 
        

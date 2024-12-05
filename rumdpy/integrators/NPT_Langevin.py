@@ -66,15 +66,15 @@ class NPT_Langevin():
         
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, w_id, fsq_id = [configuration.sid[key] for key in ['m', 'k', 'w', 'fsq']]     
+        m_id, k_id, w_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'W', 'Fsq']]     
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
-        compute_k = compute_flags['k']
-        compute_fsq = compute_flags['fsq']
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
 
         def copyParticleVirial(scalars, integrator_params):
             dt, alpha, alpha_baro, mass_baro, barostatModeISO, boxFlucCoord, rng_states, barostat_state, barostatVirial, length_ratio  = integrator_params

@@ -87,9 +87,9 @@ class PairPotential():
     def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
         num_cscalars = configuration.num_cscalars
 
-        compute_u = compute_flags['u']
-        compute_w = compute_flags['w']
-        compute_lap = compute_flags['lap']
+        compute_u = compute_flags['U']
+        compute_w = compute_flags['W']
+        compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
 
         # Unpack parameters from configuration and compute_plan
@@ -107,11 +107,11 @@ class PairPotential():
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
 
         if compute_u:
-            u_id = configuration.sid['u']
+            u_id = configuration.sid['U']
         if compute_w:
-            w_id = configuration.sid['w']
+            w_id = configuration.sid['W']
         if compute_lap:
-            lap_id = configuration.sid['lap']
+            lap_id = configuration.sid['lapU']
 
         if compute_stresses:
             sx_id = configuration.vectors.indices['sx']
@@ -122,7 +122,6 @@ class PairPotential():
                     if D > 3:
                         sw_id = configuration.vectors.indices['sw']
 
-#        u_id, w_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'w', 'lap', 'm']]
 
 
         pairpotential_function = self.pairpotential_function

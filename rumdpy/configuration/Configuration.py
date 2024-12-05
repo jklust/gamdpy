@@ -36,7 +36,7 @@ class Configuration:
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f', 'sx', 'sy', 'sz']
     >>> print(conf.scalar_columns) # Print names of scalar columns
-    ['u', 'w', 'lap', 'k', 'fsq', 'm']
+    ['U', 'W', 'lapU', 'K', 'Fsq', 'm']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
     (1000, 3)
     >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
@@ -70,8 +70,8 @@ class Configuration:
 
     #sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     scalar_parameters = ['m']
-    scalar_computables_interactions = ['u', 'w', 'lap']
-    scalar_computables_integrator = ['k', 'fsq']
+    scalar_computables_interactions = ['U', 'W', 'lapU']
+    scalar_computables_integrator = ['K', 'Fsq']
 
 
     def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
@@ -203,7 +203,7 @@ class Configuration:
 
     def get_potential_energy(self) -> float:
         """ Get total potential energy of the configuration """
-        return float(np.sum(self['u']))
+        return float(np.sum(self['U']))
 
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
