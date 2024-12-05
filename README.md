@@ -29,6 +29,7 @@ Classes implementing a simulation algorithm. Currently implemented:
 - class NVT : Nose-Hoover thermostat 
 - class NVT_Langevin
 - class NPT_Langevin
+- class NVU_RT
 
 Temperature/Pressure can be controlled by a user-supplied function, see examples/kablj.py
 

@@ -25,11 +25,11 @@ class NVE():
     def __init__(self, dt):
         self.dt = dt
   
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         return (dt,)
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -52,7 +52,7 @@ class NVE():
         compute_k = compute_flags['k']
         compute_fsq = compute_flags['fsq']
    
-        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+        def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVE timestep using Leap-frog
                 Kernel configuration: [num_blocks, (pb, tp)]
             """

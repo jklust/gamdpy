@@ -26,7 +26,7 @@ class NPT_Langevin():
         self.dt = dt
         self.seed = seed
 
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         alpha = np.float32(self.alpha)
         alpha_baro = np.float32(self.alpha_baro)
@@ -41,7 +41,7 @@ class NPT_Langevin():
                 self.barostatModeISO, np.int32(self.boxFlucCoord), 
                 rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)
     
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -201,7 +201,7 @@ class NPT_Langevin():
 
         if gridsync:                                              
 
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 copyParticleVirial(scalars, integrator_params)
                 grid.sync()
                 update_barostat_state(sim_box, integrator_params, time)
@@ -213,7 +213,7 @@ class NPT_Langevin():
 
         else:
 
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 copyParticleVirial[num_blocks, (pb, 1)](scalars, integrator_params)
                 update_barostat_state[1, (1, 1)](sim_box, integrator_params, time)            
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)

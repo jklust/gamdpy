@@ -78,6 +78,7 @@ def test_SLLOD(run_NVT=False):
     integrator_SLLOD.get_kernel(configuration=configuration,
                                 compute_plan = rp.get_default_compute_plan(configuration),
                                 compute_flags = rp.get_default_compute_flags(),
+                                interactions_kernel=None,
                                 verbose=True)
 
     # set the kinetic temperature to the exact value associated with the desired

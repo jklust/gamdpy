@@ -40,7 +40,7 @@ class NPT_Atomic():
         self.thermostat_state = np.zeros(2, dtype=np.float32)          
         self.barostat_state = np.zeros(3, dtype=np.float32)                         # NOTE: array is (barostat_state, virial, volume) 
 
-    def get_params(self, configuration, verbose=False):
+    def get_params(self, configuration, interactions_params, verbose=False):
         dt = np.float32(self.dt)
         degrees  = configuration.N * configuration.D - configuration.D                        # number of degrees of freedom 
         factor = np.float32(1./(4*np.pi*np.pi))
@@ -52,7 +52,7 @@ class NPT_Atomic():
         return (dt, mass_t, mass_p, degrees, self.d_thermostat_state, self.d_barostat_state)   # Needs to be compatible with unpacking in
                                                                                                # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -183,7 +183,7 @@ class NPT_Atomic():
 
         if gridsync:        # pragma: no cover
             # construct and return device function
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 step(  grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 grid.sync()
                 scale_box(vectors, sim_box, integrator_params)
@@ -193,7 +193,7 @@ class NPT_Atomic():
             return cuda.jit(device=gridsync)(kernel)
         else:       # pragma: no cover
             # return python function, which makes kernel-calls
-            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
+            def kernel(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
                 step[num_blocks, (pb, 1)](grid, vectors, scalars, r_im, sim_box, integrator_params, time)
                 scale_box[num_blocks, (pb, 1)](vectors, sim_box, integrator_params)
                 update_thermostat_barostat_state[1, (1, 1)](vectors, sim_box, integrator_params, time)

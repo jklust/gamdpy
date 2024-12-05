@@ -253,8 +253,8 @@ class Simulation():
             self.conf_saver_params = (0,)
 
         # Integrator
-        self.integrator_params = self.integrator.get_params(self.configuration, verbose)
-        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, verbose)
+        self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params, verbose)
+        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, self.interactions_kernel, verbose)
 
         return
 
@@ -291,7 +291,7 @@ class Simulation():
             self.conf_saver_params = (0,)
 
         # Integrator
-        self.integrator_params = self.integrator.get_params(self.configuration, verbose)
+        self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params, verbose)
         #self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
 
         return
@@ -319,6 +319,19 @@ class Simulation():
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
         num_blocks = (num_part - 1) // pb + 1
 
+        get_integrator_setup = getattr(self.integrator, "get_setup_kernel", None)
+        if get_integrator_setup is not None:
+            integrator_setup = get_integrator_setup(self.configuration, self.compute_plan, self.interactions_kernel)
+            self.configuration.copy_to_device()
+            integrator_setup(
+                self.configuration.d_vectors,
+                self.configuration.d_scalars,
+                self.configuration.d_r_im,
+                self.configuration.simbox.d_data,
+                self.integrator_params,
+                self.configuration.d_ptype,
+            )
+
         if gridsync:
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
@@ -331,12 +344,11 @@ class Simulation():
                         conf_saver_kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params)
                     grid.sync()
                     time = time_zero + step * integrator_params[0]
-                    integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time)
+                    integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
                     if momentum_reset_kernel != None:
                         momentum_reset_kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
                     if output_calculator_kernel != None:
                         output_calculator_kernel(grid, vectors, scalars, r_im, sim_box, step, output_calculator_params)
-
                     grid.sync()
                 if conf_saver_kernel != None:
                     conf_saver_kernel(grid, vectors, scalars, r_im, sim_box, steps,
@@ -355,7 +367,7 @@ class Simulation():
                     if conf_saver_kernel != None:
                         conf_saver_kernel(0, vectors, scalars, r_im, sim_box, step, conf_saver_params)
                     time = time_zero + step * integrator_params[0]
-                    integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time)
+                    integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
                     if output_calculator_kernel != None:
                         output_calculator_kernel(0, vectors, scalars, r_im, sim_box, step, output_calculator_params)
                     if momentum_reset_kernel != None:
