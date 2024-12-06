@@ -40,7 +40,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
 
 print('Simulation created')
 
-hydrocorr = rp.CalculatorHydrodynamicCorrelations(configuration, dtsample=32*0.005)
+hydrocorr = rp.CalculatorHydrodynamicCorrelations(configuration, dtsample=32*0.005, nwaves=10)
 
 # Run simulation
 for _ in sim.run_timeblocks():

@@ -67,7 +67,7 @@ class CalculatorHydrodynamicCorrelations:
         self.nsample = 0
         self.index = 0
         
-        self.lbox = configuration.simbox.lengths[0]; 
+        self.lbox = configuration.simbox.lengths[1]; 
 
         # Storage arrays
         self.dk = np.zeros( (lvec, nwaves), dtype=np.complex64)  
@@ -106,9 +106,12 @@ class CalculatorHydrodynamicCorrelations:
 
 
 
-    def read(self):
+    def read(self, save=True):
 
         volume = self.conf.simbox.lengths[0]*self.conf.simbox.lengths[1]*self.conf.simbox.lengths[2]
+
+        out_dacf = np.zeros( (self.lvec, self.nwaves) )
+        out_jacf = np.zeros( (self.lvec, self.nwaves) )
 
         file_dacf = open("dacf.dat", "w")
         file_jacf = open("jacf.dat", "w")
@@ -121,8 +124,10 @@ class CalculatorHydrodynamicCorrelations:
             file_jacf.write("%f " % (self.dt*n))
 
             for k in range(self.nwaves):
-                file_dacf.write("%f " % (self.dacf[n, k].real*fac)) 
-                file_jacf.write("%f " % (self.jacf[n, k].real*fac))
+                out_dacf[n,k] = self.dacf[n, k].real*fac
+                out_jacf[n,k] = self.jacf[n, k].real*fac
+                file_dacf.write("%f " % (out_dacf[n,k])) 
+                file_jacf.write("%f " % (out_jacf[n,k]))
 
             file_dacf.write("\n")
             file_jacf.write("\n")
@@ -130,3 +135,4 @@ class CalculatorHydrodynamicCorrelations:
         file_dacf.close()
         file_jacf.close()
 
+        return (out_dacf, out_jacf)
