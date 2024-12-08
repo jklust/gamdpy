@@ -77,16 +77,25 @@ class NPT_Atomic():
             print(f'\tNumber of threads {num_blocks * pb * tp}')
 
         # Unpack indices for vectors and scalars to be compiled into kernel
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
         r_id, v_id, f_id, sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f', 'sx', 'sy', 'sz']]
-        m_id, k_id, fsq_id, w_id = [configuration.sid[key] for key in ['m', 'K', 'Fsq', 'W']]     
+        m_id = configuration.sid['m']
+        if not compute_flags['W']:
+            raise ValueError("NPT_Atomic requires virial")
+        else:
+            w_id = configuration.sid['W']
+
+        if compute_k:
+            k_id = configuration.sid['K']
+        if compute_fsq:
+            fsq_id = configuration.sid['Fsq']
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
-        compute_k = compute_flags['K']
-        compute_fsq = compute_flags['Fsq']
 
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):       # pragma: no cover
             """ Make one NPT timestep using Leap-frog

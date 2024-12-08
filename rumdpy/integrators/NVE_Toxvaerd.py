@@ -35,14 +35,19 @@ class NVE_Toxvaerd():
             print(f'\tNumber of threads {num_blocks * pb * tp}')
 
         # Unpack indices for vectors and scalars
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'Fsq']]     
-        
+        m_id = configuration.sid['m']
+        if compute_k:
+            k_id = configuration.sid['K']
+        if compute_fsq:
+            fsq_id = configuration.sid['Fsq']
+
         # JIT compile functions to be compiled into kernel
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
-        compute_k = compute_flags['K']
-        compute_fsq = compute_flags['Fsq']
+
 
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVE timestep using Leap-frog
@@ -73,8 +78,8 @@ class NVE_Toxvaerd():
                     v_mean /= numba.float32(2.0)  # v(t) = (v(t-dt/2) + v(t+dt/2))/2
                     if compute_k:
                         my_k += numba.float32(0.5) * my_m * v_mean * v_mean
-                    # Toxvaerd correction to kinetic energy:  - 1/8 f(t)^2 dt^2 / m
-                    my_k += numba.float32(1/8) * my_f[k] * my_f[k] * dt * dt / my_m
+                        # Toxvaerd correction to kinetic energy:  - 1/8 f(t)^2 dt^2 / m
+                        my_k += numba.float32(1/8) * my_f[k] * my_f[k] * dt * dt / my_m
                     my_r[k] += my_v[k] * dt
 
                 apply_PBC(my_r, r_im[global_id], sim_box)

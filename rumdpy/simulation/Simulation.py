@@ -205,7 +205,6 @@ class Simulation():
                                                 self.output_calculator_kernel, self.conf_saver_kernel,
                                                 self.momentum_reset_kernel,
                                                 self.compute_plan, True)
-        
                 self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
                 self.integrate_self(0.0, self.steps_in_kernel_test)
                 break

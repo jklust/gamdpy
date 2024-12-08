@@ -68,7 +68,6 @@ class Configuration:
 
     """
 
-    #sid = {'u': 0, 'w': 1, 'lap': 2, 'm': 3, 'k': 4, 'fsq': 5}
     scalar_parameters = ['m']
     scalar_computables_interactions = ['U', 'W', 'lapU']
     scalar_computables_integrator = ['K', 'Fsq']

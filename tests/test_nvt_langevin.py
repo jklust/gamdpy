@@ -46,7 +46,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     print(sim.summary())
 
     # Convert scalars to dataframe
-    columns = ['U', 'W', 'lapU', 'Fsq', 'K']
+    columns = ['U', 'W', 'K']
     data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
     df = pd.DataFrame(data.T/configuration.N, columns=columns) 
 

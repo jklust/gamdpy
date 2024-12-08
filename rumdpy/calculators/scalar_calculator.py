@@ -134,7 +134,9 @@ class ScalarSaver():
             Sxy_id = self.sid['Sxy']
 
         m_id = configuration.sid['m']
-        v_id, sx_id = [configuration.vectors.indices[key] for key in ['v', 'sx']]
+        v_id = configuration.vectors.indices['v']
+        if compute_stresses:
+            sx_id = configuration.vectors.indices['sx']
 
         volume_function = numba.njit(configuration.simbox.volume)
 
@@ -159,8 +161,9 @@ class ScalarSaver():
                         cuda.atomic.add(output_array, (save_index, k_id), scalars[global_id][k_id])   # Kinetic energy
 
                     # Contribution to total momentum
-                    if compute_Ptot:
+                    if compute_Ptot or compute_stresses:
                         my_m = scalars[global_id][m_id]
+                    if compute_Ptot:
                         cuda.atomic.add(output_array, (save_index, Px_id), my_m*vectors[v_id][global_id][0])
                         cuda.atomic.add(output_array, (save_index, Py_id), my_m*vectors[v_id][global_id][1])
                         cuda.atomic.add(output_array, (save_index, Pz_id), my_m*vectors[v_id][global_id][2])

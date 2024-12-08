@@ -67,8 +67,15 @@ class SLLOD():
             print(f'\tNumber of threads {num_blocks * pb * tp}')
 
         # Unpack indices for vectors and scalars
+
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'Fsq']]
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
+        m_id = configuration.sid['m']
+        if compute_k:
+            k_id = configuration.sid['K']
+        if compute_fsq:
+            fsq_id = configuration.sid['Fsq']
         # was thinking that using a function could avoid synchronization
         # issues for updating the boxshift. But now I'm not sure if it really
         # makes sense to use a function (the same way that NVT
@@ -84,8 +91,6 @@ class SLLOD():
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
         update_box_shift = numba.njit(configuration.simbox.update_box_shift)
 
-        compute_k = compute_flags['K']
-        compute_fsq = compute_flags['Fsq']
 
         def call_update_box_shift(sim_box, integrator_params):                              # pragma: no cover
             dt, sr, thermostat_sums = integrator_params

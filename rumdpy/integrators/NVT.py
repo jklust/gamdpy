@@ -57,14 +57,19 @@ class NVT():
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'Fsq']]     
+        m_id = configuration.sid['m']
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
+        if compute_k:
+            k_id = configuration.sid['K']
+        if compute_fsq:
+            fsq_id = configuration.sid['Fsq']
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
-        compute_k = compute_flags['K']
-        compute_fsq = compute_flags['Fsq']
+
 
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):
             """ Make one NVT timestep using Leap-frog

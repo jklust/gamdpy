@@ -65,16 +65,26 @@ class NPT_Langevin():
             print(f'\tNumber of threads {num_blocks * pb * tp}')
         
         # Unpack indices for vectors and scalars to be compiled into kernel
+        compute_k = compute_flags['K']
+        compute_fsq = compute_flags['Fsq']
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        m_id, k_id, w_id, fsq_id = [configuration.sid[key] for key in ['m', 'K', 'W', 'Fsq']]     
+        m_id = configuration.sid['m']
+        if not compute_flags['W']:
+            raise ValueError("NPT_Langevin requires virial")
+        else:
+            w_id = configuration.sid['W']
+
+        if compute_k:
+            k_id = configuration.sid['K']
+        if compute_fsq:
+            fsq_id = configuration.sid['Fsq']
+
 
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
         apply_PBC = numba.njit(configuration.simbox.apply_PBC)
 
-        compute_k = compute_flags['K']
-        compute_fsq = compute_flags['Fsq']
 
         def copyParticleVirial(scalars, integrator_params):
             dt, alpha, alpha_baro, mass_baro, barostatModeISO, boxFlucCoord, rng_states, barostat_state, barostatVirial, length_ratio  = integrator_params
