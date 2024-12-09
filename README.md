@@ -199,7 +199,7 @@ This will use the settings in the file `pytest.ini`.
 Install needed packages:
 
 ```sh
-pip install pytest hypothesis scipy
+pip install pytest hypothesis scipy ipywidgets
 ```
 
 Running pytest:
