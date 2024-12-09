@@ -41,7 +41,7 @@ default:
     - virtualenv env
     - source env/bin/activate
     - python3 -m pip install .
-    - python3 -m pip install $PYTHON_VERSION-distutils
+    # - python3 -m pip install $PYTHON_VERSION-distutils
     - python3 -m pip install coverage
     - python3 -m pip install matplotlib
     - python3 -m pip install pytest
