@@ -27,7 +27,7 @@ def test_examples(path_to_examples='examples'):
     run_first = [  # These examples generate files that are used by other examples
         'minimal.py',
         'isomorph.py',
-        'isochore.py'
+        'isochore.py',
     ]
 
     exclude_files = [
@@ -35,6 +35,8 @@ def test_examples(path_to_examples='examples'):
         # FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'LJ_cooled_0.70.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
         'LJchain_wall.py',  # ImportError: cannot import name 'nvt_nh' from 'rumdpy.integrators'
         'minimal_cpu.py',
+        ## The following are test in their own scripts
+        'structure_factor.py',
     ]
 
     # Save the current working directory
