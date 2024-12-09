@@ -31,7 +31,7 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
-    configuration = rp.Configuration(D=3)
+    configuration = rp.Configuration(D=3, compute_flags={'W':True})
     configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
     configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=2 * T)
@@ -41,7 +41,8 @@ for index, rho in enumerate(rhos):
 
     # Setup Simulation
     sim = rp.Simulation(configuration, pair_pot, integrator,
-                        num_timeblocks=16,  # try something like 128 for better statistics
+                        num_timeblocks=16,  # try something like 128 for better statistics,
+                        compute_flags={'W':True},
                         steps_per_timeblock=512,
                         steps_between_momentum_reset=100,
                         storage='memory') 

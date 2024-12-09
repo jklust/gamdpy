@@ -2,7 +2,7 @@ def test_npt_atomic() -> None:
     import numpy as np
     import rumdpy as rp
 
-    configuration = rp.Configuration(D=3)
+    configuration = rp.Configuration(D=3, compute_flags={'W':True})
     configuration.make_positions(N=1000, rho=0.754)
     configuration['m'] = 1.0  # Set all masses to 1.0
     configuration.randomize_velocities(temperature=2.0)
