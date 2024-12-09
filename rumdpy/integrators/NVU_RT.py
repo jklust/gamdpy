@@ -189,7 +189,12 @@ class NVU_RT():
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        u_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'fsq', 'lap', 'm']]     
+        m_id = configuration.sid['m']
+        if not compute_flags['U'] or not compute_flags['Fsq']:
+            raise ValueError('NVU_RT requires both U and Fsq in scalars')
+        u_id = configuration.sid['U']
+        fsq_id = configuration.sid['Fsq']
+
 
         (
             forces_sql_id, 
@@ -479,7 +484,7 @@ class NVU_RT():
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
-        u_id, m_id = configuration.sid["u"], configuration.sid["m"]
+        u_id, m_id = configuration.sid['U'], configuration.sid['m']
 
         apply_PBC = nb.jit(configuration.simbox.apply_PBC)
         (
@@ -816,7 +821,7 @@ class NVU_RT():
 
                 u1 = u - target_u
                 x2 = b * x1**2 / (b*x1 - u1)
-                u2 = 0  # Only to solve unbound issues
+                u2 = 0  # Only to solve unbound issues
 
                 steps_done = 1
                 while steps_done <= max_steps and not d_scalars_shared[should_break_id]:
@@ -1001,7 +1006,7 @@ class NVU_RT():
                 positions = vectors[r_id]
                 my_r = positions[global_id]
                 my_r_im = r_im[global_id]
-                # INITIAL STEP
+                # INITIAL STEP
                 ##############
                 r_copy: CudaArray = cuda.local.array(num_dim, my_r.dtype)  # type: ignore
                 r_im_copy: CudaArray = cuda.local.array(num_dim, r_im.dtype)  # type: ignore
@@ -1055,9 +1060,9 @@ class NVU_RT():
                     return delta_x
 
                 r_copy_u[0] = d_pot_energy[0]
-                copy_positions_and_images(my_r, my_r_im, r_copy, r_im_copy)
+                copy_qqpositions_and_images(my_r, my_r_im, r_copy, r_im_copy)
 
-                # FIND POINT OUTSIDE SURFACE
+                # FIND POINT OUTSIDE SURFACE
                 ############################
 
                 should_return_above, x_above, steps_done = perform_find_point_above(
@@ -1158,7 +1163,7 @@ class NVU_RT():
             if not d_scalars_shared[should_break_id] and steps_done > max_steps:
                 # TODO: deal with this: reached max steps
                 # Use r_copy because my_r is propbably above U0 bevause if not in the wjiole loop r_copy 
-                # should have been moved and so r_copy == my_r
+                #  should have been moved and so r_copy == my_r
                 copy_positions_and_images(r_copy, r_im_copy, my_r, my_r_im)
                 if global_id == 0 and my_t == 0:
                     if debug_print:

@@ -86,12 +86,12 @@ def run_simulations():
                 print(f'{block=:4}  {sim.status(per_particle=True)}')
         print(sim.summary())
         
-        u, = rp.extract_scalars(sim.output, ["U"], first_block=0, D=conf.D)
+        u, = rp.extract_scalars(sim.output, ['U'], first_block=0, D=conf.D)
         target_u = np.mean(u[len(u)*3//4:])
         for block in sim.run_timeblocks():
             ev = rp.Evaluator(conf, pair_pot)
             ev.evaluate()
-            conf_u = np.sum(conf["u"])
+            conf_u = np.sum(conf['U'])
             if conf_u <= target_u:
                 save_conf_to_npz(NVE_PROD_CONF_OUTPUT, conf, target_u)
                 break

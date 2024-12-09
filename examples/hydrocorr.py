@@ -17,7 +17,7 @@ import rumdpy as rp
 import os
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3, compute_flags={'w':True})
+configuration = rp.Configuration(D=3, compute_flags={'W':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.8)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.9)
@@ -33,7 +33,7 @@ integrator = rp.integrators.NVT(temperature=0.9, tau=0.2, dt=0.005)
 # Setup Simulation. 
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_between_momentum_reset=100,
-                    compute_flags={'w':True},
+                    compute_flags={'W':True},
                     num_timeblocks=2048,
                     steps_per_timeblock=32,
                     storage='memory')

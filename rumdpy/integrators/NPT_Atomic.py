@@ -79,7 +79,7 @@ class NPT_Atomic():
         # Unpack indices for vectors and scalars to be compiled into kernel
         compute_k = compute_flags['K']
         compute_fsq = compute_flags['Fsq']
-        r_id, v_id, f_id, sx_id, sy_id, sz_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f', 'sx', 'sy', 'sz']]
+        r_id, v_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'v', 'f']]
         m_id = configuration.sid['m']
         if not compute_flags['W']:
             raise ValueError("NPT_Atomic requires virial")
