@@ -29,7 +29,7 @@ default:
     - echo 'tzdata tzdata/Zones/Europe select Copenhagen' | debconf-set-selections
     - DEBIAN_FRONTEND="noninteractive" apt install -y tzdata
 
-    - apt install -y "$PYTHON_VERSION" "$PYTHON_VERSION-dev" "$PYTHON_VERSION-venv" "$PYTHON_VERSION-distutils"
+    - apt install -y "$PYTHON_VERSION" "$PYTHON_VERSION-dev" "$PYTHON_VERSION-venv"
     - update-alternatives --install /usr/bin/python3 python3 "/usr/bin/$PYTHON_VERSION" 1
     - update-alternatives --set python3 "/usr/bin/$PYTHON_VERSION"
 
@@ -41,6 +41,7 @@ default:
     - virtualenv env
     - source env/bin/activate
     - python3 -m pip install .
+    - python3 -m pip install $PYTHON_VERSION-distutils
     - python3 -m pip install coverage
     - python3 -m pip install matplotlib
     - python3 -m pip install pytest
