@@ -20,7 +20,7 @@ import os
 configuration = rp.Configuration(D=3, compute_flags={'w':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.8)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=0.9)
+configuration.randomize_velocities(temperature=0.9)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)

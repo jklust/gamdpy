@@ -13,7 +13,7 @@ configuration.make_lattice(unit_cell=rp.unit_cells.BCC, cells=[8, 8, 8], rho=1.0
 
 # Setup masses and velocities
 configuration['m'] = 1.0  # Set all masses to 1.0
-configuration.randomize_velocities(T=0.7)
+configuration.randomize_velocities(temperature=0.7)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

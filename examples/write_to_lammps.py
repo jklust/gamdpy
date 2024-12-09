@@ -7,7 +7,7 @@ import rumdpy as rp
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=0.7)
+configuration.randomize_velocities(temperature=0.7)
 
 # Write initial configuration to LAMMPS dump file
 lmp_dump = rp.configuration_to_lammps(configuration)

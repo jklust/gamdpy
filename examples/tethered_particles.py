@@ -18,7 +18,7 @@ nx, ny, nz, rho = 6, 6, 10, 1.0
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=2.0)
+configuration.randomize_velocities(temperature=2.0)
 
 # Fluid/free particles have type '0', tethered particles '1' and '2'
 indices = []; kspring = [];

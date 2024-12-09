@@ -67,7 +67,7 @@ cut = np.array(sig) * 2.5
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Temperature
-configuration.randomize_velocities(T=2.0)
+configuration.randomize_velocities(temperature=2.0)
 
 # Setup integrator: NVT
 integrator = rp.integrators.NVE(dt=0.005)

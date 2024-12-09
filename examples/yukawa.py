@@ -114,7 +114,7 @@ plt.show()
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=0.7)
+configuration.randomize_velocities(temperature=0.7)
 
 # Setup pair potential: Single component Yukawa system
 pair_func = rp.apply_shifted_potential_cutoff(yukawa)  # Note: We use the above yukawa function here

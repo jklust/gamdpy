@@ -55,7 +55,7 @@ def run_simulations():
         conf = rp.Configuration(D=3)
         conf.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=RHO)
         conf['m'] = 1.0
-        conf.randomize_velocities(T=TEMPERATURE)
+        conf.randomize_velocities(temperature=TEMPERATURE)
         conf.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
         print(f"========== NVE EQ ({NVE_EQ_STEPS//NVE_EQ_STEPS_PER_TIMEBLOCK} blocks) ==========")
 

@@ -5,7 +5,7 @@ def test_npt_atomic() -> None:
     configuration = rp.Configuration(D=3)
     configuration.make_positions(N=1000, rho=0.754)
     configuration['m'] = 1.0  # Set all masses to 1.0
-    configuration.randomize_velocities(T=2.0)
+    configuration.randomize_velocities(temperature=2.0)
     
     # Test init
     itg = rp.integrators.NPT_Atomic(temperature=2.0, tau=0.4, pressure=4.7, tau_p=20, dt=0.001)

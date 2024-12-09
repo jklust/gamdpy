@@ -16,7 +16,7 @@ import rumdpy as rp
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=0.973)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=0.7)
+configuration.randomize_velocities(temperature=0.7)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)

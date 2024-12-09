@@ -34,7 +34,7 @@ for index, rho in enumerate(rhos):
     configuration = rp.Configuration(D=3)
     configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
     configuration['m'] = 1.0
-    configuration.randomize_velocities(T=2*T)
+    configuration.randomize_velocities(temperature=2 * T)
 
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)

@@ -12,7 +12,7 @@ rbcoef=[.0, 50.0, .0, .0, .0, .0]
 
 # Generate configuration with a FCC lattice
 configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
-configuration.randomize_velocities(T=temperature)
+configuration.randomize_velocities(temperature=temperature)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function

@@ -26,7 +26,7 @@ def test_SLLOD(run_NVT=False):
     if run_NVT:
         # Setup configuration: FCC Lattice
         configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
-        configuration.randomize_velocities(T=2.0)
+        configuration.randomize_velocities(temperature=2.0)
 
         # Setup integrator to melt the crystal
         dt = 0.005

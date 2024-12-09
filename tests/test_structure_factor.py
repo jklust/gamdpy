@@ -8,7 +8,7 @@ def test_structure_factor(verbose=False, plot=False):
     # Setup simulation of single-component Lennard-Jones liquid
     temperature = 2.0
     configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.973)
-    configuration.randomize_velocities(T=temperature * 2)
+    configuration.randomize_velocities(temperature=temperature * 2)
     pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
     sig, eps, cut = 1.0, 1.0, 2.5
     pair_potential = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)

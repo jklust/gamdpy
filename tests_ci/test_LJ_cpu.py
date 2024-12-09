@@ -20,15 +20,15 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     if   nconf == '1':
         configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 2], rho=0.8442)
         configuration['m'] = 1.0
-        configuration.randomize_velocities(T=1.44)
+        configuration.randomize_velocities(temperature=1.44)
     elif nconf == '2':
         configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 3, 4], rho=1.2000)
         configuration['m'] = 1.0
-        configuration.randomize_velocities(T=0.44)
+        configuration.randomize_velocities(temperature=0.44)
     elif nconf == '3':
         configuration.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=0.8442)
         configuration['m'] = 1.0
-        configuration.randomize_velocities(T=2.44)
+        configuration.randomize_velocities(temperature=2.44)
     else:
         print("wrong input")
         exit()

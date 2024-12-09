@@ -19,7 +19,7 @@ configuration['m'] = 1.0
 B_particles = range(1, configuration.N, 2)
 configuration.ptype[B_particles] = 1  # Setting particle type of B particles
 configuration['m'][B_particles] = 0.195  # Setting masses of B particles
-configuration.randomize_velocities(T=1.44)
+configuration.randomize_velocities(temperature=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function

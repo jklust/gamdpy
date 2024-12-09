@@ -10,7 +10,7 @@ import rumdpy as rp
 # Generate configuration with a FCC lattice
 rho = 1.0
 configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
-configuration.randomize_velocities(T=1.44)
+configuration.randomize_velocities(temperature=1.44)
 
 # Make bonds
 bond_potential = rp.harmonic_bond_function

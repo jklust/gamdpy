@@ -12,7 +12,7 @@ def test_widom_insertion():
     configuration = rp.Configuration(D=3)
     configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.4)
     configuration['m'] = 1.0
-    configuration.randomize_velocities(T=2.0, seed=0)
+    configuration.randomize_velocities(temperature=2.0, seed=0)
 
     # Setup pair potential: Single component 12-6 Lennard-Jones
     pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)

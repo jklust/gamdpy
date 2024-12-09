@@ -8,7 +8,7 @@ import numpy as np
 # Setup configuration: FCC Lattice
 rho = 0.973
 configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
-configuration.randomize_velocities(T=0.8 * 2)
+configuration.randomize_velocities(temperature=0.8 * 2)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
 pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

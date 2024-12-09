@@ -11,7 +11,7 @@ import rumdpy as rp
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=1.6)
+configuration.randomize_velocities(temperature=1.6)
 
 # Setup pair potential.
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

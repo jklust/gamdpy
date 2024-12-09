@@ -17,7 +17,7 @@ rho = 1.200
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 configuration['m'] = 1.0
-configuration.randomize_velocities(T=1.6)
+configuration.randomize_velocities(temperature=1.6)
 configuration.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
 #configuration['r'][27,2] += 0.01 # Perturb z-coordinate of particle 27
 

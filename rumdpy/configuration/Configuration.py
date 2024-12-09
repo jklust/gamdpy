@@ -209,26 +209,26 @@ class Configuration:
         """ Get volume of simulation box associated with configuration """
         return self.simbox.volume(self.simbox.lengths)
 
-    def set_kinetic_temperature(self, T, ndofs=None):
+    def set_kinetic_temperature(self, temperature, ndofs=None):
         if ndofs is None:
             ndofs = self.D * (self.N - 1)
 
         T_ = np.sum(np.dot(self['m'], np.sum(self['v'] ** 2, axis=1))) / ndofs
         if T_ == 0:
             raise ValueError('Cannot rescale velocities when all equal to zero')
-        self['v'] *= (T / T_) ** 0.5
+        self['v'] *= (temperature / T_) ** 0.5
 
-    def randomize_velocities(self, T, seed=None, ndofs=None):
+    def randomize_velocities(self, temperature, seed=None, ndofs=None):
         """ Randomize velocities according to a given temperature. If T <= 0, set all velocities to zero. """
         if self.D is None:
             raise ValueError('Cannot randomize velocities. Start by assigning positions.')
         masses = self['m']
         if np.any(masses == 0):
             raise ValueError('Cannot randomize velocities when any mass is zero')
-        if T > 0.0:
-            self['v'] = generate_random_velocities(self.N, self.D, T=T, seed=seed, m=self['m'])
+        if temperature > 0.0:
+            self['v'] = generate_random_velocities(self.N, self.D, T=temperature, seed=seed, m=self['m'])
             # rescale to get the kinetic temperature exactly right
-            self.set_kinetic_temperature(T=T, ndofs=ndofs)
+            self.set_kinetic_temperature(temperature=temperature, ndofs=ndofs)
         else:
             self['v'] = np.zeros((self.N, self.D), np.float32)
 
