@@ -9,6 +9,7 @@ import numpy as np
 rho = 0.973
 configuration = rp.Configuration(D=3)
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
+configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.8 * 2)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
