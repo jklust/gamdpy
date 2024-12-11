@@ -7,7 +7,8 @@ import numpy as np
 
 # Setup configuration: FCC Lattice
 rho = 0.973
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho)
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 configuration.randomize_velocities(temperature=0.8 * 2)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones

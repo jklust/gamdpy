@@ -16,7 +16,9 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     temperature: float = 1.2
 
     # Setup configuration
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration = rp.Configuration(D=3, compute_flags={'W':True, 'K':True, 'lapU':True, 'Fsq':True})
+    configuration.make_lattice(rp.unit_cells.FCC, cells=[7, 7, 7], rho=density)
+    configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=2 * temperature, seed=0)
 
     # Setup interactions
@@ -33,6 +35,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         steps_between_momentum_reset=100,
+                        compute_flags={'W':True, 'K':True, 'lapU':True, 'Fsq':True},
                         conf_output=None, storage='memory', verbose=False)
     
     # Run simulation one block at a time
@@ -50,6 +53,7 @@ def test_nve_toxvaerd(verbose=False, plot_figures=False):
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         steps_between_momentum_reset=100,
+                        compute_flags={'W':True, 'K':True, 'lapU':True, 'Fsq':True},
                         conf_output=None, storage='memory', verbose=False)
     for block in sim.run_timeblocks():
         pass 

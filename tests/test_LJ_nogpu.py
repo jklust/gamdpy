@@ -10,11 +10,17 @@ class Test(unittest.TestCase):
         import numpy as np
         
         # Generate configurations with a FCC lattice
-        configuration1 = rp.make_configuration_fcc(nx= 8, ny= 8, nz=8,  rho=0.8442)
+        configuration1 = rp.Configuration(D=3)
+        configuration1.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.8442)
+        configuration1['m'] = 1.0
         configuration1.randomize_velocities(temperature=1.44)
-        configuration2 = rp.make_configuration_fcc(nx= 5, ny= 5, nz=13, rho=1.2000)
+        configuration2 = rp.Configuration(D=3)
+        configuration2.make_lattice(rp.unit_cells.FCC, cells=[5, 5, 13], rho=1.2000)
+        configuration2['m'] = 1.0
         configuration2.randomize_velocities(temperature=0.44)
-        configuration3 = rp.make_configuration_fcc(nx=16, ny=16, nz=32, rho=0.8442)
+        configuration3 = rp.Configuration(D=3)
+        configuration3.make_lattice(rp.unit_cells.FCC, cells=[16, 16, 32], rho=0.8442)
+        configuration3['m'] = 1.0
         configuration3.randomize_velocities(temperature=2.44)
 
         # Make pair potentials

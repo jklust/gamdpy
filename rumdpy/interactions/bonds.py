@@ -102,14 +102,17 @@ class Bonds():
                 
             for k in range(D):
                 cuda.atomic.add(vectors, (f_id, indices[0], k), -dr[k]*s)      # Force
-                cuda.atomic.add(vectors, (f_id, indices[1], k), +dr[k]*s)                      
-                cuda.atomic.add(scalars, (indices[0], w_id), dr[k]*dr[k]*s*virial_factor)    # Virial
-                cuda.atomic.add(scalars, (indices[1], w_id), dr[k]*dr[k]*s*virial_factor)                      
-            cuda.atomic.add(scalars, (indices[0], u_id), u*numba.float32(0.5)) # Potential enerrgy 
-            cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5))
-            lap = numba.float32(1-D)*s + umm                                   # Laplacian  
-            cuda.atomic.add(scalars, (indices[0], lap_id), lap)               
-            cuda.atomic.add(scalars, (indices[1], lap_id), lap)                
+                cuda.atomic.add(vectors, (f_id, indices[1], k), +dr[k]*s)
+                if compute_w:
+                    cuda.atomic.add(scalars, (indices[0], w_id), dr[k]*dr[k]*s*virial_factor)    # Virial
+                    cuda.atomic.add(scalars, (indices[1], w_id), dr[k]*dr[k]*s*virial_factor)
+            if compute_u:
+                cuda.atomic.add(scalars, (indices[0], u_id), u*numba.float32(0.5)) # Potential enerrgy
+                cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5))
+            if compute_lap:
+                lap = numba.float32(1-D)*s + umm                                   # Laplacian
+                cuda.atomic.add(scalars, (indices[0], lap_id), lap)
+                cuda.atomic.add(scalars, (indices[1], lap_id), lap)
             
             return
         

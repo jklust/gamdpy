@@ -19,7 +19,9 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     expected_potential_energy = expected_total_energy - expected_kinetic_energy
 
     # Setup configuration (give temperature kick to particles to get closer to equilibrium)
-    configuration = rp.make_configuration_fcc(nx=7, ny=7, nz=7, rho=density)
+    configuration = rp.Configuration(D=3, compute_flags={'W':True, 'K':True})
+    configuration.make_lattice(rp.unit_cells.FCC, cells=[7, 7, 7], rho=density)
+    configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=2 * temperature, seed=0)
 
     # Setup pair potential.
@@ -38,6 +40,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         steps_between_momentum_reset=100,
+                        compute_flags={'W':True, 'K': True},
                         conf_output=None, storage='memory', verbose=False)
 
     # Run simulation one block at a time

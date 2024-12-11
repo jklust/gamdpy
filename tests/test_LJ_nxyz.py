@@ -10,7 +10,9 @@ from hypothesis import given, strategies as st, settings, Verbosity, example
 def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, UtilizeNIII=None, cut=2.5, integrator='NVE', verbose=True):
     
     # Generate configuration with a FCC lattice
-    configuration = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho)
+    configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True})
+    configuration.make_lattice(rp.unit_cells.FCC, cells=[nx, ny, nz], rho=rho)
+    configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=1.44, seed=0)
     assert configuration.N==nx*ny*nz*4, f'Wrong number particles (FCC), {configuration.N} <> {nx*ny*nz*4}'
     assert configuration.D==3, f'Wrong dimension (FCC), {configuration.D} <> {3}'
@@ -54,8 +56,9 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
     sim = rp.Simulation(configuration, pairpot, integrator,
                         num_timeblocks=2, steps_per_timeblock=1024 * 4,
                         scalar_output=8, conf_output=None,
+                        compute_flags={'Fsq':True, 'lapU':True, 'stresses':False},
                         steps_between_momentum_reset=100,
-                        storage='memory', verbose=False, compute_flags={'stresses':False})
+                        storage='memory', verbose=False)
 
     # Run simulation one block at a time
     for block in sim.run_timeblocks():

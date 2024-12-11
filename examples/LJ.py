@@ -17,7 +17,7 @@ if 'NPT_Langevin' in sys.argv:            # use with NoRDF since box size is var
     integrator_name = 'NPT_Langevin'
 
 # Generate configuration with a FCC lattice
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.8442)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.44)
@@ -59,13 +59,14 @@ print(compute_plan)
 
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    compute_flags={'Fsq':True, 'lapU':True},
                     compute_plan=compute_plan, storage='memory')
 
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
 
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
+columns = ['U', 'W', 'K', 'Fsq','lapU', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in

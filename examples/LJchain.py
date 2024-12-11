@@ -76,7 +76,7 @@ for block in sim.run_timeblocks():
     calc_rdf.update()
 print(sim.summary())
 
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
+columns = ['U', 'W', 'K', 'lapU', 'Fsq', 'Vol']
 with h5py.File(filename, "r") as f:
     data = np.array(rp.extract_scalars(f, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)

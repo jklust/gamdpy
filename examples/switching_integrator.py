@@ -24,7 +24,8 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 T = 0.8
 
 # Setup fcc configuration
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=0.84)
+configuration = rp.Configuration(D=3)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.84)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
   

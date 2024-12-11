@@ -23,7 +23,10 @@ wall_dimension = 2
 nxy, nz = 8, 4
 
 # Generate configuration with a FCC lattice (higher rho, to make room for walls)
-c1 = rp.make_configuration_fcc(nx=nxy, ny=nxy, nz=nz, rho=1.5, T=1.44) 
+c1 = rp.Configuration(D=3)
+c1.make_lattice(rp.unit_cell.FCC, cells=[nxy, nxy, nz], rho=1.5)
+c1['m'] = 1.0
+c1.randomize_velocities(temperature=1.44)
 
 # Adjust the simbox according to the desired setup
 Lxy = (c1.N/wall_dist/rho)**0.5
