@@ -16,7 +16,7 @@ def __store__(dk, dmk, jk, jmk, sampletype, mass, pos, vel, ptypes, npart, index
         kwave = 2.0*math.pi*(k+1)/lbox
 
         for n in range(npart):
-            if ptypes[n] == sampletype:
+            if ptypes[n] == sampletype or sampletype == -1:
                 kfac = cmath.exp(I*kwave*pos[n])
                 mkfac = cmath.exp(-I*kwave*pos[n])
 
@@ -48,13 +48,13 @@ class CalculatorHydrodynamicCorrelations:
         Initialization variables
         - configuration: Instance of the configuration class
         - dtsample: Time between sampling (= integrator time step * steps_per_timeblock)
-        - ptype: The particle type for which the correlations are calculated (default 0) 
+        - ptype: The particle type for which the correlations are calculated (default 0)   
         - nwaves: Number of wavevectors (default 10)
         - lvec: Length of the time vector - sample time span then dtsample*lvec (defulat 100) 
         - verbose: Write a bit to screen (default False)
 
         Output: 
-            With the method read() data is written to the files jacf.dat and dacf.dat 
+            With the method read() data is written to files and returned to user 
     """
     
     def __init__(self, configuration, dtsample, ptype=0, nwaves=10, lvec=100, verbose=False):
@@ -106,33 +106,38 @@ class CalculatorHydrodynamicCorrelations:
 
 
 
-    def read(self, save=True):
+    def read(self, save=True, fname_dacf="dacf.dat", fname_jacf="jacf.dat"):
 
-        volume = self.conf.simbox.lengths[0]*self.conf.simbox.lengths[1]*self.conf.simbox.lengths[2]
+        if self.nsample > 0:
+        
+            volume = self.conf.simbox.lengths[0]*self.conf.simbox.lengths[1]*self.conf.simbox.lengths[2]
 
-        out_dacf = np.zeros( (self.lvec, self.nwaves) )
-        out_jacf = np.zeros( (self.lvec, self.nwaves) )
+            out_dacf = np.zeros( (self.lvec, self.nwaves) )
+            out_jacf = np.zeros( (self.lvec, self.nwaves) )
 
-        file_dacf = open("dacf.dat", "w")
-        file_jacf = open("jacf.dat", "w")
+            file_dacf = open(fname_dacf, "w")
+            file_jacf = open(fname_jacf, "w")
 
-        for n in range(self.lvec):
-            
-            fac = 1.0/(self.nsample*(self.lvec-n)*volume)
+            for n in range(self.lvec):
+                
+                fac = 1.0/(self.nsample*(self.lvec-n)*volume)
 
-            file_dacf.write("%f " % (self.dt*n))
-            file_jacf.write("%f " % (self.dt*n))
+                file_dacf.write("%f " % (self.dt*n))
+                file_jacf.write("%f " % (self.dt*n))
 
-            for k in range(self.nwaves):
-                out_dacf[n,k] = self.dacf[n, k].real*fac
-                out_jacf[n,k] = self.jacf[n, k].real*fac
-                file_dacf.write("%f " % (out_dacf[n,k])) 
-                file_jacf.write("%f " % (out_jacf[n,k]))
+                for k in range(self.nwaves):
+                    out_dacf[n,k] = self.dacf[n, k].real*fac
+                    out_jacf[n,k] = self.jacf[n, k].real*fac
+                    file_dacf.write("%f " % (out_dacf[n,k])) 
+                    file_jacf.write("%f " % (out_jacf[n,k]))
 
-            file_dacf.write("\n")
-            file_jacf.write("\n")
+                file_dacf.write("\n")
+                file_jacf.write("\n")
 
-        file_dacf.close()
-        file_jacf.close()
+            file_dacf.close()
+            file_jacf.close()
 
-        return (out_dacf, out_jacf)
+            return (out_dacf, out_jacf)
+
+        else:
+            return (0,0)
