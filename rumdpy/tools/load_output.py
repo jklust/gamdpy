@@ -136,6 +136,7 @@ class load_output():
                 for item in cmt_line:
                     key, val = item.split("=")
                     meta_data[key] = val
+                ntrajinblock = int(meta_data['logLin'].split(",")[3])
                 num_types = int(meta_data['numTypes'])
                 masses = [float(x) for x in  meta_data['mass'].split(',')]
                 assert len(masses) == num_types
@@ -151,10 +152,11 @@ class load_output():
                     integrator_data = meta_data['integrator'].split(',')
                     timestep = integrator_data[1]
             # Loop over the files and read them assuming each line is type, x, y, z, imx, imy, imz
-            ntrajinblock = int(1+np.log2(blocksize))
+            #ntrajinblock = int(1+np.log2(blocksize))
             toskip1 = np.array([  (npart+2)*x for x in range(1+ntrajinblock)])
             toskip2 = np.array([1+(npart+2)*x for x in range(1+ntrajinblock)])
             toskip  = sorted(list(np.concatenate((toskip1, toskip2))))
+            #print(f"Found informations about trajectory files: {nblocks=} {blocksize=} {ntrajinblock=}")
             positions = list()
             images    = list()
             for trajectory in traj_files:
@@ -162,8 +164,8 @@ class load_output():
                 type_array = tmp_data['type'].to_numpy()
                 pos_array  = np.c_[tmp_data['x'].to_numpy(), tmp_data['y'].to_numpy(), tmp_data['z'].to_numpy()]
                 img_array  = np.c_[tmp_data['imx'].to_numpy(), tmp_data['imy'].to_numpy(), tmp_data['imz'].to_numpy()]
-                positions.append(pos_array.reshape((1+ntrajinblock,npart,dim)))
-                images.append(pos_array.reshape((1+ntrajinblock,npart,dim)))
+                positions.append(pos_array.reshape((-1,npart,dim)))
+                images.append(pos_array.reshape((-1,npart,dim)))
             # Saving data in output h5py
             output.attrs['dt'] =  timestep 
             output.attrs['simbox_initial'] = lengths 
@@ -179,21 +181,23 @@ class load_output():
             if energy_files[-1]==f"{name}/energies{nblocks+1:04d}.dat.gz": energy_files = energy_files[:-1]
             # Read metadata from first file in the list
             with gzip.open(f"{energy_files[0]}", "r") as f:
-                # ioformat=2 N=4096 Dt=147.266830 columns=ke,pe,p,T,Etot,W
+                # ioformat=2 N=4096 Dt=147.266830 columns=ke,pe,p,T,Etot,W                      (example of lin saving)
+                # ioformat=2 N=4096 timeStepIndex=0 logLin=0,2,0,17,0 columns=ke,pe,p,T,Etot,W  (example of log saving)
                 cmt_line = f.readline().decode().split()[1:]
                 meta_data = dict()
                 for item in cmt_line:
                     key, val = item.split("=")
                     meta_data[key] = val
                 npart = meta_data['N']
-                save_interval = meta_data['Dt']
+                if 'Dt' in meta_data: save_interval = meta_data['Dt']
+                elif 'logLin' in meta_data: save_interval = f'log{meta_data["logLin"][1]}'
                 col_names = meta_data['columns'].split(",")
             all_energies = list()
             for energies in energy_files:
                 tmp_data   = pd.read_csv(energies, skiprows=1, names=col_names, usecols = [i for i in range(len(col_names))], delimiter=" ")
                 all_energies.append(tmp_data.to_numpy())
             # Saving data in output h5py
-            if 'dt' in output.attrs.keys() : 
+            if 'dt' in output.attrs.keys() and 'Dt' in meta_data: 
                 output.attrs['steps_between_output'] = float(save_interval)/float(output.attrs['dt'])
             output.attrs['time_between_output'] = save_interval
             output.attrs['scalar_names'] = list(col_names)

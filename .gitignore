@@ -12,4 +12,6 @@ venv
 docs/build
 *libcudadevrt.a
 examples/rumdpy
+tests/rumdpy
+tests_ci/rumdpy
 .coverage

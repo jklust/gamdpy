@@ -25,7 +25,7 @@ def make_planar_calculator(configuration, potential_function) -> callable:
     r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
     u_id, w_id, lap_id = [configuration.sid[key] for key in ['U', 'W', 'lapU']] 
 
-    def planar_calculator(vectors, scalars, ptype, sim_box, indices, values):
+    def planar_calculator(vectors, scalars, ptype, sim_box, indices, values):       # pragma: no cover
         particle = indices[0]
         interaction_type = indices[1]
         point = values[interaction_type][0:D]  # Point in wall
