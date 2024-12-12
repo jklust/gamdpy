@@ -12,8 +12,6 @@ rbcoef=[.0, 50.0, .0, .0, .0, .0]
 
 # Generate configuration with a FCC lattice
 configuration = rp.Configuration(D=3)
-#configuration.make_positions(N=2000, rho=rho)
-#configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
 configuration.make_lattice(rp.unit_cells.FCC, cells=(8, 8, 8), rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=temperature)
