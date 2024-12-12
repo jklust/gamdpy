@@ -11,7 +11,11 @@ angle0, k = 2.0, 500.0
 rbcoef=[.0, 50.0, .0, .0, .0, .0]
 
 # Generate configuration with a FCC lattice
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
+configuration = rp.Configuration(D=3)
+#configuration.make_positions(N=2000, rho=rho)
+#configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
+configuration.make_lattice(rp.unit_cells.FCC, cells=(8, 8, 8), rho=rho)
+configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=temperature)
 
 # Make bonds
@@ -64,7 +68,7 @@ compute_plan = rp.get_default_compute_plan(configuration)
 
 # Setup simulation
 sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator,
-                    num_timeblocks=10, steps_per_timeblock=200,
+                    num_timeblocks=10, steps_per_timeblock=256,
                     steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
 

@@ -9,7 +9,9 @@ import rumdpy as rp
 
 # Generate configuration with a FCC lattice
 rho = 1.0
-configuration = rp.make_configuration_fcc(nx=8, ny=8, nz=8, rho=rho, N=2000)
+configuration = rp.Configuration(D=3)
+configuration.make_positions(N=2000, rho=rho)
+configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.44)
 
 # Make bonds
