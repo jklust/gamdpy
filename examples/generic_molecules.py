@@ -34,7 +34,7 @@ for n in range(0, configuration.N, 4):
     angle_indices.append([n, n+1, n+2, 0])
     angle_indices.append([n+1, n+2, n+3, 0])
 
-angles = rp.Angels(angle_indices, angle_params) 
+angles = rp.Angles(angle_indices, angle_params) 
 
 # Dihedrals
 dihedral_params = [rbcoef, ]

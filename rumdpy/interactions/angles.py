@@ -4,7 +4,7 @@ import math
 from numba import cuda
 from .make_fixed_interactions import make_fixed_interactions   # bonds is an example of 'fixed' interactions
 
-class Angels(): 
+class Angles(): 
 
     def __init__(self, indices, parameters):
         

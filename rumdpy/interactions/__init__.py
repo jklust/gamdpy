@@ -11,3 +11,6 @@ from .relaxtemp import *
 from .gravity import *
 from .angles import *
 from .dihedrals import *
+
+## import of potential_functions
+from .potential_functions import *

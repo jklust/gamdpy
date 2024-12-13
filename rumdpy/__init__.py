@@ -21,7 +21,7 @@ from .integrators import *
 
 # Import from interactions subpackage
 from .interactions import *
-from .potential_functions import *
+from .interactions.potential_functions import *
 
 # Import from calculators subpackage
 # Calculators are runtime actions with interact with the kernel
