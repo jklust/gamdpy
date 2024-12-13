@@ -1,13 +1,11 @@
 import pytest
 
-# check on personalized pytest mark
-@pytest.mark.rumdpy_ci
+@pytest.mark.rumdpy_cpu
 def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     import os
-    os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
-    #os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
-    #os.environ["NUMBA_DISABLE_JIT"] = "1"
-    #os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
+    os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
+    os.environ["NUMBA_DISABLE_JIT"] = "1"
+    os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
     import rumdpy as rp
     import numpy as np
     import numba
@@ -94,14 +92,12 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
                         num_timeblocks=64, steps_per_timeblock=1024, storage='memory',
                         steps_in_kernel_test=steps_in_kernel_test)
     assert isinstance(sim, rp.Simulation)
-    #cuda.simulator.reset()
-    #del os.environ["NUMBA_ENABLE_CUDASIM"]
-    #del os.environ["NUMBA_DISABLE_JIT"]
-    #del os.environ["NUMBA_CUDA_DEBUGINFO"]
+    cuda.simulator.reset()
+    del os.environ["NUMBA_ENABLE_CUDASIM"]
+    del os.environ["NUMBA_DISABLE_JIT"]
+    del os.environ["NUMBA_CUDA_DEBUGINFO"]
 
 if __name__ == '__main__':
-    #import sys
-    #test_cpu(*sys.argv[1:])
     for configuration in ['1', '2', '3']:
         for integrator in ['NVE', 'NVT', 'NPT_Atomic']:
             for potential in ['LJ', 'KABLJ']:

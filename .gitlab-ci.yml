@@ -41,21 +41,22 @@ default:
     - virtualenv env
     - source env/bin/activate
     - python3 -m pip install .
+    # Install packages in requirements
+    - python3 -m pip install -r requirements.txt 
+    # Needed for running pytest and coverage
     - python3 -m pip install coverage
-    - python3 -m pip install matplotlib
     - python3 -m pip install pytest
     - python3 -m pip install pytest-cov
-    - python3 -m pip install ipywidgets
-    - python3 -m pip install k3d
+    # Needed for running some tests
     - python3 -m pip install scipy
     - python3 -m pip install sympy
+    - python3 -m pip install ipywidgets
+    - python3 -m pip install k3d
 
 .test_runs: &test_runs
-      #    - coverage run --source rumdpy -m unittest discover -s tests
-      #    - coverage report -m
-    - python3 -m pytest --doctest-modules --cov-report term --cov-report html --cov=rumdpy
-    - python3 tests_ci/test_LJ_cpu.py
-    - python3 tests_ci/test_LJ_gpu.py
+    # CPU tests need to be run independently becaouse of some issue with gpu emulation
+    - python3 -m pytest -m"rumdpy_cpu" --doctest-modules --cov-report term --cov-report html --cov=rumdpy
+    - python3 -m pytest -m"not rumdpy_cpu"--doctest-modules --cov-report term --cov-report html --cov=rumdpy
   # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
   # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
 
@@ -70,11 +71,6 @@ default:
     paths:
       - .coverage
   coverage: '/^TOTAL.+?(\d+\%)$/'
-
-# For some unexplicable reason, this fails 
-# test:3.7:
-#   image: python:3.7
-#   extends: .test
 
 test:3.10:
   extends: .test_config

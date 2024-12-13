@@ -5,7 +5,6 @@ def test_potential_functions() -> None:
     assert rp.LJ_12_6_sigma_epsilon(1, [2, 3]) == (48384.0, 585216.0, 7635456.0), "Problem with rp.LJ_12_6_sigma_epsilon"
     # rp.LJ_12_6_params_from_sigma_epsilon_cutoff seems not to be used
     #assert rp.LJ_12_6_params_from_sigma_epsilon_cutoff(1, [2, 3, 4]) == (5.0, 42.0, 438.0), "Problem with rp.LJ_12_6_params_from_sigma_epsilon_cutoff"
-    # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff, make_potential_function_from_sympy
     # consider moving inner functions out for better testing
     assert rp.harmonic_bond_function(2.5, [2, 100]) == (12.5, -20.0, 100.0), "Problem with rp.harmonic_bond_function"
     # seems correct way: https://stackoverflow.com/questions/624926/how-do-i-detect-whether-a-variable-is-a-function
@@ -16,7 +15,7 @@ def test_potential_functions() -> None:
     assert potLJ_rp(1, [2,3]) == rp.LJ_12_6_sigma_epsilon(1, [2, 3]), "Problem with rp.make_potential_function_from_sympy"
     # The function rp.SAAP is not fully implemented: expression exp is not defined, should be numba.exp, numpy.exp or math.exp?
     #assert rp.SAAP(), "Problem with rp.SAAP"
-    # make_potential_function_from_sympy needs a test
+    # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
 
 if __name__ == '__main__':
     test_potential_functions()
