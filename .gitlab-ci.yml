@@ -56,7 +56,7 @@ default:
 .test_runs: &test_runs
     # CPU tests need to be run independently because of some issue with gpu emulation
     - python3 -m pytest -m"not rumdpy_cpu" --doctest-modules --cov-report term --cov-report html --cov=rumdpy
-    - python3 -m pytest -m"rumdpy_cpu"--doctest-modules --cov-report term --cov-report html --cov=rumdpy
+    - python3 tests/test_LJ_cpu.py
   # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
   # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
 
