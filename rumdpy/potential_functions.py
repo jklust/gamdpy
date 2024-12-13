@@ -82,28 +82,28 @@ def LJ_12_6_sigma_epsilon(dist, params):
                 numba.float32(26.0) * sigmaOdist ** 12 - numba.float32(7.0) * sigmaOdist ** 6) * OneOdist ** 2
     return u, s, umm  # U(r), s == -U'(r)/r, U''(r)
 
+# LC: couldn't find where was used
+#def LJ_12_6_params_from_sigma_epsilon_cutoff(sigma: float, epsilon: float, cutoff: float) -> np.ndarray:
+#    """ Convert LJ_12_6_sigma_epsilon (sigma, epsilon, and cutoff) to LJ_12_6 parameters (A12, A6, cutoff).
+#
+#    Get 'params' array for LJ_12_6 from sigma, epsilon, and cutoff arrays (num_types, num_types)
+#
+#    .. math::
+#
+#        4\\epsilon( (\\sigma/r)^{12} - (\\sigma/r)^6) = 4\\epsilon\\sigma^{12}r^{-12} - 4\\epsilon\\sigma^6r^{-6}
 
-def LJ_12_6_params_from_sigma_epsilon_cutoff(sigma: float, epsilon: float, cutoff: float) -> np.ndarray:
-    """ Convert LJ_12_6_sigma_epsilon (sigma, epsilon, and cutoff) to LJ_12_6 parameters (A12, A6, cutoff).
+#    """
+#    sigma = np.array(sigma, dtype=np.float32)
+#    epsilon = np.array(epsilon, dtype=np.float32)
+#    cutoff = np.array(cutoff, dtype=np.float32)
 
-    Get 'params' array for LJ_12_6 from sigma, epsilon, and cutoff arrays (num_types, num_types)
+#    A12 = 4 * epsilon * sigma ** 12
+#    A6 = -4 * epsilon * sigma ** 6
 
-    .. math::
+#    params = np.array([A12, A6, cutoff])
+#    params = np.moveaxis(params, source=0, destination=2)
 
-        4\\epsilon( (\\sigma/r)^{12} - (\\sigma/r)^6) = 4\\epsilon\\sigma^{12}r^{-12} - 4\\epsilon\\sigma^6r^{-6}
-
-    """
-    sigma = np.array(sigma, dtype=np.float32)
-    epsilon = np.array(epsilon, dtype=np.float32)
-    cutoff = np.array(cutoff, dtype=np.float32)
-
-    A12 = 4 * epsilon * sigma ** 12
-    A6 = -4 * epsilon * sigma ** 6
-
-    params = np.array([A12, A6, cutoff])
-    params = np.moveaxis(params, source=0, destination=2)
-
-    return params
+#    return params
 
 
 def harmonic_bond_function(dist: float, params: np.ndarray) -> tuple:
@@ -165,9 +165,12 @@ def make_LJ_m_n(m: float, n: float) -> callable:
         where params = [A_m, A_n]
     """
 
-    def LJ_m_n(dist, params):  #     U(r) =           Am*r**-m     +         An*r**-n
-        Am = params[0]  #     Um(r) =       -m*Am*r**-(m+1) -       n*An*r**-(n+1)
-        An = params[1]  #     Umm(r) = (m+1)*m*Am*r**-(m+2) + (n+1)*n*An*r**-(n+2)
+    def LJ_m_n(dist, params): # pragma: no cover 
+        #     U(r) =           Am*r**-m     +         An*r**-n
+        #     Um(r) =       -m*Am*r**-(m+1) -       n*An*r**-(n+1)
+        #     Umm(r) = (m+1)*m*Am*r**-(m+2) + (n+1)*n*An*r**-(n+2)
+        Am = params[0]  
+        An = params[1]  
         invDist = numba.float32(1.0) / dist  #  s = -Um/r =       m*Am*r**-(m+2) +       n*An*r**-(n+2), Fx = s*dx
 
         u = (Am * invDist ** m + An * invDist ** n)
@@ -201,9 +204,12 @@ def make_IPL_n(n: float) -> callable:
         where params = [A_n]
     """
 
-    def IPL_n(dist, params):  #     U(r) =           An*r**-n
-        An = params[0]  #     Um(r) =        n*An*r**-(n+1)
-        invDist = numba.float32(1.0) / dist  # s = -Um/r =        n*An*r**-(n+2), Fx = s*dx
+    def IPL_n(dist, params):  # pragma: no cover
+        #     U(r) =           An*r**-n
+        #     Um(r) =        n*An*r**-(n+1)
+        # s = -Um/r =        n*An*r**-(n+2), Fx = s*dx
+        An = params[0]  
+        invDist = numba.float32(1.0) / dist  
 
         u = An * invDist ** n
         s = numba.float32(n) * An * invDist ** (n + 2)
@@ -303,6 +309,7 @@ def make_potential_function_from_sympy(ufunc, param_names) -> callable:
 
     ufunc : sympy expression
         The potential energy expression in Sympy's symbolic form
+        It has to be a radial function and the pair distance symbol shuould be r
 
     param_names : list
         List of parameters
@@ -315,19 +322,19 @@ def make_potential_function_from_sympy(ufunc, param_names) -> callable:
         u, s, umm = potential_function(dist, params)
 
     """
-    # import sympy as sp
-    # from sympy.utilities.lambdify import lambdify
-    # r = sp.symbols('r')
+    import sympy 
+    from sympy.abc import r
+    from sympy.utilities.lambdify import lambdify
 
-    dufunc = sp.simplify(sp.diff(ufunc, r))  # Sympy functions
-    sfunc = sp.simplify(-sp.diff(ufunc, r) / r)
-    ummfunc = sp.simplify(sp.diff(dufunc, r))
+    dufunc = sympy.simplify(sympy.diff(ufunc, r))  # Sympy functions
+    sfunc = sympy.simplify(-sympy.diff(ufunc, r) / r)
+    ummfunc = sympy.simplify(sympy.diff(dufunc, r))
     u_lam = numba.njit(lambdify([r, param_names], ufunc, 'numpy'))  # Jitted python functions
     s_lam = numba.njit(lambdify([r, param_names], sfunc, 'numpy'))
     umm_lam = numba.njit(lambdify([r, param_names], ummfunc, 'numpy'))
 
     #@numba.njit
-    def potential_function(r, params):
+    def potential_function(r, params): # pragma: no cover
         u = np.float32(u_lam(r, params))
         s = np.float32(s_lam(r, params))
         umm = np.float32(umm_lam(r, params))
@@ -372,7 +379,7 @@ def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
     pair_pot = numba.njit(pair_potential)
 
     @numba.njit
-    def potential(dist, params):
+    def potential(dist, params): # pragma: no cover
         cut = params[-1]
         u, s, umm = pair_pot(dist, params)
         u_cut, s_cut, umm_cut = pair_pot(cut, params)
@@ -408,7 +415,7 @@ def apply_shifted_force_cutoff(pair_potential):  # Cut-off by computing potentia
     pair_pot = numba.njit(pair_potential)
 
     @numba.njit
-    def potential(dist, params):
+    def potential(dist, params): # pragma: no cover
         cut = params[-1]
         u, s, umm = pair_pot(dist, params)
         u_cut, s_cut, umm_cut = pair_pot(cut, params)
