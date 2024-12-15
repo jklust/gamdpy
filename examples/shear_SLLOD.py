@@ -22,7 +22,7 @@ gridsync = True
 
 if run_NVT:
     # Setup configuration: FCC Lattice
-    configuration = rp.Configuration(D=3)
+    configuration = rp.Configuration(D=3, compute_flags={'stresses':True})
     configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
     configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=2.0)
@@ -54,7 +54,7 @@ if run_NVT:
     rp.configuration_to_hdf5(configuration, 'LJ_cooled_0.70.h5')
 
 else:
-    configuration = rp.configuration_from_hdf5('LJ_cooled_0.70.h5')
+    configuration = rp.configuration_from_hdf5('LJ_cooled_0.70.h5', compute_flags={'stresses':True})
 
 compute_plan = rp.get_default_compute_plan(configuration)
 compute_plan['gridsync'] = gridsync

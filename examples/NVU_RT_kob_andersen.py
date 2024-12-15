@@ -52,7 +52,7 @@ def run_simulations():
 
     nve_integrator = rp.integrators.NVE(dt=NVE_DT)
     if DO_NVE_EQ:
-        conf = rp.Configuration(D=3)
+        conf = rp.Configuration(D=3, compute_flags={'Fsq':True})
         conf.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=RHO)
         conf['m'] = 1.0
         conf.randomize_velocities(temperature=TEMPERATURE)
@@ -120,6 +120,7 @@ def run_simulations():
             conf, pair_pot, nvu_integrator,
             num_timeblocks=NVU_PROD_STEPS//NVU_PROD_STEPS_PER_TIMEBLOCK, 
             steps_per_timeblock=NVU_PROD_STEPS_PER_TIMEBLOCK,
+            compute_flags={'Fsq':True},
             storage=NVU_PROD_OUTPUT,
             scalar_output=NVU_SCALAR_OUTPUT,
         )
@@ -139,7 +140,7 @@ def save_conf_to_npz(path: str, conf: rp.Configuration, target_u: float) -> None
 def load_conf_from_npz(path: str) -> Tuple[rp.Configuration, float]:
     conf_data = np.load(path)
     n, d = conf_data["r"].shape
-    conf = rp.Configuration(N=n, D=d)
+    conf = rp.Configuration(N=n, D=d, compute_flags={'Fsq':True})
     conf["r"] = conf_data["r"]
     conf["m"] = conf_data.get("m", 1)
     conf["v"] = conf_data["v"]

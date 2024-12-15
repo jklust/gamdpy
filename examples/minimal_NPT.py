@@ -11,7 +11,7 @@ import numpy as np
 import rumdpy as rp
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.7543)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=2.0)

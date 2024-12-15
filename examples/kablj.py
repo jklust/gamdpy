@@ -14,7 +14,7 @@ import rumdpy as rp
 
 rho = 1.200
 # Setup configuration: FCC crystal
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.6)
@@ -45,6 +45,7 @@ integrator = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     steps_between_momentum_reset=100,
+                    compute_flags={'Fsq':True, 'lapU':True},
                     storage=filename) 
 for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
@@ -60,7 +61,7 @@ for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol']
+columns = ['U', 'W', 'K', 'Fsq', 'lapU', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df = pd.DataFrame(data.T, columns=columns)

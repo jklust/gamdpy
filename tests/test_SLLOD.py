@@ -56,7 +56,7 @@ def test_SLLOD(run_NVT=False):
         possible_file_paths = ['Data/LJ_cooled_0.70.h5', 'tests/Data/LJ_cooled_0.70.h5']
         for path in possible_file_paths:
             if Path(path).is_file():
-                configuration = rp.configuration_from_hdf5(path)
+                configuration = rp.configuration_from_hdf5(path, compute_flags={'stresses':True})
                 break
         if configuration is None:
             raise FileNotFoundError(f'Could not find configuration file in {possible_file_paths}')

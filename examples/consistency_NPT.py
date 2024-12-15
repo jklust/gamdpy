@@ -22,7 +22,7 @@ elif flag=="Langevin":
                                                              volume_velocity=0.0, barostatModeISO=True, boxFlucCoord=2, dt=0.001, seed=2023)
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=my_T, seed=0)

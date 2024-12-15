@@ -28,7 +28,7 @@ elif flag=="Langevin":
 
 print(f"\nRunning an NPT simulation using the integrator NPT_{flag} at (P, T) = ({my_p}, {my_T})\n")
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=my_T)

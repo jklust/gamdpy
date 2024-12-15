@@ -78,10 +78,10 @@ for block in sim.run_timeblocks():
 
 print(sim.summary()) 
 
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol'] 
+columns = ['U', 'W', 'K',] 
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=1)) 
-temp = 2.0/3.0*np.mean(data[4])/configuration.N
-Etot = data[0] + data[4]
+temp = 2.0/3.0*np.mean(data[2])/configuration.N
+Etot = data[0] + data[2]
 Etot_mean = np.mean(Etot)/configuration.N
 Etot_std = np.std(Etot)/configuration.N
 

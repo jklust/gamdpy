@@ -13,7 +13,7 @@ import rumdpy as rp
 # rho = 0.932 # Molecular density
 rho = 1.863  # Atomic density
 
-configuration = rp.Configuration(D=3, compute_flags={'Ptot':True})
+configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True, 'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[6, 6, 6], rho=rho)
 configuration['m'] = 1.0
 B_particles = range(1, configuration.N, 2)
@@ -59,7 +59,7 @@ if not os.path.exists(output_path):
     sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                         steps_between_momentum_reset=100,
-                        compute_flags={'Ptot':True},
+                        compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},
                         compute_plan=compute_plan, storage='memory')
 
     print('High Temperature followed by cooling and equilibration:')
@@ -96,7 +96,7 @@ for i in range(positions.shape[0]):
     calc_rdf.update()
 
 # scalars
-columns = ['U', 'W', 'lapU', 'Fsq', 'K', 'Vol', 'Px', 'Py', 'Pz']
+columns = ['U', 'W', 'K', 'Fsq', 'lapU', 'Vol', 'Px', 'Py', 'Pz']
 data = np.array(rp.extract_scalars(output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df['t'] = np.arange(len(df['U'])) * dt * output.attrs["steps_between_output"]  # should be build in

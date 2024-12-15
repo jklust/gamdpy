@@ -9,7 +9,7 @@ import rumdpy as rp
 
 # Generate configuration with a FCC lattice
 rho = 1.0
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Vol':True})
 configuration.make_positions(N=2000, rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.44)
@@ -53,6 +53,7 @@ print(compute_plan)
 
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    compute_flags={'Fsq':True, 'lapU':True},
                     steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage=filename)
 

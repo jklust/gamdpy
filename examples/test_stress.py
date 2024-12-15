@@ -7,7 +7,7 @@ import numpy as np
 
 # Setup configuration: FCC Lattice
 rho = 0.973
-configuration = rp.Configuration(D=3)
+configuration = rp.Configuration(D=3, compute_flags={'stresses':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.8 * 2)

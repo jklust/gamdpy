@@ -34,9 +34,9 @@ class Configuration:
     >>> import rumdpy as rp
     >>> conf = rp.Configuration(D=3, N=1000)
     >>> print(conf.vector_columns)  # Print names of vector columns
-    ['r', 'v', 'f', 'sx', 'sy', 'sz']
+    ['r', 'v', 'f']
     >>> print(conf.scalar_columns) # Print names of scalar columns
-    ['U', 'W', 'lapU', 'K', 'Fsq', 'm']
+    ['U', 'W', 'K', 'm']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
     (1000, 3)
     >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
@@ -434,7 +434,7 @@ def configuration_to_hdf5(configuration: Configuration, filename: str, meta_data
         ds_r_im[:] = configuration.r_im
 
 
-def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
+def configuration_from_hdf5(filename: str, reset_images=False, compute_flags=None) -> Configuration:
     """ Read a configuration from a HDF5 file
 
     Parameters
@@ -472,7 +472,7 @@ def configuration_from_hdf5(filename: str, reset_images=False) -> Configuration:
         m = f['m'][:]
         r_im = f['r_im'][:]
     N, D = r.shape
-    configuration = Configuration(D=D)
+    configuration = Configuration(D=D, compute_flags=compute_flags)
     configuration.simbox = Simbox(D, lengths)
     configuration['r'] = r
     configuration['v'] = v
@@ -547,7 +547,7 @@ def configuration_to_rumd3(configuration: Configuration, filename: str) -> None:
             f.write(line_out)
 
 
-def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration:
+def configuration_from_rumd3(filename: str, reset_images=False, compute_flags=None) -> Configuration:
     """ Read a configuration from a RUMD3 file 
 
     Parameters
@@ -614,7 +614,7 @@ def configuration_from_rumd3(filename: str, reset_images=False) -> Configuration
                 v_array[idx, :] = [float(x) for x in p_data[7:10]]
             m_array[idx] = masses[ptype]
 
-    configuration = Configuration(D=3)
+    configuration = Configuration(D=3, compute_flags=compute_flags)
     configuration.simbox = Simbox(3, lengths)
     configuration['r'] = r_array
     configuration['v'] = v_array
