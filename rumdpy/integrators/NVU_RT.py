@@ -1060,7 +1060,7 @@ class NVU_RT():
                     return delta_x
 
                 r_copy_u[0] = d_pot_energy[0]
-                copy_qqpositions_and_images(my_r, my_r_im, r_copy, r_im_copy)
+                copy_positions_and_images(my_r, my_r_im, r_copy, r_im_copy)
 
                 # FIND POINT OUTSIDE SURFACE
                 ############################
