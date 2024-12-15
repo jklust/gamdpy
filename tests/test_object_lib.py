@@ -1,4 +1,4 @@
-def non_test_object_lib():
+def test_object_lib():
     import rumdpy as rp
     import numpy as np
     ''' Test for the object_lib.py file. object_lib.py contains examples of Configuration and PairPotential classes '''
@@ -9,7 +9,7 @@ def non_test_object_lib():
     assert np.unique(configuration_SC.ptype)==0, "Problem with configuration_SC.ptypes"
     assert configuration_SC.N == 1000, "Problem with configuration_SC.N"
     assert configuration_SC.D == 3, "Problem with configuration_SC.D"
-    assert configuration_SC.compute_flags == {'U': True, 'W': True, 'K': True, 'lapU': True, 'Fsq': True, 'stresses': True, 'Vol': True, 'Ptot': False}, "Problem with configuration_SC.compute_flags"
+    assert configuration_SC.compute_flags == {'U': True, 'W': True, 'K': True, 'lapU': False, 'Fsq': False, 'stresses': False, 'Vol': False, 'Ptot': False}, "Problem with configuration_SC.compute_flags"
 
     # Test pairpot_LJ
     from object_lib import pairpot_LJ
@@ -18,5 +18,5 @@ def non_test_object_lib():
     assert pairpot_LJ.exclusions == None, "Problem with pairpot_LJ.exclusions"
     assert pairpot_LJ.max_num_nbs == 1000, "Problem with pairpot_LJ.max_num_nbs"
 
-#if __name__ == '__main__':
-#    test_object_lib()
+if __name__ == '__main__':
+    test_object_lib()
