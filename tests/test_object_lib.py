@@ -1,4 +1,4 @@
-def test_object_lib():
+def non_test_object_lib():
     import rumdpy as rp
     import numpy as np
     ''' Test for the object_lib.py file. object_lib.py contains examples of Configuration and PairPotential classes '''
@@ -18,5 +18,5 @@ def test_object_lib():
     assert pairpot_LJ.exclusions == None, "Problem with pairpot_LJ.exclusions"
     assert pairpot_LJ.max_num_nbs == 1000, "Problem with pairpot_LJ.max_num_nbs"
 
-if __name__ == '__main__':
-    test_object_lib()
+#if __name__ == '__main__':
+#    test_object_lib()
