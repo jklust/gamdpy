@@ -12,8 +12,7 @@ if file_to_read not in os.listdir(os.getcwd()):
     exit()
 
 # Load existing data
-output = rp.tools.load_output(file_to_read)
-output = output.get_h5()
+output = rp.tools.TrajectoryIO(file_to_read).get_h5()
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
 

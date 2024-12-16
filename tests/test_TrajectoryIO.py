@@ -1,6 +1,6 @@
-""" Test the class load_output. """
+""" Test the class TrajectoryIO. """
 
-def test_load_output():
+def test_TrajectoryIO():
     import os
     import pytest
     import h5py
@@ -34,42 +34,42 @@ def test_load_output():
     sim.run(verbose=False)
 
     ## Save output to -h5 file
-    output = rp.tools.load_output()
+    output = rp.tools.TrajectoryIO()
     assert output.h5 == None, "Error with no input initialization"
     output.h5 = sim.output
     output.save_h5(f"LJ_r{density}_T{temperature}.h5")
 
     ## Test read from h5
-    output = rp.tools.load_output(f"LJ_r{density}_T{temperature}.h5").get_h5()
+    output = rp.tools.TrajectoryIO(f"LJ_r{density}_T{temperature}.h5").get_h5()
     isinstance(output.file, h5py.File)
     nblocks, nconfs, _ , N, D = output['block'].shape
-    assert (N, D) == (1987, 3), "Error reading N and D in load_output while reading from .h5"
+    assert (N, D) == (1987, 3), "Error reading N and D in TrajectoryIO while reading from .h5"
     os.remove(f"LJ_r{density}_T{temperature}.h5")
 
     ## Test read from rumd3
     # Test read from rumd3 TrajectoryFiles
-    output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles").get_h5()
+    output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles").get_h5()
     nblocks, nconfs, _ , N, D = output['block'].shape
-    assert (N, D) == (4000, 3), "Error reading N and D from examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
+    assert (N, D) == (4000, 3), "Error reading N and D in TrajectoryIO while reading from  examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
 
     # Test read from rumd3 TrajectoryFiles, trajectory only
-    output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_trajonly").get_h5()
-    assert isinstance(output.file, h5py.File), "Error with read from rumd3 trajectory only"
+    output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_trajonly").get_h5()
+    assert isinstance(output.file, h5py.File), "Error in TrajectoryIO while reading from rumd3 trajectory only"
 
     # Test read from rumd3 TrajectoryFiles, energies only
-    output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_eneronly").get_h5()
-    assert isinstance(output.file, h5py.File), "Error with read from rumd3 energy only"
+    output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_eneronly").get_h5()
+    assert isinstance(output.file, h5py.File), "Error in TrajectoryIO while reading from rumd3 energy only"
 
     # Test read from rumd3 TrajectoryFiles but is empty
-    output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_empty").get_h5()
+    output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_empty").get_h5()
 
     # Test read from rumd3 TrajectoryFiles but folder is not there
     with pytest.raises(Exception):
-        output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_not_here")
+        output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles_not_here")
  
     ## Test read from unsupported format
-    output = rp.tools.load_output("file.abc").get_h5()
-    assert output == None, "Error with not recognized input/unsupported format"
+    output = rp.tools.TrajectoryIO("file.abc").get_h5()
+    assert output == None, "Error in TrajectoryIO with not recognized input/unsupported format"
 
 if __name__ == '__main__':
-    test_load_output()
+    test_TrajectoryIO()

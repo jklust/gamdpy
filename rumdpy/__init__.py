@@ -30,7 +30,7 @@ from .calculators import *
 # Import from tools subpackage
 # Tools/Evaluator are runtime actions with do not interact with the kernel
 from .tools.Evaluator import Evaluator
-# load_output, save_configuration and calc_dynamics are imported in configuration/__init__.py
+# load_output, save_configuration and calc_dynamics are not directly imported and are called via rp.tools.*
 
 # Import from misc
 # Misc folder contains scripts that have no better place in the code

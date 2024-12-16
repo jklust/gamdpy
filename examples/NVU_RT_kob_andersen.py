@@ -165,9 +165,9 @@ def get_rdf(conf, positions, first_block, conf_per_block):
     return rdf
 
 def plot_output():
-    nve_prod_output = rp.tools.load_output(NVE_PROD_OUTPUT).get_h5()
+    nve_prod_output = rp.tools.TrajectoryIO(NVE_PROD_OUTPUT).get_h5()
     conf, target_u = load_conf_from_npz(NVE_PROD_CONF_OUTPUT)
-    nvu_prod_output = rp.tools.load_output(NVU_PROD_OUTPUT).get_h5()
+    nvu_prod_output = rp.tools.TrajectoryIO(NVU_PROD_OUTPUT).get_h5()
 
     conf_per_block = 1024 // (NVE_PROD_STEPS // NVE_PROD_STEPS_PER_TIMEBLOCK)
     nve_rdf = get_rdf(conf, nve_prod_output["block"][:, :, 0, :, :], 0, conf_per_block)

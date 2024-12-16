@@ -1,27 +1,29 @@
-# This helper function is loading the output of a simulation as a dictionary following the formatting of sim.output
+# This class is used for loading the output of a simulation as a dictionary following the formatting of sim.output or save sim.output to file
+# Can be also used to convert between output formats (rumd3 -> rumdpy supported so far)
 import sys
 import numpy as np
 import os
 
-# This function is a wrapper for several possible inputs
-class load_output():
+# This class is a wrapper for several possible inputs/output
+class TrajectoryIO():
     """ 
     This class handles loading and saving of simulation data.
-    When the class is instanciated with an output from a previous simulation, the data are saved in self.h5 in the same format of the sim.output object.
-    When the class is instanciated without input, self.h5 is None and can be assigned afterwards.
+    When the class can be instanciated with an output from a previous simulation.
+    The data can be saved in self.h5 in the same format of the sim.output object.
+    When the class is instanciated without input, self.h5 is None and can be assigned afterwards (used to save output from memory simulation)
 
     Parameters
     ----------
 
     name : str
-        Name of the file or folder to read output from. Can be a rumdpy .h output or a rumd3 TrajectoryFiles folder.
+        Name of the file or folder to read output from. Can be a rumdpy .h5 output or a rumd3 TrajectoryFiles folder.
 
     Examples
     --------
 
     >>> import rumdpy as rp
     >>> import h5py
-    >>> output = rp.tools.load_output("examples/Data/LJ_r0.973_T0.70_toread.h5")                                    # Read from .h5
+    >>> output = rp.tools.TrajectoryIO("examples/Data/LJ_r0.973_T0.70_toread.h5")                                    # Read from .h5
     Found .h5 file, loading to rumdpy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
@@ -29,9 +31,8 @@ class load_output():
     Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of 2048 particles in 3 dimensions
     >>> print(f"The simulation output is divided into {nblocks} blocks, each of them with {nconfs} configurations")
     The simulation output is divided into 8 blocks, each of them with 13 configurations
-    >>> output = rp.tools.load_output("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles")            # Read from rumd3
+    >>> output = rp.tools.TrajectoryIO("examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles").get_h5()   # Read from rumd3
     Found rumd3 TrajectoryFiles, loading to rumpdy as output dictionary
-    >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
     >>> print(f"File examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of {N} particles in {D} dimensions")
     File examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles containts a simulation of 4000 particles in 3 dimensions
@@ -121,7 +122,7 @@ class load_output():
         # Defining output memory .h5 file
         fullpath = f"{name}"
         output   = h5py.File(f"{id(fullpath)}.h5", "w", driver='core', backing_store=False)
-        assert isinstance(output, h5py.File), "Error creating memory h5 file in load_output.load_rumd3"
+        assert isinstance(output, h5py.File), "Error creating memory h5 file in TrajectoryIO.load_rumd3"
 
         # Read trajectories
         if traj:
@@ -236,5 +237,3 @@ class load_output():
         print("Output file closed")
         return
 
-#if __name__ == '__main__':
-#    load_output(sys.argv[1])
