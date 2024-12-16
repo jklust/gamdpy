@@ -4,9 +4,9 @@ import os
 
 import rumdpy as rp
 
-file_to_read = "Data/LJ_r0.973_T0.70.h5"
+file_to_read = "LJ_T0.70.h5" 
 
-if file_to_read not in os.listdir(os.getcwd()):
+if not os.path.isfile(file_to_read):
     print("This example needs a the file LJ_T0.70.h5 to be present")
     print(f"{file_to_read} can be generated using minimal.py example")
     exit()
@@ -35,7 +35,4 @@ for pos in positions[nconfs-1::nconfs]:
 
 # Save rdf
 calc_rdf.save_average()
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove('rdf.dat')
 

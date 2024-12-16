@@ -66,8 +66,4 @@ for block in sim.run_timeblocks():
 print(sim.summary())
 
 rp.tools.save_configuration(configuration, "final.xyz")
-# Removes the created files if the script is run from test_examples
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove("initial.xyz")
-        os.remove("final.xyz")
+

@@ -117,10 +117,6 @@ sxy_SS = sxy[num_items_transient:]
 sxy_mean = np.mean(sxy_SS)
 print(f'{sr:.2g} {sxy_mean:.6f}')
 
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove('shear_run.txt')
-
 #plt.figure(1)
 #plt.plot(strains, k)
 #plt.plot(time, u)

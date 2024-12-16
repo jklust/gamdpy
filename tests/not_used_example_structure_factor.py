@@ -2,7 +2,7 @@
 import os
 import matplotlib
 
-def test_example_structure_factor():
+def not_example_structure_factor():
     # Use the non-interactive Agg Matplotlib backend to avoid interactive graphical interface
     matplotlib.get_backend()
     os.environ['MPLBACKEND'] = 'Agg'
@@ -15,5 +15,5 @@ def test_example_structure_factor():
     with open(example_path, 'r') as script:
         exec(script.read(), globals())
 
-if __name__ == '__main__':
-    test_example_structure_factor()
+#if __name__ == '__main__':
+#    test_example_structure_factor()

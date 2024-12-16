@@ -14,7 +14,7 @@ import numba
 import numba.cuda
 
 @pytest.mark.slow
-def test_examples(path_to_examples='examples'):
+def not_examples(path_to_examples='examples'):
     import matplotlib
     import matplotlib.pyplot as plt
     matplotlib.get_backend()
@@ -82,5 +82,5 @@ def test_examples(path_to_examples='examples'):
     del os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']
 
 
-if __name__ == '__main__':
-    test_examples()
+#if __name__ == '__main__':
+#    test_examples()

@@ -4,7 +4,7 @@ import os
 
 import rumdpy as rp
 
-file_to_read = "examples/Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
+file_to_read = "Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
 
 if not os.path.isdir(file_to_read):
     print(f"This example needs {file_to_read} to be present")
@@ -33,8 +33,4 @@ for pos in positions[nconfs-1::int(nconfs/8)]:
 
 # Save rdf
 calc_rdf.save_average("rdf_rumd3.dat")
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove('rdf_rumd3.dat')
-        os.remove('ptype_rdf_rumd3.dat')
 

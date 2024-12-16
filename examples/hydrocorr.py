@@ -50,7 +50,3 @@ print(sim.summary())
 
 hydrocorr.read()
 
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-   if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-       os.remove("jacf.dat")
-       os.remove("dacf.dat")

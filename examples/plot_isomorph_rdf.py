@@ -43,6 +43,4 @@ axs[1].set_xlim([0.5, 3.5])
 fig.tight_layout()
 fig.savefig('isomorph_rdf.pdf')
 #  plt.show()
-if 'RUMDPY_SAVE_OUTPUT_EXAMPLES' in os.environ:
-    if os.environ['RUMDPY_SAVE_OUTPUT_EXAMPLES']=='0':
-        os.remove("isomorph_rdf.pdf")
+
