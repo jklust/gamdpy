@@ -24,7 +24,7 @@ class Test_examples:
     def make_one(self, name="", toremove=[]):
         import os
         import importlib
-        os.chdir("examples")
+        os.chdir(os.path.join(self.main_dir, "examples"))
         if timing:                      # save start time
             import time
             start = time.time()
@@ -34,7 +34,6 @@ class Test_examples:
             fout.write(f"{name:30s}\t{end-start:>8.2f}\n")
         if rm_out:                      # remove created files
             [os.remove(filename) for filename in toremove]
-        os.chdir(self.main_dir)
 
     # Tests are ordered try to go fast to slow
     def test_D2(self):
