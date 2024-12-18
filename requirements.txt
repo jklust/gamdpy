@@ -3,3 +3,8 @@ numba
 pandas
 matplotlib
 h5py
+pytest-cov
+hypothesis
+ipywidgets
+sympy
+scipy

@@ -3,6 +3,8 @@ import pytest
 @pytest.mark.rumdpy_cpu
 def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     import os
+    import sys
+    sys.path.append(os.getcwd())
     os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
     os.environ["NUMBA_DISABLE_JIT"] = "1"
     os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"

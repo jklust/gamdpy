@@ -18,44 +18,26 @@ variables:
 #     - env/
 
 default:
-  image: nvidia/cuda:12.6.0-devel-ubuntu22.04
+  image: nvidia/cuda:12.6.3-devel-ubuntu22.04
 
 .test_environment: &test_environment
-    - echo "deb https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy main\ndeb-src https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy main" > /etc/apt/sources.list.d/python-deadsnake.list
-    - apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776
-    - apt-get update
+    - apt update
+    - apt -y install wget
 
-    - echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections
-    - echo 'tzdata tzdata/Zones/Europe select Copenhagen' | debconf-set-selections
-    - DEBIAN_FRONTEND="noninteractive" apt install -y tzdata
+    - mkdir -p ~/miniconda3
+    - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+    - bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    - source ~/miniconda3/bin/activate
 
-    - apt install -y "$PYTHON_VERSION" "$PYTHON_VERSION-dev" "$PYTHON_VERSION-venv"
-    - update-alternatives --install /usr/bin/python3 python3 "/usr/bin/$PYTHON_VERSION" 1
-    - update-alternatives --set python3 "/usr/bin/$PYTHON_VERSION"
-
-    # Python versions 3.10 and 3.11 have system packages, which prevent installation of "ensurepip" module
-    - if [[ "$PYTHON_VERSION" == "python3.10" || "$PYTHON_VERSION" == "python3.11" ]]; then apt install -y python3-pip; else python3 -m ensurepip --upgrade; fi
+    - conda create -y --name "$PYTHON_VERSION" python=="$PYTHON_VERSION"
+    - conda install -f -y -q --name "$PYTHON_VERSION" -c conda-forge --file requirements.txt
+    - conda activate "$PYTHON_VERSION"
 
     - python3 -V
-    - python3 -m pip install virtualenv
-    - virtualenv env
-    - source env/bin/activate
-    - python3 -m pip install .
-    # Install packages in requirements
-    - python3 -m pip install -r requirements.txt 
-    # Needed for running pytest and coverage
-    - python3 -m pip install coverage
-    - python3 -m pip install pytest
-    - python3 -m pip install pytest-cov
-    # Needed for running some tests
-    - python3 -m pip install scipy
-    - python3 -m pip install sympy
-    - python3 -m pip install ipywidgets
-    - python3 -m pip install k3d
 
 .test_runs: &test_runs
     # CPU tests need to be run independently because of some issue with gpu emulation
-    - python3 -m pytest -m"not rumdpy_cpu" --doctest-modules --cov-report term --cov-report html --cov=rumdpy
+    - python3 -m pytest -m "not rumdpy_cpu" --doctest-modules --cov-report term --cov-report html --cov=rumdpy
     - python3 tests/test_LJ_cpu.py
   # https://forum.gitlab.com/t/is-there-a-way-to-not-run-pipeline-when-merge-request-is-created/63039
   # https://stackoverflow.com/questions/70654510/how-to-run-pipeline-after-merge-request-approved-in-gitlab-ci
@@ -75,7 +57,7 @@ default:
 test:3.10:
   extends: .test_config
   variables:
-    PYTHON_VERSION: "python3.10"
+    PYTHON_VERSION: "3.10"
   script:
     - *test_environment
     - *test_runs
@@ -83,7 +65,7 @@ test:3.10:
 test:3.11:
   extends: .test_config
   variables:
-    PYTHON_VERSION: "python3.11"
+    PYTHON_VERSION: "3.11"
   script:
     - *test_environment
     - *test_runs
@@ -91,7 +73,7 @@ test:3.11:
 test:3.12:
   extends: .test_config
   variables:
-    PYTHON_VERSION: "python3.12"
+    PYTHON_VERSION: "3.12"
   script:
     - *test_environment
     - *test_runs
