@@ -21,7 +21,7 @@ configuration = rp.Configuration(D=D, N=N)
 configuration.simbox = rp.Simbox(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
-calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)
 #       the zero is to select the position array and discard images

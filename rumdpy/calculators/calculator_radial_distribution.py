@@ -18,7 +18,7 @@ class CalculatorRadialDistribution():
     configuration : rumdpy.Configuration
         The configuration object for which the radial distribution function is calculated.
 
-    num_bins : int
+    bins : int
         The number of bins in the radial distribution function.
 
     compute_plan : dict
@@ -31,7 +31,7 @@ class CalculatorRadialDistribution():
 
     >>> import rumdpy as rp
     >>> sim = rp.get_default_sim()
-    >>> calc_rdf = rp.CalculatorRadialDistribution(sim.configuration, num_bins=1000)
+    >>> calc_rdf = rp.CalculatorRadialDistribution(sim.configuration, bins=1000)
     >>> for _ in sim.run_timeblocks():
     ...     calc_rdf.update()      # Current configuration to rdf
     >>> rdf_data = calc_rdf.read() # Read the rdf data as a dictionary
@@ -39,10 +39,10 @@ class CalculatorRadialDistribution():
     >>> rdf = rdf_data['rdf']      # Radial distribution function
     """
 
-    def __init__(self, configuration, num_bins, compute_plan=None, ptype=None) -> None:
+    def __init__(self, configuration, bins, compute_plan=None, ptype=None) -> None:
         self.configuration = configuration
         self.d_ptype = cuda.to_device(ptype) if ptype is not None else None
-        self.num_bins = num_bins
+        self.bins = bins
         self.count = 0  # How many times have statistics been added to?
 
         self.compute_plan = compute_plan
@@ -52,7 +52,7 @@ class CalculatorRadialDistribution():
             # Allocate space for statistics
         self.rdf_list = []
         nptypes = int(np.max(ptype if ptype is not None else configuration.ptype)) + 1
-        self.gr_bins = np.zeros((nptypes, nptypes, self.num_bins), dtype=np.float64)
+        self.gr_bins = np.zeros((nptypes, nptypes, self.bins), dtype=np.float64)
         self.d_gr_bins = cuda.to_device(self.gr_bins)
         self.host_array_zeros = np.zeros(self.d_gr_bins.shape, dtype=self.d_gr_bins.dtype)
 
@@ -78,9 +78,9 @@ class CalculatorRadialDistribution():
             Kernel configuration: [num_blocks, (pb, tp)]
         """
 
-            num_bins = d_gr_bins.shape[2]  # reading number of bins from size of the device array
+            bins = d_gr_bins.shape[2]  # reading number of bins from size of the device array
             min_box_dim = min(sim_box[0], sim_box[1], sim_box[2])  # max distance for rdf can 0.5*Smallest dimension
-            bin_width = (min_box_dim / 2) / num_bins  # TODO: Chose more directly!
+            bin_width = (min_box_dim / 2) / bins  # TODO: Chose more directly!
 
             my_block = cuda.blockIdx.x
             local_id = cuda.threadIdx.x
@@ -127,15 +127,15 @@ class CalculatorRadialDistribution():
         dict
             A dictionary containing the distances and the radial distribution function.
         """
-        num_bins = self.rdf_list[0].shape[2]
+        bins = self.rdf_list[0].shape[2]
         min_box_dim = min(self.configuration.simbox.lengths[0], self.configuration.simbox.lengths[1],
                           self.configuration.simbox.lengths[2])
-        bin_width = (min_box_dim / 2) / num_bins
+        bin_width = (min_box_dim / 2) / bins
         rdf_ptype = np.array(self.rdf_list)
 
         # Normalize the g(r) lengths # Compute in setup and normalize om the fly 
         rho = self.configuration.N / np.prod(self.configuration.simbox.lengths)
-        for i in range(num_bins):  # Normalize one bin/distance at a time
+        for i in range(bins):  # Normalize one bin/distance at a time
             r_outer = (i + 1) * bin_width
             r_inner = i * bin_width
             shell_volume = (4.0 / 3.0) * np.pi * (r_outer ** 3 - r_inner ** 3)
@@ -149,7 +149,7 @@ class CalculatorRadialDistribution():
         for k in range(rdf_ptype.shape[2]):
             n_k = np.sum(ptype == k) / len(ptype)
             rdf_ptype[:, :, k, :] /= n_k
-        distances = np.arange(0, num_bins) * bin_width
+        distances = np.arange(0, bins) * bin_width
         return {'distances': distances, 'rdf': rdf, 'rdf_ptype': rdf_ptype, "ptype": ptype}
 
     def save_average(self, output_filename="rdf.dat", save_ptype=False) -> None:

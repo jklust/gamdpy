@@ -150,7 +150,7 @@ def load_conf_from_npz(path: str) -> Tuple[rp.Configuration, float]:
 
 def get_rdf(conf, positions, first_block, conf_per_block):
     _, nconf, _n, _d = positions.shape
-    cal_rdf = rp.CalculatorRadialDistribution(conf, num_bins=500)
+    cal_rdf = rp.CalculatorRadialDistribution(conf, bins=500)
     for i in range(positions.shape[0]):
         if i < first_block:
             continue

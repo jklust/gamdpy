@@ -116,7 +116,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Settle on io format
 - [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [ ] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
-- [ ] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
+- [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
 - [ ] make installable by pip for all, by uploading to pypi
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
@@ -128,12 +128,19 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Benchmarking
 - [ ] Charge (Water, SPCflexible), Jesper et al.
-
+- [ ] Remove NVE_Toxvaerd Nick
+- [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
+- [ ] Include support for different types in CalculatorStructureFactor
+- [ ] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
+- [ ] Remove imports of rumdpy inside rumdpy modules, Lorenzo(?)
+- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals
+- [ ] Molecular stress
+- [ ] Decide status of gravity interaction, should it be included in planar_interactions, Thomas
 
 ## TODO, long term:
 - [ ] Constraints
 - [ ] EAM metallic potentials
-- [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, is float64's sneaking in?
+- [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, are float64's sneaking in?
 - [ ] Add CPU support (can it be done as a decorator?)
 - [ ] Thermostat on subsets of particles
 

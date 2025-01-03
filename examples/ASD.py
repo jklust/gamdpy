@@ -86,7 +86,7 @@ if not os.path.exists(output_path):
 output = rp.tools.TrajectoryIO(output_path).get_h5()
 
 # Setup on-the-fly calculation of Radial Distribution Function
-calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
 positions = output["block"][:, :, 0, :, ]
 for i in range(positions.shape[0]):
     pos = positions[i, -1, :, :]

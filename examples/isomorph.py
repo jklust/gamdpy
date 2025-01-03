@@ -48,7 +48,7 @@ for index, rho in enumerate(rhos):
                         storage='memory') 
     
     # Setup on-the-fly calculation of Radial Distribution Function
-    calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+    calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
 
     print('Equilibration:', end='\t')
     for block in sim.run_timeblocks():

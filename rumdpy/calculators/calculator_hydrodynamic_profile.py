@@ -24,7 +24,7 @@ class CalculatorHydrodynamicProfile:
     Initialization variables:
     - configuration: Instance of the configuration class
     - ptype: The particle type for which the profile is calculated
-    - nbins: Number of bins to use in the profiles; more bins higher resolution. (default 100)
+    - bins: Number of bins to use in the profiles; more bins higher resolution. (default 100)
     - profdir: Profile spatial direction (default 2 - or z - direction)
     - veldir: The streaming velocity component used (default 0 - or x - direction)
     - verbose: If true print some information (default True)
@@ -33,20 +33,20 @@ class CalculatorHydrodynamicProfile:
      With the method read() you can retrieve the current data. By default a data file is printed with the same 
     """
     
-    def __init__(self, configuration, ptype, nbins=100, profdir=2, veldir=0, verbose=True):
+    def __init__(self, configuration, ptype, bins=100, profdir=2, veldir=0, verbose=True):
         self.conf = configuration
         self.ptype = ptype
-        self.nbins = nbins
+        self.bins = bins
         self.pdir = profdir
         self.vdir = veldir
 
-        self.cpart = np.zeros(nbins, dtype=np.int64)    
-        self.dens = np.zeros(nbins, dtype=np.float64)
-        self.temp = np.zeros(nbins, dtype=np.float64)
-        self.momc = np.zeros(nbins, dtype=np.float64)
+        self.cpart = np.zeros(bins, dtype=np.int64)
+        self.dens = np.zeros(bins, dtype=np.float64)
+        self.temp = np.zeros(bins, dtype=np.float64)
+        self.momc = np.zeros(bins, dtype=np.float64)
 
-        self.volbin = configuration.get_volume()/nbins
-        self.widthbin = configuration.simbox.lengths[profdir]/nbins
+        self.volbin = configuration.get_volume()/bins
+        self.widthbin = configuration.simbox.lengths[profdir]/bins
         self.hbox =  configuration.simbox.lengths[profdir]*0.5
         self.nsample = 0
         
@@ -59,7 +59,7 @@ class CalculatorHydrodynamicProfile:
                 break
 
         if verbose:
-            print(f"Types {self.ptype}, no. bin {self.nbins}, profile dir {self.pdir}, vel dir {self.vdir}")
+            print(f"Types {self.ptype}, no. bin {self.bins}, profile dir {self.pdir}, vel dir {self.vdir}")
 
     def update(self):
         
@@ -71,13 +71,13 @@ class CalculatorHydrodynamicProfile:
 
     def read(self, save=True): 
 
-        density = np.zeros(self.nbins)
-        svel = np.zeros(self.nbins)
-        temp = np.zeros(self.nbins)
-        x = np.zeros(self.nbins)
+        density = np.zeros(self.bins)
+        svel = np.zeros(self.bins)
+        temp = np.zeros(self.bins)
+        x = np.zeros(self.bins)
 
         fac = 1.0/(self.nsample*self.volbin)
-        for n in range(self.nbins):
+        for n in range(self.bins):
             x[n] = (n+0.5)*self.widthbin
             if self.cpart[n] > 0:
                 density[n] = self.mass*self.cpart[n]*fac                
@@ -86,10 +86,9 @@ class CalculatorHydrodynamicProfile:
 
         if save:
             fp =  open("HydrodynamicProfile.dat","w")
-            for n in range(self.nbins):
+            for n in range(self.bins):
                 fp.write("%f %f %f %f\n" % (x[n], density[n], svel[n], temp[n]))
                 
             fp.close()
         
         return (x, density, svel, temp)
-

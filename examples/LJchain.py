@@ -70,7 +70,7 @@ sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
                     compute_plan=compute_plan, storage=filename)
 
 # Setup on-the-fly calculation of Radial Distribution Function
-calc_rdf = rp.CalculatorRadialDistribution(configuration, num_bins=1000)
+calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
 
 print('Production:')
 for block in sim.run_timeblocks():
