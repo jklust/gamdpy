@@ -24,8 +24,7 @@ A class containing all relevant information about a configuration, including the
 
 ### 2. Integrators
 Classes implementing a simulation algorithm. Currently implemented: 
-- class NVE 
-- class NVE_Toxvaerd
+- class NVE
 - class NVT : Nose-Hoover thermostat 
 - class NVT_Langevin
 - class NPT_Langevin
@@ -128,7 +127,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Ensure neighborlist integrity (automated check/reallocate)
 - [ ] Benchmarking
 - [ ] Charge (Water, SPCflexible), Jesper et al.
-- [ ] Remove NVE_Toxvaerd Nick
+- [X] Remove NVE_Toxvaerd Nick
 - [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
 - [ ] Include support for different types in CalculatorStructureFactor
 - [ ] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
