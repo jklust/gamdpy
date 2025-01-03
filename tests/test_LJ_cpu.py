@@ -61,9 +61,6 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     if   integrator_type == 'NVE':
         integrator = rp.integrators.NVE(dt=dt)
         assert isinstance(integrator, rp.integrators.NVE)
-    elif integrator_type == 'NVE_Toxvaerd':
-        integrator = rp.integrators.NVE_Toxvaerd(dt=dt)
-        assert isinstance(integrator, rp.integrators.NVE_Toxvaerd)
     elif integrator_type == 'NVT':
         integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
         assert isinstance(integrator, rp.integrators.NVT)

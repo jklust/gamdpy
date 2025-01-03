@@ -7,8 +7,6 @@ import pandas as pd
 import rumdpy as rp
 
 integrator_name = 'NVE'
-if 'NVE_Toxvaerd' in sys.argv:
-    integrator_name = 'NVE_Toxvaerd'
 if 'NVT' in sys.argv:
     integrator_name = 'NVT'
 if 'NVT_Langevin' in sys.argv:
@@ -41,8 +39,6 @@ pressure = 1.2  # Not used for NV*
 
 if integrator_name=='NVE':
     integrator = rp.integrators.NVE(dt=dt)
-if integrator_name=='NVE_Toxvaerd':
-    integrator = rp.integrators.NVE_Toxvaerd(dt=dt)
 if integrator_name=='NVT':
     integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt) 
 if integrator_name=='NVT_Langevin':

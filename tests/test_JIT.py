@@ -40,7 +40,6 @@ def test_JIT():
        pressure = 1.2 # Not used for NV*
 
        integrators = [rp.integrators.NVE(dt=dt),
-                     rp.integrators.NVE_Toxvaerd(dt=dt), 
                      rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt), 
                      rp.integrators.NVT_Langevin(temperature=temperature, alpha=0.2, dt=dt, seed=2023), 
                      rp.integrators.NPT_Atomic  (temperature=temperature, tau=0.4, pressure=pressure, tau_p=20, dt=dt),
