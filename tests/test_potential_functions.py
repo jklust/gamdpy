@@ -13,8 +13,13 @@ def test_potential_functions() -> None:
     potLJ = 4*e*((s/r)**(12)-(s/r)**6)
     potLJ_rp = rp.make_potential_function_from_sympy(potLJ, [s, e])
     assert potLJ_rp(1, [2,3]) == rp.LJ_12_6_sigma_epsilon(1, [2, 3]), "Problem with rp.make_potential_function_from_sympy"
-    # The function rp.SAAP is not fully implemented: expression exp is not defined, should be numba.exp, numpy.exp or math.exp?
-    #assert rp.SAAP(), "Problem with rp.SAAP"
+
+    # Test SAAP potential
+    number_of_params = 8
+    params = [1.0]*number_of_params
+    dist = 1.0
+    pot_SAAP = rp.SAAP(dist, params)
+    assert len(pot_SAAP) == 3, "Problem with rp.SAAP"
     # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import math
+from math import exp
 from numba import cuda
 
 def SAAP(dist, params):
