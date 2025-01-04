@@ -81,7 +81,10 @@ EXPECTED_HEXAGONAL_POSITIONS = np.array([
 ])
 
 
-def test_fcc_lattice(verbose=False, plot=False):
+def test_fcc_lattice():
+    # verbose = False
+    # plot = False
+
     cells = [2, 2, 2]
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.FCC, cells)
     configuration = rp.Configuration(D=3)
@@ -91,18 +94,18 @@ def test_fcc_lattice(verbose=False, plot=False):
     assert np.allclose(configuration.simbox.lengths, expected_box_vector)
     expected_number_of_particles = 32
     assert configuration['r'].shape[0] == expected_number_of_particles
-    if verbose:
-        print('    FCC lattice')
-        print("positions:", configuration['r'])
-        print("box_vector:", configuration.simbox.lengths)
-    if plot:
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(configuration['r'][:, 0], configuration['r'][:, 1], configuration['r'][:, 2])
-        plt.show()
+    # if verbose:
+    #     print('    FCC lattice')
+    #     print("positions:", configuration['r'])
+    #     print("box_vector:", configuration.simbox.lengths)
+    # if plot:
+    #     import matplotlib.pyplot as plt
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     ax.scatter(configuration['r'][:, 0], configuration['r'][:, 1], configuration['r'][:, 2])
+    #     plt.show()
 
-def test_fcc_lattice_method(verbose=False, plot=False):
+def test_fcc_lattice_method():
     print("    FCC lattice usign conf.make_lattice")
     conf = rp.Configuration(D=3)
     conf.make_lattice(rp.unit_cells.FCC, [2, 2, 2])
@@ -115,7 +118,7 @@ def test_fcc_lattice_method(verbose=False, plot=False):
     print("positions:", positions)
 
 
-def test_bcc_lattice(verbose=False, plot=False):
+def test_bcc_lattice():
     cells = [2, 2, 2]
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.BCC, cells)
     configuration = rp.Configuration(D=3)
@@ -126,19 +129,22 @@ def test_bcc_lattice(verbose=False, plot=False):
     assert np.allclose(configuration['r'], EXPECTED_BCC_POSITIONS)
     expected_box_vector = np.array([2.0, 2.0, 2.0])
     assert np.allclose(configuration.simbox.lengths, expected_box_vector)
-    if verbose:
-        print("    BCC lattice")
-        print("positions:", configuration['r'])
-        print("box_vector:", configuration.simbox.lengths)
-    if plot:
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(configuration['r'][:, 0], configuration['r'][:, 1], configuration['r'][:, 2])
-        plt.show()
+    # if verbose:
+    #     print("    BCC lattice")
+    #     print("positions:", configuration['r'])
+    #     print("box_vector:", configuration.simbox.lengths)
+    # if plot:
+    #     import matplotlib.pyplot as plt
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     ax.scatter(configuration['r'][:, 0], configuration['r'][:, 1], configuration['r'][:, 2])
+    #     plt.show()
 
 
-def test_hexagonal(verbose=False, plot=False):
+def test_hexagonal():
+    # verbose = False
+    # plot = False
+
     cells = [4, 2]
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.HEXAGONAL, cells=cells)
     configuration = rp.Configuration(D=2)
@@ -151,29 +157,25 @@ def test_hexagonal(verbose=False, plot=False):
 
     assert np.allclose(configuration['r'], EXPECTED_HEXAGONAL_POSITIONS, rtol=1e-4)
 
-    if verbose:
-        print('  Hexagonal lattice')
-        print("positions:", configuration['r'])
-        print("box_vector:", configuration.simbox.lengths)
-    if plot:
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.title("Hexagonal lattice")
-        plt.scatter(configuration['r'][:, 0], configuration['r'][:, 1])
-        # Plot the box
-        L_x, L_y = box_vector
-        box = plt.Rectangle([-L_x/2, -L_y/2], L_x, L_y, fill=False)
-        plt.gca().add_patch(box)  
-        plt.axis('equal')
-        plt.show()
-
-def main():
-    test_hexagonal(verbose=True, plot=True)
-    test_fcc_lattice(verbose=True, plot=True)
-    test_fcc_lattice_method(verbose=True, plot=True)
-    test_bcc_lattice(verbose=True, plot=True)
+    # if verbose:
+    #     print('  Hexagonal lattice')
+    #     print("positions:", configuration['r'])
+    #     print("box_vector:", configuration.simbox.lengths)
+    # if plot:
+    #     import matplotlib.pyplot as plt
+    #     plt.figure()
+    #     plt.title("Hexagonal lattice")
+    #     plt.scatter(configuration['r'][:, 0], configuration['r'][:, 1])
+    #     # Plot the box
+    #     L_x, L_y = box_vector
+    #     box = plt.Rectangle([-L_x/2, -L_y/2], L_x, L_y, fill=False)
+    #     plt.gca().add_patch(box)
+    #     plt.axis('equal')
+    #     plt.show()
 
 
-if __name__ == "__main__":
-    main()
-
+if __name__ == "__main__":  # pragma: no cover
+    test_hexagonal()
+    test_fcc_lattice()
+    test_fcc_lattice_method()
+    test_bcc_lattice()

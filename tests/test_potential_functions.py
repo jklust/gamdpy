@@ -22,5 +22,5 @@ def test_potential_functions() -> None:
     assert len(pot_SAAP) == 3, "Problem with rp.SAAP"
     # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     test_potential_functions()

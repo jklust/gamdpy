@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 
 import rumdpy as rp
 
-def test_structure_factor(verbose=False, plot=False):
+def test_structure_factor():
+    # verbose = False
+    # plot = False
 
     # Setup simulation of single-component Lennard-Jones liquid
     temperature = 2.0
@@ -19,25 +21,26 @@ def test_structure_factor(verbose=False, plot=False):
                         steps_between_momentum_reset=100,
                         steps_per_timeblock=1024, num_timeblocks=16, storage='memory')
 
-    if verbose:
-        print('Equilibrating...')
-    for _ in sim.run_timeblocks():
-        if verbose:
-            print(sim.status(per_particle=True))
+    # if verbose:
+    #     print('Equilibrating...')
+    # for _ in sim.run_timeblocks():
+    #     if verbose:
+    #         print(sim.status(per_particle=True))
+    #
+    # if verbose:
+    #     print('Calculating structure factor in production run ...')
 
-    if verbose:
-        print('Calculating structure factor in production run ...')
     q_max: float = 16.0
     calc_struct_fact = rp.CalculatorStructureFactor(configuration)
     calc_struct_fact.generate_q_vectors(q_max=q_max)
     for _ in sim.run_timeblocks():
         calc_struct_fact.update()
-        if verbose:
-            print(sim.status(per_particle=True))
+        # if verbose:
+        #     print(sim.status(per_particle=True))
 
     # Read the (binned) structure factor
-    if verbose:
-        print('Testing binned data output ...')
+    # if verbose:
+    #     print('Testing binned data output ...')
     struc_fact = calc_struct_fact.read(bins=128)
 
     # Assert that the structure factor is a dictionary
@@ -60,25 +63,27 @@ def test_structure_factor(verbose=False, plot=False):
     assert np.min(struc_fact['S(|q|)']) < 1, f"min(S(q)) = {np.min(struc_fact['S(|q|)'])}"
     assert np.min(struc_fact['S(|q|)']) >= 0, f"min(S(q)) = {np.min(struc_fact['S(|q|)'])}"
 
-    if verbose:
-        # Print shape of the arrays
-        for key in struc_fact.keys():
-            print(f"Shape of {key}: {struc_fact[key].shape}")
-        print(f"Max of S(q): {np.max(struc_fact['S(|q|)'])}")
-        print(f"Length of q at max of S(q): {struc_fact['|q|'][np.argmax(struc_fact['S(|q|)'])]}")
+    # if verbose:
+    #     # Print shape of the arrays
+    #     for key in struc_fact.keys():
+    #         print(f"Shape of {key}: {struc_fact[key].shape}")
+    #     print(f"Max of S(q): {np.max(struc_fact['S(|q|)'])}")
+    #     print(f"Length of q at max of S(q): {struc_fact['|q|'][np.argmax(struc_fact['S(|q|)'])]}")
+    #
+    # if plot:
+    #     plt.figure()
+    #     plt.title('Structure factor')
+    #     plt.plot(struc_fact['|q|'], struc_fact['S(|q|)'], 'o--')
+    #     plt.xlabel('|q|')
+    #     plt.ylabel('S(|q|)')
+    #     plt.xlim(0, None)
+    #     plt.ylim(0, None)
+    #     plt.show()
+    #
+    # if verbose:
+    #     print('Testing raw data output ...')
 
-    if plot:
-        plt.figure()
-        plt.title('Structure factor')
-        plt.plot(struc_fact['|q|'], struc_fact['S(|q|)'], 'o--')
-        plt.xlabel('|q|')
-        plt.ylabel('S(|q|)')
-        plt.xlim(0, None)
-        plt.ylim(0, None)
-        plt.show()
 
-    if verbose:
-        print('Testing raw data output ...')
     struc_fact_raw = calc_struct_fact.read(bins=None)
     # Assert that the output is a dictionary
     assert isinstance(struc_fact_raw, dict)
@@ -96,32 +101,32 @@ def test_structure_factor(verbose=False, plot=False):
     assert isinstance(struc_fact_raw['n_vectors'], type(np.array([])))
     # Assert that the length of the arrays are the same
 
-    if verbose:
-        # Print dimensions of the arrays
-        for key in struc_fact_raw.keys():
-            print(f"Shape of {key}: {struc_fact_raw[key].shape}")
-
-    if plot:
-        # Plot image of 2D S(q) for q_z = 0
-        q: np.ndarray = struc_fact_raw['q']
-        S_q: np.ndarray = struc_fact_raw['S(q)']
-        # Select q_vectors where q_z = 0
-        mask = np.isclose(q[:, 2], 0)
-        q = q[mask]
-        q_x = q[:, 0]
-        q_y = q[:, 1]
-        S_q = S_q[mask]
-        # Plot image of 2D S(q)
-        plt.figure()
-        plt.title('Structure factor')
-        plt.scatter(q_x, q_y, c=S_q, s=50, alpha=0.8, cmap='viridis')
-        plt.xlabel('q_x')
-        plt.ylabel('q_y')
-        plt.colorbar()
-        plt.show()
-
-    if verbose:
-        print('All tests passed successfully')
+    # if verbose:
+    #     # Print dimensions of the arrays
+    #     for key in struc_fact_raw.keys():
+    #         print(f"Shape of {key}: {struc_fact_raw[key].shape}")
+    #
+    # if plot:
+    #     # Plot image of 2D S(q) for q_z = 0
+    #     q: np.ndarray = struc_fact_raw['q']
+    #     S_q: np.ndarray = struc_fact_raw['S(q)']
+    #     # Select q_vectors where q_z = 0
+    #     mask = np.isclose(q[:, 2], 0)
+    #     q = q[mask]
+    #     q_x = q[:, 0]
+    #     q_y = q[:, 1]
+    #     S_q = S_q[mask]
+    #     # Plot image of 2D S(q)
+    #     plt.figure()
+    #     plt.title('Structure factor')
+    #     plt.scatter(q_x, q_y, c=S_q, s=50, alpha=0.8, cmap='viridis')
+    #     plt.xlabel('q_x')
+    #     plt.ylabel('q_y')
+    #     plt.colorbar()
+    #     plt.show()
+    #
+    # if verbose:
+    #     print('All tests passed successfully')
 
 def test_structure_factor_backends():
     # Test structure factor calculation with different backends
@@ -142,6 +147,6 @@ def test_structure_factor_backends():
         calc_struct_fact.update()
         struc_fact = calc_struct_fact.read(bins=128)
 
-if __name__ == '__main__':
-    test_structure_factor(verbose=True, plot=True)
+if __name__ == '__main__':  # pragma: no cover
+    test_structure_factor()
     test_structure_factor_backends()

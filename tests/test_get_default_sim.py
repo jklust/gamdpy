@@ -11,5 +11,5 @@ def test_get_default_sim():
     assert isinstance(sim.integrator, rp.integrators.NVT)
     assert isinstance(sim.interactions[0], rp.PairPotential)
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     test_get_default_sim()

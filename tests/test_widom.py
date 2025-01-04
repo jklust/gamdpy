@@ -50,5 +50,5 @@ def test_widom_insertion():
     my_tol = 1e-4
     assert np.isclose(mu, mu_expected, rtol=my_tol), f"mu = {mu}, mu_expected = {mu_expected}"
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     test_widom_insertion()
