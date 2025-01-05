@@ -108,6 +108,9 @@ class Test_examples:
     def test_D4(self):
         self.make_one("D4")
 
+    def test_D8(self):
+        self.make_one("D8")
+
     def test_poiseuille(self):
         self.make_one("poiseuille", ["HydrodynamicProfile.dat", "initial.xyz", "final.xyz"])
 

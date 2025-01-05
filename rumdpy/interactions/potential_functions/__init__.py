@@ -1,6 +1,7 @@
 from .LJ_12_6 import LJ_12_6
 from .LJ_12_6_sigma_epsilon import LJ_12_6_sigma_epsilon 
 from .SAAP import SAAP
+from .harmonic_repulsion import harmonic_repulsion
 from .harmonic_bond_function import harmonic_bond_function
 # import helper functions
 from .apply_shifted_force_cutoff import apply_shifted_force_cutoff

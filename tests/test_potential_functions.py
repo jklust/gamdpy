@@ -1,5 +1,7 @@
 def test_potential_functions() -> None:
     import rumdpy as rp
+    import numba
+
     # note: this example assumes these functions were implemented correctly in version bfa77f6e
     assert rp.LJ_12_6(1, [2, 3]) == (5.0, 42.0, 438.0), "Problem with rp.LJ_12_6"
     assert rp.LJ_12_6_sigma_epsilon(1, [2, 3]) == (48384.0, 585216.0, 7635456.0), "Problem with rp.LJ_12_6_sigma_epsilon"
@@ -20,7 +22,20 @@ def test_potential_functions() -> None:
     dist = 1.0
     pot_SAAP = rp.SAAP(dist, params)
     assert len(pot_SAAP) == 3, "Problem with rp.SAAP"
+
+
+    # Test harmonic repulsion, here u=(1-r)²
+    pair_pot = rp.PairPotential(rp.harmonic_repulsion, params=params, max_num_nbs=128)
+    params = 2.0, 1.0
+    dist = 0.5
+    pot_harm_rep = rp.harmonic_repulsion(dist, params)
+    assert pot_harm_rep[0] == 0.25, "Problem with rp.harmonic_repulsion"
+    assert pot_harm_rep[1] == 2.0, "Problem with rp.harmonic_repulsion"
+    assert pot_harm_rep[2] == 2.0, "Problem with rp.harmonic_repulsion"
+
     # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
+
+
 
 if __name__ == '__main__':  # pragma: no cover
     test_potential_functions()

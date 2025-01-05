@@ -25,7 +25,9 @@ List of examples of simulations (mostly in order of increasing complexity).
 ## Atomistic models
 
 - [bcc_lattice.py](bcc_lattice.py) : How to set up other initial structures (bcc lattice of LJ particles).
-- [2D.py](2D.py) : Simulating a 2D system (Lennard-Jones particle in a hexagonal lattice).
+- [D2.py](D2.py) : Simulating a 2D system (Lennard-Jones particle in a hexagonal lattice).
+- [D4.py](D4.py) : Simulating a 4D system
+- [D8.py](D8.py) : Simulating a 8D system (harmonic repulsions)
 - [kablj.py](kablj.py) : Simulating the Kob-Andersen binary LJ mixture. Also showing how to apply a temperature ramp for cooling.
 - [tethered_particles.py](tethered_particles.py) : Simulation of tethered particles.
 - [poiseuille.py](poiseuille.py) : Simulation of a nano-scale Poiseuille flow in a slit-pore.
