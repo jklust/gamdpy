@@ -20,7 +20,7 @@ def LJ_12_6_sigma_epsilon(dist, params):
         Distance between particles
         
     params : array-like
-        sigma, epsilon
+        σ, ε
 
     """  # LJ:  U(r)  =     4*epsilon(   (r/sigma)**-12 +   (r/sigma)**-6 )
     sigma = params[0]  #      Um(r) =   -24*epsilon( 2*(r/sigma)**-13 +   (r/sigma)**-7 )/sigma

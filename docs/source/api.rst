@@ -22,9 +22,6 @@ Integrators
 .. autoclass:: rumdpy.NVE
    :members:
 
-.. autoclass:: rumdpy.NVE_Toxvaerd
-   :members:
-
 .. autoclass:: rumdpy.NVT
    :members:
 
@@ -40,6 +37,9 @@ Integrators
 .. autoclass:: rumdpy.SLLOD
    :members:
 
+.. autoclass:: rumdpy.NVU_RT
+   :members:
+
 Interactions
 ************
 
@@ -49,12 +49,19 @@ Pair potentials
 .. autoclass:: rumdpy.PairPotential
    :members:
 
-Functions
----------
+Functions (pair potentials)
+---------------------------
 
 .. autofunction:: rumdpy.LJ_12_6
 
 .. autofunction:: rumdpy.LJ_12_6_sigma_epsilon
+
+.. autofunction:: rumdpy.harmonic_repulsion
+
+.. autofunction:: rumdpy.SAAP
+
+Functions (bonds)
+---------------------------
 
 .. autofunction:: rumdpy.harmonic_bond_function
 
@@ -86,6 +93,8 @@ Classes
 
 .. autoclass:: rumdpy.Bonds
 
+.. autoclass:: rumdpy.Angles
+
 .. autoclass:: rumdpy.Tether
 
 .. autoclass:: rumdpy.Gravity
@@ -101,13 +110,6 @@ Generators
 
 .. autofunction:: rumdpy.make_fixed_interactions
 
-
-The Evaluator Class
-===================
-
-.. autoclass:: rumdpy.Evaluater
-
-
 Calculators
 ***********
 
@@ -120,9 +122,40 @@ Calculators
 .. autoclass:: rumdpy.CalculatorWidomInsertion
    :members:
 
+.. autoclass:: rumdpy.CalculatorHydrodynamicCorrelations
+   :members:
+
+.. autoclass:: rumdpy.CalculatorHydrodynamicProfile
+   :members:
 
 Tools and helper functions
 **************************
+
+Input and Output
+================
+
+The TrajectoryIO class
+----------------------
+
+.. autoclass:: rumdpy.Configuration
+   :members:
+   :undoc-members:
+
+IO functions
+------------
+
+.. autofunction:: rumdpy.tools.save_configuration
+
+.. autofunction:: rumdpy.configuration_to_hdf5
+
+.. autofunction:: rumdpy.configuration_from_hdf5
+
+.. autofunction:: rumdpy.configuration_to_rumd3
+
+.. autofunction:: rumdpy.configuration_from_rumd3
+
+.. autofunction:: rumdpy.configuration_to_lammps
+
 
 Mathematical functions
 ======================
@@ -141,25 +174,11 @@ Extract data
 
 .. autofunction:: rumdpy.extract_scalars
 
-Input/output of configurations
-==============================
-
-.. autofunction:: rumdpy.tools.save_configuration
-
-.. autofunction:: rumdpy.configuration_to_hdf5
-
-.. autofunction:: rumdpy.configuration_from_hdf5
-
-.. autofunction:: rumdpy.configuration_to_rumd3
-
-.. autofunction:: rumdpy.configuration_from_rumd3
-
-.. autofunction:: rumdpy.configuration_to_lammps
-
 Miscellaneous
-=============
-
-.. autofunction:: rumdpy.get_default_compute_plan
+*************
 
 .. autofunction:: rumdpy.get_default_sim
 
+.. autofunction:: rumdpy.get_default_compute_plan
+
+.. autofunction:: rumdpy.get_default_compute_flags

@@ -1,11 +1,25 @@
 import numba
 
 def harmonic_repulsion(dist, params):
-    """ The harmonic repulsion potential: u(r) = ½ ε (1 - r/σ)²  for r/σ < 1 and 0 otherwise.
-    u(r) = 0.5 eps (1 - r/sigma)^2 for r < sigma and zero otherwise.
-    parameters: ε=eps, σ=cut
+    """ The harmonic repulsion pair potential
 
-    Note that this potential is naturally truncated at r=sigma.
+    .. math::
+
+        u(r) = \\epsilon(1-r/\\sigma)^2
+
+    for :math:`r<\\sigma` and zero otherwise.
+    Parameters: ε=epsilon, σ=cut.
+    Note that this potential is naturally truncated at r=σ.
+
+    Parameters
+    ----------
+
+    dist : float
+        Distance between particles
+
+    params : array-like
+        ε, σ
+
     """
 
     eps = numba.float32(params[0])

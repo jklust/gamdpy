@@ -1,33 +1,29 @@
-import numpy as np
 import numba
-import math
 from math import exp
-from numba import cuda
 
 def SAAP(dist, params):
-    '''
-    The SAAP potential: u(r) = eps (a0 exp(a1 r)/r + a2 exp(a3 r) + a4) / (1 + a5 r⁶)
+    """ The SAAP potential
+    is a pair potential for noble elements, its parameters
+    are derived from fitting on data obtained from ab initio methods (coupled cluster):
 
-    parameters: a0, a1, a2, a3, a4, a5, sigma, eps
+    .. math::
 
-    The SAAP potential is a pair potential for noble elements, its parameters
-    are derived from fitting on data obtained from ab initio methods (coupled cluster).
-    The potential is given by:
+        u(x=r/\\sigma)/\\epsilon = (a_0\\exp(a_1 x)/x + a_2\\exp(a_3 x) + a_4) / (1+a_5 x^6)
 
-        u(r) = eps (a0 exp(a1 r)/r + a2 exp(a3 r) + a4) / (1 + a5 r⁶)
+    The six :math:`a_i` parameters are given in units of eps and sigma.
 
-    The s(r) function, used to compute pair forces (𝐅=s·𝐫), is defined as
+    Reference: https://doi.org/10.1063/1.5085420
 
-        s(r) = -u'(r)/r
+    Parameters
+    ----------
 
-    Together with the second derivative of u ('d2u_dr2') has been computed
-    using the sympy library.
+    dist : float
+        Distance between particles
 
-    NB: the six parameters 'ai' are given in units of eps and sigma, e.g. a0 and
-    a1 have units of energy*distance and 1/distance respectively (real a0, namely
-    A0, is A0 = a0 * sigma * eps).
+    params : array-like
+        a₀, a₁, a₂, a₃, a₄, a₅, σ, ε
 
-    '''
+    """
 
     # Extract parameters compatibly with numba, in float32 precision
     a0 = numba.float32(params[0])
@@ -80,4 +76,3 @@ def SAAP(dist, params):
     d2u_dr2 = eps * (d2u_dr2_1 + d2u_dr2_2 + d2u_dr2_3 + d2u_dr2_4) / sigma**2 # sigma² because of double CR
 
     return u, s, d2u_dr2  # u(r), -u'(r)/r, u''(r)
-
