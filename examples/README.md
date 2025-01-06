@@ -2,6 +2,8 @@
 
 List of examples of simulations (mostly in order of increasing complexity).
 
+NOTE: For testing purposes the simulations in the examples are very short, so you might want to make them longer.
+
 ## Basic
 
 - [minimal.py](minimal.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NVT integrator. 

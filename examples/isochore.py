@@ -9,7 +9,7 @@ import rumdpy as rp
 
 # Setup fcc configuration
 configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[6, 6, 6], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.6)
 
@@ -18,8 +18,12 @@ pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
-num_blocks = 8
-steps_per_block = 1024*2
+# Specify duration of simulations. 
+# Increase 'num_timelocks' for longer runs, better statistics, AND larger storage consumption
+# Increase 'steps_per_block' for longer runs
+dt = 0.004  # timestep
+num_timeblocks = 8            # Do simulation in this many 'timeblocks'. 
+steps_per_timeblock = 1*1024  # ... each of this many steps
 
 for temperature in ['0.70', '1.10', '1.50']:
     print('\n\nTemperature: ' + temperature)
@@ -29,7 +33,7 @@ for temperature in ['0.70', '1.10', '1.50']:
 
     # Setup Simulation
     sim = rp.Simulation(configuration, pair_pot, integrator,
-                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                        num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                         steps_between_momentum_reset=100,
                         storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 

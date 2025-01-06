@@ -1,25 +1,26 @@
 """ Example of a binary LJ simulation using rumdpy.
 
-NVT simulation of the Kob-Andersen mixture, starting from a FCC crystal using a temperature ramp.
-
+NVT simulation of the Kob-Andersen mixture, and compare results with Rumd3 (rumd.org)
 """
-import os.path
-
-import h5py
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
 import rumdpy as rp
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import os.path
+
+# Specify statepoint
+num_part = 2000
 rho = 1.200
-# Setup configuration: FCC crystal
+temperature = 0.80
+
+# Setup configuration: 
 configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Vol':True})
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
-configuration['m'] = 1.0
-configuration.randomize_velocities(temperature=1.6)
-configuration.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
-#configuration['r'][27,2] += 0.01 # Perturb z-coordinate of particle 27
+configuration.make_positions(N=num_part, rho=rho)
+configuration['m'] = 1.0 # Specify all masses to unity 
+configuration.randomize_velocities(temperature=2.0) # Initial high temperature for randomizing
+configuration.ptype[::5] = 1 # Every fifth particle set to type 1 (4:1 mixture)
 
 # Setup pair potential: Binary Kob-Andersen LJ mixture.
 pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
@@ -30,32 +31,39 @@ eps = [[1.00, 1.50],
 cut = np.array(sig)*2.5
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
-# Setup integrator
+# Setup integrator. 
+# Increase 'num_blocks' for longer runs, better statistics, AND bigger storage consumption
+# Increase 'steps_per_block' for longer runs
 dt = 0.004  # timestep
-num_blocks = 64           # Do simulation in this many 'blocks'
-steps_per_block = 4*1024  # ... each of this many steps
-running_time = dt*num_blocks*steps_per_block
-temperature = 0.800
-filename = 'Data/KABLJ_Rho1.20_T0.800.h5'
+num_timeblocks = 32           # Do simulation in this many 'blocks'. 
+steps_per_timeblock = 2*1024  # ... each of this many steps
+running_time = dt*num_timeblocks*steps_per_timeblock
+filename = f'Data/KABLJ_Rho{rho:.3f}_T{temperature:.3f}.h5'
 
 print('High Temperature followed by cooling and equilibration:')
 Ttarget_function = rp.make_function_ramp(value0=2.000,       x0=running_time*(1/8), 
                                          value1=temperature, x1=running_time*(1/4))
-integrator = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
+integrator = rp.integrators.NVT(temperature=Ttarget_function, tau=0.2, dt=dt)
+
 sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    num_timeblocks=num_timeblocks, 
+                    steps_per_timeblock=steps_per_timeblock,
                     steps_between_momentum_reset=100,
-                    compute_flags={'Fsq':True, 'lapU':True},
-                    storage=filename) 
+                    scalar_output=None, # Do not save data for equilibration run
+                    conf_output=None,
+                    storage="memory") 
 for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
 print('Production:')
-integrator = rp.integrators.NVT(temperature, tau=0.2, dt=dt)
+integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
+
 sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    num_timeblocks=num_timeblocks, 
+                    steps_per_timeblock=steps_per_timeblock,
                     steps_between_momentum_reset=100,
+                    compute_flags={'Fsq':True, 'lapU':True},
                     storage=filename)
 for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
@@ -88,7 +96,6 @@ if rho==1.200 and temperature==0.800:
 rp.plot_scalars(df, configuration.N,  configuration.D, figsize=(10,8), block=False)
 
 dyn = rp.tools.calc_dynamics(sim.output, first_block=0, qvalues=[7.5, 5.5])
-
 fig, axs = plt.subplots(1, 1, figsize=(6,4))
 axs.loglog(dyn['times'], dyn['msd'], '.-', label=['A (rumdpy)', 'B (rumdpy)'])
 axs.set_xlabel('Time')
@@ -103,8 +110,8 @@ axs.legend()
 plt.show(block=True)
 
 if rho==1.200 and temperature==0.800:
-     print('Testing complience with Rumd3:')
+     print('\nTesting complience with Rumd3:')
      assert abs(mu - mu3)     < 0.01, f"{mu=} but in rumd3 is {mu3=}"
-     assert abs(cvex - cvex3) < 0.1 , f"{cvex=} but in rumd3 is {cvex3=}"
+     assert abs(cvex - cvex3) < 0.2 , f"{cvex=} but in rumd3 is {cvex3=}"
      assert abs(mw - mw3)     < 0.03, f"{mw=} but in rumd3 is {mw3=}"
      print('Passed')

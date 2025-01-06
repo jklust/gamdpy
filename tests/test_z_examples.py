@@ -136,5 +136,5 @@ class Test_examples:
         self.make_one("consistency_NPT")
 
     def test_kablj(self):
-        self.make_one("kablj", ["Data/KABLJ_Rho1.20_T0.800.h5"])
+        self.make_one("kablj", ["Data/KABLJ_Rho1.200_T0.800.h5"])
 
