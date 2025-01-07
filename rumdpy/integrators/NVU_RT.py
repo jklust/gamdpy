@@ -6,13 +6,14 @@ from numba import cuda
 import math
 from typing import Any, Literal, Tuple
 import numpy.typing as npt
+from .integrator import Integrator
 
 
 # Just to get rid of certain IDE errors but it is not important
 CudaArray = npt.NDArray[Any]
 
 
-class NVU_RT():
+class NVU_RT(Integrator):
     """Potential energy conserving integrator.
     Calculate the positions by reflecting on the constant potential energy
     hypersurface and doing Ray Tracing (RT).

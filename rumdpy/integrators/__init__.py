@@ -1,3 +1,4 @@
+from .integrator import Integrator
 from .NVE import NVE
 from .NVT import NVT
 from .NVT_Langevin import NVT_Langevin

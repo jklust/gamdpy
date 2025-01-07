@@ -2,9 +2,10 @@ import numpy as np
 import numba
 import rumdpy as rp
 from numba import cuda
-import math
+from .integrator import Integrator
 
-class NVE():
+
+class NVE(Integrator):
     """Total energy conserving integrator
 
     Use the Leap-frog algorithm to integrate the equations of motion:
@@ -25,11 +26,11 @@ class NVE():
     def __init__(self, dt):
         self.dt = dt
   
-    def get_params(self, configuration, interactions_params, verbose=False):
+    def get_params(self, configuration: rp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         return (dt,)
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration: rp.Configuration, compute_plan: dict, compute_flags: dict[str,bool], interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
