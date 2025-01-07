@@ -6,8 +6,10 @@ import math
 from numba.cuda.random import create_xoroshiro128p_states
 from numba.cuda.random import xoroshiro128p_normal_float32
 import rumdpy as rp
+from .integrator import Integrator
 
-class NVT_Langevin():
+
+class NVT_Langevin(Integrator):
     """ NVT Langevin Leap-frog integrator
 
     The langevin thermostat is a stochastic thermostat that keeps the system at a constant temperature:
@@ -39,7 +41,7 @@ class NVT_Langevin():
         self.dt = dt
         self.seed = seed
 
-    def get_params(self, configuration, interactions_params, verbose=False):
+    def get_params(self, configuration: rp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         alpha = np.float32(self.alpha)
         rng_states = create_xoroshiro128p_states(configuration.N, seed=self.seed)
@@ -48,7 +50,7 @@ class NVT_Langevin():
         return (dt, alpha, rng_states, d_old_beta) # Needs to be compatible with unpacking in
                                                    # step() below
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration: rp.Configuration, compute_plan: dict, compute_flags: dict[str,bool], interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

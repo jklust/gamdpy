@@ -5,8 +5,9 @@ import math
 from numba.cuda.random import create_xoroshiro128p_states
 from numba.cuda.random import xoroshiro128p_normal_float32
 import rumdpy as rp
+from .integrator import Integrator
 
-class NPT_Langevin():
+class NPT_Langevin(Integrator):
     """ Constant NPT Langevin integrator
     NPT Langevin Leap-frog integrator based on 
     N. Grønbech-Jensen and Oded Farago, J. Chem. Phys. 141, 194108 (2014),
@@ -26,7 +27,7 @@ class NPT_Langevin():
         self.dt = dt
         self.seed = seed
 
-    def get_params(self, configuration, interactions_params, verbose=False):
+    def get_params(self, configuration: rp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         alpha = np.float32(self.alpha)
         alpha_baro = np.float32(self.alpha_baro)
@@ -41,7 +42,7 @@ class NPT_Langevin():
                 self.barostatModeISO, np.int32(self.boxFlucCoord), 
                 rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)
     
-    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration: rp.Configuration, compute_plan: dict, compute_flags:dict[str,bool], interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

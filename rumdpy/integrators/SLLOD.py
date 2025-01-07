@@ -3,6 +3,7 @@ import numba
 import rumdpy as rp
 from numba import cuda
 import math
+from .integrator import Integrator
 
 
 ## TO DO LIST FOR SLLOD (including LEBCs)
@@ -13,7 +14,7 @@ import math
 # 5. Update images when box shift gets wrapped
 # 6. Save box-shift
 
-class SLLOD():
+class SLLOD(Integrator):
     """ The SLLOD integrator
 
     Shear an atomic system in the xy-plane using the SLLOD equations.

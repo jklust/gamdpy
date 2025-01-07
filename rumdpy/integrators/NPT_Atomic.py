@@ -3,8 +3,9 @@ import numpy as np
 import numba
 from numba import cuda
 import rumdpy as rp
+from .integrator import Integrator
 
-class NPT_Atomic():
+class NPT_Atomic(Integrator):
     """ Constant NPT integrator for atomic systems
 
         Integrator keeping N (number of particles), P (pressure), and T (temperature) constant, 
@@ -40,7 +41,7 @@ class NPT_Atomic():
         self.thermostat_state = np.zeros(2, dtype=np.float32)          
         self.barostat_state = np.zeros(3, dtype=np.float32)                         # NOTE: array is (barostat_state, virial, volume) 
 
-    def get_params(self, configuration, interactions_params, verbose=False):
+    def get_params(self, configuration: rp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         degrees  = configuration.N * configuration.D - configuration.D                        # number of degrees of freedom 
         factor = np.float32(1./(4*np.pi*np.pi))
@@ -52,7 +53,7 @@ class NPT_Atomic():
         return (dt, mass_t, mass_p, degrees, self.d_thermostat_state, self.d_barostat_state)   # Needs to be compatible with unpacking in
                                                                                                # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
+    def get_kernel(self, configuration: rp.Configuration, compute_plan: dict, compute_flags:dict, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
