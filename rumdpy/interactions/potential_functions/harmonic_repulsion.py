@@ -5,7 +5,7 @@ def harmonic_repulsion(dist, params):
 
     .. math::
 
-        u(r) = \\epsilon(1-r/\\sigma)^2
+        u(r) = ½\\epsilon(1-r/\\sigma)^2
 
     for :math:`r<\\sigma` and zero otherwise.
     Parameters: ε=epsilon, σ=cut.
