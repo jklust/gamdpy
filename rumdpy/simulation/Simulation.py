@@ -74,7 +74,9 @@ class Simulation():
 
     def __init__(self, configuration: rp.Configuration, interactions, integrator: Integrator,
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
-                 compute_plan=None, storage='output.h5', scalar_output: int|str='default', conf_output='default',
+                 compute_plan=None, storage='output.h5',
+                 scalar_output: int|str|None='default',
+                 conf_output: int|str|None='default',
                  steps_between_momentum_reset: int|str='default', compute_flags=None, verbose=False, timing=True,
                  include_simbox_in_output=False, steps_in_kernel_test=1):
 

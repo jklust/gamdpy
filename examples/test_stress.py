@@ -31,7 +31,8 @@ print(sim.compute_plan)
 # Run simulation one block at a time
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
-    vol = configuration.simbox.volume(configuration.simbox.lengths)
+    #vol = configuration.simbox.volume(configuration.simbox.lengths)
+    vol = configuration.get_volume()
     
     sts_x_row = (np.sum(sim.configuration['sx'], axis=0)/2/vol)
     sts_y_row = (np.sum(sim.configuration['sy'], axis=0)/2/vol)
