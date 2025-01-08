@@ -31,20 +31,18 @@ def test_potential_functions() -> None:
     params = 2.0, 1.0
     dist = 0.5
     pot_harm_rep = rp.harmonic_repulsion(dist, params)
-    assert pot_harm_rep[0] == 0.25, "Problem with rp.harmonic_repulsion"
-    assert pot_harm_rep[1] == 2.0, "Problem with rp.harmonic_repulsion"
-    assert pot_harm_rep[2] == 2.0, "Problem with rp.harmonic_repulsion"
+    assert np.isclose(pot_harm_rep[0],0.25), "Problem with rp.harmonic_repulsion"
+    assert np.isclose(pot_harm_rep[1],2.0), "Problem with rp.harmonic_repulsion"
+    assert np.isclose(pot_harm_rep[2],2.0), "Problem with rp.harmonic_repulsion"
     eps, sig = 1.43, 1.37
     r = 0.98
     pot_harm_rep_2 = rp.harmonic_repulsion(r, [eps, sig])
     assert np.isclose(pot_harm_rep_2[0], np.float32(0.5*eps*(1.0-r/sig)**2)), f"Problem with rp.harmonic_repulsion"
     du_dr = -eps*(1.0-r/sig)/sig
-    assert pot_harm_rep_2[1] == -du_dr/r, "Problem with rp.harmonic_repulsion"
-    assert pot_harm_rep_2[2] == eps/sig**2, "Problem with rp.harmonic_repulsion"
+    assert np.isclose(pot_harm_rep_2[1], -du_dr/r), "Problem with rp.harmonic_repulsion"
+    assert np.isclose(pot_harm_rep_2[2], eps/sig**2), "Problem with rp.harmonic_repulsion"
 
     # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
-
-
 
 if __name__ == '__main__':  # pragma: no cover
     test_potential_functions()
