@@ -4,7 +4,12 @@ import math
 from numba import cuda
 from .make_fixed_interactions import make_fixed_interactions   # bonds is an example of 'fixed' interactions
 
-class Bonds():
+# Abstract Base Class and type annotation
+from .interaction import Interaction
+from rumdpy import Configuration
+
+
+class Bonds(Interaction):
     """ Fixed bond interactions between particles, such as harmonic bonds or FENE bonds.
 
     Parameters
@@ -31,7 +36,7 @@ class Bonds():
         self.potential_params = potential_params
         self.indices = indices
 
-    def get_params(self, configuration, compute_plan, verbose=False):
+    def get_params(self, configuration: Configuration, compute_plan: dict, verbose=False) -> tuple:
         self.N = configuration.N
         self.potential_params_array = np.array(self.potential_params, dtype=np.float32)
         assert len(self.potential_params_array.shape)==2 # for now...
@@ -48,7 +53,8 @@ class Bonds():
         self.d_params = cuda.to_device(self.potential_params_array)
         return (self.d_indices, self.d_params)
         
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 

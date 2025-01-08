@@ -5,8 +5,11 @@ import numba
 import math
 from .make_fixed_interactions import make_fixed_interactions
 
+# Abstract Base Class and type annotation
+from .interaction import Interaction
+from rumdpy import Configuration
 
-class Gravity:
+class Gravity(Interaction):
     """Adding a gravitational-like force on particles.
 
         Parameters
@@ -63,9 +66,7 @@ class Gravity:
 
         self.indices_set = True
 
-
-    def get_params(self, configuration, compute_plan, verbose=False):
-        
+    def get_params(self, configuration: Configuration, compute_plan: dict, verbose=False) -> tuple:
         if self.indices_set == False:
             raise ValueError("Indices not defined")
 
@@ -74,8 +75,7 @@ class Gravity:
         
         return (self.d_pindices, self.d_force)
 
-
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 

@@ -6,8 +6,11 @@ from numba import cuda
 
 from .make_fixed_interactions import make_fixed_interactions  # tether is an example of 'fixed' interactions
 
+# Abstract Base Class and type annotation
+from .interaction import Interaction
+from rumdpy import Configuration
 
-class Relaxtemp:
+class Relaxtemp(Interaction):
     """ Thermostat using simple kinetic temperature relaxation of each particles. 
  
         Parameters
@@ -63,8 +66,7 @@ class Relaxtemp:
 
         self.indices_set = True
 
-    
-    def get_params(self, configuration, compute_plan, verbose=False):
+    def get_params(self, configuration: Configuration, compute_plan: dict, verbose=False) -> tuple:
 
         if self.indices_set == False:
             raise ValueError("Indices not defined")
@@ -75,8 +77,7 @@ class Relaxtemp:
 
         return (self.d_pindices, self.d_relax_params)
 
-    
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']]

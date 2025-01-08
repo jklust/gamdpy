@@ -6,6 +6,7 @@ from numba import cuda
 # rumdpy
 import rumdpy as rp
 from rumdpy.integrators import Integrator
+from rumdpy.interactions import Interaction
 
 # TODO: to remove import above you need to add a lot of lines are the following
 #from ..simulation.get_default_compute_plan import get_default_compute_plan
@@ -72,7 +73,9 @@ class Simulation():
 
     """
 
-    def __init__(self, configuration: rp.Configuration, interactions, integrator: Integrator,
+    def __init__(self, configuration: rp.Configuration, 
+                 interactions: Interaction|list[Interaction], 
+                 integrator: Integrator,
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
                  scalar_output: int|str|None='default',

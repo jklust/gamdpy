@@ -3,7 +3,7 @@ from rumdpy import Configuration
 
 class Interaction(ABC):
     """
-    Abstract Base Class specifying the requirements for an integrator
+    Abstract Base Class specifying the requirements for an interaction
     """
 
     @abstractmethod   

@@ -15,11 +15,9 @@ class Integrator(ABC):
         pass
 
     @abstractmethod
-    def get_params(self, configuration: Configuration, interactions_params: dict) -> dict :
+    def get_params(self, configuration: Configuration, interactions_params: dict) -> tuple :
         """
         Get a tuple with the parameters expected by the associated kernel
         """
 
         pass
-
-    

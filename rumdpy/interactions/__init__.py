@@ -1,5 +1,5 @@
+from .interaction import Interaction
 from .pair_potential import *
-#from .pair_potential2 import *
 from .nblist import *
 from .nblist_linked_lists import *
 from .add_interactions import *

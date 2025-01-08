@@ -4,7 +4,11 @@ import math
 from numba import cuda
 from .make_fixed_interactions import make_fixed_interactions   # bonds is an example of 'fixed' interactions
 
-class Angles(): 
+# Abstract Base Class and type annotation
+from .interaction import Interaction
+from rumdpy import Configuration
+
+class Angles(Interaction): 
 
     def __init__(self, indices, parameters):
         
@@ -12,15 +16,12 @@ class Angles():
         self.params = np.array(parameters, dtype=np.float32)
 
 
-    def get_params(self, configuration, compute_plan, verbose=False):
-
+    def get_params(self, configuration: Configuration, compute_plan: dict, verbose=False) -> tuple:
         self.d_indices = cuda.to_device(self.indices)
         self.d_params = cuda.to_device(self.params);
-        
         return (self.d_indices, self.d_params)
 
- 
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 

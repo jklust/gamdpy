@@ -4,8 +4,9 @@ import math
 from numba import cuda
 import matplotlib.pyplot as plt
 import rumdpy as rp
+from .interaction import Interaction
 
-class PairPotential():
+class PairPotential(Interaction):
     """ Pair potential """
 
     def __init__(self, pairpotential_function, params, max_num_nbs, exclusions=None):
@@ -69,7 +70,7 @@ class PairPotential():
         plt.show()
         
   
-    def get_params(self, configuration, compute_plan, verbose=False):
+    def get_params(self, configuration: rp.Configuration, compute_plan: dict, verbose=False) -> tuple:
         
         self.params, max_cut = self.convert_user_params()
         self.d_params = cuda.to_device(self.params)
@@ -84,7 +85,7 @@ class PairPotential():
 
         return (self.d_params, self.nblist.d_nblist, nblist_params)
 
-    def get_kernel(self, configuration, compute_plan, compute_flags, verbose=False):
+    def get_kernel(self, configuration: rp.Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         num_cscalars = configuration.num_cscalars
 
         compute_u = compute_flags['U']
