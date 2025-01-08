@@ -3,9 +3,13 @@ import numba
 import math
 from numba import cuda
 
-# Intended to be a runtime-action
+# Abstract Base Class and type annotation
+from .runtime_action import RuntimeAction
+from rumdpy import Configuration
+
+
 # Could include flags of dimensions to work on
-class MomentumReset():
+class MomentumReset(RuntimeAction):
     """ 
     Runtime action that sets the total momentum of configuration to zero
     every 'steps_between_action' time step.
@@ -16,12 +20,12 @@ class MomentumReset():
             raise ValueError(f'steps_between_momentum_reset ({steps_between_reset}) should be non-negative integer.')
         self.steps_between_reset = steps_between_reset
 
-    def get_params(self, configuration, compute_plan):
+    def get_params(self, configuration: Configuration, compute_plan: dict) -> tuple:
         self.total_momentum = np.zeros(configuration.D+1, dtype=np.float32) # Total mass summed in last index of total_momentum
         self.d_total_momentum = cuda.to_device(self.total_momentum)
         return (self.d_total_momentum, ) # return parameters as a tuple
 
-    def get_kernel(self, configuration, compute_plan):
+    def get_kernel(self, configuration: Configuration, compute_plan: dict):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

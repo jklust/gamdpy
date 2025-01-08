@@ -80,7 +80,7 @@ class Simulation():
                  compute_plan=None, storage='output.h5',
                  scalar_output: int|str|None='default',
                  conf_output: int|str|None='default',
-                 steps_between_momentum_reset: int|str='default', compute_flags=None, verbose=False, timing=True,
+                 steps_between_momentum_reset: int =100, compute_flags=None, verbose=False, timing=True,
                  include_simbox_in_output=False, steps_in_kernel_test=1):
 
         self.configuration = configuration
@@ -148,15 +148,12 @@ class Simulation():
             del self.memory['ptype']
         self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
 
+        self.runtime_actions = []
+
         # Momentum reset (this should be saved to output, same for sim parameters)
-        if steps_between_momentum_reset == 'default':
-            steps_between_momentum_reset = 100
-
         if steps_between_momentum_reset > 0:
-            self.momentum_reset = rp.MomentumReset(steps_between_momentum_reset)
-        else:
-            self.momentum_reset = None
-
+            self.runtime_actions.append(rp.MomentumReset(steps_between_momentum_reset))
+        
         # Scalar saving
         if scalar_output == 'default':
             scalar_output = 16
@@ -210,7 +207,7 @@ class Simulation():
                 self.get_kernels_and_params()
                 self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
                                                 self.output_calculator_kernel, self.conf_saver_kernel,
-                                                self.momentum_reset_kernel,
+                                                self.runtime_actions_kernel,
                                                 self.compute_plan, True)
                 self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
                 self.integrate_self(0.0, self.steps_in_kernel_test)
@@ -234,13 +231,13 @@ class Simulation():
                                                                                       compute_flags=self.compute_flags,
                                                                                       verbose=verbose)
 
-        # Momentum reset 
-        if self.momentum_reset != None:
-            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
-            self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
+        # Runtime actions
+        if self.runtime_actions:
+            self.runtime_actions_params = self.runtime_actions[0].get_params(self.configuration, self.compute_plan)
+            self.runtime_actions_kernel = self.runtime_actions[0].get_kernel(self.configuration, self.compute_plan)
         else:
-            self.momentum_reset_kernel = None
-            self.momentum_reset_params = (0,)
+            self.runtime_actions_kernel = None
+            self.runtime_actions_params = (0,)
 
         # Scalar saving
         if self.output_calculator != None:
@@ -272,14 +269,14 @@ class Simulation():
                                                                 compute_flags=self.compute_flags,
                                                                 verbose=verbose)
 
-        # Momentum reset 
-        if self.momentum_reset != None:
-            self.momentum_reset_params = self.momentum_reset.get_params(self.configuration, self.compute_plan)
-            #self.momentum_reset_kernel = self.momentum_reset.get_kernel(self.configuration, self.compute_plan)
+        # Runtime actions
+        if self.runtime_actions:
+            self.runtime_actions_params = self.runtime_actions[0].get_params(self.configuration, self.compute_plan)
+            #self.runtime_actions_kernel = self.runtime_actions[0].get_kernel(self.configuration, self.compute_plan)
         else:
-            #self.momentum_reset_kernel = None
-            self.momentum_reset_params = (0,)
-
+            #self.runtime_actions_kernel = None
+            self.runtime_actions_params = (0,)
+        
         # Scalar saving
         if self.output_calculator != None:
             self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
@@ -311,7 +308,7 @@ class Simulation():
                            self.interactions_params,
                            self.integrator_params,
                            self.conf_saver_params,
-                           self.momentum_reset_params,
+                           self.runtime_actions_params,
                            self.output_calculator_params,
                            np.float32(time_zero),
                            steps)
@@ -319,7 +316,7 @@ class Simulation():
 
 
     def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator_kernel,
-                        conf_saver_kernel, momentum_reset_kernel, compute_plan, verbose=True):
+                        conf_saver_kernel, runtime_actions_kernel, compute_plan, verbose=True):
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
@@ -342,7 +339,7 @@ class Simulation():
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
             def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params,
-                           conf_saver_params, momentum_reset_params, output_calculator_params, time_zero, steps):
+                           conf_saver_params, runtime_actions_params, output_calculator_params, time_zero, steps):
                 grid = cuda.cg.this_grid()
                 for step in range(steps):
                     compute_interactions(grid, vectors, scalars, ptype, sim_box, interaction_params)
@@ -351,8 +348,8 @@ class Simulation():
                     grid.sync()
                     time = time_zero + step * integrator_params[0]
                     integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
-                    if momentum_reset_kernel != None:
-                        momentum_reset_kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
+                    if runtime_actions_kernel != None:
+                        runtime_actions_kernel(grid, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
                     if output_calculator_kernel != None:
                         output_calculator_kernel(grid, vectors, scalars, r_im, sim_box, step, output_calculator_params)
                     grid.sync()
@@ -367,7 +364,7 @@ class Simulation():
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
             def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params,
-                           conf_saver_params, momentum_reset_params, output_calculator_params, time_zero, steps):
+                           conf_saver_params, runtime_actions_params, output_calculator_params, time_zero, steps):
                 for step in range(steps):
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
                     if conf_saver_kernel != None:
@@ -376,8 +373,8 @@ class Simulation():
                     integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
                     if output_calculator_kernel != None:
                         output_calculator_kernel(0, vectors, scalars, r_im, sim_box, step, output_calculator_params)
-                    if momentum_reset_kernel != None:
-                        momentum_reset_kernel(0, vectors, scalars, r_im, sim_box, step, momentum_reset_params)
+                    if runtime_actions_kernel != None:
+                        runtime_actions_kernel(0, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
 
                 if conf_saver_kernel != None:
                     conf_saver_kernel(0, vectors, scalars, r_im, sim_box, steps,

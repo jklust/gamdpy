@@ -4,6 +4,7 @@ import numpy as np
 from numba import cuda
 
 from .make_fixed_interactions import make_fixed_interactions  # tether is an example of 'fixed' interactions
+
 # Abstract Base Class and type annotation
 from .interaction import Interaction
 from rumdpy import Configuration
