@@ -463,9 +463,9 @@ class Simulation():
                 block_times.append(cuda.event_elapsed_time(start_block, end_block))
 
             self.configuration.copy_to_host()
-            self.vectors_list.append(self.configuration.vectors.copy())  # Needed for 3D viz, should use memory/hdf5
-            self.scalars_list.append(self.configuration.scalars.copy())  # same
-            self.simbox_data_list.append(self.configuration.simbox.lengths.copy())  # same
+            #self.vectors_list.append(self.configuration.vectors.copy())  # Needed for 3D viz, should use memory/hdf5
+            #self.scalars_list.append(self.configuration.scalars.copy())  # same
+            #self.simbox_data_list.append(self.configuration.simbox.lengths.copy())  # same
             #self.scalars_t.append(self.d_output_array.copy_to_host())              # same
 
             if self.output_calculator != None:
