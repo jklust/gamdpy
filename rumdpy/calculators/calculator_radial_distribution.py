@@ -79,7 +79,7 @@ class CalculatorRadialDistribution():
         """
 
             bins = d_gr_bins.shape[2]  # reading number of bins from size of the device array
-            min_box_dim = min(sim_box[0], sim_box[1], sim_box[2])  # max distance for rdf can 0.5*Smallest dimension
+            min_box_dim = min(sim_box)
             bin_width = (min_box_dim / 2) / bins  # TODO: Chose more directly!
 
             my_block = cuda.blockIdx.x
@@ -128,8 +128,7 @@ class CalculatorRadialDistribution():
             A dictionary containing the distances and the radial distribution function.
         """
         bins = self.rdf_list[0].shape[2]
-        min_box_dim = min(self.configuration.simbox.lengths[0], self.configuration.simbox.lengths[1],
-                          self.configuration.simbox.lengths[2])
+        min_box_dim = np.min(self.configuration.simbox.lengths)
         bin_width = (min_box_dim / 2) / bins
         rdf_ptype = np.array(self.rdf_list)
 
@@ -138,7 +137,14 @@ class CalculatorRadialDistribution():
         for i in range(bins):  # Normalize one bin/distance at a time
             r_outer = (i + 1) * bin_width
             r_inner = i * bin_width
-            shell_volume = (4.0 / 3.0) * np.pi * (r_outer ** 3 - r_inner ** 3)
+            D = self.configuration.D
+            if D % 2 == 0:
+                n = D//2
+                unit_hypersphere_volume = math.pi**n/math.factorial(n)
+            else:
+                n = (D - 1) // 2
+                unit_hypersphere_volume = ( 2**D * math.pi**n * math.factorial(n) ) / math.factorial(D)
+            shell_volume = unit_hypersphere_volume * (r_outer**D - r_inner**D)
             expected_num = rho * shell_volume
             rdf_ptype[:, :, :, i] /= (expected_num * self.configuration.N)
         rdf = rdf_ptype.sum(axis=1).sum(axis=1)
