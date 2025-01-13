@@ -2,8 +2,10 @@ import numpy as np
 import numba
 import math
 from numba import cuda
+from rumdpy.interactions import Interaction
 
-def add_interactions_list(configuration, interactions_list, compute_plan, compute_flags, verbose=True,):
+
+def add_interactions_list_old(configuration, interactions_list, compute_plan, compute_flags, verbose=True,):
     gridsync = compute_plan['gridsync']
     num_interactions = len(interactions_list)
     assert 0 < num_interactions <= 5
@@ -59,50 +61,43 @@ def add_interactions_list(configuration, interactions_list, compute_plan, comput
         return interactions, tuple(interaction_params_list)
 
 
-def add_interactions_list_experimental(configuration, interactions_list, compute_plan, compute_flags, verbose=True,):
+def merge_interactions(configuration, kernel, params, interactionB: Interaction, compute_plan, compute_flags, verbose=True,):
     gridsync = compute_plan['gridsync']
-    num_interactions = len(interactions_list)
-    assert 0 < num_interactions <= 5
-    
-    interaction_params_list = []
-    interaction_kernel_list = []
-    
-    for interaction in interactions_list:
-        interaction_params_list.append(interaction.get_params(configuration, compute_plan, verbose=verbose))
-        interaction_kernel_list.append(interaction.get_kernel(configuration, compute_plan, compute_flags, verbose=verbose))
 
-    params = tuple(interaction_params_list)
-    kernels = tuple(interaction_kernel_list)
+    paramsB = interactionB.get_params(configuration, compute_plan, verbose=verbose)
+    kernelB = interactionB.get_kernel(configuration, compute_plan, compute_flags, verbose=verbose) 
 
     if gridsync:
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=gridsync )
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            #for i in range(num_interactions):                                                     # Works only with single interaction
-            #    kernels[i](grid, vectors, scalars, ptype, sim_box, interaction_parameters[i])
-            #    grid.sync()
-            kernels[0](grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])          # Gives NumbaExperimentalFeatureWarning
-            if num_interactions>1:
-                grid.sync() # Not always necessary !!!
-                kernels[1](grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
-            if num_interactions>2:
-                grid.sync() # Not always necessary !!!
-                kernels[2](grid, vectors, scalars, ptype, sim_box, interaction_parameters[2])
-            if num_interactions>3:
-                grid.sync() # Not always necessary !!!
-                kernels[3](grid, vectors, scalars, ptype, sim_box, interaction_parameters[3])
-            if num_interactions>4:
-                grid.sync() # Not always necessary !!!
-                kernels[4](grid, vectors, scalars, ptype, sim_box, interaction_parameters[4])
-            return  
-        return interactions, params
-
+            kernel(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])        
+            grid.sync() # Not always necessary !!!
+            kernelB(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])        
+            return
+        return interactions, (params, paramsB, )
     else:
         # A python function, making several kernel calls to syncronize  
         #@cuda.jit( device=gridsync )
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            for i in range(len(kernels)):
-                kernels[i](0, vectors, scalars, ptype, sim_box, interaction_parameters[i])
+            kernel(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])        
+            kernelB(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])        
             return
-        return interactions, params
+        return interactions, (params, paramsB, )
 
+
+def add_interactions_list(configuration, interactions_list, compute_plan, compute_flags, verbose=True,):
+    gridsync = compute_plan['gridsync']
+    assert 0 < len(interactions_list)
+
+    # Setup first interaction and cuda.jit it if gridsync is used for syncronization
+    params = interactions_list[0].get_params(configuration, compute_plan, verbose=verbose)
+    kernel = interactions_list[0].get_kernel(configuration, compute_plan, compute_flags, verbose=verbose)
+    if gridsync:
+        kernel = cuda.jit( device=gridsync )(kernel)
+    
+    # Merge in the rest of the interaction (maximum recursion depth might set a maximum for number of interactions)
+    for i in range(1, len(interactions_list)):
+        kernel, params = merge_interactions(configuration, kernel, params, interactions_list[i], compute_plan, compute_flags)
+
+    return kernel, params
