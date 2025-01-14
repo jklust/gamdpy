@@ -98,7 +98,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
 
-## Output Branch (branch origin/output)
+## Output Branch (branch origin/output) LORENZO
 ### This branch is an attempt to make memory and disk output identical from user prospective
 ### Points to discuss/issues to address
 - [X] sim.output is an h5py file, if in memory it uses driver='core'
@@ -129,16 +129,16 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Charge (Water, SPCflexible), Jesper et al.
 - [X] Remove NVE_Toxvaerd Nick
 - [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
-- [ ] Include support for different types in CalculatorStructureFactor
+- [ ] Include support for different types in CalculatorStructureFactor, Ulf
 - [ ] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
-- [ ] Remove imports of rumdpy inside rumdpy modules, Lorenzo(?)
-- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals
-- [ ] Molecular stress
+- [ ] Remove imports of rumdpy inside rumdpy modules, Lorenzo
+- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
+- [ ] Molecular stress, Jesper/Nick
 - [ ] Decide status of gravity interaction, should it be included in planar_interactions, Thomas
 
 ## TODO, long term:
 - [ ] Constraints
-- [ ] EAM metallic potentials
+- [ ] EAM metallic potentials, Nick
 - [ ] Use sympy to differentiate pair-potentials. Was implemented but a factor of 2 slower, are float64's sneaking in?
 - [ ] Add CPU support (can it be done as a decorator?)
 - [ ] Thermostat on subsets of particles
