@@ -71,6 +71,13 @@ class Configuration:
     scalar_parameters = ['m']
     scalar_computables_interactions = ['U', 'W', 'lapU']
     scalar_computables_integrator = ['K', 'Fsq']
+    scalar_decriptions = {'m': 'Particle mass.',
+                          'U': 'Potential energy.',
+                          'W': 'Virial.',
+                          'lapU': 'Laplace(U).',
+                          'K': 'Kinetic energy.',
+                          'Fsq': 'Squared length of force vector.', 
+                          }
 
 
     def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
@@ -129,6 +136,19 @@ class Configuration:
         self.r_im = np.zeros((self.N, self.D), dtype=self.itype)  # Move to vectors
         self.ptype = np.zeros(self.N, dtype=self.itype)  # Move to scalars
         return
+
+    def __repr__(self):
+        return f'Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})'
+
+    def __str__(self):
+        if self.N == None:
+            return f'{self.D} dimensional configuration. Particles not yet assigned.'
+        str = f'{self.N} particles in {self.D} dimensions. Current scalar data per particle:'
+        for key in self.sid:
+            str += f'\n{key}, {np.mean(self.scalars[:,self.sid[key]]):.3f}'
+            if key in self.scalar_decriptions:
+                str += '\t' + self.scalar_decriptions[key]
+        return str
 
     def __setitem__(self, key, data):
         if self.N is None:  # First time setting particle data, so allocate arrays

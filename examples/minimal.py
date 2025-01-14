@@ -27,12 +27,14 @@ sim = rp.Simulation(configuration, pair_pot, integrator,
                     steps_per_timeblock=1024,
                     storage='LJ_T0.70.h5')
 
-print('Simulation created')
-
 # Run simulation
 for _ in sim.run_timeblocks():
         print(sim.status(per_particle=True))
 print(sim.summary())
+
+# Print current status of simulation
+print(configuration)
+
 
 # To get a plot of the MSD do something like this:
 # python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
