@@ -1,8 +1,8 @@
-from .interaction import Interaction
+from .interaction import Interaction, add_interactions_list
 from .pair_potential import *
 from .nblist import *
 from .nblist_linked_lists import *
-from .add_interactions import *
+#from .add_interactions import *
 from .make_fixed_interactions import make_fixed_interactions
 from .bonds import *
 from .planar_interactions import *

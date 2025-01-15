@@ -228,8 +228,7 @@ class Simulation():
         self.interactions_kernel, self.interactions_params = rp.add_interactions_list(self.configuration,
                                                                                       self.interactions,
                                                                                       compute_plan=self.compute_plan,
-                                                                                      compute_flags=self.compute_flags,
-                                                                                      verbose=verbose)
+                                                                                      compute_flags=self.compute_flags)
 
         # Runtime actions
         if self.runtime_actions:
@@ -256,8 +255,8 @@ class Simulation():
             self.conf_saver_params = (0,)
 
         # Integrator
-        self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params, verbose)
-        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, self.interactions_kernel, verbose)
+        self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params)
+        self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, self.interactions_kernel)
 
         return
 
@@ -266,8 +265,7 @@ class Simulation():
         _, self.interactions_params = rp.add_interactions_list(self.configuration,
                                                                 self.interactions,
                                                                 compute_plan=self.compute_plan,
-                                                                compute_flags=self.compute_flags,
-                                                                verbose=verbose)
+                                                                compute_flags=self.compute_flags)
 
         # Runtime actions
         if self.runtime_actions:
