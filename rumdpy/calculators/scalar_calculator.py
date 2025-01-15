@@ -45,11 +45,6 @@ class ScalarSaver():
             self.sid['Sxy'] = self.num_scalars
             self.num_scalars += 1
 
-        #self.num_scalars = 6
-        #self.num_scalars += self.configuration.D #include CM momentum
-        #self.num_scalars += 1 #include XY component of stress (temporary!!!)
-        #self.sid = {'U':0, 'W':1, 'lapU':2, 'Fsq':3, 'K':4, 'Vol':5, 'Px':6, 'Py':7, 'Pz':8, 'Sxy':9} # 3D for now!!!
-
         self.scalar_saves_per_block = self.steps_per_timeblock//self.steps_between_output
 
         # Setup output
@@ -97,8 +92,6 @@ class ScalarSaver():
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
         num_blocks = (num_part - 1) // pb + 1
         
-        # Unpack indices for scalars to be compiled into kernel  
-        #u_id, k_id, w_id, fsq_id, lap_id, m_id = [configuration.sid[key] for key in ['u', 'k', 'w', 'fsq', 'lap', 'm']]
         compute_u = configuration.compute_flags['U']
         compute_w = configuration.compute_flags['W']
         compute_lap = configuration.compute_flags['lapU']
@@ -107,7 +100,7 @@ class ScalarSaver():
         compute_vol = configuration.compute_flags['Vol']
         compute_Ptot = configuration.compute_flags['Ptot']
         compute_stresses = configuration.compute_flags['stresses']
-
+        # Unpack indices for scalars to be compiled into kernel
         if compute_u:
             u_id = self.sid['U']
 

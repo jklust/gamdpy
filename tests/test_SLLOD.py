@@ -20,55 +20,22 @@ def test_SLLOD(run_NVT=False):
     sig, eps, cut = 1.0, 1.0, 2.5
     pairpot = rp.PairPotential(pairfunc, params=[sig, eps, cut], max_num_nbs=1000)
 
-    temperature_low = 0.700
+    temperature = 0.700
     gridsync = True
 
-    if run_NVT:
-        # Setup configuration: FCC Lattice
-        configuration = rp.Configuration(D=3)
-        configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
-        configuration['m'] = 1.0
-        configuration.randomize_velocities(temperature=2.0)
-
-        # Setup integrator to melt the crystal
-        dt = 0.005
-        num_blocks = 10
-        steps_per_block = 2048
-        running_time = dt*num_blocks*steps_per_block
-
-        Ttarget_function = rp.make_function_ramp(value0=2.000, x0=running_time*(1/8), 
-                                                value1=temperature_low, x1=running_time*(7/8))
-        integrator_NVT = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
-
-        # Set simulation up. Total number of timesteps: num_blocks * steps_per_block
-        sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
-                                num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                                storage='memory')
-
-
-        for block in sim_NVT.run_timeblocks():
-            print(block)
-            print(sim_NVT.status(per_particle=True))
-
-        rp.configuration_to_hdf5(configuration, 'LJ_cooled_0.70.h5')
-    else:
-        configuration = None
-        possible_file_paths = ['Data/LJ_cooled_0.70.h5', 'tests/Data/LJ_cooled_0.70.h5']
-        for path in possible_file_paths:
-            if Path(path).is_file():
-                configuration = rp.configuration_from_hdf5(path, compute_flags={'stresses':True})
-                break
-        if configuration is None:
-            raise FileNotFoundError(f'Could not find configuration file in {possible_file_paths}')
+    # read reference configuration
+    configuration = None
+    possible_file_paths = ['reference_data/conf_LJ_N2048_rho0.973_T0.700.h5', 'tests/reference_data/conf_LJ_N2048_rho0.973_T0.700.h5']
+    for path in possible_file_paths:
+        if Path(path).is_file():
+            configuration = rp.configuration_from_hdf5(path, compute_flags={'stresses':True})
+            break
+    if configuration is None:
+        raise FileNotFoundError(f'Could not find configuration file in {possible_file_paths}')
 
     compute_plan = rp.get_default_compute_plan(configuration)
     compute_plan['gridsync'] = gridsync
-    print('compute_plan')
-    print(compute_plan)
-    print("Run SLLOD simulation")
-
     sc_output = 1
-
     sr = 0.1
     dt = 0.01
 
@@ -85,7 +52,7 @@ def test_SLLOD(run_NVT=False):
 
     # set the kinetic temperature to the exact value associated with the desired
     # temperature since SLLOD uses an isokinetic thermostat
-    configuration.set_kinetic_temperature(temperature_low, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE
+    configuration.set_kinetic_temperature(temperature, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE
 
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
     sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
@@ -103,10 +70,9 @@ def test_SLLOD(run_NVT=False):
     print(sim_SLLOD.summary())
 
     sxy = rp.extract_scalars(sim_SLLOD.output, ['Sxy'])/configuration.get_volume()
-
     sxy_mean = np.mean(sxy)
     print(f'{sr:.2g} {sxy_mean:.6f}')
-    assert (np.isclose(sxy_mean, 0.876, atol=0.005 ))
+    assert (np.isclose(sxy_mean, 2.71, atol=0.005 ))
     assert(np.isclose(sim_SLLOD.nbflag[2], 49, atol=1))
 
 if __name__ == '__main__':

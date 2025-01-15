@@ -81,9 +81,6 @@ class Test_examples:
     def test_switching_integrator(self):
         self.make_one("switching_integrator")
 
-    def test_test_stress(self):
-        self.make_one("test_stress", ["Data/LJ_T0.70.h5"])
-
     def test_tethered_particles(self):
         self.make_one("tethered_particles", ["initial.xyz", "final.xyz"])
 

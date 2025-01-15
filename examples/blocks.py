@@ -20,7 +20,7 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
 
-# Setup Simulation. Total number of time steps: num_blocks * steps_per_block
+# Setup Simulation. Total number of time steps: num_timeblocks * steps_per_block
 sim = rp.Simulation(configuration, pair_pot, integrator,
                     num_timeblocks=16, steps_per_timeblock=1024 * 2,
                     steps_between_momentum_reset=100,
@@ -33,3 +33,6 @@ print(sim.summary())
 
 # To get a plot of the MSD do something like this:
 # python -m rumdpy.tools.calc_dynamics -f 4 -o msd.pdf LJ_T*.h5
+
+# uncomment the following to regenerate configuration in reference_data
+#rp.configuration_to_hdf5(configuration, '../tests/reference_data/conf_LJ_N2048_rho0.973_T0.700.h5')
