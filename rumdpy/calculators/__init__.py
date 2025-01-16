@@ -1,4 +1,4 @@
-from .runtime_action import RuntimeAction
+from .runtime_action import RuntimeAction, add_runtime_actions_list
 from .calculator_radial_distribution import *
 from .calculator_structure_factor import *
 from .calculator_hydrodynamic_profile import *

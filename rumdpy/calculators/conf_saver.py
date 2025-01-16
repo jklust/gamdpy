@@ -3,10 +3,12 @@ import numba
 import math
 from numba import cuda, config
 
+from .runtime_action import RuntimeAction
+
 import h5py
 
 
-class ConfSaver():
+class ConfSaver(RuntimeAction):
     """ Runtime_action for saving configurations during timeblock
         - for now only logarithmic saving
     """

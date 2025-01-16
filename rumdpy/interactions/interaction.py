@@ -24,7 +24,7 @@ class Interaction(ABC):
 
         pass
 
-def merge_interactions(configuration: Configuration, kernel: Callable, params: tuple, interactionB: Interaction, compute_plan: dict, compute_flags: dict[str,bool]) -> tuple[Callable, tuple] :
+def merge_interactions(configuration: Configuration, kernelA: Callable, paramsA: tuple, interactionB: Interaction, compute_plan: dict, compute_flags: dict[str,bool]) -> tuple[Callable, tuple] :
     paramsB = interactionB.get_params(configuration, compute_plan)
     kernelB = interactionB.get_kernel(configuration, compute_plan, compute_flags) 
 
@@ -32,18 +32,18 @@ def merge_interactions(configuration: Configuration, kernel: Callable, params: t
         # A device function, calling a number of device functions, using gridsync to syncronize
         @cuda.jit( device=compute_plan['gridsync'])
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            kernel(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])        
+            kernelA(grid, vectors, scalars, ptype, sim_box, interaction_parameters[0])
             grid.sync() # Not always necessary !!!
-            kernelB(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])        
+            kernelB(grid, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
-        return interactions, (params, paramsB, )
+        return interactions, (paramsA, paramsB, )
     else:
         # A python function, making several kernel calls to syncronize  
         def interactions(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
-            kernel(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])        
-            kernelB(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])        
+            kernelA(0, vectors, scalars, ptype, sim_box, interaction_parameters[0])
+            kernelB(0, vectors, scalars, ptype, sim_box, interaction_parameters[1])
             return
-        return interactions, (params, paramsB, )
+        return interactions, (paramsA, paramsB, )
 
 
 def add_interactions_list(configuration: Configuration, interactions_list: list[Interaction], compute_plan: dict, compute_flags: dict[str,bool], verbose: bool = False) -> tuple[Callable, tuple]:
