@@ -9,10 +9,13 @@ import pandas as pd
 
 import rumdpy as rp
 
-# Generate configuration with a FCC lattice
-# rho = 0.932 # Molecular density
-rho = 1.863  # Atomic density
 
+# Specify state point
+rho = 1.863  # Atomic density = Molecular density * 2
+temperature = 0.465
+filename = f'Data/ASD_rho{rho:.3f}_T{temperature:.3f}.h5'
+
+# Generate two-component configuration with a FCC lattice 
 configuration = rp.Configuration(D=3, compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True, 'Vol':True})
 configuration.make_lattice(rp.unit_cells.FCC, cells=[6, 6, 6], rho=rho)
 configuration['m'] = 1.0
@@ -43,47 +46,35 @@ dt = 0.002  # timestep
 num_blocks = 64  # Do simulation in this many 'blocks'
 steps_per_block = 1024  # ... each of this many steps (increase for better statistics)
 running_time = dt * num_blocks * steps_per_block
-temperature = 0.465
+
 Ttarget_function = rp.make_function_ramp(value0=10.000, x0=running_time * (1 / 8),
                                          value1=temperature, x1=running_time * (1 / 4))
 integrator0 = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
-compute_plan = rp.get_default_compute_plan(configuration)
-print(compute_plan)
-#compute_plan['tp'] = 6
+sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    steps_between_momentum_reset=100,
+                    storage='memory')
 
-output_path = "examples/Data/ASD_out.h5"
-if not os.path.exists(output_path):
-    if not os.path.exists(os.path.dirname(output_path)):
-        os.makedirs(os.path.dirname(output_path))
-    sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
-                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                        steps_between_momentum_reset=100,
-                        compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},
-                        compute_plan=compute_plan, storage='memory')
+print('High Temperature followed by cooling and equilibration:')
+for block in sim.run_timeblocks():
+    if block % 10 == 0:
+        print(f'{block=:4}  {sim.status(per_particle=True)}')
+print(sim.summary())
 
-    print('High Temperature followed by cooling and equilibration:')
-    for block in sim.run_timeblocks():
-        if block % 10 == 0:
-            print(f'{block=:4}  {sim.status(per_particle=True)}')
-    print(sim.summary())
+integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
+sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
+                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                    compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},
+                    steps_between_momentum_reset=100,
+                    storage=filename)
+print('Production:')
+for block in sim.run_timeblocks():
+    if block % 10 == 0:
+        print(f'{block=:4}  {sim.status(per_particle=True)}')
+print(sim.summary())
 
-    runtime_action = 128
-    #runtime_action=1024*8 # to see effect of momentum resetting
-    #runtime_action=0 # Turn off momentum resetting (at own risk!)
-
-    integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
-    sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
-                        num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                        steps_between_momentum_reset=runtime_action,
-                        compute_plan=compute_plan, storage=output_path)
-    print('Production:')
-    for block in sim.run_timeblocks():
-        if block % 10 == 0:
-            print(f'{block=:4}  {sim.status(per_particle=True)}')
-    print(sim.summary())
-
-output = rp.tools.TrajectoryIO(output_path).get_h5()
+output = rp.tools.TrajectoryIO(filename).get_h5()
 
 # Setup on-the-fly calculation of Radial Distribution Function
 calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
