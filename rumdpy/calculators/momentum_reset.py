@@ -25,7 +25,20 @@ class MomentumReset(RuntimeAction):
         self.d_total_momentum = cuda.to_device(self.total_momentum)
         return (self.d_total_momentum, ) # return parameters as a tuple
 
-    def get_kernel(self, configuration: Configuration, compute_plan: dict):
+    def get_prestep_kernel(self, configuration: Configuration, compute_plan: dict):
+
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
+        if gridsync:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params):
+                pass
+                return
+            return cuda.jit(device=gridsync)(kernel)
+        else:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, momentum_reset_params):
+                pass
+            return kernel
+
+    def get_poststep_kernel(self, configuration: Configuration, compute_plan: dict):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

@@ -89,7 +89,20 @@ class ConfSaver(RuntimeAction):
             output['sim_box'][block, :] = self.d_sim_box_output_array.copy_to_host()
         self.zero_kernel(self.d_conf_array)
 
-    def get_kernel(self, configuration, compute_plan, verbose=False):
+    def get_poststep_kernel(self, configuration, compute_plan, verbose=False):
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
+        if gridsync:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params):
+                pass
+                return
+            return cuda.jit(device=gridsync)(kernel)
+        else:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params):
+                pass
+            return kernel
+
+
+    def get_prestep_kernel(self, configuration, compute_plan, verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
