@@ -83,7 +83,6 @@ def test_structure_factor():
     # if verbose:
     #     print('Testing raw data output ...')
 
-
     struc_fact_raw = calc_struct_fact.read(bins=None)
     # Assert that the output is a dictionary
     assert isinstance(struc_fact_raw, dict)
@@ -146,6 +145,29 @@ def test_structure_factor_backends():
         calc_struct_fact.generate_q_vectors(q_max=10.0)
         calc_struct_fact.update()
         struc_fact = calc_struct_fact.read(bins=128)
+
+def test_atomic_form_factors():
+        D = 3
+        rho = 1.0
+        number_of_particles = 10_000
+        conf = rp.Configuration(D=D)
+        conf.make_positions(N=number_of_particles, rho=rho)
+        conf['m'] = 1.0
+
+        n_vectors = np.array([[5,6,7], [0, 0, 1], [2, -2, -5]])
+        atomic_form_factors = np.random.random(number_of_particles)
+
+        calc_single = rp.CalculatorStructureFactor(conf, n_vectors, atomic_form_factors, 'CPU single core')
+        number_of_updates = 4
+        for _ in range(number_of_updates):
+            conf['r'] = (np.random.rand(number_of_particles, D)-0.5) * conf.simbox.lengths  # Ideal gas configuration
+            conf.copy_to_device()
+            calc_single.update()
+        calc_multi = rp.CalculatorStructureFactor(conf, n_vectors, atomic_form_factors, 'CPU multi core')
+        for _ in range(number_of_updates):
+            conf['r'] = (np.random.rand(number_of_particles, D)-0.5) * conf.simbox.lengths  # Ideal gas configuration
+            conf.copy_to_device()
+            calc_multi.update()
 
 if __name__ == '__main__':  # pragma: no cover
     test_structure_factor()

@@ -137,7 +137,7 @@ Input and Output
 The TrajectoryIO class
 ----------------------
 
-.. autoclass:: rumdpy.Configuration
+.. autoclass:: rumdpy.tools.TrajectoryIO
    :members:
    :undoc-members:
 
