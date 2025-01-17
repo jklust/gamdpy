@@ -65,7 +65,7 @@ print(sim.summary())
 columns = ['U', 'W', 'K', 'Fsq','lapU', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U']))* dt * sim.output.attrs["steps_between_output"]
 if integrator_name!='NVE' and callable(temperature):
     df['Ttarget'] = numba.vectorize(temperature)(np.array(df['t']))
 if integrator_name=='NPT_Langevin' and callable(pressure):

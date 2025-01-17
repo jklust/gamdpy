@@ -164,9 +164,12 @@ class Simulation():
         if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
             self.output_calculator = None
         else:
-            self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
+            #self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
+            #                                        num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
+            #                                        output=self.memory)
+            self.runtime_actions.append(rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
                                                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                                                    output=self.memory)
+                                                    output=self.memory))
 
         # Saving of configurations
         if conf_output == 'default':
@@ -208,7 +211,7 @@ class Simulation():
             try:
                 self.get_kernels_and_params()
                 self.integrate = self.make_integrator(self.configuration, self.integrator_kernel, self.interactions_kernel,
-                                                self.output_calculator_kernel,
+                                                #self.output_calculator_kernel,
                                                 self.runtime_actions_prestep_kernel,
                                                 self.runtime_actions_poststep_kernel,
                                                 self.compute_plan, True)
@@ -243,22 +246,6 @@ class Simulation():
             self.runtime_actions_poststep_kernel = None
             self.runtime_actions_params = (0,)
 
-        # Scalar saving
-        if self.output_calculator != None:
-            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
-            self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
-        else:
-            self.output_calculator_kernel = None
-            self.output_calculator_params = (0,)
-
-        # Configuration saving
-        #if self.conf_saver != None:
-        #    self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
-        #    self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
-        #else:
-        #    self.conf_saver_kernel = None
-        #    self.conf_saver_params = (0,)
-
         # Integrator
         self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params)
         self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, self.compute_flags, self.interactions_kernel)
@@ -281,22 +268,6 @@ class Simulation():
             #self.runtime_actions_kernel = None
             self.runtime_actions_params = (0,)
 
-        # Scalar saving
-        if self.output_calculator != None:
-            self.output_calculator_params = self.output_calculator.get_params(self.configuration, self.compute_plan)
-            #self.output_calculator_kernel = self.output_calculator.get_kernel(self.configuration, self.compute_plan)
-        else:
-            #self.output_calculator_kernel = None
-            self.output_calculator_params = (0,)
-
-        # Configuration saving
-        #if self.conf_saver != None:
-        #    self.conf_saver_params = self.conf_saver.get_params(self.configuration, self.compute_plan)
-        #    #self.conf_saver_kernel = self.conf_saver.get_kernel(self.configuration, self.compute_plan)
-        #else:
-        #    #self.conf_saver_kernel = None
-        #    self.conf_saver_params = (0,)
-
         # Integrator
         self.integrator_params = self.integrator.get_params(self.configuration, self.interactions_params, verbose)
         #self.integrator_kernel = self.integrator.get_kernel(self.configuration, self.compute_plan, verbose)
@@ -312,14 +283,14 @@ class Simulation():
                            self.interactions_params,
                            self.integrator_params,
                            self.runtime_actions_params,
-                           self.output_calculator_params,
                            np.float32(time_zero),
                            steps)
         return
 
 
-    def make_integrator(self, configuration, integration_step, compute_interactions, output_calculator_kernel,
+    def make_integrator(self, configuration, integration_step, compute_interactions,# output_calculator_kernel,
                         runtime_actions_prestep_kernel, runtime_actions_poststep_kernel, compute_plan, verbose=True):
+        
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
@@ -342,7 +313,7 @@ class Simulation():
             # Return a kernel that does 'steps' timesteps, using grid.sync to syncronize   
             @cuda.jit
             def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params,
-                            runtime_actions_params, output_calculator_params, time_zero, steps):
+                            runtime_actions_params, time_zero, steps):
                 grid = cuda.cg.this_grid()
                 for step in range(steps + 1): # make extra step without integration, so that interactions and run_time actions called for final configuration
                     time = time_zero + step * integrator_params[0]
@@ -350,20 +321,14 @@ class Simulation():
                     grid.sync()
                     if runtime_actions_prestep_kernel != None:
                         runtime_actions_prestep_kernel(grid, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
-                    #if conf_saver_kernel != None:
-                    #    conf_saver_kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params)
-                    grid.sync()
+                        grid.sync()
                     if step<steps:
                         integration_step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
                         grid.sync()
                         if runtime_actions_poststep_kernel != None:
                             runtime_actions_poststep_kernel(grid, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
-                        if output_calculator_kernel != None:
-                            output_calculator_kernel(grid, vectors, scalars, r_im, sim_box, step, output_calculator_params)
                             grid.sync()
-                #if conf_saver_kernel != None:
-                #    conf_saver_kernel(grid, vectors, scalars, r_im, sim_box, steps,
-                #                      conf_saver_params)  # Save final configuration (if conditions fullfiled)
+
                 return
 
             return integrator[num_blocks, (pb, tp)]
@@ -372,23 +337,16 @@ class Simulation():
 
             # Return a Python function that does 'steps' timesteps, using kernel calls to syncronize  
             def integrator(vectors, scalars, ptype, r_im, sim_box, interaction_params, integrator_params,
-                           runtime_actions_params, output_calculator_params, time_zero, steps):
+                           runtime_actions_params, time_zero, steps):
                 for step in range(steps + 1): # make extra step without integration, so that interactions and run_time actions called for final configuration
                     time = time_zero + step * integrator_params[0]
                     compute_interactions(0, vectors, scalars, ptype, sim_box, interaction_params)
                     if runtime_actions_prestep_kernel != None:
                         runtime_actions_prestep_kernel(0, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
-                    #if conf_saver_kernel != None:
-                    #    conf_saver_kernel(0, vectors, scalars, r_im, sim_box, step, conf_saver_params)
                     if step<steps:
                         integration_step(0, vectors, scalars, r_im, sim_box, integrator_params, time, ptype)
                         if runtime_actions_poststep_kernel != None:
                             runtime_actions_poststep_kernel(0, vectors, scalars, r_im, sim_box, step, runtime_actions_params)
-                        if output_calculator_kernel != None:
-                            output_calculator_kernel(0, vectors, scalars, r_im, sim_box, step, output_calculator_params)
-                #if conf_saver_kernel != None:
-                #    conf_saver_kernel(0, vectors, scalars, r_im, sim_box, steps,
-                #                      conf_saver_params)  # Save final configuration (if conditions fullfiled)
                 return
 
             return integrator
@@ -462,8 +420,8 @@ class Simulation():
         for block in range(num_timeblocks):
 
             self.current_block = block
-            if self.output_calculator != None:
-                self.output_calculator.initialize_before_timeblock()
+            for runtime_action in self.runtime_actions:
+                runtime_action.initialize_before_timeblock()
             
             if self.timing: 
                 start_block.record()
@@ -476,9 +434,6 @@ class Simulation():
                 block_times.append(cuda.event_elapsed_time(start_block, end_block))
 
             self.configuration.copy_to_host()
-
-            if self.output_calculator != None:
-                self.output_calculator.update_at_end_of_timeblock(block, self.get_output(mode="a"))
             
             for runtime_action in self.runtime_actions:
                 runtime_action.update_at_end_of_timeblock(block, self.get_output(mode="a"))

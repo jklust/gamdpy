@@ -73,7 +73,7 @@ columns = ['U', 'W', 'K', 'Fsq', 'lapU', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
 df = pd.DataFrame(data.T, columns=columns)
-df['t'] = np.arange(len(df['U']))*dt*sim.output_calculator.steps_between_output # should be build in
+df['t'] = np.arange(len(df['U'])) * dt * sim.output.attrs["steps_between_output"]
 
 mu = np.mean(df['U'])/configuration.N
 mw = np.mean(df['W'])/configuration.N

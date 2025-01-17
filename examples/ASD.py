@@ -62,7 +62,8 @@ for block in sim.run_timeblocks():
         print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
-integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
+#integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
+integrator = rp.integrators.NVE(dt=dt)
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},

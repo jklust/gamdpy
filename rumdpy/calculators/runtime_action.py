@@ -41,6 +41,13 @@ class RuntimeAction(ABC):
         """
 
         pass
+   
+    def initialize_before_timeblock(self):
+        """
+        Method to be called before each timeblock 
+        """
+
+        pass
 
 def merge_runtime_actions(configuration: Configuration, prestep_kernelA: Callable, poststep_kernelA: Callable, paramsA: tuple, actionB: RuntimeAction, compute_plan: dict) -> tuple[Callable, Callable, tuple] :
     paramsB = actionB.get_params(configuration, compute_plan)
@@ -84,7 +91,7 @@ def add_runtime_actions_list(configuration: Configuration, runtime_actions_list:
     params = runtime_actions_list[0].get_params(configuration, compute_plan)
     prestep_kernel = runtime_actions_list[0].get_prestep_kernel(configuration, compute_plan)
     poststep_kernel = runtime_actions_list[0].get_poststep_kernel(configuration, compute_plan)
-    
+
     if compute_plan['gridsync']:
         prestep_kernel: Callable = cuda.jit( device=compute_plan['gridsync'] )(prestep_kernel)
         poststep_kernel: Callable = cuda.jit( device=compute_plan['gridsync'] )(poststep_kernel)

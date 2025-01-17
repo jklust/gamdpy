@@ -4,7 +4,9 @@ import math
 from numba import cuda, config
 import h5py
 
-class ScalarSaver():
+from .runtime_action import RuntimeAction
+
+class ScalarSaver(RuntimeAction):
 
     def __init__(self, configuration, num_timeblocks:int, steps_per_timeblock:int, steps_between_output:int, output, verbose=False) -> None:
 
@@ -85,8 +87,20 @@ class ScalarSaver():
 
     def update_at_end_of_timeblock(self, block:int, output):
         output['scalars'][block, :] = self.d_output_array.copy_to_host()
-    
-    def get_kernel(self, configuration, compute_plan):
+
+    def get_prestep_kernel(self, configuration, compute_plan, verbose=False):
+        pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
+        if gridsync:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params):
+                pass
+                return
+            return cuda.jit(device=gridsync)(kernel)
+        else:
+            def kernel(grid, vectors, scalars, r_im, sim_box, step, conf_saver_params):
+                pass
+            return kernel
+
+    def get_poststep_kernel(self, configuration, compute_plan):
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']] 
