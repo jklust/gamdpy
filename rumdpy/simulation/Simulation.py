@@ -72,7 +72,8 @@ class Simulation():
                  runtime_actions: list[RuntimeAction],
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
-                 compute_flags=None, verbose=False, timing=True,
+                 #compute_flags=None, 
+                 verbose=False, timing=True,
                  steps_in_kernel_test=1):
 
         self.configuration = configuration
@@ -80,18 +81,6 @@ class Simulation():
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
         else:
             self.compute_plan = compute_plan
-
-        self.compute_flags = rp.get_default_compute_flags() # configuration.compute_flags
-        if compute_flags is not None:
-            # only keys present in the default are processed
-            for k in compute_flags:
-                if k in self.compute_flags:
-                    self.compute_flags[k] = compute_flags[k]
-                else:
-                    raise ValueError('Unknown key in compute_flags:%s' %k)
-        for k in self.compute_flags:
-            if self.compute_flags[k] and not configuration.compute_flags[k]:
-                raise ValueError('compute_flags["%s]" set for Simulation but not in Configuration' % k)
 
         # Integrator
         if type(interactions) == list:
@@ -141,6 +130,26 @@ class Simulation():
         self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
 
         self.runtime_actions = runtime_actions
+
+        compute_flags = None
+        for runtime_action in self.runtime_actions:
+            if compute_flags is not None and runtime_action.get_compute_flags() is not None:
+                raise ValueError('Can not handle more than one compute_flags in runtime_actions')
+            else:
+                compute_flags = runtime_action.get_compute_flags()
+
+        self.compute_flags = rp.get_default_compute_flags() # configuration.compute_flags
+        if compute_flags is not None:
+            # only keys present in the default are processed
+            for k in compute_flags:
+                if k in self.compute_flags:
+                    self.compute_flags[k] = compute_flags[k]
+                else:
+                    raise ValueError('Unknown key in compute_flags:%s' %k)
+        for k in self.compute_flags:
+            if self.compute_flags[k] and not configuration.compute_flags[k]:
+                raise ValueError('compute_flags["%s]" set for Simulation but not in Configuration' % k)
+
         for runtime_action in self.runtime_actions:
             runtime_action.setup(configuration=self.configuration, num_timeblocks=num_timeblocks,
                                 steps_per_timeblock=steps_per_timeblock, output=self.memory )

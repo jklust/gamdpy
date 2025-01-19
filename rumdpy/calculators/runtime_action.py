@@ -9,6 +9,9 @@ class RuntimeAction(ABC):
     Abstract Base Class specifying the requirements for a runtime_action, i.e. an action to compiled into to innner MD kernel
     """
 
+    def get_compute_flags(self):
+        return None
+
     def setup(self, configuration: Configuration, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
         pass
 
