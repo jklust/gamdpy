@@ -62,19 +62,12 @@ for block in sim.run_timeblocks():
         print(sim.status(per_particle=True))
 print(sim.summary())
 
-#integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
-integrator = rp.integrators.NVE(dt=dt)
-sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
-                    runtime_actions=[rp.MomentumReset(100), rp.ConfSaver(), rp.ScalarSaver()],
-                    num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},
-                    storage=filename)
 print('Production:')
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(32, {'Fsq':True, 'lapU':True, 'Ptot':True}), 
-                   rp.MomentumReset(100),]
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfSaver(), 
+                   rp.ScalarSaver(32, {'Fsq':True, 'lapU':True, 'Ptot':True}), ]
 
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator, runtime_actions, 
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
