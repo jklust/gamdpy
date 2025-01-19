@@ -8,7 +8,13 @@ from .runtime_action import RuntimeAction
 
 class ScalarSaver(RuntimeAction):
 
-    def __init__(self, configuration, num_timeblocks:int, steps_per_timeblock:int, steps_between_output:int, output, verbose=False) -> None:
+    def __init__(self, steps_between_output:int = 16, verbose=False) -> None:
+
+        if type(steps_between_output) != int or steps_between_output < 0:
+            raise ValueError(f'steps_between_output ({steps_between_output}) should be non-negative integer.')
+        self.steps_between_output = steps_between_output
+
+    def setup(self, configuration, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:
 
         self.configuration = configuration
 
@@ -20,12 +26,8 @@ class ScalarSaver(RuntimeAction):
             raise ValueError(f'steps_per_timeblock ({steps_per_timeblock}) should be non-negative integer.')
         self.steps_per_timeblock = steps_per_timeblock
 
-        if type(steps_between_output) != int or steps_between_output < 0:
-            raise ValueError(f'steps_between_output ({steps_between_output}) should be non-negative integer.')
-        self.steps_between_output = steps_between_output
-
-        if steps_between_output >= steps_per_timeblock:
-            raise ValueError(f'scalar_output ({steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
+        if self.steps_between_output >= steps_per_timeblock:
+            raise ValueError(f'scalar_output ({self.steps_between_output}) must be less than steps_per_timeblock ({steps_per_timeblock})')
 
         # per block saving of scalars
         compute_flags = configuration.compute_flags

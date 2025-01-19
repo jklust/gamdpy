@@ -44,7 +44,7 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclus
 # Make integrator
 dt = 0.002  # timestep
 num_blocks = 64  # Do simulation in this many 'blocks'
-steps_per_block = 1024  # ... each of this many steps (increase for better statistics)
+steps_per_block = 1*1024  # ... each of this many steps (increase for better statistics)
 running_time = dt * num_blocks * steps_per_block
 
 Ttarget_function = rp.make_function_ramp(value0=10.000, x0=running_time * (1 / 8),
@@ -52,8 +52,8 @@ Ttarget_function = rp.make_function_ramp(value0=10.000, x0=running_time * (1 / 8
 integrator0 = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
+                    runtime_actions=[rp.MomentumReset(100)],
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    steps_between_momentum_reset=100,
                     storage='memory')
 
 print('High Temperature followed by cooling and equilibration:')
@@ -65,9 +65,9 @@ print(sim.summary())
 #integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 integrator = rp.integrators.NVE(dt=dt)
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
+                    runtime_actions=[rp.MomentumReset(100), rp.ConfSaver(), rp.ScalarSaver()],
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                     compute_flags={'Fsq':True, 'lapU':True, 'Ptot':True},
-                    steps_between_momentum_reset=100,
                     storage=filename)
 print('Production:')
 for block in sim.run_timeblocks():

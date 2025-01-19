@@ -20,6 +20,9 @@ class MomentumReset(RuntimeAction):
             raise ValueError(f'steps_between_momentum_reset ({steps_between_reset}) should be non-negative integer.')
         self.steps_between_reset = steps_between_reset
 
+    def setup(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
+        pass
+
     def get_params(self, configuration: Configuration, compute_plan: dict) -> tuple:
         self.total_momentum = np.zeros(configuration.D+1, dtype=np.float32) # Total mass summed in last index of total_momentum
         self.d_total_momentum = cuda.to_device(self.total_momentum)
