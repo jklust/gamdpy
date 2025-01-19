@@ -13,24 +13,24 @@ class ConfSaver(RuntimeAction):
         - for now only logarithmic saving
     """
 
-    def __init__(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output, include_simbox=False, verbose=False) -> None:
+    def __init__(self, include_simbox=False, verbose=False) -> None:
 
-        self.configuration = configuration
         self.include_simbox = include_simbox
+        self.num_vectors = 2  # 'r' and 'r_im' (for now!)
+        self.sid = {"r":0, "r_im":1}
+
+    def setup(self, configuration, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
+        self.configuration = configuration
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
             raise ValueError(f'num_timeblocks ({num_timeblocks}) should be non-negative integer.')
         self.num_timeblocks = num_timeblocks
-
+        
         if type(steps_per_timeblock) != int or steps_per_timeblock < 0:
             raise ValueError(f'steps_per_timeblock ({steps_per_timeblock}) should be non-negative integer.')
         self.steps_per_timeblock = steps_per_timeblock
 
         self.conf_per_block = int(math.log2(self.steps_per_timeblock)) + 2  # Should be user controllable
-
-        self.num_vectors = 2  # 'r' and 'r_im' (for now!)
-
-        self.sid = {"r":0, "r_im":1}
 
         # Setup output
         if verbose:

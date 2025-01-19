@@ -49,16 +49,6 @@ class Simulation():
     storage : str
         Storage for the simulation output. Can be 'memory' or a filename with extension '.h5'.
 
-    scalar_output : str or int
-        How often to save scalar output. If 'default', then a default value is used.
-
-    conf_output : str or None
-        If 'default', then a default method is used (logarithmic spacing).
-        If None, no configuration output is saved.
-
-    steps_between_momentum_reset : int
-        Number of steps between momentum reset. If 'default', then a default value is used.
-
     compute_flags : dict
         For each scalar quantity, and stresses, specifies whether to be calculated
 
@@ -79,12 +69,11 @@ class Simulation():
     def __init__(self, configuration: rp.Configuration, 
                  interactions: Interaction|list[Interaction], 
                  integrator: Integrator,
+                 runtime_actions: list[RuntimeAction],
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
-                 scalar_output: int|str|None='default',
-                 conf_output: int|str|None='default',
-                 steps_between_momentum_reset: int =100, compute_flags=None, verbose=False, timing=True,
-                 include_simbox_in_output=False, steps_in_kernel_test=1):
+                 compute_flags=None, verbose=False, timing=True,
+                 steps_in_kernel_test=1):
 
         self.configuration = configuration
         if compute_plan == None:
@@ -151,33 +140,10 @@ class Simulation():
             del self.memory['ptype']
         self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
 
-        self.runtime_actions : list[RuntimeAction] = []
-
-        # Momentum reset (this should be saved to output, same for sim parameters)
-        if steps_between_momentum_reset > 0:
-            self.runtime_actions.append(rp.MomentumReset(steps_between_momentum_reset))
-        
-        # Scalar saving
-        if scalar_output == 'default':
-            scalar_output = 16
-
-        if scalar_output == None or scalar_output == 'none' or scalar_output < 1:
-            self.output_calculator = None
-        else:
-            #self.output_calculator = rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
-            #                                        num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-            #                                        output=self.memory)
-            self.runtime_actions.append(rp.ScalarSaver(configuration=self.configuration, steps_between_output=scalar_output,
-                                                    num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                                                    output=self.memory))
-
-        # Saving of configurations
-        if conf_output == 'default':
-            self.runtime_actions.append( rp.ConfSaver(configuration=self.configuration, num_timeblocks=num_timeblocks,
-                                           steps_per_timeblock=steps_per_timeblock, output=self.memory, include_simbox=include_simbox_in_output)
-            )
-        elif conf_output != None and conf_output != 'none':
-            raise RuntimeError('Did not understand conf_output = ', conf_output)
+        self.runtime_actions = runtime_actions
+        for runtime_action in self.runtime_actions:
+            runtime_action.setup(configuration=self.configuration, num_timeblocks=num_timeblocks,
+                                steps_per_timeblock=steps_per_timeblock, output=self.memory )
 
         self.vectors_list = []
         self.scalars_list = []
