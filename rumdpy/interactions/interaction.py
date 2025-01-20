@@ -1,3 +1,4 @@
+import numba
 from numba import cuda
 from abc import ABC, abstractmethod
 from rumdpy import Configuration
@@ -49,16 +50,75 @@ def merge_interactions(configuration: Configuration, kernelA: Callable, paramsA:
 def add_interactions_list(configuration: Configuration, interactions_list: list[Interaction], compute_plan: dict, compute_flags: dict[str,bool], verbose: bool = False) -> tuple[Callable, tuple]:
 
     # Setup first interaction and cuda.jit it if gridsync is used for syncronization
-    params = interactions_list[0].get_params(configuration, compute_plan)
-    kernel = interactions_list[0].get_kernel(configuration, compute_plan, compute_flags)
+    params = get_initializer_params(configuration, compute_plan)
+    kernel: Callable = get_initializer_kernel(configuration, compute_plan, compute_flags)
     if compute_plan['gridsync']:
         kernel: Callable  = cuda.jit( device=compute_plan['gridsync'] )(kernel)
     
     # Merge in the rest of the interaction (maximum recursion depth might set a maximum for number of interactions)
-    for i in range(1, len(interactions_list)):
+    for i in range(len(interactions_list)):
         kernel, params = merge_interactions(configuration, kernel, params, interactions_list[i], compute_plan, compute_flags)
 
     return kernel, params
+
+
+def get_initializer_params(configuration, compute_plan):
+    return (0,)
+
+
+def get_initializer_kernel(configuration, compute_plan, compute_flags):
+
+    num_cscalars = configuration.num_cscalars
+    compute_stresses = compute_flags['stresses']
+
+    # Unpack parameters from configuration and compute_plan
+    D, num_part = configuration.D, configuration.N
+    pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
+    num_blocks = (num_part - 1) // pb + 1  
+
+    # Unpack indices for vectors and scalars to be compiled into kernel
+    f_id,  = [configuration.vectors.indices[key] for key in ['f']]
+
+    if compute_stresses:
+        sx_id = configuration.vectors.indices['sx']
+        if D > 1:
+            sy_id = configuration.vectors.indices['sy']
+            if D > 2:
+                sz_id = configuration.vectors.indices['sz']
+                if D > 3:
+                    sw_id = configuration.vectors.indices['sw']
+
+    
+    def kernel(grid, vectors, scalars, ptype, sim_box, interaction_parameters):
+
+        global_id, my_t = cuda.grid(2)
+
+        if global_id < num_part and my_t==0: 
+            for k in range(num_cscalars):
+                scalars[global_id, k] = numba.float32(0.0)
+
+
+        if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
+            for k in range(D):
+                vectors[f_id][global_id, k] = numba.float32(0.0)
+                if  compute_stresses:
+                    vectors[sx_id][global_id, k] =  numba.float32(0.0)
+                    if D > 1:
+                        vectors[sy_id][global_id, k] =  numba.float32(0.0)
+                        if D > 2:
+                            vectors[sz_id][global_id, k] =  numba.float32(0.0)
+                            if D > 3:
+                                vectors[sw_id][global_id, k] =  numba.float32(0.0)
+        return
+    
+
+    if gridsync:
+        # A device function, calling a number of device functions, using gridsync to syncronize
+        return cuda.jit( device=gridsync )(kernel)
+    else:
+        return cuda.jit( device=gridsync )(kernel)[num_blocks, (pb, tp)]
+
+
 
 
 # Function below not used and will be removed

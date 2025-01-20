@@ -185,9 +185,9 @@ class PairPotential(Interaction):
             
             max_nbs = nblist.shape[1]-1
             
-            if global_id < num_part and my_t==0: # Initialize global variables. Should be controlled by flag if more pair-potentials
-                for k in range(num_cscalars):
-                    cscalars[global_id, k] = numba.float32(0.0)
+            #if global_id < num_part and my_t==0: # Initialize global variables. Should be controlled by flag if more pair-potentials
+            #    for k in range(num_cscalars):
+            #        cscalars[global_id, k] = numba.float32(0.0)
 
             my_f = cuda.local.array(shape=D,dtype=numba.float32)
             my_dr = cuda.local.array(shape=D,dtype=numba.float32)

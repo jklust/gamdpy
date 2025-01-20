@@ -72,17 +72,17 @@ class NbList2():
                 if dist_moved_exceeds_limit_function(vectors[r_id][global_id], r_ref[global_id], sim_box, simbox_last_rebuild, skin, cut):
                     nbflag[0] = num_blocks
 
-            if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
-                for k in range(D):
-                    vectors[f_id][global_id, k] = numba.float32(0.0)
-                    if  compute_stresses:
-                        vectors[sx_id][global_id, k] =  numba.float32(0.0)
-                        if D > 1:
-                            vectors[sy_id][global_id, k] =  numba.float32(0.0)
-                            if D > 2:
-                                vectors[sz_id][global_id, k] =  numba.float32(0.0)
-                                if D > 3:
-                                    vectors[sw_id][global_id, k] =  numba.float32(0.0)
+            #if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
+            #    for k in range(D):
+            #        vectors[f_id][global_id, k] = numba.float32(0.0)
+            #        if  compute_stresses:
+            #            vectors[sx_id][global_id, k] =  numba.float32(0.0)
+            #            if D > 1:
+            #                vectors[sy_id][global_id, k] =  numba.float32(0.0)
+            #                if D > 2:
+            #                    vectors[sz_id][global_id, k] =  numba.float32(0.0)
+            #                    if D > 3:
+            #                        vectors[sw_id][global_id, k] =  numba.float32(0.0)
             return
    
         @cuda.jit(device=gridsync)
