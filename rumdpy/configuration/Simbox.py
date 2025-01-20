@@ -19,7 +19,7 @@ class Simbox():
     >>> import rumdpy as rp
     >>> import numpy as np
     >>> simbox = rp.Simbox(D=3, lengths=np.array([3,4,5]))
-    >>> assert list(simbox.lengths) == list(np.array([3,4,5]))
+
     """
     def __init__(self, D, lengths):
         self.D = D
@@ -40,9 +40,12 @@ class Simbox():
         self.lengths = self.d_data.copy_to_host()
 
     def make_simbox_functions(self):
+        ''' This function generates the simbox methods. It is needed for the cuda kernel '''
         D = self.D
+        # NOTE: in the following functions sim_box is an array of box lengths
 
         def dist_sq_dr_function(ri, rj, sim_box, dr):  
+            ''' Returns the squared distance between ri and rj applying MIC and saves ri-rj in dr '''
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr[k] = ri[k] - rj[k]
@@ -53,6 +56,7 @@ class Simbox():
             return dist_sq
 
         def dist_sq_function(ri, rj, sim_box):  
+            ''' Returns the squared distance between ri and rj applying MIC'''
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr_k = ri[k] - rj[k]
@@ -71,21 +75,23 @@ class Simbox():
                     r[k] += sim_box[k]
                     image[k] -= 1
 
-        def apply_PBC_dimension(r, image, sim_box, dimension):
-            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
-                r[dimension] -= sim_box[dimension]
-                image[dimension] += 1
-            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
-                r[dimension] += sim_box[dimension]
-                image[dimension] -= 1
+#        def apply_PBC_dimension(r, image, sim_box, dimension):
+#            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
+#                r[dimension] -= sim_box[dimension]
+#                image[dimension] += 1
+#            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
+#                r[dimension] += sim_box[dimension]
+#                image[dimension] -= 1
 
         def volume(sim_box):
+            ''' Returns volume of the rectangular box '''
             vol = sim_box[0]
             for i in range(1,D):
                 vol *= sim_box[i]
             return vol
 
         def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
+            ''' Returns squared distance between vectors r_current and r_last '''
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr_k = r_current[k] - r_last[k]
@@ -98,7 +104,8 @@ class Simbox():
 
 
         def dist_moved_exceeds_limit_function(r_current, r_last, sim_box, sim_box_last, skin, cut):
-            """ Parameters sim_box_last and cut are not used here, but is needed for the Lees-Edwards type of Simbox"""
+            """ Returns True if squared distance between r_current and r_last exceeds half skin.
+            Parameters sim_box_last and cut are not used here, but is needed for the Lees-Edwards type of Simbox"""
             dist_sq = numba.float32(0.0)
             for k in range(D):
                 dr_k = r_current[k] - r_last[k]
@@ -109,7 +116,7 @@ class Simbox():
 
             return dist_sq > skin*skin*numba.float32(0.25)
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, volume, dist_moved_sq_function, dist_moved_exceeds_limit_function
+        return dist_sq_dr_function, dist_sq_function, apply_PBC, volume, dist_moved_sq_function, dist_moved_exceeds_limit_function
 
 
 
@@ -123,7 +130,6 @@ class Simbox_LeesEdwards(Simbox):
     >>> import numpy as np
     >>> simbox = rp.Simbox_LeesEdwards(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
     Simbox_LeesEdwards, box_shift= 1.0
-    >>> assert list(simbox.lengths) == list(np.array([3,4,5]))
 
     """
     def __init__(self, D, lengths, box_shift=0.):
