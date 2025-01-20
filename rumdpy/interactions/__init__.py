@@ -1,16 +1,24 @@
+# Interaction class
 from .interaction import Interaction, add_interactions_list
-from .pair_potential import *
-from .nblist import *
-from .nblist_linked_lists import *
-#from .add_interactions import *
-from .make_fixed_interactions import make_fixed_interactions
-from .bonds import *
-from .planar_interactions import *
-from .tether import *
-from .relaxtemp import *
-from .gravity import *
-from .angles import *
-from .dihedrals import *
 
-## import of potential_functions
+# Neighborlist
+from .nblist import NbList2
+from .nblist_linked_lists import NbListLinkedLists
+
+# Pair potential
+from .pair_potential import PairPotential
+# import of potential_functions
 from .potential_functions import *
+
+# Fixed interactions
+from .make_fixed_interactions import make_fixed_interactions
+from .planar_interactions import make_planar_calculator, setup_planar_interactions
+from .tether import Tether
+from .relaxtemp import Relaxtemp
+from .gravity import Gravity
+
+# Molecules
+from .bonds import Bonds
+from .angles import Angles
+from .dihedrals import Dihedrals
+

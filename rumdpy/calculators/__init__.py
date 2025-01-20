@@ -1,10 +1,11 @@
+# Runtime actions
 from .runtime_action import RuntimeAction, add_runtime_actions_list
-from .calculator_radial_distribution import *
-from .calculator_structure_factor import *
-from .calculator_hydrodynamic_profile import *
-from .calculator_hydrodynamic_correlations import *
-from .calculator_widom_insertion import *
-from .scalar_calculator import *
-from .conf_saver import *
-#from .runtime_action_executor import *
+from .scalar_calculator import ScalarSaver
+from .conf_saver import ConfSaver
 from .momentum_reset import MomentumReset
+# Calculators
+from .calculator_radial_distribution import CalculatorRadialDistribution
+from .calculator_structure_factor import CalculatorStructureFactor
+from .calculator_hydrodynamic_profile import CalculatorHydrodynamicProfile
+from .calculator_hydrodynamic_correlations import CalculatorHydrodynamicCorrelations
+from .calculator_widom_insertion import CalculatorWidomInsertion
