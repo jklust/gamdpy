@@ -1,6 +1,5 @@
 import numpy as np
 import numba
-import math
 from numba import cuda
 from .colarray import colarray
 from .Simbox import Simbox

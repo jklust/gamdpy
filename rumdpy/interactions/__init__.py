@@ -7,8 +7,6 @@ from .nblist_linked_lists import NbListLinkedLists
 
 # Pair potential
 from .pair_potential import PairPotential
-# import of potential_functions
-from .potential_functions import *
 
 # Fixed interactions
 from .make_fixed_interactions import make_fixed_interactions

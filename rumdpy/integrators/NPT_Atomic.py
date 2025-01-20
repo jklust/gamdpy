@@ -1,5 +1,7 @@
 import numpy as np
 # LC: check https://orbit.dtu.dk/en/publications/cudarray-cuda-based-numpy
+import numba
+from numba import cuda
 from rumdpy import Configuration
 from rumdpy.misc.make_function import make_function_constant
 from .integrator import Integrator
@@ -41,7 +43,6 @@ class NPT_Atomic(Integrator):
         self.barostat_state = np.zeros(3, dtype=np.float32)                         # NOTE: array is (barostat_state, virial, volume) 
 
     def get_params(self, configuration: Configuration, interactions_params: tuple, verbose=False) -> tuple:
-        import numba
         dt = np.float32(self.dt)
         degrees  = configuration.N * configuration.D - configuration.D                        # number of degrees of freedom 
         factor = np.float32(1./(4*np.pi*np.pi))
@@ -55,7 +56,6 @@ class NPT_Atomic(Integrator):
                                                                                                # step() and update_thermostat_state() below.
 
     def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags:dict, interactions_kernel, verbose=False):
-        import numba
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -114,7 +114,7 @@ class NPT_Atomic(Integrator):
             minus = np.float32(1. - factor)                    
             rfactor = barostat_state[0]*dt
 
-            global_id, my_t = numba.cuda.grid(2)
+            global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 my_r = vectors[r_id][global_id]
                 my_v = vectors[v_id][global_id]
@@ -134,8 +134,8 @@ class NPT_Atomic(Integrator):
                     
                 apply_PBC(my_r, r_im[global_id], sim_box)
 
-                numba.cuda.atomic.add(thermostat_state, 1, my_k)   # Probably slow? Not really!
-                numba.cuda.atomic.add(barostat_state  , 1, my_w)
+                cuda.atomic.add(thermostat_state, 1, my_k)   # Probably slow? Not really!
+                cuda.atomic.add(barostat_state  , 1, my_w)
                 if compute_k:
                     scalars[global_id][k_id] = my_k
                 if compute_fsq:
@@ -147,7 +147,7 @@ class NPT_Atomic(Integrator):
             # Unpack parameters. MUST be compatible with get_params() above
             dt, mass_t, mass_p, degrees, thermostat_state, barostat_state = integrator_params 
 
-            global_id, my_t = numba.cuda.grid(2)
+            global_id, my_t = cuda.grid(2)
             if global_id == 0 and my_t == 0:
                 temperature  = 2*thermostat_state[1]/degrees
                 scale_factor_3 = 1 + dt*D*barostat_state[0]     # assumes D=3
@@ -183,7 +183,7 @@ class NPT_Atomic(Integrator):
             scale_factor_3 = 1 + dt*D*barostat_state[0]     # assumes D=3
             scale_factor  = scale_factor_3**(1./3)
 
-            global_id, my_t = numba.cuda.grid(2)
+            global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 for k in range(D): 
                     vectors[r_id][global_id][k] = scale_factor*vectors[r_id][global_id][k] 
