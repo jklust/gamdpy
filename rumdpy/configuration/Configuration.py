@@ -143,9 +143,17 @@ class Configuration:
     def __str__(self):
         if self.N == None:
             return f'{self.D} dimensional configuration. Particles not yet assigned.'
-        str = f'{self.N} particles in {self.D} dimensions. Current scalar data per particle:'
+        str = f'{self.N} particles in {self.D} dimensions. Number density (atomic): {self.N/self.get_volume():.3f}'
+        num_types = np.max(self.ptype)+1
+        if num_types==1:
+            str += '. Single component. '
+        else:
+            str += f'. {num_types} components with fractions '
+            for ptype in range(num_types):
+                str += f'{np.mean(self.ptype==ptype):.3f}, '
+        str += '\nCurrent scalar data per particle:'
         for key in self.sid:
-            str += f'\n{key}, {np.mean(self.scalars[:,self.sid[key]]):.3f}'
+            str += f'\n{key+",":5} {np.mean(self.scalars[:,self.sid[key]]):.3f}'
             if key in self.scalar_decriptions:
                 str += '\t' + self.scalar_decriptions[key]
         return str

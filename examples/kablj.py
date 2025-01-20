@@ -56,7 +56,10 @@ for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
-print('Production:')
+# Print current status of configuration
+print(configuration)
+
+print('\nProduction:')
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 
 sim = rp.Simulation(configuration, pair_pot, integrator,
@@ -69,6 +72,11 @@ for block in sim.run_timeblocks():
     print(f'{block=:4}  {sim.status(per_particle=True)}')
 print(sim.summary())
 
+# Print current status of configuration
+print(configuration)
+
+
+
 columns = ['U', 'W', 'K', 'Fsq', 'lapU', 'Vol']
 data = np.array(rp.extract_scalars(sim.output, columns, first_block=0))
 df = pd.DataFrame(data.T, columns=columns)
@@ -79,7 +87,7 @@ mu = np.mean(df['U'])/configuration.N
 mw = np.mean(df['W'])/configuration.N
 cvex = np.var(df['U'])/temperature**2/configuration.N
 
-print('rumdpy:')
+print('\nrumdpy:')
 print(f'Potential energy:     {mu:.4f}')
 print(f'Excess heat capacity: {cvex:.3f}')
 print(f'Virial                {mw:.4f}')

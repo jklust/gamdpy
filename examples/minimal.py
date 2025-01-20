@@ -32,7 +32,7 @@ for _ in sim.run_timeblocks():
         print(sim.status(per_particle=True))
 print(sim.summary())
 
-# Print current status of simulation
+# Print current status of configuration
 print(configuration)
 
 
