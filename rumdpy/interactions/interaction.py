@@ -25,6 +25,13 @@ class Interaction(ABC):
 
         pass
 
+    def check_datastructure_validity(self) -> bool:
+        """
+        Interactions which have an internal data structure (think: PairPotential and its NbList) should overwrite this method 
+        with one that checks the validity of it, and throws an error if not valid (Later: repair it and signal rerun of timeblock) 
+        """
+        return True
+
 def merge_interactions(configuration: Configuration, kernelA: Callable, paramsA: tuple, interactionB: Interaction, compute_plan: dict, compute_flags: dict[str,bool]) -> tuple[Callable, tuple] :
     paramsB = interactionB.get_params(configuration, compute_plan)
     kernelB = interactionB.get_kernel(configuration, compute_plan, compute_flags) 
@@ -66,7 +73,7 @@ def get_initializer_params(configuration, compute_plan):
     return (0,)
 
 
-def get_initializer_kernel(configuration, compute_plan, compute_flags):
+def get_initializer_kernel(configuration, compute_plan, compute_flags) -> Callable:
 
     num_cscalars = configuration.num_cscalars
     compute_stresses = compute_flags['stresses']

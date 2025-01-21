@@ -73,7 +73,7 @@ def test_SLLOD(run_NVT=False):
     sxy_mean = np.mean(sxy)
     print(f'{sr:.2g} {sxy_mean:.6f}')
     assert (np.isclose(sxy_mean, 2.71, atol=0.005 ))
-    assert(np.isclose(sim_SLLOD.nbflag[2], 49, atol=1))
+    assert(np.isclose(pairpot.nblist.d_nbflag[2], 49, atol=1))
 
 if __name__ == '__main__':
     test_SLLOD()

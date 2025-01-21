@@ -184,6 +184,9 @@ class Simulation():
         self.simbox_data_list = []
 
         self.JIT_and_test_kernel()
+        for interaction in self.interactions: # Attempt to catch (eg.) nblist errors before actually doing any simulation
+            interaction.check_datastructure_validity()
+
 
         if self.storage[-3:] == '.h5':
             self.memory.close()
@@ -434,7 +437,10 @@ class Simulation():
                 block_times.append(cuda.event_elapsed_time(start_block, end_block))
 
             self.configuration.copy_to_host()
-            
+
+            for interaction in self.interactions:
+                interaction.check_datastructure_validity()
+
             for runtime_action in self.runtime_actions:
                 runtime_action.update_at_end_of_timeblock(block, self.get_output(mode="a"))
 
@@ -450,7 +456,7 @@ class Simulation():
 
             self.timing_numba = cuda.event_elapsed_time(start, end)
             self.timing_numba_blocks = np.array(block_times)
-        self.nbflag = self.interactions[0].nblist.d_nbflag.copy_to_host()
+        #self.nbflag = self.interactions[0].nblist.d_nbflag.copy_to_host()
         self.scalars_list = np.array(self.scalars_list)
 
     def status(self, per_particle=False) -> str:
@@ -499,7 +505,7 @@ class Simulation():
 
         st = f'Particles : {self.configuration.N} \n'
         st += f'Steps : {self.last_num_blocks * self.steps_per_block} \n'
-        st += f'nbflag : {self.nbflag} \n'
+        #st += f'nbflag : {self.nbflag} \n'
         if self.timing:
             st += f'Total time (incl. time spent between blocks): {time_total:.2f} s \n'
             st += f'Simulation time : {time_sim:.2f} s \n'

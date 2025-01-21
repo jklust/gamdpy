@@ -68,8 +68,13 @@ class PairPotential(Interaction):
         plt.ylabel('Pair potential')
         plt.legend()
         plt.show()
-        
-  
+
+    def check_datastructure_validity(self) -> bool:
+        nbflag = self.nblist.d_nbflag.copy_to_host()
+        if nbflag[0] != 0 or nbflag[1] != 0:
+            raise RuntimeError(f'Neighbor-list is invalid. Try allocating space for more neighbors (max_num_nbs in PairPot object). Allocated size: {self.max_num_nbs}, but {nbflag[1]+1} neighbours found. {nbflag=}.')
+        return True
+
     def get_params(self, configuration: rp.Configuration, compute_plan: dict, verbose=False) -> tuple:
         
         self.params, max_cut = self.convert_user_params()
