@@ -9,7 +9,7 @@ import rumdpy as rp
 # For type annotation
 from rumdpy.integrators import Integrator
 from rumdpy.interactions import Interaction
-from rumdpy.calculators import RuntimeAction
+from rumdpy.runtime_actions import RuntimeAction
 
 # TODO: to remove import above you need to add a lot of lines are the following
 #from ..simulation.get_default_compute_plan import get_default_compute_plan
@@ -28,11 +28,14 @@ class Simulation():
     configuration : rumdpy.Configuration
         The configuration to simulate.
 
-    interactions : an interaction or list of interactions
+    interactions : list of interactions
         Interactions such as pair potentials, bonds, external fields, etc.
 
     integrator : an integrator
         The integrator to use for the simulation.
+
+    runtime_actions : list of runtime actions
+        Runtime actions such as ScalarSaver, ConfigurationSaver or MomentumReset
 
     num_steps : int
         Number of steps to run the simulation. If 0, num_timeblocks and steps_per_timeblock should be set.
@@ -48,9 +51,6 @@ class Simulation():
 
     storage : str
         Storage for the simulation output. Can be 'memory' or a filename with extension '.h5'.
-
-    compute_flags : dict
-        For each scalar quantity, and stresses, specifies whether to be calculated
 
     verbose : bool
         If True, print verbose output.
@@ -72,7 +72,6 @@ class Simulation():
                  runtime_actions: list[RuntimeAction],
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
-                 #compute_flags=None, 
                  verbose=False, timing=True,
                  steps_in_kernel_test=1):
 
@@ -451,8 +450,9 @@ class Simulation():
             A string with the current status of the simulation.
 
         """
-        time = self.current_block * self.steps_per_block * self.dt
-        st = f'{time= :<10.3f}'
+        time = (self.current_block+1) * self.steps_per_block * self.dt
+        st = f'timeblock= {self.current_block :<6}'
+        st += f'{time= :<12.3f}'
         for name in self.configuration.sid:
             if name in self.configuration.compute_flags and self.configuration.compute_flags[name]:
                 data = np.sum(self.configuration[name])
@@ -472,23 +472,14 @@ class Simulation():
             time_sim = np.sum(self.timing_numba_blocks) / 1000
             tps_sim = self.last_num_blocks * self.steps_per_block / time_sim
 
-            if self.timing_numba_blocks.shape[0] > 1:
-                extratime_firstblock = (self.timing_numba_blocks[0]
-                                        - np.mean(self.timing_numba_blocks[1:])) / 1000
-                time_sim_minus_extra = time_sim - extratime_firstblock
-                tps_sim_minus_extra = self.last_num_blocks * self.steps_per_block / time_sim_minus_extra
-
         st = f'Particles : {self.configuration.N} \n'
-        st += f'Steps : {self.last_num_blocks * self.steps_per_block} \n'
-        #st += f'nbflag : {self.nbflag} \n'
+        st += f'Steps : {self.last_num_blocks} * {self.steps_per_block} = '
+        st += f'{self.last_num_blocks * self.steps_per_block:_} \n'
         if self.timing:
-            st += f'Total time (incl. time spent between blocks): {time_total:.2f} s \n'
-            st += f'Simulation time : {time_sim:.2f} s \n'
-            st += f'Extra time 1.st block (presumably JIT): {extratime_firstblock:.2f} s \n'
-            st += f'TPS_total : {tps_total:.2e} \n'
-            st += f'TPS_sim : {tps_sim:.2e} \n'
-            if self.timing_numba_blocks.shape[0] > 1:
-                st += f'TPS_sim_minus_extra : {tps_sim_minus_extra:.2e} \n'
+            st += f'Total run time  (incl. time spent between timeblocks): {time_total:.2f} s '
+            st += f'( TPS: {tps_total:.2e} )\n'
+            st += f'Simulation time (excl. time spent between timeblocks): {time_sim:.2f} s '
+            st += f'( TPS: {tps_sim:.2e} )\n'
         return st
 
     def autotune_bruteforce(self, pbs='auto', skins='auto', tps='auto', timesteps=0, repeats=1):

@@ -29,9 +29,10 @@ from .interactions import make_fixed_interactions, make_planar_calculator, setup
 from .interactions import Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 
+# Import from runtime_actions subpackage (Actions that can be inserted into the stimulation  kernel)
+from .runtime_actions import RuntimeAction, add_runtime_actions_list, ConfigurationSaver, ScalarSaver, MomentumReset
+
 # Import from calculators subpackage
-# Calculators are runtime actions with interact with the kernel
-from .calculators import RuntimeAction, add_runtime_actions_list, ConfSaver, ScalarSaver, MomentumReset
 from .calculators import CalculatorHydrodynamicCorrelations, CalculatorHydrodynamicProfile, CalculatorWidomInsertion
 from .calculators import CalculatorRadialDistribution, CalculatorStructureFactor
 

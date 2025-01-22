@@ -24,7 +24,8 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 
 # Setup Simulation.
-sim = rp.Simulation(configuration, pair_pot, integrator,
+sim = rp.Simulation(configuration, [pair_pot, ], integrator,
+                    min
                     steps_between_momentum_reset=100,
                     num_steps=32*1024, storage='memory')
 
