@@ -64,10 +64,16 @@ else:
 # Compute plan
 compute_plan = rp.get_default_compute_plan(configuration)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+# 
+
 # Setup simulation
-sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator,
+sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
                     num_timeblocks=10, steps_per_timeblock=256,
-                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
 
 angles_array, dihedrals_array = [], []

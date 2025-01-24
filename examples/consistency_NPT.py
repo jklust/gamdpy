@@ -34,9 +34,14 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # NVT equilibration for calculation of c_V and Thermal pressure coefficient
 integratorNVT = rp.integrators.NVT(temperature=my_T, tau=0.2, dt=0.001)
-sim = rp.Simulation(configuration, pair_pot, integratorNVT,
+
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32), 
+                   rp.MomentumReset(100)]
+
+sim = rp.Simulation(configuration, pair_pot, integratorNVT, runtime_actions, 
                     num_timeblocks=8, steps_per_timeblock=16384,
-                    steps_between_momentum_reset=100, scalar_output=32,
                     storage='memory')
 # Equilibration run
 print("Running NVT simulation at (\\rho, T) = ({my_rho},{my_T})")
@@ -62,9 +67,8 @@ print(f"Specific heat at constant volume: {c_V}")
 print()
 
 # NPT Simulation 
-sim = rp.Simulation(configuration, pair_pot, integrator,
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=8, steps_per_timeblock=16384,
-                    steps_between_momentum_reset=100, scalar_output=32,
                     storage='memory')
 sim.run()
 sim.run()

@@ -34,13 +34,19 @@ if run_NVT:
     steps_per_block = 2048
     running_time = dt*num_blocks*steps_per_block
 
-
     Ttarget_function = rp.make_function_ramp(value0=2.000, x0=running_time*(1/8), 
                                              value1=temperature_low, x1=running_time*(7/8))
     integrator_NVT = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+
+
     # Set simulation up. Total number of timesteps: num_blocks * steps_per_block
-    sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT,
+    sim_NVT = rp.Simulation(configuration, pairpot, integrator_NVT, runtime_actions,
                             num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
                             storage='memory')
 
@@ -85,11 +91,16 @@ strain_transient = 1.0 # how much of the output to ignore
 num_steps_transient = int(strain_transient / (sr*dt) ) + 1
 
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(include_simbox=True), 
+                   rp.MomentumReset(100),
+                   rp.ScalarSaver(sc_output, {'stresses':True})]
+
+
 print(f'num_blocks={num_blocks}')
-sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
-                          num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block, scalar_output=sc_output,
-                          steps_between_momentum_reset=100,
-                          storage='memory', compute_flags={'stresses':True}, compute_plan=compute_plan, include_simbox_in_output=True)
+sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD, runtime_actions, 
+                          num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
+                          storage='memory', compute_plan=compute_plan)
 
 # Run simulation one block at a time
 for block in sim_SLLOD.run_timeblocks():

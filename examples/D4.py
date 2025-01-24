@@ -21,9 +21,14 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 # Setup integrator
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.08, dt=0.001)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+
 # Setup Simulation
-sim = rp.Simulation(configuration, pair_pot, integrator,
-                    steps_between_momentum_reset=100,
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=16, steps_per_timeblock=4096,
                     storage='memory')
 
@@ -36,7 +41,7 @@ dU = U - np.mean(U)
 dW = W - np.mean(W)
 gamma = np.dot(dW,dU)/np.dot(dU,dU)
 R = np.dot(dW,dU)/(np.dot(dW,dW)*np.dot(dU,dU))**0.5
-print(f'{density} {temperature} {R:.3f} {gamma:.3f}')
+print(f'{density=} {temperature=} {R=:.3f} {gamma=:.3f}')
 # Reference results are from http://glass.ruc.dk/pdf/articles/2016_JChemPhys_144_231101.pdf
 assert math.isclose(0.80, R    , rel_tol=0.1), f"{R=} but should be 0.80"
 assert math.isclose(3.33, gamma, rel_tol=0.1), f"{gamma=} but should be 3.33"

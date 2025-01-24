@@ -31,13 +31,16 @@ pair_pot = rp.PairPotential(pair_func, params=[eps, sig, cut], max_num_nbs=1000)
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32), 
+                   rp.MomentumReset(100)]
+
 # Setup Simulation.
 sim = rp.Simulation(
-    configuration, pair_pot, integrator,
-    steps_between_momentum_reset=100,
+    configuration, pair_pot, integrator, runtime_actions,
     num_timeblocks=16,
     steps_per_timeblock=1024,
-    scalar_output=32,
     storage='memory'
 )
 

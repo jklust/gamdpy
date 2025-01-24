@@ -30,12 +30,15 @@ integrator = rp.integrators.NPT_Atomic(temperature=target_temperature,
                                        tau_p=20, 
                                        dt=0.001)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32), 
+                   rp.MomentumReset(100)]
+
+
 # NPT Simulation 
-sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=16,
-                    steps_per_timeblock=2048,
-                    steps_between_momentum_reset=100,
-                    scalar_output=32,
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+                    num_timeblocks=16, steps_per_timeblock=2048,
                     storage='memory')
 
 sim.run()  # Equilibration run
