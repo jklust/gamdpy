@@ -65,9 +65,15 @@ print(sim.summary())
 print('Production:')
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 
+<<<<<<< HEAD
 runtime_actions = [rp.ConfigurationSaver(), 
                    rp.ScalarSaver(32, {'Fsq':True, 'lapU':True, 'Ptot':True}), 
                    rp.MomentumReset(100),]
+=======
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfSaver(), 
+                   rp.ScalarSaver(32, {'Fsq':True, 'lapU':True, 'Ptot':True}), ]
+>>>>>>> c21ca343276e2fa64d067c7aa32ad48c593679c3
 
 sim = rp.Simulation(configuration, [pair_pot, bonds], integrator, runtime_actions, 
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,

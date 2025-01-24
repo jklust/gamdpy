@@ -52,6 +52,12 @@ class Simulation():
     storage : str
         Storage for the simulation output. Can be 'memory' or a filename with extension '.h5'.
 
+<<<<<<< HEAD
+=======
+    compute_flags : dict
+        For each scalar quantity, and stresses, specifies whether to be calculated
+
+>>>>>>> c21ca343276e2fa64d067c7aa32ad48c593679c3
     verbose : bool
         If True, print verbose output.
 
@@ -72,6 +78,10 @@ class Simulation():
                  runtime_actions: list[RuntimeAction],
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
+<<<<<<< HEAD
+=======
+                 #compute_flags=None, 
+>>>>>>> c21ca343276e2fa64d067c7aa32ad48c593679c3
                  verbose=False, timing=True,
                  steps_in_kernel_test=1):
 
