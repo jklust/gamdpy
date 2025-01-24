@@ -26,7 +26,7 @@ runtime_actions = [rp.ConfigurationSaver(),
                    rp.MomentumReset(100)]
 
 # Setup Simulation. 
-sim = rp.Simulation(configuration, [pair_pot, ], integrator, runtime_actions
+sim = rp.Simulation(configuration, [pair_pot, ], integrator, runtime_actions, 
                     num_timeblocks=32, steps_per_timeblock=1024,
                     storage='LJ_T0.70.h5')
 
