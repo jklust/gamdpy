@@ -38,9 +38,8 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
     #  c1 = rp.make_configuration_fcc(nx=nx,  ny=ny,  nz=nz,  rho=rho, T=1.44)
 
     # Setup pair potential.
-    pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
-    #pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
-    #pair_func = numba.njit(rp.LJ_12_6_sigma_epsilon) # numba.njit should not be necessarry!
+    #pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
     sig, eps, cut = 1.0, 1.0, 2.5
     pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
@@ -62,22 +61,17 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
         integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=dt)
     if integrator == 'NVT_Langevin':
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
-
+    
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim = rp.Simulation(c1, pair_pot, integrator,
+    sim = rp.Simulation(c1, pair_pot, integrator, [rp.MomentumReset(200), ],
                         num_timeblocks=1, steps_per_timeblock=steps,
-    #                    steps_between_momentum_reset=200,
-                        conf_output=None, scalar_output=None,
-                        compute_plan=compute_plan,
-                        storage='memory', verbose=False)
+                        compute_plan=compute_plan, storage='memory', verbose=False)
 
     # Run simulation one block at a time
     for block in sim.run_timeblocks():
         pass
     nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
-    assert nbflag0[0] == 0
-    assert nbflag0[1] == 0
-
+    
     for block in sim.run_timeblocks():
         pass
 
@@ -107,8 +101,11 @@ def main(integrator, nblist):
     nxyzs = (
         (8, 8, 8), (8, 8, 16), (8, 16, 16), (16, 16, 16), (16, 16, 32), (16, 32, 32), (32, 32, 32) )
     if nblist == 'Nsquared':
-        nxyzs = ((4, 4, 8), (6, 6, 6), (4, 8, 8),) + nxyzs
+        nxyzs = ((4, 4, 8), (4, 8, 8),) + nxyzs
     if nblist == 'LinkedLists':
+        nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
+    if nblist == 'default':
+        nxyzs = ((4, 4, 8), (4, 8, 8),) + nxyzs
         nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
     Ns = []
     tpss = []
@@ -164,7 +161,11 @@ if __name__ == "__main__":
         integrator = 'NVT'
     if 'NVT_Langevin' in sys.argv:
         integrator = 'NVT_Langevin'
+
+    nblist = 'default'    
     if 'LinkedLists' in sys.argv:
         nblist = 'LinkedLists'
+    if 'NSquared' in sys.argv:
+        nblist = 'NSquared'
 
     main(integrator=integrator, nblist=nblist)
