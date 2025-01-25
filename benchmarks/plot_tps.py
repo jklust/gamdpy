@@ -8,7 +8,7 @@ benchmarks = ['RTX_2060_Super',
               'RTX_2080_Ti', 
               'RTX_3070_Laptop',
               'RTX_4070', 
-              'RTX_4090_NSq',]
+              'RTX_4090',]
 style = ['ro-', 'ro-','bo-', 'bo-', 'r+-','go-', 'go-', 'ko-', 'ko-']
 
 plt.figure()
