@@ -54,11 +54,14 @@ def test_SLLOD(run_NVT=False):
     # temperature since SLLOD uses an isokinetic thermostat
     configuration.set_kinetic_temperature(temperature, ndofs=configuration.N*3-4) # remove one DOF due to constraint on total KE
 
+    runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(include_simbox=True), 
+                   rp.ScalarSaver(sc_output, {'stresses':True}), ]
+
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD,
-                            num_timeblocks=3, steps_per_timeblock=128, scalar_output=sc_output,
-                            steps_between_momentum_reset=100,
-                            storage='memory', compute_flags={'stresses':True}, compute_plan=compute_plan, include_simbox_in_output=True)
+    sim_SLLOD = rp.Simulation(configuration, pairpot, integrator_SLLOD, runtime_actions,
+                            num_timeblocks=3, steps_per_timeblock=128,
+                            storage='memory', compute_plan=compute_plan)
 
     # Run simulation one block at a time
     for block in sim_SLLOD.run_timeblocks():

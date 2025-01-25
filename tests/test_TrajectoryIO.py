@@ -23,9 +23,13 @@ def test_TrajectoryIO():
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.001)
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
     # Setup Simulation      # Note: useless reducing steps_per_timeblock, the time is spent by the jit not by the run
-    sim = rp.Simulation(configuration, pair_pot, integrator,
-                        steps_between_momentum_reset=100,
+    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                         num_timeblocks=1, steps_per_timeblock=128, 
                         storage='memory')
 

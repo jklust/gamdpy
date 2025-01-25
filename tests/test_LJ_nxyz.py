@@ -49,15 +49,15 @@ def LJ(nx, ny, nz, rho=0.8442, pb=None, tp=None, skin=None, gridsync=None, Utili
         
     if integrator=='NVT_Langevin':
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.1, dt=dt, seed=213)
-                       
+
+    runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(8, {'Fsq':True, 'lapU':True, 'stresses':False}), ]
+
+
     # Setup the Simulation
-    num_blocks = 1
-    steps_per_block = 1024*4
-    sim = rp.Simulation(configuration, pairpot, integrator,
+    sim = rp.Simulation(configuration, pairpot, integrator, runtime_actions,
                         num_timeblocks=2, steps_per_timeblock=1024 * 4,
-                        scalar_output=8, conf_output=None,
-                        compute_flags={'Fsq':True, 'lapU':True, 'stresses':False},
-                        steps_between_momentum_reset=100,
                         storage='memory', verbose=False)
 
     # Run simulation one block at a time

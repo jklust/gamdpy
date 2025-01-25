@@ -84,10 +84,13 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
         steps_in_kernel_test = 0
     else:
         steps_in_kernel_test = 1
+
+    runtime_actions = [rp.ConfigurationSaver(), 
+                    rp.ScalarSaver(), 
+                    rp.MomentumReset(100)]
     
     ev = rp.Evaluator(configuration, pairpot)
-    sim = rp.Simulation(configuration, pairpot, integrator,
-                        steps_between_momentum_reset=100,
+    sim = rp.Simulation(configuration, pairpot, integrator, runtime_actions,
                         num_timeblocks=64, steps_per_timeblock=1024, storage='memory',
                         steps_in_kernel_test=steps_in_kernel_test)
     assert isinstance(sim, rp.Simulation)

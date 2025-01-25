@@ -33,15 +33,16 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     dt = 0.005
     alpha = 0.1
     integrator = rp.integrators.NVT_Langevin(temperature, alpha=alpha, dt=dt, seed=0)
+
+    runtime_actions = [rp.MomentumReset(100), 
+                   rp.ScalarSaver(32, {'W':True, 'K':True}), ]
     
     # Setup the Simulation
     num_blocks = 32
     steps_per_block = 512
-    sim = rp.Simulation(configuration, pairpot, integrator,
+    sim = rp.Simulation(configuration, pairpot, integrator, runtime_actions,
                         num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                        steps_between_momentum_reset=100,
-                        compute_flags={'W':True, 'K': True},
-                        conf_output=None, storage='memory', verbose=False)
+                        storage='memory')
 
     # Run simulation one block at a time
     for block in sim.run_timeblocks():

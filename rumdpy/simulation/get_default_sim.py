@@ -30,10 +30,14 @@ def get_default_sim():
     # Setup integrator: NVT
     integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator,
-                        steps_between_momentum_reset=100,
-                        num_timeblocks=8,
-                        steps_per_timeblock=1024,
+    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions, 
+                        num_timeblocks=8, steps_per_timeblock=1024,
                         storage='memory')
     return sim

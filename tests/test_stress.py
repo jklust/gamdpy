@@ -22,13 +22,14 @@ integrator = rp.integrators.NVT(temperature=0.70, tau=0.2, dt=0.005)
 
 num_timeblocks = 4
 
-# Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-sim = rp.Simulation(configuration, pairpot, integrator,
-                    num_timeblocks=num_timeblocks, steps_per_timeblock=128,
-                    steps_between_momentum_reset=100,
-                    storage='memory', compute_flags={'stresses':True})
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32, {'stresses':True}), ]
 
-#print(sim.compute_plan)
+# Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
+sim = rp.Simulation(configuration, pairpot, integrator, runtime_actions,
+                    num_timeblocks=num_timeblocks, steps_per_timeblock=128,
+                    storage='memory',)
 
 p_conf_array = np.zeros(num_timeblocks)
 scalar_stress_array = np.zeros(num_timeblocks)

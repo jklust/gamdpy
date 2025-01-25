@@ -51,10 +51,13 @@ def test_JIT():
        for configuration in [configuration1, configuration3]:
               for pairpot in [pairpot2, ]:
                      ev = rp.Evaluator(configuration, pairpot)
-                     for integrator in integrators:
-                            sim = rp.Simulation(configuration, pairpot, integrator,
+                     for integrator in integrators:     
+                            runtime_actions = [rp.ConfigurationSaver(), 
+                                                 rp.ScalarSaver(), 
+                                                 rp.MomentumReset(100)]
+
+                            sim = rp.Simulation(configuration, pairpot, integrator, runtime_actions,
                                                  num_timeblocks=2, steps_per_timeblock=256, 
-                                                 steps_between_momentum_reset=100,
                                                  storage='memory')
                             print(sim.compute_plan)
               
