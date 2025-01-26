@@ -64,7 +64,7 @@ def get_default_compute_plan(configuration):
         tp = 16
 
     # skin: used when updating nblist
-    skin = np.float32(0.5)
+    skin = 0.5
     if N > 6 * 1024:
         skin = np.float32( 1.0)  # make the nblist be valid for many steps for large N.
 
