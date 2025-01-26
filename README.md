@@ -81,7 +81,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] SLLOD (stress, LEBC), Nick
 - [X] Bonds interface
 - [X] Implement other fixed interactions: point interactions (tethered particles). Jesper
-- [ ] Finish Atomic interface (runtime actions...) Thomas
+- [X] Finish Atomic interface (runtime actions...) Thomas
 - [X] Momentum resetting (remove default) Nick
 - [X] Read rumd3 & others configurations Nick
 - [X] Testing (Framework, doctest), Ulf & Thomas
@@ -92,7 +92,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Reserve name on pypi, conda? Thomas
 - [X] Generalize make_configuration to different lattices, Ulf
 - [X] Read configurations from file (Lorenzo: added function load_output in tools)
-- [ ] Runtime actions to include conf_saver and scalar_output, Thomas
+- [X] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
 - [X] Post analysis for multicomponents, Lorenzo/Danqui
@@ -114,7 +114,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Molecules (Interface) Jesper, Ulf
 - [ ] Settle on io format
 - [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
-- [ ] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
+- [X] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
 - [ ] make installable by pip for all, by uploading to pypi
@@ -124,13 +124,14 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Auto-tuner, TBS
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
-- [ ] Ensure neighborlist integrity (automated check/reallocate)
+- [X] Test neighborlist integrity before and during simulations (after each timeblock)
+- [X] Automatic reallocate larger neighborlist when needed, and redo simulation of last timeblock
 - [ ] Benchmarking
 - [ ] Charge (Water, SPCflexible), Jesper et al.
 - [X] Remove NVE_Toxvaerd Nick
 - [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
 - [ ] Include support for different types in CalculatorStructureFactor, Ulf
-- [ ] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
+- [X] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
 - [X] Remove imports of rumdpy inside rumdpy modules, Lorenzo
 - [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
 - [ ] Molecular stress, Jesper/Nick
