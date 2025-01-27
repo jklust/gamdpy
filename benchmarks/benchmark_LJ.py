@@ -46,7 +46,7 @@ def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
     return c1, pair_pot
 
 
-def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=False):
+def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', autotune=False, verbose=False):
     """
     Run LJ benchmark
     Could be run with other potential and/or parameters, but asserts would need to be updated
@@ -66,12 +66,17 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
     sim = rp.Simulation(c1, pair_pot, integrator, [rp.MomentumReset(200), ],
                         num_timeblocks=1, steps_per_timeblock=steps,
                         compute_plan=compute_plan, storage='memory', verbose=False)
+    
+    
 
     # Run simulation one block at a time
     for block in sim.run_timeblocks():
         pass
-    nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
     
+    if autotune:
+        sim.autotune_bruteforce(verbose=False)
+
+    nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
     for block in sim.run_timeblocks():
         pass
 
@@ -89,13 +94,13 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', verbose=F
 
     nbflag = pair_pot.nblist.d_nbflag.copy_to_host()
     nbupdates = nbflag[2] - nbflag0[2]
-    print(f"{c1.N:7} {tps:.2e} {steps:.1e} {time_in_sec:.1e}  {nbupdates:6} {steps/nbupdates:.1f} {compute_plan}")
+    print(f"{c1.N:7} {tps:.2e} {steps:.1e} {time_in_sec:.1e}  {nbupdates:6} {steps/nbupdates:.1f} {sim.compute_plan}")
     assert nbflag[0] == 0
     assert nbflag[1] == 0
-    return tps, time_in_sec
+    return tps, time_in_sec, steps
 
 
-def main(integrator, nblist):
+def main(integrator, nblist, autotune):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
     print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
@@ -109,6 +114,7 @@ def main(integrator, nblist):
         nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
     Ns = []
     tpss = []
+    tpss_at = []
     magic_number = 1e7
     print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:
@@ -126,33 +132,38 @@ def main(integrator, nblist):
                     #compute_plan['pb'] = 128
                     #if c1.N < 50000:
                     #    compute_plan['gridsync'] = True
-            tps, time_in_sec = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
+            tps, time_in_sec, steps = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
+            if autotune:
+                tps_at, time_in_sec_at, steps_at = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, autotune=autotune, verbose=False)
             magic_number *= 1.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
-
-    # Save this run to csv file
-
-    df = pd.DataFrame({'N': Ns, 'TPS': tpss})
-    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
-    files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
-
-    plt.figure()
-    plt.title('LJ benchmark, NVE, rho=0.8442')
-    plt.loglog(df['N'], df['TPS'], 'o-', label='This run')
-    for file in files_with_benchmark_data:
-        bdf = pd.read_csv(file)
-        label = " ".join(file.split("/")[-1].split('.')[0].split("_")[2::])
-        plt.loglog(bdf['N'], bdf['TPS'], '.-', label=label)
-    plt.loglog(df['N'], 200 * 1e6 / df['N'], '--', label='Perfect scaling (MATS=200)')
-    plt.legend(loc='lower left', fontsize=6)
-    plt.ylim(1, 1e6)
-    plt.xlabel('N')
-    plt.ylabel('TPS')
-    plt.savefig('Data/benhcmarks.pdf')
-    plt.show()
-
+        if autotune:
+            tpss_at.append(tps_at)
     
+    # Save this run to csv file
+    if autotune:  
+        df = pd.DataFrame({'N': Ns, 'TPS': tpss, 'TPS_AT':tps_at})
+    else:
+        df = pd.DataFrame({'N': Ns, 'TPS': tpss})
+ 
+    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
+    #files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
+
+    #plt.figure()
+    #plt.title('LJ benchmark, NVE, rho=0.8442')
+    #plt.loglog(df['N'], df['TPS'], 'o-', label='This run')
+    #for file in files_with_benchmark_data:
+    #    bdf = pd.read_csv(file)
+    #    label = " ".join(file.split("/")[-1].split('.')[0].split("_")[2::])
+    #    plt.loglog(bdf['N'], bdf['TPS'], '.-', label=label)
+    #plt.loglog(df['N'], 200 * 1e6 / df['N'], '--', label='Perfect scaling (MATS=200)')
+    #plt.legend(loc='lower left', fontsize=6)
+    #plt.ylim(1, 1e6)
+    #plt.xlabel('N')
+    #plt.ylabel('TPS')
+    #plt.savefig('Data/benhcmarks.pdf')
+    #plt.show()
 
 if __name__ == "__main__":
     integrator = 'NVE'
@@ -168,4 +179,6 @@ if __name__ == "__main__":
     if 'NSquared' in sys.argv:
         nblist = 'NSquared'
 
-    main(integrator=integrator, nblist=nblist)
+    autotune = 'autotune' in sys.argv
+
+    main(integrator=integrator, nblist=nblist, autotune=autotune)

@@ -186,7 +186,7 @@ class Simulation():
     def output(self):
         return self.get_output()
 
-    def JIT_and_test_kernel(self):
+    def JIT_and_test_kernel(self, adjust_compute_plan=True):
         while True:
             try:
                 self.get_kernels_and_params()
@@ -199,6 +199,9 @@ class Simulation():
                 self.integrate_self(0.0, self.steps_in_kernel_test)
                 break
             except numba.cuda.cudadrv.driver.CudaAPIError as e:
+                if not adjust_compute_plan:
+                    self.compute_plan['tp'] = 0 # Signal failure to autotuner
+                    break
                 #print('Failed compute_plan : ', self.compute_plan)
                 if self.compute_plan['tp'] > 1:             # Most common problem tp is too big
                     self.compute_plan['tp'] -= 1            # ... so we reduce it and try again
@@ -525,16 +528,17 @@ class Simulation():
             print('nblists:', nblists)
 
         gridsyncs = []
-        if self.configuration.N < 14000:
+        if self.configuration.N < 20000:
             gridsyncs.append(True)
-        if self.configuration.N > 4000:
+        if self.configuration.N > 10000:
             gridsyncs.append(False)
         if verbose:
             print('gridsyncs :', gridsyncs)
             
         utilizeNIIIs = []
-        if self.configuration.N < 64000:
-            utilizeNIIIs.append(False)
+        #if self.configuration.N < 64000:
+        #    
+        utilizeNIIIs.append(False)
         if self.configuration.N > 4000:
             utilizeNIIIs.append(True)
         if verbose:
@@ -561,16 +565,13 @@ class Simulation():
                                 if tp>0:
                                     self.compute_plan['tp'] = tp
                                     gridsync = self.compute_plan['gridsync']
-                                    self.JIT_and_test_kernel()
+                                    self.JIT_and_test_kernel(adjust_compute_plan=False)
                                     # does kernel run without adjustment?
                                     if self.compute_plan['tp'] != tp or self.compute_plan['gridsync'] != gridsync: 
                                         break
                                     #print('Seems to work, so looping over skins...')
                                     total_min_time = self.autotune_scan_skin(self.compute_plan, skins, timesteps, repeats, total_min_time, optimal_compute_plan, verbose)
 
-        #self.compute_plan['pb'] = total_min_pb
-        #self.compute_plan['tp'] = total_min_tp
-        #self.compute_plan['skin'] = total_min_skin
         self.compute_plan = optimal_compute_plan
         if verbose:
             print('\nFinal compute_plan :', self.compute_plan)
@@ -579,7 +580,6 @@ class Simulation():
         self.JIT_and_test_kernel()
         
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
-
 
 
     def autotune_scan_skin(self, compute_plan, skins, timesteps, repeats, total_min_time, optimal_compute_plan, verbose=False):
@@ -613,7 +613,7 @@ class Simulation():
             print('.', end='', flush=True)
         if min_time < total_min_time:
             total_min_time = min_time
-            optimal_compute_plan['skin'] = skin
+            optimal_compute_plan['skin'] = min_skin
             optimal_compute_plan['pb'] = pb
             optimal_compute_plan['tp'] = tp
             print(f' ({pb}x{tp},{min_skin:.2f}):{max_TPS:.2f}', end=' ', flush=True)
