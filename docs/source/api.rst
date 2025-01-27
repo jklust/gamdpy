@@ -112,6 +112,14 @@ Generators
 
 .. autofunction:: rumdpy.make_fixed_interactions
 
+Runtime Actions
+***************
+
+.. autoclass:: rumdpy.ConfigurationSaver
+
+.. autoclass:: rumdpy.ScalarSaver
+
+.. autoclass:: rumdpy.MomentumReset
 
 Calculators
 ***********

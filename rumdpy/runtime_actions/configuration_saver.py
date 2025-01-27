@@ -7,8 +7,8 @@ from .runtime_action import RuntimeAction
 
 
 class ConfigurationSaver(RuntimeAction):
-    """ Runtime_action for saving configurations during timeblock
-        - for now only logarithmic saving
+    """ Runtime action for saving configurations during timeblock.
+        Does logarithmic saving.
     """
 
     def __init__(self, include_simbox=False, verbose=False) -> None:

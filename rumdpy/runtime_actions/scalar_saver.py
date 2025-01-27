@@ -7,6 +7,9 @@ import h5py
 from .runtime_action import RuntimeAction
 
 class ScalarSaver(RuntimeAction):
+    """ Runtime action for saving scalar data (such as thermodynamic properties) during a timeblock
+    every `steps_between_output` time steps.
+    """
 
     def __init__(self, steps_between_output:int = 16, compute_flags = None, verbose=False) -> None:
 
