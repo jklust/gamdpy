@@ -58,6 +58,8 @@ Functions (pair potentials)
 
 .. autofunction:: rumdpy.harmonic_repulsion
 
+.. autofunction:: rumdpy.hertzian
+
 .. autofunction:: rumdpy.SAAP
 
 Functions (bonds)
@@ -109,6 +111,7 @@ Generators
 .. autofunction:: rumdpy.setup_planar_interactions
 
 .. autofunction:: rumdpy.make_fixed_interactions
+
 
 Calculators
 ***********
