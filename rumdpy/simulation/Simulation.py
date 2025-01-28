@@ -528,7 +528,7 @@ class Simulation():
             print('nblists:', nblists)
 
         gridsyncs = []
-        if self.configuration.N < 20000:
+        if self.configuration.N < 200000:
             gridsyncs.append(True)
         if self.configuration.N > 10000:
             gridsyncs.append(False)
