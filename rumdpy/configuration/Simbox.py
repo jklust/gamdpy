@@ -256,6 +256,7 @@ class Simbox_LeesEdwards(Simbox):
 
 
         def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
+            """ See Chattoraj PhD thesis for criterion for neighbor list checking under shear https://pastel.hal.science/pastel-00664392/"""
             zero = numba.float32(0.)
             half = numba.float32(0.5)
             one = numba.float32(1.0)
