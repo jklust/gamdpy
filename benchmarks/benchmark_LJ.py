@@ -63,12 +63,10 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', autotune=
         integrator = rp.integrators.NVT_Langevin(temperature=0.70, alpha=0.2, dt=dt, seed=213)
     
     # Setup Simulation. Total number of timesteps: num_blocks * steps_per_block
-    sim = rp.Simulation(c1, pair_pot, integrator, [rp.MomentumReset(200), ],
+    sim = rp.Simulation(c1, pair_pot, integrator, [rp.MomentumReset(100), ],
                         num_timeblocks=1, steps_per_timeblock=steps,
                         compute_plan=compute_plan, storage='memory', verbose=False)
     
-    
-
     # Run simulation one block at a time
     for block in sim.run_timeblocks():
         pass
@@ -86,9 +84,7 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', autotune=
     #assert 0.55 < Tconf < 0.85, f'{Tconf=}'
     #if integrator == 'NVE':  # Only expect conservation of energy if we are running NVE
     #    assert -0.01 < de < 0.01
-    #assert nbflag[0] == 0
-    #assert nbflag[1] == 0
-
+    
     tps = sim.last_num_blocks * sim.steps_per_block / np.sum(sim.timing_numba_blocks) * 1000
     time_in_sec = sim.timing_numba / 1000
 
@@ -112,6 +108,7 @@ def main(integrator, nblist, autotune):
     if nblist == 'default':
         nxyzs = ((4, 4, 8), (4, 8, 8),) + nxyzs
         nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
+    #nxyzs = ( (4, 4, 8), (4, 8, 8) ) # For quick debuging
     Ns = []
     tpss = []
     tpss_at = []
@@ -120,54 +117,29 @@ def main(integrator, nblist, autotune):
     for nxyz in nxyzs:
         c1, LJ_func = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
-        while time_in_sec < 0.5:  # At least 1s to get reliable timing
+        while time_in_sec < 0.5:  # At least x s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
-            #compute_plan['tp'] = 1
-            #compute_plan['tp'] = int(compute_plan['tp']*1.5)
-            if nblist=='LinkedLists':
-                if c1.N > 2000:
-                    compute_plan['nblist'] = 'linked lists'
-                    compute_plan['skin'] = 0.3
-                    #compute_plan['pb'] = 128
-                    #if c1.N < 50000:
-                    #    compute_plan['gridsync'] = True
             tps, time_in_sec, steps = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
-            if autotune:
-                tps_at, time_in_sec_at, steps_at = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, autotune=autotune, verbose=False)
-            magic_number *= 1.0 / time_in_sec  # Aim for 2 seconds (Assuming O(N) scaling)
+            magic_number *= 1.0 / time_in_sec  # Aim for 2x seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
+        
         if autotune:
+            tps_at, time_in_sec_at, steps_at = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, autotune=autotune, verbose=False)
             tpss_at.append(tps_at)
     
     # Save this run to csv file
     if autotune:  
-        df = pd.DataFrame({'N': Ns, 'TPS': tpss, 'TPS_AT':tps_at})
+        df = pd.DataFrame({'N': Ns, 'TPS': tpss, 'TPS_AT':tpss_at})
     else:
         df = pd.DataFrame({'N': Ns, 'TPS': tpss})
  
     df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
-    #files_with_benchmark_data = sorted(glob.glob('Data/benchmark_LJ_*.csv'))
-
-    #plt.figure()
-    #plt.title('LJ benchmark, NVE, rho=0.8442')
-    #plt.loglog(df['N'], df['TPS'], 'o-', label='This run')
-    #for file in files_with_benchmark_data:
-    #    bdf = pd.read_csv(file)
-    #    label = " ".join(file.split("/")[-1].split('.')[0].split("_")[2::])
-    #    plt.loglog(bdf['N'], bdf['TPS'], '.-', label=label)
-    #plt.loglog(df['N'], 200 * 1e6 / df['N'], '--', label='Perfect scaling (MATS=200)')
-    #plt.legend(loc='lower left', fontsize=6)
-    #plt.ylim(1, 1e6)
-    #plt.xlabel('N')
-    #plt.ylabel('TPS')
-    #plt.savefig('Data/benhcmarks.pdf')
-    #plt.show()
 
 if __name__ == "__main__":
     integrator = 'NVE'
-    nblist = 'Nsquared'
+    
     if 'NVT' in sys.argv:
         integrator = 'NVT'
     if 'NVT_Langevin' in sys.argv:

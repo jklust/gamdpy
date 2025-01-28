@@ -535,14 +535,14 @@ class Simulation():
         if verbose:
             print('gridsyncs :', gridsyncs)
             
-        utilizeNIIIs = []
+        UtilizeNIIIs = []
         #if self.configuration.N < 64000:
         #    
-        utilizeNIIIs.append(False)
+        UtilizeNIIIs.append(False)
         if self.configuration.N > 4000:
-            utilizeNIIIs.append(True)
+            UtilizeNIIIs.append(True)
         if verbose:
-            print('utilizeNIIIs :', utilizeNIIIs)
+            print('UtilizeNIIIs :', UtilizeNIIIs)
             
         flag = cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = False
@@ -555,9 +555,9 @@ class Simulation():
             self.compute_plan['nblist'] = nblist
             for gridsync in gridsyncs:
                 self.compute_plan['gridsync'] = gridsync
-                for utilizeNIII in utilizeNIIIs:
-                    self.compute_plan['utilizeNIII'] = utilizeNIII
-                    print(f'\n {nblist}, {gridsync=}, {utilizeNIII=}: ', end='')
+                for UtilizeNIII in UtilizeNIIIs:
+                    self.compute_plan['UtilizeNIII'] = UtilizeNIII
+                    print(f'\n {nblist}, {gridsync=}, {UtilizeNIII=}: ', end='')
                     for pb in pbs:
                         if pb <= 512:
                             self.compute_plan['pb'] = pb
@@ -577,6 +577,7 @@ class Simulation():
             print('\nFinal compute_plan :', self.compute_plan)
         else:
             print('')
+            #print('\nFinal compute_plan :', self.compute_plan)
         self.JIT_and_test_kernel()
         
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
@@ -613,6 +614,10 @@ class Simulation():
             print('.', end='', flush=True)
         if min_time < total_min_time:
             total_min_time = min_time
+            #optimal_compute_plan = self.compute_plan.copy()
+            optimal_compute_plan['UtilizeNIII'] = self.compute_plan['UtilizeNIII']
+            optimal_compute_plan['nblist'] = self.compute_plan['nblist']
+            optimal_compute_plan['gridsync'] = self.compute_plan['gridsync']
             optimal_compute_plan['skin'] = min_skin
             optimal_compute_plan['pb'] = pb
             optimal_compute_plan['tp'] = tp

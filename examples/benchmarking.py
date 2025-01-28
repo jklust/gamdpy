@@ -12,8 +12,8 @@ rho = 0.8442
 configuration = rp.Configuration(D=3)
 #configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
 #configuration.make_lattice(rp.unit_cells.FCC, cells=[16, 16, 16], rho=rho)
-#configuration.make_lattice(rp.unit_cells.FCC, cells=[32, 32, 32], rho=rho)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[64, 64, 64], rho=rho)
+configuration.make_lattice(rp.unit_cells.FCC, cells=[32, 32, 32], rho=rho)
+#configuration.make_lattice(rp.unit_cells.FCC, cells=[64, 64, 64], rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.44)
 
