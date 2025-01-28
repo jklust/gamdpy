@@ -535,12 +535,7 @@ class Simulation():
         if verbose:
             print('gridsyncs :', gridsyncs)
             
-        UtilizeNIIIs = []
-        #if self.configuration.N < 64000:
-        #    
-        UtilizeNIIIs.append(False)
-        if self.configuration.N > 4000:
-            UtilizeNIIIs.append(True)
+        UtilizeNIIIs = [False, True]
         if verbose:
             print('UtilizeNIIIs :', UtilizeNIIIs)
             
