@@ -4,11 +4,11 @@ import numpy as np
 
 # List of stored benchmarks to compare with
 #benchmarks = ['h100', 'RTX_4090', 'RTX_4070_Laptop', 'RTX_3070_Laptop', 'Quadro_P2000_Mobile']
-benchmarks = ['RTX_2060_Super', 
-              'RTX_2080_Ti', 
-              'RTX_3070_Laptop',
-              'RTX_4070', 
-              'RTX_4090',]
+benchmarks = ['RTX_2060_Super_AT', 
+              #'RTX_2080_Ti', 
+              #'RTX_3070_Laptop_AT',
+              'RTX_4070_AT', 
+              'RTX_4090_AT',]
 style = ['ro-', 'ro-','bo-', 'bo-', 'r+-','go-', 'go-', 'ko-', 'ko-']
 
 plt.figure()
@@ -18,7 +18,7 @@ plt.title('LJ benchmark, NVE, rho=0.8442')
 for index, benchmark in enumerate(benchmarks):
     print(benchmark)
     bdf = pd.read_csv('Data/benchmark_LJ_' + benchmark + '.csv')
-    plt.loglog(bdf['N'], bdf['TPS'], 'o-', label=benchmark)
+    plt.loglog(bdf['N'], bdf['TPS_AT'], 'o-', label=benchmark)
 lammps = np.loadtxt('Data/MATS_Lammps_LJ_V100.dat')
 plt.loglog(lammps[:,0],lammps[:, 1]/lammps[:,0]*1e6, '+--', label='Lammps V100')
 N = np.array((512, 2e6))
