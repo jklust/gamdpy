@@ -558,6 +558,7 @@ class Simulation():
                 for UtilizeNIII in UtilizeNIIIs:
                     self.compute_plan['UtilizeNIII'] = UtilizeNIII
                     print(f'\n {nblist}, {gridsync=}, {UtilizeNIII=}: ', end='')
+                    local_min_time = 1e9
                     for pb in pbs:
                         if pb <= 512:
                             self.compute_plan['pb'] = pb
@@ -570,7 +571,7 @@ class Simulation():
                                     if self.compute_plan['tp'] != tp or self.compute_plan['gridsync'] != gridsync: 
                                         break
                                     #print('Seems to work, so looping over skins...')
-                                    total_min_time = self.autotune_scan_skin(self.compute_plan, skins, timesteps, repeats, total_min_time, optimal_compute_plan, verbose)
+                                    total_min_time, local_min_time = self.autotune_scan_skin(self.compute_plan, skins, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose)
 
         self.compute_plan = optimal_compute_plan
         if verbose:
@@ -583,7 +584,7 @@ class Simulation():
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
 
-    def autotune_scan_skin(self, compute_plan, skins, timesteps, repeats, total_min_time, optimal_compute_plan, verbose=False):
+    def autotune_scan_skin(self, compute_plan, skins, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose=False):
         min_time = 1e9
         skin_times = []
         pb = compute_plan['pb']
@@ -612,15 +613,16 @@ class Simulation():
             print('\n', pb, tp, min_skin, min_time, max_TPS)
         else:
             print('.', end='', flush=True)
+        if min_time < local_min_time:
+            local_min_time = min_time
+            print(f' ({pb}x{tp},{min_skin:.2f}):{max_TPS:.2f}', end=' ', flush=True)
         if min_time < total_min_time:
             total_min_time = min_time
-            #optimal_compute_plan = self.compute_plan.copy()
             optimal_compute_plan['UtilizeNIII'] = self.compute_plan['UtilizeNIII']
             optimal_compute_plan['nblist'] = self.compute_plan['nblist']
             optimal_compute_plan['gridsync'] = self.compute_plan['gridsync']
             optimal_compute_plan['skin'] = min_skin
             optimal_compute_plan['pb'] = pb
             optimal_compute_plan['tp'] = tp
-            print(f' ({pb}x{tp},{min_skin:.2f}):{max_TPS:.2f}', end=' ', flush=True)
-        return total_min_time
+        return total_min_time, local_min_time
 
