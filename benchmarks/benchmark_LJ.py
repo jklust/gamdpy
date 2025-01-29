@@ -22,6 +22,7 @@ import numba
 from numba import cuda, config
 
 import rumdpy as rp
+import pickle
 
 
 def setup_lennard_jones_system(nx, ny, nz, rho=0.8442, cut=2.5, verbose=False):
@@ -93,10 +94,10 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', autotune=
     print(f"{c1.N:7} {tps:.2e} {steps:.1e} {time_in_sec:.1e}  {nbupdates:6} {steps/nbupdates:.1f} {sim.compute_plan}")
     assert nbflag[0] == 0
     assert nbflag[1] == 0
-    return tps, time_in_sec, steps
+    return tps, time_in_sec, steps, sim.compute_plan.copy()
 
 
-def main(integrator, nblist, autotune):
+def main(integrator, nblist, identifier, autotune):
     config.CUDA_LOW_OCCUPANCY_WARNINGS = False
     print(f'Benchmarking LJ with {integrator} integrator:')
     nxyzs = (
@@ -108,10 +109,12 @@ def main(integrator, nblist, autotune):
     if nblist == 'default':
         nxyzs = ((4, 4, 8), (4, 8, 8),) + nxyzs
         nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
-    #nxyzs = ( (4, 4, 8), (4, 8, 8) ) # For quick debuging
+    nxyzs = ( (4, 4, 8), (4, 8, 8) ) # For quick debuging
     Ns = []
     tpss = []
     tpss_at = []
+    compute_plans = []
+    compute_plans_at = []
     magic_number = 1e7
     print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:
@@ -120,26 +123,34 @@ def main(integrator, nblist, autotune):
         while time_in_sec < 0.5:  # At least x s to get reliable timing
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
-            tps, time_in_sec, steps = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
+            tps, time_in_sec, steps, compute_plan = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
             magic_number *= 1.0 / time_in_sec  # Aim for 2x seconds (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
+        compute_plans.append(compute_plan)
         
         if autotune:
-            tps_at, time_in_sec_at, steps_at = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, autotune=autotune, verbose=False)
+            tps_at, time_in_sec_at, steps_at, compute_plan_at = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, autotune=autotune, verbose=False)
             tpss_at.append(tps_at)
+            compute_plans_at.append(compute_plan_at)
     
     # Save this run to csv file
-    if autotune:  
+    if autotune:
         df = pd.DataFrame({'N': Ns, 'TPS': tpss, 'TPS_AT':tpss_at})
+        data = {'N': Ns, 'TPS': tpss, 'TPS_AT':tpss_at, 'compute_plans':compute_plans, 'compute_plans_at':compute_plans_at}
     else:
-        df = pd.DataFrame({'N': Ns, 'TPS': tpss})
- 
-    df.to_csv('Data/benchmark_LJ_Last_run.csv', index=False)
+        df = pd.DataFrame({'N': Ns, 'TPS': tpss}, )
+        data = {'N': Ns, 'TPS': tpss, 'compute_plans':compute_plans,}
+    
+    df.to_csv(f'Data/benchmark_LJ_{identifier}.csv', index=False)
+    with open(f'Data/benchmark_LJ_{identifier}.pkl', 'wb') as file:  
+        pickle.dump(data, file) 
 
 if __name__ == "__main__":
     integrator = 'NVE'
     
+    identifier = sys.argv[1]
+
     if 'NVT' in sys.argv:
         integrator = 'NVT'
     if 'NVT_Langevin' in sys.argv:
@@ -153,4 +164,4 @@ if __name__ == "__main__":
 
     autotune = 'autotune' in sys.argv
 
-    main(integrator=integrator, nblist=nblist, autotune=autotune)
+    main(integrator=integrator, nblist=nblist, identifier=identifier, autotune=autotune)
