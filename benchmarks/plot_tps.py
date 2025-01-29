@@ -1,21 +1,28 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import pickle
 
 # List of stored benchmarks to compare with
 #benchmarks = ['h100', 'RTX_4090', 'RTX_4070_Laptop', 'RTX_3070_Laptop', 'Quadro_P2000_Mobile']
 benchmarks = [#'RTX_2060_Super_AT', 
-              #'RTX_2080_Ti', 
+              'RTX_2080_Ti_AT', 
               #'RTX_3070_Laptop_AT',
               'RTX_4070_AT', 
               'RTX_4090_AT',]
 style = ['ro', 'bo', 'go', 'ko']
 
-plt.figure()
-plt.title('LJ benchmark, NVE, rho=0.8442')
 
 for index, benchmark in enumerate(benchmarks):
-    print(benchmark)
+    print(benchmark+':')
+    with open('Data/benchmark_LJ_' + benchmark + '.pkl', 'rb') as file:
+        data = pickle.load(file)
+    for n, tps, cp in zip(data['N'], data['TPS_AT'], data['compute_plans_at']):
+        print(f'{n:10}, {tps:8.1f}   {cp}')
+
+plt.figure()
+plt.title('LJ benchmark, NVE, rho=0.8442')
+for index, benchmark in enumerate(benchmarks):
     bdf = pd.read_csv('Data/benchmark_LJ_' + benchmark + '.csv')
     plt.loglog(bdf['N'], bdf['TPS_AT'],  style[index]+'-', label=benchmark)
 lammps = np.loadtxt('Data/MATS_Lammps_LJ_V100.dat')
@@ -33,17 +40,40 @@ plt.show(block=False)
 plt.figure()
 plt.title('LJ benchmark, NVE, rho=0.8442')
 for index, benchmark in enumerate(benchmarks):
-    print(benchmark)
     bdf = pd.read_csv('Data/benchmark_LJ_' + benchmark + '.csv')
     plt.loglog(bdf['N'], bdf['TPS_AT']*bdf['N']/1e6, style[index]+'-', label=benchmark)
     plt.loglog(bdf['N'], bdf['TPS']*bdf['N']/1e6, style[index]+'--', alpha=0.5)
 lammps = np.loadtxt('Data/MATS_Lammps_LJ_V100.dat')
 plt.loglog(lammps[:,0],lammps[:, 1], '+-', label='Lammps V100')
+r3 = np.loadtxt('Data/Rumd36_LJ_RTX_2080_Ti.dat')
+plt.loglog(r3[:,0],r3[:, 2], '+-', label='Rumd36 RTX_2080_Ti')
 plt.legend()
 plt.xlim((400, 1.5e6))
 #plt.ylim((1, 1.e6))
 plt.xlabel('N')
 plt.ylabel('MATS')
 plt.savefig('Data/benhcmarks_mats.pdf')
+plt.show(block=False)
+ 
+
+plt.figure()
+plt.title('LJ benchmark, NVE, rho=0.8442')
+for index, benchmark in enumerate(benchmarks):
+    bdf = pd.read_csv('Data/benchmark_LJ_' + benchmark + '.csv')
+    plt.loglog(bdf['N'], bdf['TPS_AT']*bdf['N']/1e6, style[index]+'-', label=benchmark)
+    #plt.loglog(bdf['N'], bdf['TPS']*bdf['N']/1e6, style[index]+'--', alpha=0.5)
+lammps = np.loadtxt('Data/MATS_Lammps_LJ_V100.dat')
+plt.loglog(lammps[:,0],lammps[:, 1], '+-', label='Lammps V100')
+r3 = np.loadtxt('Data/Rumd36_LJ_RTX_2080_Ti.dat')
+plt.loglog(r3[:,0],r3[:, 2], style[0]+'--', alpha=0.5, label='Rumd36 RTX_2080_Ti')
+r3 = np.loadtxt('Data/Rumd36_LJ_RTX_4090.dat')
+plt.loglog(r3[:,0],r3[:, 2], style[2]+'--', alpha=0.5, label='Rumd36 RTX_4090')
+plt.legend()
+plt.xlim((400, 1.5e6))
+#plt.ylim((1, 1.e6))
+plt.xlabel('N')
+plt.ylabel('MATS')
+plt.savefig('Data/benhcmarks_mats_rumd3.pdf')
 plt.show()
  
+

@@ -156,7 +156,7 @@ class NbListLinkedLists():
                                 if flag:
                                     dist_sq = dist_sq_function(vectors[r_id][other_global_id], vectors[r_id][global_id], sim_box)
                                     if dist_sq < cut_plus_skin*cut_plus_skin:
-                                        not_excluded = True  # Check exclusion list
+                                        not_excluded = True  # Check exclusion list. Do later ???
                                         for k in range(my_num_exclusions):
                                             if exclusions[global_id, k] ==  other_global_id:
                                                 not_excluded = False
@@ -217,7 +217,7 @@ class NbListLinkedLists():
             if global_id < num_part and my_t==0:
                 nblist[global_id, max_nbs] = 0  # Set number of neighbors (stored at index max_nbs) to zero
                 
-            cuda.syncthreads() # wait for nblist[global_id, max_nbs] to be ready ready
+            cuda.syncthreads() # wait for nblist[global_id, max_nbs] to be ready
             
             if global_id < num_part:
                 my_num_exclusions = exclusions[global_id,-1]
