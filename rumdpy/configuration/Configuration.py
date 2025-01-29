@@ -139,6 +139,19 @@ class Configuration:
     def __repr__(self):
         return f'Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})'
 
+    def __code__(self):
+        import sys
+        np.set_printoptions(threshold=sys.maxsize)
+        code_str  = "# Define configuration class\n"
+        code_str += f"from rumdpy import Configuration\n"
+        code_str += f"configuration = Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})\n"
+        # Following part needs to be done with a read function from the .h5
+        for key in self.vector_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        for key in self.scalar_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        return code_str
+
     def __str__(self):
         if self.N == None:
             return f'{self.D} dimensional configuration. Particles not yet assigned.'
