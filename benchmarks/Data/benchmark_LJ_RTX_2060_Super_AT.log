@@ -1,0 +1,81 @@
+Benchmarking LJ with NVE integrator:
+    N     TPS     Steps   Time     NbUpd Steps/NbUpd
+    512 6.23e+04 2.0e+04 3.1e-01    1181 16.5 {'pb': 8, 'tp': 12, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'N squared'}
+    512 6.26e+04 6.2e+04 1.0e+00    3765 16.5 {'pb': 8, 'tp': 12, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'N squared'}
+
+ N squared, gridsync=True, UtilizeNIII=False: . (4x9,0.30):51162.21 . (4x10,0.30):53371.65 . (4x11,0.50):53670.21 . (4x12,0.30):56469.14 . (4x13,0.50):57473.13 . (4x14,0.30):58457.14 . (4x15,0.30):58600.33 ... (8x11,0.30):59618.91 . (8x12,0.30):61458.72 . (8x13,0.50):62002.29 . (8x14,0.30):63107.15 ........
+ N squared, gridsync=True, UtilizeNIII=True: . (4x9,0.30):54291.46 . (4x10,0.70):54711.36 ... (4x13,0.30):55025.16 . (4x14,0.70):57141.57 .. (8x9,0.50):60686.97 .. (8x11,0.50):61948.84 ....... (16x11,0.50):62188.61 . (16x12,0.70):63209.78 ...
+    512 6.04e+04 6.2e+04 1.0e+00    2574 24.2 {'pb': 16, 'tp': 12, 'skin': 0.7, 'UtilizeNIII': True, 'gridsync': True, 'nblist': 'N squared'}
+   1024 4.00e+04 3.1e+04 7.8e-01    1989 15.7 {'pb': 8, 'tp': 8, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'N squared'}
+
+ N squared, gridsync=True, UtilizeNIII=False: . (4x5,0.50):28354.31 . (4x6,0.50):31041.27 . (4x7,0.50):32373.75 . (4x8,0.50):35402.95 ... (8x7,0.50):36659.73 . (8x8,0.50):39414.66 .. (8x10,0.50):40489.41 . (8x11,0.50):41858.45 ...... (16x10,0.50):41952.33 .
+ N squared, gridsync=True, UtilizeNIII=True: . (4x5,0.70):33930.68 . (4x6,0.50):34068.31 . (4x7,0.70):34811.71 . (4x8,0.70):35969.73 . (8x5,0.90):37234.45 . (8x6,0.70):38839.88 . (8x7,0.70):40429.92 . (8x8,0.50):41325.07 .. (8x10,0.70):41437.14 . (8x11,0.70):41850.55 .... (16x8,0.90):43648.12 ...
+   1024 4.36e+04 3.1e+04 7.2e-01    1001 31.2 {'pb': 16, 'tp': 8, 'skin': 0.9, 'UtilizeNIII': True, 'gridsync': True, 'nblist': 'N squared'}
+   2048 2.10e+04 2.0e+04 9.5e-01    1330 15.0 {'pb': 16, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'N squared'}
+
+ N squared, gridsync=True, UtilizeNIII=False: . (8x1,0.50):7544.32 . (8x2,0.70):12661.26 . (8x3,0.70):16512.27 . (8x4,0.50):19944.51 .... (16x4,0.70):20823.14 . (16x5,0.70):22587.27 . (16x6,0.50):24724.37 ...... (32x6,0.70):25009.90 
+ N squared, gridsync=True, UtilizeNIII=True: . (8x1,0.70):11407.39 . (8x2,0.90):17498.27 . (8x3,0.90):21978.69 . (8x4,0.90):24190.15 .... (16x4,0.70):25653.18 . (16x5,0.90):27133.90 . (16x6,1.10):28472.01 ..... (32x5,0.90):29123.96 . (32x6,0.90):29331.20 
+ linked lists, gridsync=True, UtilizeNIII=False: . (8x1,0.30):10249.97 . (8x2,0.50):14377.03 . (8x3,0.70):16999.11 . (8x4,0.70):18526.85 .... (16x4,0.70):19169.63 .. (16x6,0.70):20001.20 ......
+ linked lists, gridsync=True, UtilizeNIII=True: . (8x1,0.50):13353.04 . (8x2,0.70):17892.84 . (8x3,0.70):20082.22 . (8x4,1.10):21145.70 .... (16x4,1.10):22251.06 .. (16x6,1.10):22967.79 ......
+   2048 2.90e+04 2.0e+04 6.9e-01     674 29.7 {'pb': 32, 'tp': 6, 'skin': 0.9, 'UtilizeNIII': True, 'gridsync': True, 'nblist': 'N squared'}
+   4096 8.80e+03 1.1e+04 1.2e+00     728 14.4 {'pb': 32, 'tp': 2, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'N squared'}
+
+ N squared, gridsync=True, UtilizeNIII=False: . (16x1,0.70):5425.78 . (16x2,0.70):8906.59 ... (32x3,0.70):11183.83 ...
+ N squared, gridsync=True, UtilizeNIII=True: . (16x1,0.90):7760.52 . (16x2,0.90):11945.90 .. (32x2,0.90):12224.21 . (32x3,0.70):14270.59 ...
+ linked lists, gridsync=True, UtilizeNIII=False: . (16x1,0.30):8223.70 . (16x2,0.50):10338.75 .. (32x2,0.50):10480.56 . (32x3,0.50):10646.23 ... (64x3,0.50):10720.94 
+ linked lists, gridsync=True, UtilizeNIII=True: . (16x1,0.70):9980.69 . (16x2,0.70):12306.43 .. (32x2,0.70):12434.71 . (32x3,0.70):12838.21 ... (64x3,0.70):13117.41 
+   4096 1.42e+04 1.1e+04 7.4e-01     504 20.9 {'pb': 32, 'tp': 3, 'skin': 0.7, 'UtilizeNIII': True, 'gridsync': True, 'nblist': 'N squared'}
+   8192 6.27e+03 4.4e+03 7.0e-01     316 13.9 {'pb': 64, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': False, 'gridsync': True, 'nblist': 'linked lists'}
+
+ N squared, gridsync=True, UtilizeNIII=False: . (32x1,0.90):3363.79 ..
+ N squared, gridsync=True, UtilizeNIII=True: . (32x1,0.90):4596.12 .. (128x1,1.10):4700.38 
+ linked lists, gridsync=True, UtilizeNIII=False: . (32x1,0.30):6190.67 .. (128x1,0.30):6291.55 
+ linked lists, gridsync=True, UtilizeNIII=True: . (32x1,0.30):7181.10 .. (128x1,0.30):7526.51 
+   8192 7.11e+03 4.4e+03 6.2e-01     529 8.3 {'pb': 128, 'tp': 1, 'skin': 0.3, 'UtilizeNIII': True, 'gridsync': True, 'nblist': 'linked lists'}
+  16384 2.20e+03 3.1e+03 1.4e+00     233 13.4 {'pb': 128, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ N squared, gridsync=True, UtilizeNIII=False: 
+ N squared, gridsync=True, UtilizeNIII=True: 
+ N squared, gridsync=False, UtilizeNIII=False: . (64x1,1.10):1945.65 . (64x2,1.10):2091.37 . (64x3,1.10):2131.37 . (64x4,1.10):2198.76 .... (128x4,1.10):2211.01 ....
+ N squared, gridsync=False, UtilizeNIII=True: . (64x1,1.10):2416.17 . (64x2,0.70):2474.46 ..........
+ linked lists, gridsync=True, UtilizeNIII=False: 
+ linked lists, gridsync=True, UtilizeNIII=True: 
+ linked lists, gridsync=False, UtilizeNIII=False: . (64x1,0.70):2144.04 .. (64x3,0.70):2149.92 . (64x4,0.70):2153.02 ... (128x3,0.70):2159.40 . (128x4,0.70):2196.00 ....
+ linked lists, gridsync=False, UtilizeNIII=True: . (64x1,0.90):2223.22 .. (64x3,1.10):2235.33 . (64x4,1.10):2245.18 ........
+  16384 2.40e+03 3.1e+03 1.3e+00     161 19.4 {'pb': 64, 'tp': 2, 'skin': 0.7, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'N squared'}
+  32768 1.57e+03 1.1e+03 7.0e-01      85 12.9 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=True, UtilizeNIII=False: 
+ linked lists, gridsync=True, UtilizeNIII=True: 
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.30):1299.84 . (128x2,0.30):1674.67 . (128x3,0.30):1733.91 . (128x4,0.30):1746.17 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):1639.96 . (128x2,0.50):1800.74 . (128x3,0.50):1862.35 . (128x4,0.50):1892.19 ......
+  32768 1.93e+03 1.1e+03 5.7e-01      83 13.2 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+  65536 9.37e+02 7.8e+02 8.4e-01      62 12.6 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=True, UtilizeNIII=False: 
+ linked lists, gridsync=True, UtilizeNIII=True: 
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.30):696.66 . (128x2,0.30):1054.79 . (128x3,0.30):1073.01 . (128x4,0.30):1082.32 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):1051.49 . (128x2,0.30):1179.45 . (128x3,0.50):1222.84 . (128x4,0.50):1224.40 ......
+  65536 1.29e+03 7.8e+02 6.1e-01      62 12.6 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+ 131072 5.67e+02 4.7e+02 8.3e-01      38 12.3 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=True, UtilizeNIII=False: 
+ linked lists, gridsync=True, UtilizeNIII=True: 
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.30):362.21 . (128x2,0.30):637.19 . (128x3,0.30):645.62 . (128x4,0.30):648.43 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):624.49 . (128x2,0.50):700.54 . (128x3,0.50):720.99 . (128x4,0.50):724.98 ......
+ 131072 7.55e+02 4.7e+02 6.2e-01      38 12.3 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+ 262144 3.11e+02 2.8e+02 9.1e-01      24 11.8 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.30):179.59 . (128x2,0.30):348.15 .. (128x4,0.30):351.99 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):345.84 . (128x2,0.50):390.11 . (128x3,0.50):399.79 . (128x4,0.50):400.00 ......
+ 262144 4.19e+02 2.8e+02 6.8e-01      24 11.8 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+ 524288 1.46e+02 1.6e+02 1.1e+00      14 11.1 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.10):82.21 . (128x2,0.30):179.63 . (128x3,0.30):181.48 . (128x4,0.30):183.86 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):157.95 . (128x2,0.50):207.63 . (128x3,0.50):213.69 . (128x4,0.50):216.70 ......
+ 524288 2.25e+02 1.6e+02 6.9e-01      13 11.9 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+1048576 7.48e+01 7.2e+01 9.9e-01       6 12.0 {'pb': 256, 'tp': 1, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
+
+ linked lists, gridsync=False, UtilizeNIII=False: . (128x1,0.30):41.57 . (128x2,0.30):93.06 . (128x3,0.30):95.50 . (128x4,0.30):96.65 ......
+ linked lists, gridsync=False, UtilizeNIII=True: . (128x1,0.30):80.47 . (128x2,0.50):109.14 . (128x3,0.50):112.73 . (128x4,0.50):113.11 ......
+1048576 1.14e+02 7.2e+01 6.5e-01       6 12.0 {'pb': 128, 'tp': 4, 'skin': 0.5, 'UtilizeNIII': True, 'gridsync': False, 'nblist': 'linked lists'}
