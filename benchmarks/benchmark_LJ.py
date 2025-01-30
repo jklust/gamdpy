@@ -73,7 +73,8 @@ def run_benchmark(c1, pair_pot, compute_plan, steps, integrator='NVE', autotune=
         pass
     
     if autotune:
-        sim.autotune_bruteforce(verbose=False)
+        #sim.autotune_bruteforce(verbose=False)
+        sim.autotune()
 
     nbflag0 = pair_pot.nblist.d_nbflag.copy_to_host()
     for block in sim.run_timeblocks():
