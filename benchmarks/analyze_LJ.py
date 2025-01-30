@@ -12,7 +12,10 @@ benchmarks = [#'RTX_2060_Super_AT',
               'RTX_4090_AT',]
 style = ['ro', 'bo', 'go', 'ko']
 
-
+# Print benchmarks in markdown
+print('## Preliminary benchmarks.')
+print()
+print('![Fig](./Data/benchmark_LJ_tps.png)')
 for index, benchmark in enumerate(benchmarks):
     print('\n' + benchmark+':')
     with open('Data/benchmark_LJ_' + benchmark + '.pkl', 'rb') as file:
@@ -36,7 +39,8 @@ plt.xlim((400, 1.5e6))
 plt.ylim((100, 1.e6))
 plt.xlabel('N')
 plt.ylabel('TPS')
-plt.savefig('Data/benhcmark_LJ_tps.pdf')
+plt.savefig('Data/benchmark_LJ_tps.pdf')
+plt.savefig('Data/benchmark_LJ_tps.png')
 plt.show(block=False)
  
 plt.figure()
@@ -54,7 +58,7 @@ plt.xlim((400, 1.5e6))
 #plt.ylim((1, 1.e6))
 plt.xlabel('N')
 plt.ylabel('MATS')
-plt.savefig('Data/benhcmark_LJ_mats.pdf')
+plt.savefig('Data/benchmark_LJ_mats.pdf')
 plt.show(block=False)
  
 
@@ -75,7 +79,7 @@ plt.xlim((400, 1.5e6))
 #plt.ylim((1, 1.e6))
 plt.xlabel('N')
 plt.ylabel('MATS')
-plt.savefig('Data/benhcmarks_mats_rumd3.pdf')
+plt.savefig('Data/benchmarks_mats_rumd3.pdf')
 plt.show()
  
 

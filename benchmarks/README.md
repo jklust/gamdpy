@@ -1,3 +1,6 @@
+## Preliminary benchmarks.
+
+![Fig](./Data/benchmark_LJ_tps.png)
 
 RTX_2080_Ti_AT:
 |        N  |   TPS   |  MATS |  pb | tp | skin | gridsync |  nblist      |  NIII  |
