@@ -14,6 +14,9 @@ This is the developers version of the rumdpy package, NOT for general consumptio
 
 [Examples](examples/README.md)
 
+[Benchmarks (preliminary)](benchmarks/README.md)
+
+
 ## Overall structure of the package
 
 ### 1. Configuration
