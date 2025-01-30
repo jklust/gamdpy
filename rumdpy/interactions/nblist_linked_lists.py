@@ -73,7 +73,7 @@ class NbListLinkedLists():
 
 
         # JIT compile functions to be compiled into kernel
-        dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
     
         @cuda.jit( device=gridsync )
         def nblist_check(vectors, sim_box, skin, r_ref, nbflag):

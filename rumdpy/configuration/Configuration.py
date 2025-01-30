@@ -248,7 +248,7 @@ class Configuration:
 
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
-        return self.simbox.volume(self.simbox.lengths)
+        return self.simbox.get_volume_function()(self.simbox.lengths)
 
     def set_kinetic_temperature(self, temperature, ndofs=None):
         if ndofs is None:

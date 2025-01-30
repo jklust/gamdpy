@@ -155,7 +155,7 @@ class ScalarSaver(RuntimeAction):
         if compute_stresses:
             sx_id = configuration.vectors.indices['sx']
 
-        volume_function = numba.njit(configuration.simbox.volume)
+        volume_function = numba.njit(configuration.simbox.get_volume_function())
 
         def kernel(grid, vectors, scalars, r_im, sim_box, step, runtime_action_params):
             """     

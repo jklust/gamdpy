@@ -97,7 +97,7 @@ class NPT_Atomic(Integrator):
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
-        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+        apply_PBC = numba.njit(configuration.simbox.get_apply_PBC())
 
 
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time):       # pragma: no cover

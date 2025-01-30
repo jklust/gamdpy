@@ -84,7 +84,7 @@ class NPT_Langevin(Integrator):
         # JIT compile functions to be compiled into kernel
         temperature_function = numba.njit(temperature_function)
         pressure_function = numba.njit(pressure_function)
-        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+        apply_PBC = numba.njit(configuration.simbox.get_apply_PBC())
 
 
         def copyParticleVirial(scalars, integrator_params):

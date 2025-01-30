@@ -216,7 +216,7 @@ class NVU_RT(Integrator):
         o_its, o_cos_v_f, o_time, o_dt = (self.output_ids[name] for name in ["its", "cos_v_f", "time", "dt", ])
 
         # JIT compile functions to be compiled into kernel
-        apply_PBC = nb.jit(configuration.simbox.apply_PBC)
+        apply_PBC = nb.jit(configuration.simbox.get_apply_PBC())
 
         save_path_u = self.save_path_u
         save_path_max_saves = self.d_path_u.shape[0]

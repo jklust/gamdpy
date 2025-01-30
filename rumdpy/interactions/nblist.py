@@ -49,9 +49,9 @@ class NbList2():
                         sw_id = configuration.vectors.indices['sw']
 
         # JIT compile functions to be compiled into kernel
-        dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
         #dist_moved_sq_function = numba.njit(configuration.simbox.dist_moved_sq_function)
-        dist_moved_exceeds_limit_function = numba.njit(configuration.simbox.dist_moved_exceeds_limit_function)
+        dist_moved_exceeds_limit_function = numba.njit(configuration.simbox.get_dist_moved_exceeds_limit_function())
 
 
         @cuda.jit( device=gridsync )

@@ -54,7 +54,7 @@ class NVE(Integrator):
             fsq_id = configuration.sid['Fsq']
 
         # JIT compile functions to be compiled into kernel
-        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
+        apply_PBC = numba.njit(configuration.simbox.get_apply_PBC())
 
         def step(grid, vectors, scalars, r_im, sim_box, integrator_params, time, ptype):
             """ Make one NVE timestep using Leap-frog

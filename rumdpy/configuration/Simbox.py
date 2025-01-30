@@ -25,7 +25,6 @@ class Simbox():
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
         self.len_sim_box_data = D # not true for other Simbox classes
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.volume, self.dist_moved_sq_function, self.dist_moved_exceeds_limit_function = self.make_simbox_functions()
         return
 
     def make_device_copy(self):
@@ -39,11 +38,10 @@ class Simbox():
     def copy_to_host(self):
         self.lengths = self.d_data.copy_to_host()
 
-    def make_simbox_functions(self):
-        ''' This function generates the simbox methods. It is needed for the cuda kernel '''
-        D = self.D
-        # NOTE: in the following functions sim_box is an array of box lengths
 
+    def get_dist_sq_dr_function(self):
+        """Generates function dist_sq_dr which computes displacement and distance squared for one neighbor """
+        D = self.D
         def dist_sq_dr_function(ri, rj, sim_box, dr):  
             ''' Returns the squared distance between ri and rj applying MIC and saves ri-rj in dr '''
             dist_sq = numba.float32(0.0)
@@ -55,6 +53,11 @@ class Simbox():
                 dist_sq = dist_sq + dr[k] * dr[k]
             return dist_sq
 
+        return dist_sq_dr_function
+
+    def get_dist_sq_function(self):
+        """Generates.function dist_sq_function which computes distance squared for one neighbor """
+        D = self.D
         def dist_sq_function(ri, rj, sim_box):  
             ''' Returns the squared distance between ri and rj applying MIC'''
             dist_sq = numba.float32(0.0)
@@ -66,6 +69,10 @@ class Simbox():
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
 
+        return dist_sq_function
+
+    def get_apply_PBC(self):
+        D = self.D
         def apply_PBC(r, image, sim_box):
             for k in range(D):
                 if r[k] * numba.float32(2.0) > +sim_box[k]:
@@ -74,22 +81,22 @@ class Simbox():
                 if r[k] * numba.float32(2.0) < -sim_box[k]:
                     r[k] += sim_box[k]
                     image[k] -= 1
+            return
+        return apply_PBC
 
-#        def apply_PBC_dimension(r, image, sim_box, dimension):
-#            if r[dimension] * numba.float32(2.0) > +sim_box[dimension]:
-#                r[dimension] -= sim_box[dimension]
-#                image[dimension] += 1
-#            if r[dimension] * numba.float32(2.0) < -sim_box[dimension]:
-#                r[dimension] += sim_box[dimension]
-#                image[dimension] -= 1
 
+    def get_volume_function(self):
+        D = self.D
         def volume(sim_box):
             ''' Returns volume of the rectangular box '''
             vol = sim_box[0]
             for i in range(1,D):
                 vol *= sim_box[i]
             return vol
+        return volume
 
+    def get_dist_moved_sq_function(self):
+        D = self.D
         def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
             ''' Returns squared distance between vectors r_current and r_last '''
             dist_sq = numba.float32(0.0)
@@ -101,7 +108,10 @@ class Simbox():
                 dist_sq = dist_sq + dr_k * dr_k
 
             return dist_sq
+        return dist_moved_sq_function
 
+    def get_dist_moved_exceeds_limit_function(self):
+        D = self.D
 
         def dist_moved_exceeds_limit_function(r_current, r_last, sim_box, sim_box_last, skin, cut):
             """ Returns True if squared distance between r_current and r_last exceeds half skin.
@@ -115,8 +125,7 @@ class Simbox():
                 dist_sq = dist_sq + dr_k * dr_k
 
             return dist_sq > skin*skin*numba.float32(0.25)
-
-        return dist_sq_dr_function, dist_sq_function, apply_PBC, volume, dist_moved_sq_function, dist_moved_exceeds_limit_function
+        return dist_moved_exceeds_limit_function
 
 
 
@@ -144,7 +153,6 @@ class Simbox_LeesEdwards(Simbox):
         # have already called base class Simbox.make_simbox_functions, and can
         # re-use the volume so this version only has to override the first
         # three and dist_moved_sq_function
-        self.dist_sq_dr_function, self.dist_sq_function, self.apply_PBC, self.update_box_shift, self.dist_moved_sq_function, self.dist_moved_exceeds_limit_function = self.make_simbox_functions_LE()
 
         return
 
@@ -179,7 +187,9 @@ class Simbox_LeesEdwards(Simbox):
         self.boxshift_image = box_data[D+1]
         # don't need last_box_shift etc on the host except maybe occasionally for debugging?
 
-    def make_simbox_functions_LE(self):
+
+    def get_dist_sq_dr_function(self):
+        """Generates function dist_sq_dr which computes displacement and distance for one neighbor """
         D = self.D
 
         def dist_sq_dr_function(ri, rj, sim_box, dr):  
@@ -200,6 +210,11 @@ class Simbox_LeesEdwards(Simbox):
                 dist_sq = dist_sq + dr[k] * dr[k]
             return dist_sq
 
+        return dist_sq_dr_function
+
+    def get_dist_sq_function(self):
+
+        D = self.D
         def dist_sq_function(ri, rj, sim_box):  
             box_shift = sim_box[D]
             dist_sq = numba.float32(0.0)
@@ -220,7 +235,10 @@ class Simbox_LeesEdwards(Simbox):
                          (+box_k if numba.float32(2.0) * dr_k < -box_k else numba.float32(0.0)))  # MIC
                 dist_sq = dist_sq + dr_k * dr_k
             return dist_sq
+        return dist_sq_function
 
+    def get_apply_PBC(self):
+        D = self.D
         def apply_PBC(r, image, sim_box):
 
             # first shift the x-component depending on whether the y-component is outside the box
@@ -240,8 +258,11 @@ class Simbox_LeesEdwards(Simbox):
                 if r[k] * numba.float32(2.0) < -sim_box[k]:
                     r[k] += sim_box[k]
                     image[k] -= 1
+            return
+        return apply_PBC
 
-
+    def get_update_box_shift(self):
+        D = self.D
         def update_box_shift(sim_box, shift):
             # carry out the addition in double precision
             sim_box[D] = numba.float32(sim_box[D] + numba.float64(shift))
@@ -253,8 +274,11 @@ class Simbox_LeesEdwards(Simbox):
             if sim_box[D] < -Lx_half:
                 sim_box[D] += Lx
                 sim_box[D+1] -= 1
+            return
+        return update_box_shift
 
-
+    def get_dist_moved_sq_function(self):
+        D = self.D
         def dist_moved_sq_function(r_current, r_last, sim_box, sim_box_last):
             """ See Chattoraj PhD thesis for criterion for neighbor list checking under shear https://pastel.hal.science/pastel-00664392/"""
             zero = numba.float32(0.)
@@ -292,6 +316,10 @@ class Simbox_LeesEdwards(Simbox):
 
 
             return dist_moved_sq
+        return dist_moved_sq_function
+
+    def get_dist_moved_exceeds_limit_function(self):
+        D = self.D
 
         def dist_moved_exceeds_limit_function(r_current, r_last, sim_box, sim_box_last, skin, cut):
             zero = numba.float32(0.)
@@ -332,4 +360,4 @@ class Simbox_LeesEdwards(Simbox):
 
             return dist_moved_sq > skin_corrected*skin_corrected*numba.float32(0.25)
 
-        return dist_sq_dr_function, dist_sq_function,  apply_PBC, update_box_shift, dist_moved_sq_function, dist_moved_exceeds_limit_function
+        return dist_moved_exceeds_limit_function
