@@ -2,8 +2,8 @@ def test_Simbox():
     import rumdpy as rp
     import numpy as np
 
-    simbox = rp.Simbox(D=3, lengths=np.array([3,4,5]))
-    assert isinstance(simbox, rp.Simbox), "Problem with Simbox __init__"
+    simbox = rp.OrthorhombicSimulationBox(D=3, lengths=np.array([3,4,5]))
+    assert isinstance(simbox, rp.OrthorhombicSimulationBox), "Problem with Simbox __init__"
     assert np.all(simbox.lengths == np.array([3,4,5])), "Problem with Simbox.lengths"
 
     ## Test dist_sq_dr_function
@@ -62,7 +62,7 @@ def test_Simbox_LeesEdwards():
 
     # Test normal case
     simbox = rp.Simbox_LeesEdwards(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
-    assert isinstance(simbox, rp.Simbox), "Problem with simbox __init__"
+    assert isinstance(simbox, rp.Simbox_LeesEdwards), "Problem with simbox __init__"
     assert np.all(simbox.lengths == np.array([3,4,5])), "Problem with simbox.lengths"
 
 if __name__ == '__main__':

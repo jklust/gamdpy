@@ -104,7 +104,7 @@ class Tether(Interaction):
         if compute_u:
             u_id = configuration.sid['U']
 
-        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+        dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
         
         def tether_calculator(vectors, scalars, ptype, sim_box, indices, values):
        

@@ -145,7 +145,7 @@ def load_conf_from_npz(path: str) -> Tuple[rp.Configuration, float]:
     conf["m"] = conf_data.get("m", 1)
     conf["v"] = conf_data["v"]
     conf.ptype = conf_data["ptype"]
-    conf.simbox = rp.Simbox(D=d, lengths=conf_data["simbox_initial"])
+    conf.simbox = rp.OrthorhombicSimulationBox(D=d, lengths=conf_data["simbox_initial"])
     return conf, float(conf_data["target_u"])
 
 def get_rdf(conf, positions, first_block, conf_per_block):
