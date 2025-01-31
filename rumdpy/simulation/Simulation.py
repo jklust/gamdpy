@@ -630,15 +630,24 @@ class Simulation():
         timesteps = self.steps_per_block
         repeats = 1
 
-        gridsyncs = [True]
-        if self.configuration.N > 10000:
+        # Binary choises: Take self.compute_plan as starting point, and add alternatives if appropiate 
+        gridsyncs = [initial_compute_plan['gridsync'], ]
+        if gridsyncs[0] != True:
+            gridsyncs.append(True)
+        if gridsyncs[0] != False and self.configuration.N > 10000:
             gridsyncs.append(False)
 
-        nblists = []
-        if self.configuration.N < 32000:
+        nblists = [initial_compute_plan['nblist'], ]
+        if nblists[0] != 'N squared' and self.configuration.N < 32000:
             nblists.append('N squared')
-        if self.configuration.N > 2000:
+        if nblists[0] != 'linked lists' and self.configuration.N > 2000:
             nblists.append('linked lists')
+
+        UtilizeNIIIs = [initial_compute_plan['UtilizeNIII'], ]
+        if UtilizeNIIIs[0] != False:
+            UtilizeNIIIs.append(False)
+        if UtilizeNIIIs[0] != True:
+            UtilizeNIIIs.append(True)
 
         skin = initial_compute_plan['skin']
         skins = [skin - 0.6, skin - 0.4, skin - 0.2, skin, skin + 0.2, skin + 0.4, skin + 0.6, skin + 0.8,  skin + 1.0]
@@ -653,9 +662,9 @@ class Simulation():
         total_min_time, local_min_time = 1e9, 1e9
         optimal_compute_plan = initial_compute_plan.copy()
         nblist, gridsync, UtilizeNIII = self.compute_plan['nblist'], self.compute_plan['gridsync'], self.compute_plan['UtilizeNIII']
-        print(f'\n {nblist:12}, {gridsync=}, {UtilizeNIII=}: ', end='')
-        total_min_time, local_min_time = self.autotune_skin(skins, timesteps, repeats, 
-                                                            total_min_time, local_min_time, 
+        print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
+        total_min_time, local_min_time = self.autotune_skin(initial_compute_plan['skin']-0.2, 0.2, 
+                                                            timesteps, repeats, total_min_time, local_min_time, 
                                                             optimal_compute_plan, verbose=False)
         initial_min_time = local_min_time
 
@@ -664,21 +673,23 @@ class Simulation():
             self.compute_plan['nblist'] = nblist
             for gridsync in gridsyncs:
                 self.compute_plan['gridsync'] = gridsync
-                for UtilizeNIII in [False, True]:
+                for UtilizeNIII in UtilizeNIIIs:
                     self.compute_plan['UtilizeNIII'] = UtilizeNIII
                     
                     # Get time for default 'pb', 'tp' to check if its worth to proceede with these boleans
                     self.compute_plan['pb'] = initial_compute_plan['pb']
                     self.compute_plan['tp'] = initial_compute_plan['tp']
-                    print(f'\n {nblist:12}, {gridsync=}, {UtilizeNIII=}: ', end='')
+                    print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
                     self.JIT_and_test_kernel(adjust_compute_plan=False)
+                    if self.compute_plan['tp'] == 0 or self.compute_plan['gridsync'] != gridsync: 
+                        continue
         
                     local_min_time = 1e9
-                    total_min_time, local_min_time = self.autotune_skin(skins, timesteps, repeats, 
-                                                                        total_min_time, local_min_time, 
+                    total_min_time, local_min_time = self.autotune_skin(initial_compute_plan['skin']-0.2, 0.2, 
+                                                                        timesteps, repeats, total_min_time, local_min_time, 
                                                                         optimal_compute_plan, verbose=False)
                     
-                    if local_min_time < 1.2 * initial_min_time:
+                    if local_min_time < 1.15 * initial_min_time:
                         local_min_time = 1e9
                         #print(f'\n {nblist}, {gridsync=}, {UtilizeNIII=}: ', end='')
                         for pb in pbs:
@@ -691,15 +702,16 @@ class Simulation():
                                         if self.compute_plan['tp'] != tp or self.compute_plan['gridsync'] != gridsync: 
                                             break
                                         
-                                        total_min_time, local_min_time = self.autotune_skin(skins, timesteps, repeats, 
-                                                                        total_min_time, local_min_time, 
+                                        total_min_time, local_min_time = self.autotune_skin(initial_compute_plan['skin']-0.2, 0.2, 
+                                                                        timesteps, repeats, total_min_time, local_min_time, 
                                                                         optimal_compute_plan, verbose=False)
 
         self.compute_plan = optimal_compute_plan
         self.JIT_and_test_kernel()
+        print()
         cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
-    def autotune_skin(self, skins, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose=False):
+    def autotune_skin_old(self, skins, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose=False):
         min_time = 1e9
         for skin in skins:
             if 0 < skin < 1.2:
@@ -720,7 +732,46 @@ class Simulation():
         max_TPS = repeats * timesteps / min_time * 1000
         if min_time < local_min_time:
             local_min_time = min_time
-            print(f' ({self.compute_plan['pb']}x{self.compute_plan['tp']},{min_skin:.2f}):{max_TPS:.2f}', end=' ', flush=True)
+            print(f" ({self.compute_plan['pb']}x{self.compute_plan['tp']},{min_skin:.2f}):{max_TPS:.2f}", end=' ', flush=True)
+        else:
+            print('.', end='', flush=True)
+        if min_time < total_min_time:
+            total_min_time = min_time
+            optimal_compute_plan['UtilizeNIII'] = self.compute_plan['UtilizeNIII']
+            optimal_compute_plan['nblist'] = self.compute_plan['nblist']
+            optimal_compute_plan['gridsync'] = self.compute_plan['gridsync']
+            optimal_compute_plan['skin'] = min_skin
+            optimal_compute_plan['pb'] = self.compute_plan['pb']
+            optimal_compute_plan['tp'] = self.compute_plan['tp']
+        return total_min_time, local_min_time
+
+                    
+
+    def autotune_skin(self, initial_skin, delta_skin, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose=False):
+        min_time = 1e9
+        skin = initial_skin
+        while 0.0 < skin < 1.5: # Should keep on going until eg. linked lists throw an error
+            self.compute_plan['skin'] = skin
+            self.update_params()
+            self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
+            start = cuda.event()
+            end = cuda.event()
+            start.record()
+            for i in range(repeats):
+                self.integrate_self(0.0, timesteps)
+            end.record()
+            end.synchronize()
+            time_elapsed = cuda.event_elapsed_time(start, end)
+            if time_elapsed < min_time:
+                min_time = time_elapsed
+                min_skin = skin
+            elif time_elapsed > 1.1*min_time:
+                break
+            skin += delta_skin
+        max_TPS = repeats * timesteps / min_time * 1000
+        if min_time < local_min_time:
+            local_min_time = min_time
+            print(f" ({self.compute_plan['pb']}x{self.compute_plan['tp']},{min_skin:.2f}):{max_TPS:.2f}", end=' ', flush=True)
         else:
             print('.', end='', flush=True)
         if min_time < total_min_time:
