@@ -117,16 +117,17 @@ def main(integrator, nblist, identifier, autotune):
     tpss_at = []
     compute_plans = []
     compute_plans_at = []
+    target_time_in_sec = 0.25 # At least this time to get reliable timing
     magic_number = 1e7
     print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:
         c1, LJ_func = setup_lennard_jones_system(*nxyz, cut=2.5, verbose=False)
         time_in_sec = 0
-        while time_in_sec < 0.5:  # At least x s to get reliable timing
+        while time_in_sec < target_time_in_sec:  
             steps = int(magic_number / c1.N)
             compute_plan = rp.get_default_compute_plan(c1)
             tps, time_in_sec, steps, compute_plan = run_benchmark(c1, LJ_func, compute_plan, steps, integrator=integrator, verbose=False)
-            magic_number *= 1.0 / time_in_sec  # Aim for 2x seconds (Assuming O(N) scaling)
+            magic_number *= (2*target_time_in_sec) / time_in_sec  # Aim for 2*target_time (Assuming O(N) scaling)
         Ns.append(c1.N)
         tpss.append(tps)
         compute_plans.append(compute_plan)
