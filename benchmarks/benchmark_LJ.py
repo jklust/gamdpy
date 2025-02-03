@@ -117,7 +117,7 @@ def main(integrator, nblist, identifier, autotune):
     tpss_at = []
     compute_plans = []
     compute_plans_at = []
-    target_time_in_sec = 0.25 # At least this time to get reliable timing
+    target_time_in_sec = 0.50 # At least this time to get reliable timing
     magic_number = 1e7
     print('    N     TPS     Steps   Time     NbUpd Steps/NbUpd')
     for nxyz in nxyzs:

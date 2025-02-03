@@ -649,26 +649,30 @@ class Simulation():
         if UtilizeNIIIs[0] != True:
             UtilizeNIIIs.append(True)
 
-        skin = initial_compute_plan['skin']
-        skins = [skin - 0.6, skin - 0.4, skin - 0.2, skin, skin + 0.2, skin + 0.4, skin + 0.6, skin + 0.8,  skin + 1.0]
+        #skin = initial_compute_plan['skin']
+        #skins = [skin - 0.6, skin - 0.4, skin - 0.2, skin, skin + 0.2, skin + 0.4, skin + 0.6, skin + 0.8,  skin + 1.0]
 
         pb = self.compute_plan['pb']
         pbs = [pb//2, pb, pb*2]
         
-        tp = initial_compute_plan['tp']
-        tps = [tp - 3, tp - 2, tp - 1, tp, tp + 1, tp + 2, tp + 3,]
+        #tp = initial_compute_plan['tp']
+        #tps = [tp - 3, tp - 2, tp - 1, tp, tp + 1, tp + 2, tp + 3,]
 
         # Get timing for initial compute_plan, optimizing skin (relatively cheap)
-        total_min_time, local_min_time = 1e9, 1e9
-        optimal_compute_plan = initial_compute_plan.copy()
-        nblist, gridsync, UtilizeNIII = self.compute_plan['nblist'], self.compute_plan['gridsync'], self.compute_plan['UtilizeNIII']
-        print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
-        total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
-                                                            timesteps, repeats, total_min_time, local_min_time, 
-                                                            optimal_compute_plan, verbose=False)
-        initial_min_time = local_min_time
+        #total_min_time, local_min_time = 1e9, 1e9
+        #optimal_compute_plan = initial_compute_plan.copy()
+        #nblist, gridsync, UtilizeNIII = self.compute_plan['nblist'], self.compute_plan['gridsync'], self.compute_plan['UtilizeNIII']
+        #print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
+        #total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
+        #                                                    timesteps, repeats, total_min_time, local_min_time, 
+        #                                                    optimal_compute_plan, verbose=False)
+        #initial_min_time = local_min_time
 
-        # Loop over 'boleans'
+        optimal_compute_plan = initial_compute_plan.copy()
+        results = []
+        # Loop over binary parameters
+        total_min_time = 1e9
+        binary_min_time = 1e9
         for nblist in nblists:
             self.compute_plan['nblist'] = nblist
             for gridsync in gridsyncs:
@@ -676,7 +680,7 @@ class Simulation():
                 for UtilizeNIII in UtilizeNIIIs:
                     self.compute_plan['UtilizeNIII'] = UtilizeNIII
                     
-                    # Get time for default 'pb', 'tp' to check if its worth to proceede with these boleans
+                    # Get time for default 'pb', 'tp' to check if its worth to proceede with these choises
                     self.compute_plan['pb'] = initial_compute_plan['pb']
                     self.compute_plan['tp'] = initial_compute_plan['tp']
                     print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
@@ -688,25 +692,24 @@ class Simulation():
                     total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
                                                                         timesteps, repeats, total_min_time, local_min_time, 
                                                                         optimal_compute_plan, verbose=False)
-                    
-                    if local_min_time < 1.15 * initial_min_time:
-                        local_min_time = 1e9
-                        #print(f'\n {nblist}, {gridsync=}, {UtilizeNIII=}: ', end='')
-                        for pb in pbs:
-                            if pb <= 512:
-                                self.compute_plan['pb'] = pb
-                                total_min_time, local_min_time = self.autotune_tp(initial_compute_plan['tp'], 1, initial_compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
+                    self.compute_plan['min_time'] = min_time
+                    if min_time < binary_min_time:
+                        binary_min_time = min_time
+                    results.append(self.compute_plan.copy())
         
-                                #for tp in tps:
-                                #    if tp>0:
-                                #        self.compute_plan['tp'] = tp
-                                #        self.JIT_and_test_kernel(adjust_compute_plan=False)
-                                #        if self.compute_plan['tp'] != tp or self.compute_plan['gridsync'] != gridsync: 
-                                #            break
-                                #        
-                                #        total_min_time, local_min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
-                                #                                        timesteps, repeats, total_min_time, local_min_time, 
-                                #                                        optimal_compute_plan, verbose=False)
+        for compute_plan in results:
+            if compute_plan['min_time'] < 1.15 * binary_min_time:
+                        
+                local_min_time = 1e9
+                self.compute_plan = compute_plan.copy()
+                nblist = compute_plan['nblist']
+                gridsync = compute_plan['gridsync']
+                UtilizeNIII = compute_plan['UtilizeNIII']
+                print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
+                for pb in pbs:
+                    if pb <= 512:
+                        self.compute_plan['pb'] = pb
+                        total_min_time, local_min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
 
         self.compute_plan = optimal_compute_plan
         self.JIT_and_test_kernel()
@@ -717,7 +720,7 @@ class Simulation():
     def autotune_tp(self, initial_tp, delta_tp, initial_compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time):
         tp = initial_tp
         tp_min_time = 1e9
-        while 0 < tp < 64:
+        while 0 < tp <= 64:
             #print(self.compute_plan['pb'], tp, (self.compute_plan['pb']*tp) % 32)
             if (self.compute_plan['pb']*tp) % 32 == 0:
                 self.compute_plan['tp'] = tp
@@ -733,7 +736,7 @@ class Simulation():
                     tp_min_time = min_time
             tp += delta_tp
         tp = initial_tp - delta_tp
-        while 0 < tp < 64:
+        while 0 < tp <= 64:
             if (self.compute_plan['pb']*tp) % 32 == 0:
                 self.compute_plan['tp'] = tp
                 self.JIT_and_test_kernel(adjust_compute_plan=False)
