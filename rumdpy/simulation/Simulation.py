@@ -694,10 +694,13 @@ class Simulation():
 
                 pb = compute_plan['pb']
                 pb_min_time = 1e9
+                initial_min_time = -1e9
                 while 4 <= pb <= 1024:
                     self.compute_plan['pb'] = pb
                     print(f' {pb=} ', end='')
                     total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
+                    if initial_min_time<0:
+                        initial_min_time = min_time
                     #print(f'[{min_time:.3}, {pb_min_time:.3}]')
                     if min_time > 1.01 * pb_min_time:
                         break
@@ -705,16 +708,17 @@ class Simulation():
                         pb_min_time = min_time
                     pb *= 2
                 pb = compute_plan['pb'] // 2
-                while 4 <= pb <= 1024:
-                    self.compute_plan['pb'] = pb
-                    print(f' {pb=} ', end='')
-                    total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
-                    #print(f'[{min_time:.3}, {pb_min_time:.3}]')
-                    if min_time > 1.01 * pb_min_time:
-                        break
-                    if min_time < pb_min_time:
-                        pb_min_time = min_time
-                    pb = pb // 2
+                if initial_min_time < 1.01*pb_min_time: # Is it worth trying smaller pb?
+                    while 4 <= pb <= 1024:
+                        self.compute_plan['pb'] = pb
+                        print(f' {pb=} ', end='')
+                        total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
+                        #print(f'[{min_time:.3}, {pb_min_time:.3}]')
+                        if min_time > 1.01 * pb_min_time:
+                            break
+                        if min_time < pb_min_time:
+                            pb_min_time = min_time
+                        pb = pb // 2
 
         self.compute_plan = optimal_compute_plan
         self.JIT_and_test_kernel()
