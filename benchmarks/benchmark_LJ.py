@@ -111,7 +111,7 @@ def main(integrator, nblist, identifier, autotune):
         nxyzs = ((4, 4, 8), (4, 8, 8),) + nxyzs
         nxyzs += (32, 32, 64), (32, 64, 64), (64, 64, 64)
     #nxyzs = ( (4, 4, 8), (4, 8, 8) ) # For quick debuging
-    #nxyzs = ( (64, 64, 64), ) # For quick debuging
+    #nxyzs = ( (32, 32, 32), ) # For quick debuging
     Ns = []
     tpss = []
     tpss_at = []

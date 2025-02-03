@@ -698,7 +698,8 @@ class Simulation():
                     self.compute_plan['pb'] = pb
                     print(f' {pb=} ', end='')
                     total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
-                    if min_time > 1.05 * pb_min_time:
+                    #print(f'[{min_time:.3}, {pb_min_time:.3}]')
+                    if min_time > 1.01 * pb_min_time:
                         break
                     if min_time < pb_min_time:
                         pb_min_time = min_time
@@ -708,7 +709,8 @@ class Simulation():
                     self.compute_plan['pb'] = pb
                     print(f' {pb=} ', end='')
                     total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
-                    if min_time > 1.05 * pb_min_time:
+                    #print(f'[{min_time:.3}, {pb_min_time:.3}]')
+                    if min_time > 1.01 * pb_min_time:
                         break
                     if min_time < pb_min_time:
                         pb_min_time = min_time
