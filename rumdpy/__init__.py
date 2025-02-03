@@ -7,7 +7,8 @@
 # The (abstract base) class SimulationBox, and derived classes OrthrhombicSimulationBox and LeesEdwardsSimulationBox have information about the simulation box
 from .configuration.Configuration import Configuration
 from .configuration.Configuration import configuration_to_hdf5, configuration_from_hdf5, configuration_to_rumd3, configuration_from_rumd3, configuration_to_lammps
-from .configuration.Simbox import OrthorhombicSimulationBox, Simbox_LeesEdwards
+from .configuration.Simbox import OrthorhombicSimulationBox
+from .configuration.LeesEdwards_simulationbox import LeesEdwardsSimulationBox
 from .configuration.topology import Topology
 from .configuration.colarray import colarray 
 from .configuration import unit_cells

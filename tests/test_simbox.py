@@ -49,7 +49,7 @@ def test_Simbox():
     result = simbox.get_dist_moved_exceeds_limit_function()(r_current, r_last, simbox.lengths, simbox.lengths, skin, cut)
     assert result == True, "Problem with Simbox.dist_moved_exceeds_limit_function call 2"
 
-def test_Simbox_LeesEdwards():
+def test_LeesEdwardsSimulationBox():
     import pytest
     import rumdpy as rp
     import numpy as np
@@ -57,14 +57,14 @@ def test_Simbox_LeesEdwards():
     # Test 1D error 
     # https://stackoverflow.com/questions/23337471/how-do-i-properly-assert-that-an-exception-gets-raised-in-pytest
     with pytest.raises(ValueError) as e_info:
-        simbox = rp.Simbox_LeesEdwards(D=1, lengths=np.array([3,4]), box_shift=1.0)
+        simbox = rp.LeesEdwardsSimulationBox(D=1, lengths=np.array([3,4]), box_shift=1.0)
     assert e_info.type is ValueError
 
     # Test normal case
-    simbox = rp.Simbox_LeesEdwards(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
-    assert isinstance(simbox, rp.Simbox_LeesEdwards), "Problem with simbox __init__"
+    simbox = rp.LeesEdwardsSimulationBox(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
+    assert isinstance(simbox, rp.LeesEdwardsSimulationBox), "Problem with simbox __init__"
     assert np.all(simbox.lengths == np.array([3,4,5])), "Problem with simbox.lengths"
 
 if __name__ == '__main__':
     test_Simbox()
-    test_Simbox_LeesEdwards()
+    test_LeesEdwardsSimulationBox()

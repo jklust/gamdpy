@@ -74,7 +74,7 @@ sc_output = 8
 dt = 0.01
 sr = 0.02 # restuls for different values shown in comments below. This value only takes 4 seconds to run so good for running as a test
 
-configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simbox.lengths)
+configuration.simbox = rp.LeesEdwardsSimulationBox(configuration.D, configuration.simbox.lengths)
 
 integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 

@@ -20,19 +20,19 @@ class LeesEdwardsSimulationBox(SimulationBox):
 
     >>> import rumdpy as rp
     >>> import numpy as np
-    >>> simbox = rp.Simbox_LeesEdwards(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
-    Simbox_LeesEdwards, box_shift= 1.0
+    >>> simbox = rp.LeesEdwardsSimulationBox(D=3, lengths=np.array([3,4,5]), box_shift=1.0)
+    LeesEdwardsSimulationBox, box_shift= 1.0
 
     """
     def __init__(self, D, lengths, box_shift=0.):
         if D < 2:
-            raise ValueError("Cannot use Simbox_LeesEdwards with dimension smaller than 2")
+            raise ValueError("Cannot use LeesEdwardsSimulationBox with dimension smaller than 2")
         self.D = D
         self.lengths = np.array(lengths, dtype=np.float32) # ensure single precision
         self.box_shift = box_shift
         self.box_shift_image = 0.
         self.len_sim_box_data = D+2
-        print('Simbox_LeesEdwards, box_shift=', box_shift)
+        print('LeesEdwardsSimulationBox, box_shift=', box_shift)
 
         return
 
