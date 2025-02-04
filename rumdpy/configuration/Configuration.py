@@ -3,6 +3,7 @@ import numba
 from numba import cuda
 from .colarray import colarray
 from .Simbox import Simbox
+from .topology import Topology
 from ..simulation.get_default_compute_flags import get_default_compute_flags
 #import .Simbox
 
@@ -123,6 +124,7 @@ class Configuration:
             sid_index += 1
 
         self.simbox = None
+        self.topology = Topology()
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
         self.itype = itype

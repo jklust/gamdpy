@@ -8,6 +8,7 @@
 from .configuration.Configuration import Configuration
 from .configuration.Configuration import configuration_to_hdf5, configuration_from_hdf5, configuration_to_rumd3, configuration_from_rumd3, configuration_to_lammps
 from .configuration.Simbox import Simbox, Simbox_LeesEdwards
+from .configuration.topology import Topology
 from .configuration.colarray import colarray 
 from .configuration import unit_cells
 # make_lattice is imported in configuration/__init__.py
