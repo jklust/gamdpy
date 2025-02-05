@@ -15,7 +15,7 @@ def make_lattice(unit_cell: dict, cells: list = None, rho=None) -> tuple:
     >>> positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
     >>> configuration = rp.Configuration(D=3)
     >>> configuration['r'] = positions
-    >>> configuration.simbox = rp.OrthorhombicSimulationBox(configuration.D, box_vector)
+    >>> configuration.simbox = rp.Orthorhombic(configuration.D, box_vector)
 
     See also
     --------

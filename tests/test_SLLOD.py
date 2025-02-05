@@ -39,7 +39,7 @@ def test_SLLOD(run_NVT=False):
     sr = 0.1
     dt = 0.01
 
-    configuration.simbox = rp.LeesEdwardsSimulationBox(configuration.D, configuration.simbox.lengths)
+    configuration.simbox = rp.LeesEdwards(configuration.D, configuration.simbox.lengths)
 
     integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 

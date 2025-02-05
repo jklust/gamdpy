@@ -89,7 +89,7 @@ def test_fcc_lattice():
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.FCC, cells)
     configuration = rp.Configuration(D=3)
     configuration['r'] = positions
-    configuration.simbox = rp.OrthorhombicSimulationBox(configuration.D, box_vector)
+    configuration.simbox = rp.Orthorhombic(configuration.D, box_vector)
     expected_box_vector = np.array([2.0, 2.0, 2.0])
     assert np.allclose(configuration.simbox.lengths, expected_box_vector)
     expected_number_of_particles = 32
@@ -123,7 +123,7 @@ def test_bcc_lattice():
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.BCC, cells)
     configuration = rp.Configuration(D=3)
     configuration['r'] = positions
-    configuration.simbox = rp.OrthorhombicSimulationBox(configuration.D, box_vector)
+    configuration.simbox = rp.Orthorhombic(configuration.D, box_vector)
     expected_number_of_particles = 16
     assert configuration['r'].shape[0] == expected_number_of_particles
     assert np.allclose(configuration['r'], EXPECTED_BCC_POSITIONS)
@@ -149,7 +149,7 @@ def test_hexagonal():
     positions, box_vector = rp.configuration.make_lattice(rp.unit_cells.HEXAGONAL, cells=cells)
     configuration = rp.Configuration(D=2)
     configuration['r'] = positions
-    configuration.simbox = rp.OrthorhombicSimulationBox(configuration.D, box_vector)
+    configuration.simbox = rp.Orthorhombic(configuration.D, box_vector)
     expected_dimensions_of_space = 2
     assert configuration['r'].shape[1] == expected_dimensions_of_space
     expected_number_of_particles = 16

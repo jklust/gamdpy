@@ -19,7 +19,7 @@ nblocks, nconfs, _ , N, D = output['block'].shape
 # Set up the configuration object
 # Create configuration object
 configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.OrthorhombicSimulationBox(D, output.attrs['simbox_initial'])
+configuration.simbox = rp.Orthorhombic(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 
 # Call the rdf calculator

@@ -11,7 +11,7 @@ import numba
 from numba import cuda
 from .simulationbox import SimulationBox
 
-class OrthorhombicSimulationBox():
+class Orthorhombic():
     """ Standard rectangular simulation box class 
 
     Example
@@ -19,7 +19,7 @@ class OrthorhombicSimulationBox():
 
     >>> import rumdpy as rp
     >>> import numpy as np
-    >>> simbox = rp.OrthorhombicSimulationBox(D=3, lengths=np.array([3,4,5]))
+    >>> simbox = rp.Orthorhombic(D=3, lengths=np.array([3,4,5]))
 
     """
     def __init__(self, D, lengths):
