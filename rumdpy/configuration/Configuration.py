@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import cuda
 from .colarray import colarray
-from .Simbox import Orthorhombic
+from ..simulation_boxes import Orthorhombic
 from .topology import Topology
 from ..simulation.get_default_compute_flags import get_default_compute_flags
 
