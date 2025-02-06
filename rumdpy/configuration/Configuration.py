@@ -79,9 +79,16 @@ class Configuration:
                           }
 
 
-    def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, D: int, N: int = None, type_names=None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
+
+        self.type_names = type_names
+        self.index_from_type_name = {}
+        if type_names:
+            for index, type_name in enumerate(type_names):
+                self.index_from_type_name[type_name] = index
+
         self.compute_flags = get_default_compute_flags()
         if compute_flags != None:
             # only keys present in the default are processed
