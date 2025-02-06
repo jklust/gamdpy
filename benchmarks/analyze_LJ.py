@@ -5,7 +5,7 @@ import pickle
 
 # List of stored benchmarks to compare with
 #benchmarks = ['h100', 'RTX_4090', 'RTX_4070_Laptop', 'RTX_3070_Laptop', 'Quadro_P2000_Mobile']
-benchmarks = [#'RTX_2060_Super_AT', 
+benchmarks = ['RTX_2060_Super_AT', 
               'RTX_2080_Ti_AT', 
               #'RTX_3070_Laptop_AT',
               'RTX_4070_AT', 

@@ -2,6 +2,22 @@
 
 ![Fig](./Data/benchmark_LJ_tps.png)
 
+RTX_2060_Super_AT:
+|        N  |   TPS   |  MATS |  pb | tp | skin | gridsync |  nblist      |  NIII  |
+| --------: | ------: | ----: | --: | --:| ---: | :------: | :----------: | :----: |
+|       512 | 63894.5 |  32.7 |   8 | 16 | 0.50 |   True   | N squared    | False  |
+|      1024 | 45073.0 |  46.2 |  32 | 11 | 0.70 |   True   | N squared    | True   |
+|      2048 | 29870.5 |  61.2 |  32 |  6 | 0.70 |   True   | N squared    | True   |
+|      4096 | 15226.4 |  62.4 | 128 |  3 | 0.70 |   True   | N squared    | True   |
+|      8192 |  7679.6 |  62.9 | 256 |  1 | 0.50 |   True   | linked lists | True   |
+|     16384 |  2399.1 |  39.3 | 128 |  5 | 1.10 |   False  | N squared    | True   |
+|     32768 |  1926.1 |  63.1 |  32 |  7 | 0.70 |   False  | linked lists | True   |
+|     65536 |  1302.1 |  85.3 |  64 |  5 | 0.50 |   False  | linked lists | True   |
+|    131072 |   741.0 |  97.1 | 128 |  3 | 0.50 |   False  | linked lists | True   |
+|    262144 |   416.9 | 109.3 | 128 |  3 | 0.50 |   False  | linked lists | True   |
+|    524288 |   224.5 | 117.7 | 128 |  4 | 0.50 |   False  | linked lists | True   |
+|   1048576 |   118.5 | 124.2 | 128 |  4 | 0.50 |   False  | linked lists | True   |
+
 RTX_2080_Ti_AT:
 |        N  |   TPS   |  MATS |  pb | tp | skin | gridsync |  nblist      |  NIII  |
 | --------: | ------: | ----: | --: | --:| ---: | :------: | :----------: | :----: |
