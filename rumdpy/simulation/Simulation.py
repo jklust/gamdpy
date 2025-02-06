@@ -177,7 +177,7 @@ class Simulation():
         elif self.storage == 'memory':
             output = self.memory
         else:
-            print(f"Warning: self.output can't recognize self.storage option, returning None")
+            print("Warning: self.output can't recognize self.storage option, returning None")
             output = None
         return output
 

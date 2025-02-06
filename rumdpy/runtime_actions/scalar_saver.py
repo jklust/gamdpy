@@ -74,7 +74,7 @@ class ScalarSaver(RuntimeAction):
         config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
     def make_zero_kernel(self):
-        
+
         def zero_kernel(array):
             Nx, Ny = array.shape
             #i, j = cuda.grid(2) # doing simple 1 thread kernel for now ...

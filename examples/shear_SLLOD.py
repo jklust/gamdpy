@@ -40,7 +40,7 @@ if run_NVT:
 
     # Setup runtime actions, i.e. actions performed during simulation of timeblocks
     runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
+                   rp.ScalarSaver(),
                    rp.MomentumReset(100)]
 
 
@@ -94,6 +94,7 @@ num_steps_transient = int(strain_transient / (sr*dt) ) + 1
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [rp.ConfigurationSaver(include_simbox=True), 
                    rp.MomentumReset(100),
+                   rp.StressSaver(sc_output),
                    rp.ScalarSaver(sc_output, {'stresses':True})]
 
 
@@ -112,12 +113,15 @@ for block in sim_SLLOD.run_timeblocks():
 print(sim_SLLOD.summary())
 
 
-U, K, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'Sxy'])
+U, K, W, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'W', 'Sxy'])
 N = configuration.N
 u, k, sxy = U/N,K/N, V_sxy / configuration.get_volume()
 times = np.arange(len(u)) * sc_output *  dt
 stacked_output = np.column_stack((times, u, k, sxy))
 np.savetxt('shear_run.txt', stacked_output, delimiter=' ', fmt='%f')
+
+#full_stress_tensor = rp.extract_stress_tensor(sim_SLLOD.output)
+
 
 strains = times * sr
 

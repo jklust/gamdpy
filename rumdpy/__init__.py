@@ -32,7 +32,7 @@ from .interactions import Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 
 # Import from runtime_actions subpackage (Actions that can be inserted into the stimulation  kernel)
-from .runtime_actions import RuntimeAction, add_runtime_actions_list, ConfigurationSaver, ScalarSaver, MomentumReset
+from .runtime_actions import RuntimeAction, add_runtime_actions_list, ConfigurationSaver, ScalarSaver, MomentumReset, StressSaver, extract_stress_tensor
 
 # Import from calculators subpackage
 from .calculators import CalculatorHydrodynamicCorrelations, CalculatorHydrodynamicProfile, CalculatorWidomInsertion
