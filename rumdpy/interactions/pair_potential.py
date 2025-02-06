@@ -174,8 +174,7 @@ class PairPotential(Interaction):
         ptype_function = numba.njit(configuration.ptype_function)
         params_function = numba.njit(self.params_function)
         pairpotential_calculator = numba.njit(pairpotential_calculator)
-        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
-        #dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
     
         @cuda.jit( device=gridsync )  
         def calc_forces(vectors, cscalars, ptype, sim_box, nblist, params):

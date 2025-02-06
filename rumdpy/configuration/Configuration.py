@@ -2,10 +2,9 @@ import numpy as np
 import numba
 from numba import cuda
 from .colarray import colarray
-from .Simbox import Simbox
+from ..simulation_boxes import Orthorhombic
 from .topology import Topology
 from ..simulation.get_default_compute_flags import get_default_compute_flags
-#import .Simbox
 
 # IO
 import h5py
@@ -80,9 +79,16 @@ class Configuration:
                           }
 
 
-    def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, D: int, N: int = None, type_names=None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
+
+        self.type_names = type_names
+        self.index_from_type_name = {}
+        if type_names:
+            for index, type_name in enumerate(type_names):
+                self.index_from_type_name[type_name] = index
+
         self.compute_flags = get_default_compute_flags()
         if compute_flags != None:
             # only keys present in the default are processed
@@ -248,7 +254,7 @@ class Configuration:
 
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
-        return self.simbox.volume(self.simbox.lengths)
+        return self.simbox.get_volume_function()(self.simbox.lengths)
 
     def set_kinetic_temperature(self, temperature, ndofs=None):
         if ndofs is None:
@@ -295,7 +301,7 @@ class Configuration:
         from .make_lattice import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         return
 
     def make_positions(self, N, rho):
@@ -348,7 +354,7 @@ class Configuration:
         pos *= box_length/part_per_line
         # Saving to Configuration object
         self['r'] = pos
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         # Check all particles are in the box (-L/2, L/2)
         assert np.any(np.abs(pos))<0.5*box_length
 
@@ -422,7 +428,7 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
 
     configuration = Configuration(D=3)
     configuration['r'] = positions[:N, :]
-    configuration.simbox = Simbox(D, simbox_data)
+    configuration.simbox = Orthorhombic(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
 
@@ -515,7 +521,7 @@ def configuration_from_hdf5(filename: str, reset_images=False, compute_flags=Non
         r_im = f['r_im'][:]
     N, D = r.shape
     configuration = Configuration(D=D, compute_flags=compute_flags)
-    configuration.simbox = Simbox(D, lengths)
+    configuration.simbox = Orthorhombic(D, lengths)
     configuration['r'] = r
     configuration['v'] = v
     configuration.ptype = ptype
@@ -657,7 +663,7 @@ def configuration_from_rumd3(filename: str, reset_images=False, compute_flags=No
             m_array[idx] = masses[ptype]
 
     configuration = Configuration(D=3, compute_flags=compute_flags)
-    configuration.simbox = Simbox(3, lengths)
+    configuration.simbox = Orthorhombic(3, lengths)
     configuration['r'] = r_array
     configuration['v'] = v_array
     configuration.r_im = im_array

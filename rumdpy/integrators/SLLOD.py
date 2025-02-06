@@ -89,8 +89,8 @@ class SLLOD(Integrator):
         #    strain = self.shear_rate*time
  
         # JIT compile functions to be compiled into kernel
-        apply_PBC = numba.njit(configuration.simbox.apply_PBC)
-        update_box_shift = numba.njit(configuration.simbox.update_box_shift)
+        apply_PBC = numba.njit(configuration.simbox.get_apply_PBC())
+        update_box_shift = numba.njit(configuration.simbox.get_update_box_shift())
 
 
         def call_update_box_shift(sim_box, integrator_params):                              # pragma: no cover

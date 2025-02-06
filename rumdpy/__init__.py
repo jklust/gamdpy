@@ -4,10 +4,11 @@
 
 # Import from configuration subpackage
 # The configuration subpackage contains details about the configuration (positions, energies, etc)
-# The class Simbox has informations about the simulation box
+# The (abstract base) class SimulationBox, and derived classes Orthrhombic and LeesEdwards have information about the simulation box
 from .configuration.Configuration import Configuration
 from .configuration.Configuration import configuration_to_hdf5, configuration_from_hdf5, configuration_to_rumd3, configuration_from_rumd3, configuration_to_lammps
-from .configuration.Simbox import Simbox, Simbox_LeesEdwards
+from .simulation_boxes.orthorhombic import Orthorhombic
+from .simulation_boxes.lees_edwards import LeesEdwards
 from .configuration.topology import Topology
 from .configuration.colarray import colarray 
 from .configuration import unit_cells

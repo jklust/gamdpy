@@ -18,8 +18,8 @@ def make_planar_calculator(configuration, potential_function) -> callable:
     """
 
     D = configuration.D
-    dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
-    dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+    dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
+    dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
 
     # Unpack indices for vectors and scalars to be compiled into kernel
     r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]

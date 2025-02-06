@@ -16,7 +16,7 @@ output = rp.tools.TrajectoryIO(file_to_read).get_h5()
 nblocks, nconfs, _ , N, D = output['block'].shape
 # Set up the configuration object
 configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Simbox(D, output.attrs['simbox_initial'])
+configuration.simbox = rp.Orthorhombic(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
 calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000, ptype=output['ptype'])

@@ -71,7 +71,7 @@ class CalculatorRadialDistribution():
         # Prepare user-specified functions for inclusion in kernel(s)
         ptype_function = numba.njit(configuration.ptype_function)
         #params_function = numba.njit(pair_potential.params_function)
-        dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
 
         def rdf_calculator_full(vectors, sim_box, ptype, d_gr_bins):
             """ Calculate g(r) fresh
