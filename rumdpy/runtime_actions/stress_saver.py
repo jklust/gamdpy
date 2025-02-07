@@ -78,9 +78,8 @@ class StressSaver(RuntimeAction):
         self.zero_kernel(self.d_output_array)
 
     def update_at_end_of_timeblock(self, block:int, output):
-        output['stress_tensor_times_volume'][block, :] = self.d_output_array.copy_to_host()
-
-
+        volume = self.configuration.get_volume()
+        output['stress_tensor_times_volume'][block, :] = self.d_output_array.copy_to_host() / volume
 
 
     def get_prestep_kernel(self, configuration, compute_plan):

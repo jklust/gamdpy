@@ -116,11 +116,15 @@ print(sim_SLLOD.summary())
 U, K, W, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'W', 'Sxy'])
 N = configuration.N
 u, k, sxy = U/N,K/N, V_sxy / configuration.get_volume()
+
+# alternative (newer way) to get the shear stress
+full_stress_tensor = rp.extract_stress_tensor(sim_SLLOD.output)
+sxy_alt = full_stress_tensor[:,0,1]
+
 times = np.arange(len(u)) * sc_output *  dt
-stacked_output = np.column_stack((times, u, k, sxy))
+stacked_output = np.column_stack((times, u, k, sxy, sxy_alt))
 np.savetxt('shear_run.txt', stacked_output, delimiter=' ', fmt='%f')
 
-#full_stress_tensor = rp.extract_stress_tensor(sim_SLLOD.output)
 
 
 strains = times * sr

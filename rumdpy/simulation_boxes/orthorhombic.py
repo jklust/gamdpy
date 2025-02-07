@@ -85,6 +85,9 @@ class Orthorhombic():
             return
         return apply_PBC
 
+    def get_volume(self):
+        #self.copy_to_host() # not necessary if volume if fixed and if not fixed then presumably stuff like normalizing stress by volume should be done in the device anyway
+        return self.get_volume_function()(self.lengths)
 
     def get_volume_function(self):
         D = self.D

@@ -75,7 +75,9 @@ class LeesEdwards(SimulationBox):
             return vol
         return volume
 
-
+    def get_volume(self):
+        #self.copy_to_host()
+        return self.get_volume_function()(self.lengths)
 
     def get_dist_sq_dr_function(self):
         """Generates function dist_sq_dr which computes displacement and distance for one neighbor """

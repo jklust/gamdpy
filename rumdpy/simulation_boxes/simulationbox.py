@@ -24,17 +24,21 @@ class SimulationBox(ABC):
     @abstractmethod
     def get_volume_function(self) -> callable:
         """
-        Calculate and return the volume of the simulation box
+        Returns the function which calculates the volume of the simulation box
         """
+        pass
 
+    @abstractmethod
+    def get_volume(self) -> float:
+        """
+        Calculate and return the volume, on the host
+        """
         pass
 
     @abstractmethod
     def get_dist_sq_dr_function(self) -> callable:
         """Generates function dist_sq_dr which computes displacement and distance for one neighbor """
         pass
-
-
 
     @abstractmethod
     def get_dist_sq_function(self) -> callable:
@@ -43,10 +47,6 @@ class SimulationBox(ABC):
 
     @abstractmethod
     def get_apply_PBC(self) -> callable:
-        pass
-
-    @abstractmethod
-    def get_volume_function(self) -> callable:
         pass
 
     @abstractmethod
