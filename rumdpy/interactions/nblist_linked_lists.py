@@ -94,17 +94,17 @@ class NbListLinkedLists():
                 if dist_sq > skin*skin*numba.float32(0.25):
                     nbflag[0]=num_blocks
 
-            if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
-                for k in range(D):
-                    vectors[f_id][global_id, k] = numba.float32(0.0)
-                    if  compute_stresses:
-                        vectors[sx_id][global_id, k] =  numba.float32(0.0)
-                        if D > 1:
-                            vectors[sy_id][global_id, k] =  numba.float32(0.0)
-                            if D > 2:
-                                vectors[sz_id][global_id, k] =  numba.float32(0.0)
-                                if D > 3:
-                                    vectors[sw_id][global_id, k] =  numba.float32(0.0)
+            #if global_id < num_part and my_t==0: # Initializion of forces moved here to make NewtonIII possible 
+            #    for k in range(D):
+            #        vectors[f_id][global_id, k] = numba.float32(0.0)
+            #        if  compute_stresses:
+            #            vectors[sx_id][global_id, k] =  numba.float32(0.0)
+            #            if D > 1:
+            #                vectors[sy_id][global_id, k] =  numba.float32(0.0)
+            #                if D > 2:
+            #                    vectors[sz_id][global_id, k] =  numba.float32(0.0)
+            #                    if D > 3:
+            #                        vectors[sw_id][global_id, k] =  numba.float32(0.0)
 
             return
    
@@ -140,6 +140,14 @@ class NbListLinkedLists():
 
                 for ix in range(-2,3,1):
                     for iy in range(-2,3,1):
+                        # Correct handling of LEBC requires modifyng the loop over neighbor cells to take the biox shift into account.
+                        # First we need the equivalent of y_wrap in the LEBC simbox
+                        #other_cell_y_unwrapped = (my_cell[global_id, 1]+iy)
+                        #y_wrap_cell = 1 if other_cell_y_unwrapped >= cells_per_dimension[1] else -1 if other_cell_y_unwrapped < 0 else 0
+                        #x_shift = y_wrap * box_shift
+                        #  need to move the x loop inside the y-loop because the range of the x-loop will depend on the boxshift if y_wrap_cell is non-zero
+                        # range of the x-llop will be something like
+                        #for ix in range(-(ceil(2+box_shift/lcx)),ceil(3-box_shift/lcx),1):
                         for iz in range(-2,3,1):
                             other_index = (
                                 (my_cell[global_id, 0]+ix)%cells_per_dimension[0],
