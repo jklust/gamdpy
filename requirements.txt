@@ -1,9 +1,9 @@
 numpy = 1.26.4
-numba
-pandas
-matplotlib
-h5py
-pytest-cov
+numba = 0.60
+pandas = 2.2.2
+matplotlib = 3.7.5
+h5py = 3.11
+pytest-cov = 6.0.0
 hypothesis
 ipywidgets
 sympy
