@@ -35,6 +35,7 @@ class Test_examples:
         if rm_out:                      # remove created files
             [os.remove(filename) for filename in toremove]
 
+    
     # Tests are ordered try to go fast to slow
     def test_D2(self):
         self.make_one("D2")
@@ -135,3 +136,10 @@ class Test_examples:
     def test_kablj(self):
         self.make_one("kablj", ["Data/KABLJ_Rho1.200_T0.800.h5"])
 
+    def test_molecules(self):
+        self.make_one("molecules", ["Data/dump.lammps", "Data/dump_compress.lammps", "Data/molecules_msd.pdf", "Data/molecules_rdf.pdf"])
+
+
+
+
+ 

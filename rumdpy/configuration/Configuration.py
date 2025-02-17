@@ -3,7 +3,7 @@ import numba
 from numba import cuda
 from .colarray import colarray
 from ..simulation_boxes import Orthorhombic
-from .topology import Topology
+from .topology import Topology, duplicate_topology
 from ..simulation.get_default_compute_flags import get_default_compute_flags
 
 # IO
@@ -734,3 +734,37 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
     # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump
+
+def duplicate_molecule(topology, positions, safety_distance, particle_types, masses, cells, random_rotations=True):
+    D=3
+    num_molecules = cells[0] * cells[1] * cells[2]
+    particles_per_per_molecule = len(positions)
+    num_particles = num_molecules*particles_per_per_molecule
+    configuration = Configuration(D=3, N=num_particles)
+    configuration.topology = duplicate_topology(topology, num_molecules)
+
+    positions_array = np.array(positions)
+
+    positions_array -= np.min(positions_array, axis=0) # Shift positions: smallest coordinates = 0
+    cell_length = np.max(positions_array) + safety_distance
+    simbox_data = np.array(cells) * cell_length
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    count = 0
+    for ix in range(cells[0]):
+        for iy in range(cells[1]):
+            for iz in range(cells[2]):
+                arr = np.arange(D)
+                if random_rotations:
+                    np.random.shuffle(arr)
+                configuration['r'][count:count+particles_per_per_molecule,0] = positions_array[:,arr[0]] + ix*cell_length
+                configuration['r'][count:count+particles_per_per_molecule,1] = positions_array[:,arr[1]] + iy*cell_length
+                configuration['r'][count:count+particles_per_per_molecule,2] = positions_array[:,arr[2]] + iz*cell_length
+                configuration['m'][count:count+particles_per_per_molecule] = masses
+                configuration.ptype[count:count+particles_per_per_molecule] = particle_types
+                count += particles_per_per_molecule
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration
+
