@@ -146,8 +146,11 @@ class NbListLinkedLists():
                         #y_wrap_cell = 1 if other_cell_y_unwrapped >= cells_per_dimension[1] else -1 if other_cell_y_unwrapped < 0 else 0
                         #x_shift = y_wrap * box_shift
                         #  need to move the x loop inside the y-loop because the range of the x-loop will depend on the boxshift if y_wrap_cell is non-zero
-                        # range of the x-llop will be something like
+                        # range of the x-loop will be something like
                         #for ix in range(-(ceil(2+box_shift/lcx)),ceil(3-box_shift/lcx),1):
+
+                        # since there should not be anything about individual simulation boxes in nblist code,
+                        # it seems necessary to delegate the looping over neighbor cells somehow to the simulation box code
                         for iz in range(-2,3,1):
                             other_index = (
                                 (my_cell[global_id, 0]+ix)%cells_per_dimension[0],
