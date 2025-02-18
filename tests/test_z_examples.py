@@ -29,13 +29,15 @@ class Test_examples:
             import time
             start = time.time()
         importlib.__import__(f"examples.{name}")
-        if timing:                      # save end time
+        if timing:                      # save end time 
             end = time.time()
             fout.write(f"{name:30s}\t{end-start:>8.2f}\n")
         if rm_out:                      # remove created files
             [os.remove(filename) for filename in toremove]
 
-    
+    #def test_analyze_structure(self): # Test does not work because reading from command-line
+    #    self.make_one("analyze_structure", ["Data/LJ_r0.973_T0.70_toread_rdf.pdf", "Data/LJ_r0.973_T0.70_toread_rdf.pkl"])
+
     # Tests are ordered try to go fast to slow
     def test_D2(self):
         self.make_one("D2")
@@ -102,7 +104,7 @@ class Test_examples:
 
     def test_LJ(self):
         self.make_one("LJ")
-
+    
     def test_D4(self):
         self.make_one("D4")
 

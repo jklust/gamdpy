@@ -24,6 +24,10 @@ NOTE: For testing purposes the simulations in the examples are very short, so yo
 - [evaluator_inverse_powerlaw.py](evaluator_inverse_powerlaw.py) Simulate Lennard-Jones system and evaluate the inverse power law potential.
 - [evaluator_einstein_crystal.py](evaluator_einstein_crystal.py) Simulate Lennard-Jones crystal and evaluate the harmonic tether potential.
 
+The following scripts needs a filename as commandline argument, eg. "python3 analyze_structure.py filename"
+
+- [analyze_structure.py](analyze_structure.py) Calculates rdf (radial distribution function) for configurations in filename.h5, and stores it in filename_rdf.pdf and filename_rdf.pkl (a pickle file with the computed data).
+
 ## Atomistic models
 
 - [bcc_lattice.py](bcc_lattice.py) : How to set up other initial structures (bcc lattice of LJ particles).
