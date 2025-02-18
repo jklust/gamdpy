@@ -359,6 +359,12 @@ class Configuration:
         assert np.any(np.abs(pos))<0.5*box_length
 
         return
+    
+    def atomic_scale(self, density):
+        actual_rho = self.N / self.get_volume()
+        scale_factor = (actual_rho / density)**(1/3)
+        self.vectors['r'] *= scale_factor
+        self.simbox.lengths *= scale_factor
 
 
 # Helper functions
@@ -735,7 +741,7 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
     lammps_dump = header + atom_data
     return lammps_dump
 
-def duplicate_molecule(topology, positions, safety_distance, particle_types, masses, cells, random_rotations=True):
+def duplicate_molecule(topology, positions, particle_types, masses, cells, safety_distance, random_rotations=True):
     D=3
     num_molecules = cells[0] * cells[1] * cells[2]
     particles_per_per_molecule = len(positions)

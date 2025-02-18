@@ -7,11 +7,14 @@ class Topology():
     contains information about the topology, e.g. which bonds, angles and dihedrals are in the system
     """
 
-    def __init__(self):
+    def __init__(self, molecule_names=None):
         self.bonds = []
         self.angles = []
         self.dihedrals = []
         self.molecules = {}
+        if molecule_names:
+            for molecule_name in molecule_names:
+                self.add_molecule_name(molecule_name)
 
     def add_molecule_name(self, name: str):
         self.molecules[name] = []
