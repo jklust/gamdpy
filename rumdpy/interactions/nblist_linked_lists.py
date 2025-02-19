@@ -1,3 +1,4 @@
+
 import numpy as np
 import numba
 import math
@@ -59,6 +60,9 @@ class NbListLinkedLists():
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (num_part - 1) // pb + 1
         compute_stresses = compute_flags['stresses']
+
+        loop_x_addition = 0
+        #loop_x_addition = configuration.simbox.get_loop_x_addition()
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
@@ -132,28 +136,25 @@ class NbListLinkedLists():
             global_id, my_t = cuda.grid(2)
             local_id = cuda.threadIdx.x 
 
+
+            loop_x_shift = configuration.simbox.get_loop_x_shift() # - ceil(box_shift/lcx)
+
             max_nbs = nblist.shape[1]-1 # Last index is used for storing number of neighbors
 
             if global_id < num_part and my_t==0:
                 my_num_nbs = 0
                 my_num_exclusions = exclusions[global_id, -1]
 
-                for ix in range(-2,3,1):
+                for ix in range(-2,3+loop_x_addition,1):
                     for iy in range(-2,3,1):
-                        # Correct handling of LEBC requires modifyng the loop over neighbor cells to take the biox shift into account.
-                        # First we need the equivalent of y_wrap in the LEBC simbox
-                        #other_cell_y_unwrapped = (my_cell[global_id, 1]+iy)
+                        # Correct handling of LEBC requires modifyng the loop over neighbor cells to take the box shift into account.
+                        #other_cell_y_unwrapped = my_cell[global_id, 1]+iy
                         #y_wrap_cell = 1 if other_cell_y_unwrapped >= cells_per_dimension[1] else -1 if other_cell_y_unwrapped < 0 else 0
-                        #x_shift = y_wrap * box_shift
-                        #  need to move the x loop inside the y-loop because the range of the x-loop will depend on the boxshift if y_wrap_cell is non-zero
-                        # range of the x-loop will be something like
-                        #for ix in range(-(ceil(2+box_shift/lcx)),ceil(3-box_shift/lcx),1):
+                        shifted_ix = ix #+ y_wrap_cell * loop_x_shift
 
-                        # since there should not be anything about individual simulation boxes in nblist code,
-                        # it seems necessary to delegate the looping over neighbor cells somehow to the simulation box code
                         for iz in range(-2,3,1):
                             other_index = (
-                                (my_cell[global_id, 0]+ix)%cells_per_dimension[0],
+                                (my_cell[global_id, 0]+shifted_ix)%cells_per_dimension[0],
                                 (my_cell[global_id, 1]+iy)%cells_per_dimension[1],
                                 (my_cell[global_id, 2]+iz)%cells_per_dimension[2])
                             other_global_id = cells[other_index]
