@@ -24,8 +24,8 @@ class TrajectoryIO():
 
     >>> import rumdpy as rp
     >>> import h5py
-    >>> output = rp.tools.TrajectoryIO("examples/Data/LJ_r0.973_T0.70_toread.h5")                                    # Read from .h5
-    Found .h5 file, loading to rumdpy as output dictionary
+    >>> output = rp.tools.TrajectoryIO("examples/Data/LJ_r0.973_T0.70_toread.h5")  # doctest: +ELLIPSIS
+    Found .h5 file (examples/Data/LJ_r0.973_T0.70_toread.h5, ... 
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
     >>> print(f"Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of {N} particles in {D} dimensions")
