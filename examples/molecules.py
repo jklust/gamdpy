@@ -141,57 +141,15 @@ for block in sim.run_timeblocks():
 print(sim.summary()) 
 print(configuration)
 
-print('Open dump file in ovito with:')
+
+print('\nAnalyse structure with:')
+print('   python3 analyze_structure.py Data/molecules')
+
+print('\nAnalyze dynamics with:')
+print('   python3 analyze_dynamics.py Data/molecules')
+
+print('\nVisualize simulation in ovito with:')
 print('   ovito Data/dump.lammps')
 
-print('Open in VMD with:')
-print('   vmd -lammpstrj Data/dump.lammps')
-
-
-dynamics = rp.tools.calc_dynamics(sim.output, first_block=sim.num_blocks//2)
-plt.figure()
-num_type = dynamics['msd'].shape[1]
-plt.loglog(dynamics['times'], dynamics['msd'][:,0], 'o-', label='A')
-if num_type>1: 
-    plt.loglog(dynamics['times'], dynamics['msd'][:,1], 'o-', label='B') 
-if num_type>2:
-    plt.loglog(dynamics['times'], dynamics['msd'][:,2], 'o-', label='C')
-factor = np.array([1, 10])
-plt.loglog(dynamics['times'][0]*factor, dynamics['msd'][0,num_type-1]*factor**2, 'k--', alpha=0.5)
-plt.loglog(dynamics['times'][-1]/factor, dynamics['msd'][-1,num_type-1]/factor, 'k--', alpha=0.5)
-plt.legend()
-plt.savefig(filename+"_msd.pdf", format="pdf", bbox_inches="tight")
-plt.show(block=False)
-
-rdf = calc_rdf.read()
-plt.figure()
-rdf_data = np.mean(rdf['rdf_ptype'], axis=0)
-num_type = rdf_data.shape[0]
-plt.plot(rdf['distances'], rdf_data[0,0,:], '-', label='A-A')
-if num_type>1:
-    plt.plot(rdf['distances'], rdf_data[1,0,:], '-', label='B-A')
-    plt.plot(rdf['distances'], rdf_data[1,1,:], '-', label='B-B')
-if num_type>2:
-    plt.plot(rdf['distances'], rdf_data[2,0,:], '-', label='C-A')
-    plt.plot(rdf['distances'], rdf_data[2,1,:], '-', label='C-B')
-    plt.plot(rdf['distances'], rdf_data[2,2,:], '-', label='C-C')
-
-plt.legend()
-plt.savefig(filename+"_rdf.pdf", format="pdf", bbox_inches="tight")
-plt.show(block=True)
-
-   
-columns = ['U', 'W', 'K',] 
-data = np.array(rp.extract_scalars(sim.output, columns, first_block=1))
-temp = 2.0/3.0*np.mean(data[2])/configuration.N
-Etot = data[0] + data[2]
-Etot_mean = np.mean(Etot)/configuration.N
-Etot_std = np.std(Etot)/configuration.N
-
-print('\nFinal molecular potential energies: ')
-molecular_energies = np.array( [ np.sum(configuration['U'][atoms])
-                      for atoms in configuration.topology.molecules['MyMolecule'] ])
-print(molecular_energies[:15])
-
-print(np.mean(molecular_energies), np.mean(configuration['U'])*particles_per_molecule)
-assert np.isclose(np.mean(molecular_energies), np.mean(configuration['U'])*particles_per_molecule)
+#print('\nVisualize simulation in VMD with:')
+#print('   vmd -lammpstrj Data/dump.lammps')
