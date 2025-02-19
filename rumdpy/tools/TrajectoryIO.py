@@ -24,8 +24,8 @@ class TrajectoryIO():
 
     >>> import rumdpy as rp
     >>> import h5py
-    >>> output = rp.tools.TrajectoryIO("examples/Data/LJ_r0.973_T0.70_toread.h5")  # doctest: +ELLIPSIS
-    Found .h5 file (examples/Data/LJ_r0.973_T0.70_toread.h5, ... 
+    >>> output = rp.tools.TrajectoryIO("examples/Data/LJ_r0.973_T0.70_toread.h5")
+    Found .h5 file (examples/Data/LJ_r0.973_T0.70_toread.h5), loading to rumdpy as output dictionary
     >>> output = output.get_h5()
     >>> nblocks, nconfs, _ , N, D = output['block'].shape
     >>> print(f"Output file examples/Data/LJ_r0.973_T0.70.h5 containts a simulation of {N} particles in {D} dimensions")
@@ -51,7 +51,8 @@ class TrajectoryIO():
         if name[-3:]==".h5":
             modification_time = os.path.getmtime(name)
             readable_time = time.ctime(modification_time)
-            print(f"Found .h5 file ({name}, {readable_time}), loading to rumdpy as output dictionary")
+            #print(f"Found .h5 file ({name}, {readable_time}), loading to rumdpy as output dictionary")
+            print(f"Found .h5 file ({name}), loading to rumdpy as output dictionary") # Cant handle timestamp in doctest
             self.h5 = self.load_h5(name)
         elif "TrajectoryFiles" in name:
             try: 

@@ -1,6 +1,7 @@
 import numpy as np
 import rumdpy as rp
-import matplotlib.pyplot as plt
+
+rp.select_gpu()
 
 # Simulation params 
 rho, temperature = 0.85, 1.5
@@ -123,8 +124,6 @@ print(configuration)
 sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     compute_plan=sim.compute_plan, storage=filename+'.h5')
-# Setup on-the-fly calculation of Radial Distribution Function
-calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=300)
 
 print('\nProduction: ')
 dump_filename = 'Data/dump.lammps'
@@ -136,8 +135,6 @@ for block in sim.run_timeblocks():
     with open(dump_filename, 'a') as f:
         print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
-    if block > sim.num_blocks//2:
-        calc_rdf.update()
 print(sim.summary()) 
 print(configuration)
 
