@@ -1,8 +1,7 @@
 # Examples
 
 List of examples of simulations (mostly in order of increasing complexity).
-
-NOTE: For testing purposes the simulations in the examples are very short, so you might want to make them longer.
+The simulations in the examples are very short to ensure fast execution, however, you might want to make them longer.
 
 ## Basic
 
@@ -24,7 +23,7 @@ NOTE: For testing purposes the simulations in the examples are very short, so yo
 - [evaluator_inverse_powerlaw.py](evaluator_inverse_powerlaw.py) Simulate Lennard-Jones system and evaluate the inverse power law potential.
 - [evaluator_einstein_crystal.py](evaluator_einstein_crystal.py) Simulate Lennard-Jones crystal and evaluate the harmonic tether potential.
 
-The following examples of data analysis scripts needs a filename as commandline argument, eg. "python3 analyze_structure.py filename". 
+The following examples of data analysis scripts needs a filename as commandline argument, e.g. "python3 analyze_structure.py filename". 
 
 - [analyze_structure.py](analyze_structure.py) Calculates rdf (radial distribution function) for configurations in filename.h5, and stores it in filename_rdf.pdf and filename_rdf.pkl (a pickle file with the computed data).
 
@@ -56,7 +55,8 @@ Input and output can be done in formats that are not directly supported by the p
 
 ## Post-processing
 
-Examples of postprocessing existing rumdpy/rumd3 data. This scripts require the output produced with minimal.py or a rumd3 TrajectoryFile.
+Examples of postprocessing existing rumdpy/rumd3 data. 
+These scripts require the output produced with minimal.py or a rumd3 TrajectoryFile.
 
 - [calc_rdf_from_h5.py](calc_rdf_from_h5.py) : Read a simulation saved as h5 and calculate the RDF.
 - [calc_rdf_from_rumd3.py](calc_rdf_from_rumd3.py) : Read a simulation saved as "TrajectoryFiles" from rumd3 and calculate the RDF.
