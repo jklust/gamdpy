@@ -193,3 +193,5 @@ Miscellaneous
 .. autofunction:: rumdpy.get_default_compute_plan
 
 .. autofunction:: rumdpy.get_default_compute_flags
+
+.. autofunction:: rumdpy.plot_molecule

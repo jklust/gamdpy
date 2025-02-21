@@ -49,6 +49,10 @@ print('Angles:        \t', top.angles)
 print('Dihedrals:     \t', top.dihedrals)
 print()
 
+# This call creates the pdf "molecule.pdf" with a drawing of the molecule 
+# Use block=True to visualize the molecule before running the simulation
+rp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
+
 configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(6, 6, 6), safety_distance=2.0)
 configuration.randomize_velocities(temperature=temperature)
 
