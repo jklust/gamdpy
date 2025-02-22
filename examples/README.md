@@ -47,6 +47,10 @@ The following examples of data analysis scripts needs a filename as commandline 
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
 - [generic_molecules.py](generic_molecules.py): Simulation of a linear molecule with bond, angle, and dihedral potentials
 
+## Lattice models
+
+- [xy_model.py](xy_model.py) : The classical XY model of rotators on a 2D square lattice
+
 ## Input and output
 
 Input and output can be done in formats that are not directly supported by the package.
