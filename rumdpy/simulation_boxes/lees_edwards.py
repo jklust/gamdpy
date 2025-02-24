@@ -9,6 +9,7 @@ Created on Thu Jan 30 13:49:08 2025
 import numpy as np
 import numba
 from numba import cuda
+import math
 from .simulationbox import SimulationBox
 
 
@@ -252,3 +253,15 @@ class LeesEdwards(SimulationBox):
             return dist_moved_sq > skin_corrected*skin_corrected*numba.float32(0.25)
 
         return dist_moved_exceeds_limit_function
+
+    def get_loop_x_addition(self):
+        return 1
+
+    def get_loop_x_shift_function(self):
+        D = self.D
+        def loop_x_shift_function(sim_box, cell_length_x):
+            box_shift = sim_box[D]
+            return -int(math.ceil(box_shift/cell_length_x))
+
+        return loop_x_shift_function
+

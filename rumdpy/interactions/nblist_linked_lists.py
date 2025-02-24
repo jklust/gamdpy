@@ -38,10 +38,12 @@ class NbListLinkedLists():
         for i in range(self.D):
             self.cells_per_dimension[i] = int(self.configuration.simbox.lengths[i]/min_cells_size)
             assert self.cells_per_dimension[i] > 4
+            if i == 0:
+                assert self.cells_per_dimension[i] > 6
             # TODO: Take care of
             # - changing simbox size during simulation (NPT, compression)
             # - LEBC
-        
+
         #print(self.cells_per_dimension)
         self.my_cell = np.zeros((self.N, self.D), np.int32) # my_cell[:, -1] 1d index
         self.cells = -np.ones(self.cells_per_dimension, dtype=np.int32)
@@ -61,8 +63,7 @@ class NbListLinkedLists():
         num_blocks = (num_part - 1) // pb + 1
         compute_stresses = compute_flags['stresses']
 
-        loop_x_addition = 0
-        #loop_x_addition = configuration.simbox.get_loop_x_addition()
+        loop_x_addition = configuration.simbox.get_loop_x_addition()
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
@@ -78,7 +79,8 @@ class NbListLinkedLists():
 
         # JIT compile functions to be compiled into kernel
         dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
-    
+        loop_x_shift_function = numba.njit(configuration.simbox.get_loop_x_shift_function())
+
         @cuda.jit( device=gridsync )
         def nblist_check(vectors, sim_box, skin, r_ref, nbflag):
             """ Check validity of nblist, i.e. did any particle mode more than skin/2 since last nblist update?
@@ -121,9 +123,10 @@ class NbListLinkedLists():
             global_id, my_t = cuda.grid(2)
             if global_id < num_part and my_t == 0:
                 for k in range(D):
-                    my_cell[global_id,k] = int(math.floor(vectors[r_id][global_id,k]*cells_per_dimension[k]/sim_box[k]))%cells_per_dimension[k]
+                    #my_cell[global_id,k] = int(math.floor(vectors[r_id][global_id,k]*cells_per_dimension[k]/sim_box[k]))%cells_per_dimension[k]
+                    my_cell[global_id,k] = int(math.floor((vectors[r_id][global_id,k]+0.5*sim_box[k])*cells_per_dimension[k]/sim_box[k]))%cells_per_dimension[k]
                     #if my_cell[global_id,k]<0:
-                    #    print(global_id,k, my_cell[global_id,k],vectors[r_id][global_id,k]) 
+                    #    print(global_id,k, my_cell[global_id,k],vectors[r_id][global_id,k])
                 index = (my_cell[global_id,0], my_cell[global_id,1], my_cell[global_id,2])      # 3D 
                 next_particle_in_cell[global_id] = cuda.atomic.exch(cells, index, global_id)    # index needs to be tuple when multidim
                 
@@ -136,8 +139,8 @@ class NbListLinkedLists():
             global_id, my_t = cuda.grid(2)
             local_id = cuda.threadIdx.x 
 
-
-            loop_x_shift = configuration.simbox.get_loop_x_shift() # - ceil(box_shift/lcx)
+            cell_length_x = sim_box[0] / cells_per_dimension[0]
+            loop_x_shift = loop_x_shift_function(sim_box, cell_length_x)
 
             max_nbs = nblist.shape[1]-1 # Last index is used for storing number of neighbors
 
@@ -145,12 +148,12 @@ class NbListLinkedLists():
                 my_num_nbs = 0
                 my_num_exclusions = exclusions[global_id, -1]
 
-                for ix in range(-2,3+loop_x_addition,1):
+                for ix in range(-2-loop_x_addition,3+loop_x_addition,1):
                     for iy in range(-2,3,1):
                         # Correct handling of LEBC requires modifyng the loop over neighbor cells to take the box shift into account.
-                        #other_cell_y_unwrapped = my_cell[global_id, 1]+iy
-                        #y_wrap_cell = 1 if other_cell_y_unwrapped >= cells_per_dimension[1] else -1 if other_cell_y_unwrapped < 0 else 0
-                        shifted_ix = ix #+ y_wrap_cell * loop_x_shift
+                        other_cell_y_unwrapped = my_cell[global_id, 1]+iy
+                        y_wrap_cell = 1 if other_cell_y_unwrapped >= cells_per_dimension[1] else -1 if other_cell_y_unwrapped < 0 else 0
+                        shifted_ix = ix + y_wrap_cell * loop_x_shift
 
                         for iz in range(-2,3,1):
                             other_index = (

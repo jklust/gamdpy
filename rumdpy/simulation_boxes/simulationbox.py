@@ -56,3 +56,11 @@ class SimulationBox(ABC):
     @abstractmethod
     def get_dist_moved_exceeds_limit_function(self) -> callable:
         pass
+
+    @abstractmethod
+    def get_loop_x_addition(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_loop_x_shift_function(self) -> callable:
+        pass

@@ -130,3 +130,12 @@ class Orthorhombic():
 
             return dist_sq > skin*skin*numba.float32(0.25)
         return dist_moved_exceeds_limit_function
+
+    def get_loop_x_addition(self):
+        return 0
+
+    def get_loop_x_shift_function(self):
+
+       def loop_x_shift_function(sim_box, cell_length_x):
+            return 0
+       return loop_x_shift_function
