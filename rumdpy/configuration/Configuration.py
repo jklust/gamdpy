@@ -10,6 +10,9 @@ from ..simulation.get_default_compute_flags import get_default_compute_flags
 import h5py
 import gzip
 
+from ..simulation_boxes.simulationbox import SimulationBox
+
+
 # TODO: add possibility of "with ... as conf:" TypeError: 'Configuration' object does not support the context manager protocol
 
 class Configuration:
@@ -129,7 +132,7 @@ class Configuration:
             self.scalar_columns.append(label)
             sid_index += 1
 
-        self.simbox = None
+        self.simbox: SimulationBox = None
         self.topology = Topology()
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
