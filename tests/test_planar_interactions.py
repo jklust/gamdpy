@@ -1,4 +1,7 @@
-def test_planar_interactions() -> None:
+import numpy as np
+
+
+def test_planar_interactions_old_interface() -> None:
     import math
     import numpy as np
     import rumdpy as rp
@@ -29,5 +32,33 @@ def test_planar_interactions() -> None:
     try: value = walls['interaction_params']
     except KeyError: print("rp.setup_planar_interactions should have 'interaction_params' key but it hasn't")
 
+def test_planar_interactions() -> None:
+    import rumdpy as rp
+    # Make planar interaction
+    N = 16
+    potential = rp.harmonic_repulsion
+    eps, sig = 1.0, 1.0
+    params = [[eps, sig], [eps, sig]]
+    indices =  [[i, 0] for i in range(N)]
+    indices += [[i, 1] for i in range(N)]
+    normal_vectors = [[1,0,0], [-1,0,0]]
+    points = [[-10,0,0], [10,0,0]]
+    planar = rp.interactions.Planar(potential, params, indices, normal_vectors, points)
+
+    # Test that it can be passed to sim object
+    rho, T = 1.5, 1.44
+    configuration = rp.Configuration(D=3, compute_flags={'lapU':True})
+    configuration.make_positions(N=768, rho=rho)
+    configuration['m'] = 1.0
+    configuration.randomize_velocities(temperature=T)
+    compute_plan = rp.get_default_compute_plan(configuration)
+    integrator = rp.integrators.NVE(dt=0.01)
+    runtime_actions = [rp.ConfigurationSaver(),
+                       rp.ScalarSaver(steps_between_output=1)]
+    sim = rp.Simulation(configuration, [planar, ], integrator, runtime_actions,
+                        num_timeblocks=2, steps_per_timeblock=16,
+                        storage='memory')
+
 if __name__ == '__main__':
+    test_planar_interactions_old_interface()
     test_planar_interactions()

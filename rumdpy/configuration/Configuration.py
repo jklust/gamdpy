@@ -132,7 +132,7 @@ class Configuration:
             self.scalar_columns.append(label)
             sid_index += 1
 
-        self.simbox: SimulationBox = None
+        self.simbox = None
         self.topology = Topology()
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
