@@ -8,3 +8,5 @@ hypothesis >= 6.115.3
 sympy >= 1.13.3
 scipy >= 1.12.0
 ipywidgets
+nbformat
+nbclient
