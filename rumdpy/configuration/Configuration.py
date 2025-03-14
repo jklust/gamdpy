@@ -1,9 +1,10 @@
 import numpy as np
 import numba
+import math
 from numba import cuda
 from .colarray import colarray
 from ..simulation_boxes import Orthorhombic
-from .topology import Topology, duplicate_topology
+from .topology import Topology, duplicate_topology, replicate_topologies
 from ..simulation.get_default_compute_flags import get_default_compute_flags
 
 # IO
@@ -794,3 +795,75 @@ def duplicate_molecule(topology, positions, particle_types, masses, cells, safet
 
     return configuration
 
+def replicate_molecules(mol_topology_list, mol_positions_list, particle_type_list, masses_list, num_molecules_each_type_list, safety_distance, random_rotations=True):
+    """ Construct a configuration containing different molecules, with the numbers of each type specified
+
+        Example
+        -------
+        >>>
+        >>> #configuration = rp.replicate_molecules([top1, top2], [positions1, positions2], [particle_types1, particle_types2], [masses1, masses2], [num1, num2], safety_distance=2.0)
+
+    """
+    D = 3
+    num_molecule_types = len(mol_topology_list)
+    total_num_particles = 0
+    total_num_molecules = 0
+    mol_types = []
+    positions_array_list = []
+    cell_length_list = []
+    size_molecule_type_list = []
+
+    for idx in range(num_molecule_types):
+        num_mol_this_type = num_molecules_each_type_list[idx]
+        total_num_particles += len(mol_positions_list[idx]) * num_mol_this_type
+        total_num_molecules += num_mol_this_type
+        mol_types += [idx] * num_mol_this_type
+        positions_array = np.array(mol_positions_list[idx])
+        positions_array -= np.min(positions_array, axis=0)
+        positions_array_list.append(positions_array)
+        size_molecule_type_list.append( len(mol_positions_list[idx]) )
+        cell_length = np.max(positions_array) + safety_distance
+        cell_length_list.append(cell_length)
+
+    # shuffle molecule types randomly. But commented out for now.
+    np.random.shuffle(mol_types)
+
+
+    configuration = Configuration(D=D, N=total_num_particles)
+    configuration.topology = replicate_topologies(mol_topology_list, num_molecules_each_type_list, mol_types, size_molecule_type_list)
+
+    max_cell_length = max(cell_length_list)
+    # make a cubic box big enough to hold the total number of molecules
+    num_cells_axis = math.ceil(total_num_molecules**(1/3))
+    simbox_data = np.ones(D) * (num_cells_axis * max_cell_length)
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    mol_count = 0
+    particle_count = 0
+    for ix in range(num_cells_axis):
+        for iy in range(num_cells_axis):
+            for iz in range(num_cells_axis):
+                if mol_count < total_num_molecules:
+                    # add a molecule
+                    this_mol_type = mol_types[mol_count]
+                    particles_this_molecule = size_molecule_type_list[this_mol_type]
+                    arr = np.arange(D)
+                    if random_rotations:
+                        np.random.shuffle(arr)
+
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,0] = positions_array_list[this_mol_type][:,arr[0]] + ix*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,1] = positions_array_list[this_mol_type][:,arr[1]] + iy*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,2] = positions_array_list[this_mol_type][:,arr[2]] + iz*max_cell_length
+                    configuration['m'][particle_count:particle_count+particles_this_molecule] = masses_list[this_mol_type]
+                    configuration.ptype[particle_count:particle_count+particles_this_molecule] = particle_type_list[this_mol_type]
+                    particle_count += particles_this_molecule
+
+                    mol_count += 1
+
+    assert mol_count == total_num_molecules
+    assert particle_count == total_num_particles
+
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration

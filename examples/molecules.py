@@ -53,7 +53,10 @@ print()
 # Use block=True to visualize the molecule before running the simulation
 rp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
 
-configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(6, 6, 6), safety_distance=2.0)
+#configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(6, 6, 6), safety_distance=2.0)
+configuration = rp.replicate_molecules([top], [positions], [particle_types], [masses], [216], safety_distance=2.0)
+
+
 configuration.randomize_velocities(temperature=temperature)
 
 print(f'Number of molecules: {len(configuration.topology.molecules["MyMolecule"])}')
