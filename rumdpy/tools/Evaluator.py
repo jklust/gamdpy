@@ -36,6 +36,8 @@ class Evaluator:
 
         if compute_plan==None:
             self.compute_plan = rp.get_default_compute_plan(self.configuration)
+        else:
+            self.compute_plan = compute_plan
 
         compute_flags = get_default_compute_flags()
 
