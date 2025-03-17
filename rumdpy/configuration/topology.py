@@ -36,20 +36,29 @@ def angles_from_bonds(bonds, angle_type):
     angles = []
     for bond_index, bond in enumerate(bonds):
         for other_bond in bonds[bond_index+1:]:
-            if bond[1] == other_bond[0]: # Assuming bonds inicies to be sorted!
+            if bond[0] == other_bond[0]: 
+                angles.append([bond[1], bond[0], other_bond[1], angle_type])
+            elif bond[0] == other_bond[1]: 
+                angles.append([bond[1], bond[0], other_bond[0], angle_type])
+            elif bond[1] == other_bond[0]: 
                 angles.append([bond[0], bond[1], other_bond[1], angle_type])
-            elif other_bond[1] == bond[0]: # Assuming bonds inicies to be sorted!
-                angles.append([other_bond[0], other_bond[1], other_bond[1], angle_type])
+            elif bond[1] == other_bond[1]: 
+                angles.append([bond[0], bond[1], other_bond[0], angle_type])        
     return angles
 
 def dihedrals_from_angles(angles, dihedral_type):
     dihedrals = []
     for angle_index, angle in enumerate(angles):
         for other_angle in angles[angle_index+1:]:
-            if angle[1] == other_angle[0] and angle[2] == other_angle[1]: # Assuming bonds inicies to be sorted! WHAT IF CYCLIC?
+            if angle[1] == other_angle[0] and angle[2] == other_angle[1]: 
                 dihedrals.append([angle[0], angle[1], angle[2], other_angle[2], dihedral_type])
-            elif other_angle[1] == angle[0] and other_angle[2] == angle[1]: # Assuming bonds inicies to be sorted!
-                dihedrals.append([other_angle[0], other_angle[1], other_angle[2], angle[2], dihedral_type])
+            elif angle[1] == other_angle[2] and angle[2] == other_angle[1]: 
+                dihedrals.append([angle[0], angle[1], angle[2], other_angle[0], dihedral_type])
+            elif angle[1] == other_angle[0] and angle[0] == other_angle[1]: 
+                dihedrals.append([angle[2], angle[1], angle[0], other_angle[2], dihedral_type])
+            elif angle[1] == other_angle[2] and angle[0] == other_angle[1]: 
+                dihedrals.append([angle[2], angle[1], angle[0], other_angle[0], dihedral_type])
+            
     return dihedrals
 
 def molecules_from_bonds(bonds):
