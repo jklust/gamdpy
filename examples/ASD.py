@@ -1,12 +1,6 @@
 """ Simulate a system of asymmetric dumbbells (ASD) with a Lennard-Jones potential and a harmonic bond potential. """
 
-#import os
-#from matplotlib import gridspec
-#import matplotlib.pyplot as plt
-#import numba
 import numpy as np
-#import pandas as pd
-
 import rumdpy as rp
 
 # Specify state point
