@@ -1,16 +1,15 @@
 import numpy as np
 import rumdpy as rp
-import matplotlib.pyplot as plt
-import numba
 
 rp.select_gpu()
 
 # Simulation params 
-rho, Tinitial, Tfinal  = 0.2, 2.0, 0.5
-N_A, N_B = 12, 8  # A - A - A - A - B - B - B - B - A - A - A - A 
+rho, temperature  = 0.38, 1.2
+N_A, N_B = 12, 8  # A - ... - A - B - ... - B - A - ... - A 
+
 particles_per_molecule = 2*N_A + N_B
 filename = 'Data/pluronics'
-num_timeblocks = 256 # 1024
+num_timeblocks = 64 # 1024
 steps_per_timeblock = 1 * 1024 # 
 
 positions = []
@@ -58,7 +57,7 @@ print()
 rp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
 
 configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(4, 4, 4), safety_distance=2.0)
-configuration.randomize_velocities(temperature=Tinitial)
+configuration.randomize_velocities(temperature=temperature)
 
 print(f'Number of molecules: {len(configuration.topology.molecules["MyMolecule"])}')
 print(f'Number of particles: {configuration.N}\n')
@@ -93,9 +92,7 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclus
 
 # Make integrator
 dt = 0.005
-running_time = dt*num_timeblocks*steps_per_timeblock
-#integrator = rp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.004)
-integrator = rp.integrators.NVT_Langevin(temperature=Tinitial, alpha=0.1, dt=0.004, seed=234)
+integrator = rp.integrators.NVT_Langevin(temperature=temperature, alpha=0.1, dt=0.004, seed=234)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [rp.ConfigurationSaver(), 
@@ -116,24 +113,21 @@ initial_rho = configuration.N / configuration.get_volume()
 for block in sim.run_timeblocks():
     volume = configuration.get_volume()
     N = configuration.N
-    print(sim.status(per_particle=True), f'rho= {N/volume:.3}', end='\t')
-    print(f'P= {(N*Tinitial + np.sum(configuration["W"]))/volume:.3}') # pV = NkT + W
+    current_rho = N/volume
+    print(sim.status(per_particle=True), f'rho= {current_rho:.3}', end='\t')
+    print(f'P= {(N*temperature + np.sum(configuration["W"]))/volume:.3}') # pV = NkT + W
     with open(dump_filename, 'a') as f:
         print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
     # Scale configuration to get closer to final density, rho
-    if block<sim.num_blocks/2:
-        desired_rho = (block+1)/(sim.num_blocks/2)*(rho - initial_rho) + initial_rho
+    if block<sim.num_blocks / 2:
+        desired_rho = (block+1 )/(sim.num_blocks/2)*(rho - initial_rho) + initial_rho
+        if desired_rho > 1.2*current_rho:
+            desired_rho = 1.2*current_rho
         configuration.atomic_scale(density=desired_rho)
         configuration.copy_to_device() # Since we altered configuration, we need to copy it back to device
 print(sim.summary()) 
 print(configuration)
-
-
-running_time = dt*num_timeblocks*steps_per_timeblock
-temperature = rp.make_function_ramp(value0=Tinitial, x0=0.0*running_time, value1=Tfinal, x1=1.0*running_time)
-#integrator = rp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.004)
-integrator = rp.integrators.NVT_Langevin(temperature=temperature, alpha=0.1, dt=0.004, seed=234)
 
 sim = rp.Simulation(configuration, [pair_pot, bonds, ], integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
@@ -151,24 +145,6 @@ for block in sim.run_timeblocks():
 
 print(sim.summary()) 
 print(configuration)
-
-# Plot data
-fig, axs = plt.subplots(3, 1, figsize=(8, 12), sharex=False)
-fig.subplots_adjust(hspace=0.20)
-axs[0].set_title(f'LJ, {rho=:.3}, {Tfinal=:.3}')
-
-U, W, K = np.array(rp.extract_scalars(sim.output, ['U', 'W', 'K'], first_block=1))
-time = np.arange(len(U))* dt * sim.output.attrs["steps_between_output"]
-if callable(temperature):
-    Ttarget = numba.vectorize(temperature)(time)
-    axs[0].grid(linestyle='--', alpha=0.5)
-    axs[0].plot(Ttarget, U/configuration.N)
-    axs[0].set_xlabel('Temperature')
-    axs[0].set_ylabel('Potenital energy per particle')
-
-plt.savefig('Data/pluronics.pdf')
-print('Wrote Data/pluronics.pdf')
-plt.show(block=True)
 
 print('\nAnalyse structure with:')
 print('   python3 analyze_structure.py Data/pluronics')
