@@ -18,7 +18,7 @@ variables:
 #     - env/
 
 default:
-  image: nvidia/cuda:12.6.3-devel-ubuntu22.04
+  image: nvidia/cuda:12.2.2-devel-ubuntu22.04
 
 .test_environment: &test_environment
     - apt update
@@ -30,7 +30,7 @@ default:
     - source ~/miniconda3/bin/activate
 
     - conda create -y --name "$PYTHON_VERSION" python=="$PYTHON_VERSION"
-    - conda install -f -y -q --name "$PYTHON_VERSION" -c conda-forge --file requirements.txt
+    - conda install -y -q --name "$PYTHON_VERSION" -c conda-forge --file requirements.txt
     - conda activate "$PYTHON_VERSION"
 
     - python3 -V
