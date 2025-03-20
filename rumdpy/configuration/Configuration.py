@@ -710,8 +710,8 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
 
     """
     D = configuration.D
-    if D != 3:
-        raise ValueError('Only 3D configurations are supported')
+    if D != 3 and D!=2:
+        raise ValueError('Only 3D and 2D configurations are supported')
     masses = configuration['m']
     positions = configuration['r']
     image_coordinates = configuration.r_im
@@ -725,31 +725,44 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
     number_of_atoms = positions.shape[0]
     header += f'ITEM: NUMBER OF ATOMS\n{number_of_atoms:d}\n'
     header += f'ITEM: BOX BOUNDS pp pp pp\n'
-    for k in range(3):
+    for k in range(D):
         header += f'{-simulation_box[k] / 2:e} {simulation_box[k] / 2:e}\n'
+    if D==2:
+        header += f'{-1 / 2:e} {1 / 2:e}\n'
     # Atoms
     atom_data = 'ITEM: ATOMS id type mass x y z ix iy iz vx vy vz fx fy fz'
     for i in range(number_of_atoms):
         atom_data += f'\n{i + 1:d} {ptypes[i] + 1:d} {masses[i]:f} '
-        for k in range(3):
+        for k in range(D):
             atom_data += f'{positions[i, k]:f} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{image_coordinates[i, k]:d} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{velocities[i, k]:f} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{forces[i, k]:f} '
+        if D==2:
+            atom_data += f'{0.0:f} '
         #atom_data += '\n'
     # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump
 
 def duplicate_molecule(topology, positions, particle_types, masses, cells, safety_distance, random_rotations=True):
-    D=3
-    num_molecules = cells[0] * cells[1] * cells[2]
+    
+    D=len(positions[0])
+    num_molecules = 1
+    for i in range(D):
+        num_molecules *= cells[i]
     particles_per_per_molecule = len(positions)
     num_particles = num_molecules*particles_per_per_molecule
-    configuration = Configuration(D=3, N=num_particles)
+    configuration = Configuration(D=D, N=num_particles)
     configuration.topology = duplicate_topology(topology, num_molecules)
 
     positions_array = np.array(positions)
@@ -760,6 +773,9 @@ def duplicate_molecule(topology, positions, particle_types, masses, cells, safet
     configuration.simbox = Orthorhombic(D, simbox_data)
 
     count = 0
+    if D<3:
+        cells = list(cells)
+        cells.append(1)    
     for ix in range(cells[0]):
         for iy in range(cells[1]):
             for iz in range(cells[2]):
@@ -768,7 +784,8 @@ def duplicate_molecule(topology, positions, particle_types, masses, cells, safet
                     np.random.shuffle(arr)
                 configuration['r'][count:count+particles_per_per_molecule,0] = positions_array[:,arr[0]] + ix*cell_length
                 configuration['r'][count:count+particles_per_per_molecule,1] = positions_array[:,arr[1]] + iy*cell_length
-                configuration['r'][count:count+particles_per_per_molecule,2] = positions_array[:,arr[2]] + iz*cell_length
+                if D>2:
+                    configuration['r'][count:count+particles_per_per_molecule,2] = positions_array[:,arr[2]] + iz*cell_length
                 configuration['m'][count:count+particles_per_per_molecule] = masses
                 configuration.ptype[count:count+particles_per_per_molecule] = particle_types
                 count += particles_per_per_molecule
