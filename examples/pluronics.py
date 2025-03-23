@@ -9,7 +9,7 @@ N_A, N_B = 12, 8  # A - ... - A - B - ... - B - A - ... - A
 
 particles_per_molecule = 2*N_A + N_B
 filename = 'Data/pluronics'
-num_timeblocks = 64 # 1024
+num_timeblocks = 64
 steps_per_timeblock = 1 * 1024 # 
 
 positions = []
@@ -39,8 +39,6 @@ for i in range(N_A):
 # Setup configuration: Single molecule first, then duplicate
 top = rp.Topology(['MyMolecule', ])
 top.bonds = rp.bonds_from_positions(positions, cut_off=bond_length+.1, bond_type=0)
-#top.angles = rp.angles_from_bonds(top.bonds, angle_type=0)
-#top.dihedrals = rp.dihedrals_from_angles(top.angles, dihedral_type=0)
 top.molecules['MyMolecule'] = rp.molecules_from_bonds(top.bonds)
 
 print('Initial Positions:')
@@ -48,8 +46,6 @@ for position in positions:
     print('\t\t', position)
 print('Particle types:\t', particle_types)
 print('Bonds:         \t', top.bonds)
-#print('Angles:        \t', top.angles)
-#print('Dihedrals:     \t', top.dihedrals)
 print()
 
 # This call creates the pdf "molecule.pdf" with a drawing of the molecule 
@@ -67,16 +63,7 @@ bond_potential = rp.harmonic_bond_function
 bond_params = [[0.8, 1000.], ]
 bonds = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
-# Make angle interactions
-#angle0, k = 2.0, 500.0
-#angles = rp.Angles(configuration.topology.angles, parameters=[[k, angle0],]) 
-
-# Make dihedral interactions
-#rbcoef=[.0, 5.0, .0, .0, .0, .0]    
-#dihedrals = rp.Dihedrals(configuration.topology.dihedrals, parameters=[rbcoef, ])
-
 # Exlusion list
-#exclusions = dihedrals.get_exclusions(configuration)
 exclusions = bonds.get_exclusions(configuration)
 
 # Make pair potential
