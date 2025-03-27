@@ -32,8 +32,8 @@ print("Equilibration run")
 sim.run()
 
 print("Production run")
-q_max = 12.0  # Change to 18.0 to include second peak
-calc_struct_fact = rp.CalculatorStructureFactor(configuration)
+q_max = 18.0
+calc_struct_fact = rp.CalculatorStructureFactor(configuration, backend='GPU')
 calc_struct_fact.generate_q_vectors(q_max=q_max)
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))

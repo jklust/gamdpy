@@ -174,6 +174,29 @@ def test_atomic_form_factors():
             conf.copy_to_device()
             calc_multi.update()
 
+def test_structure_factor_gpu():
+    D = 3
+    rho = 1.0
+    number_of_particles = 10_000
+    conf = rp.Configuration(D=D)
+    conf.make_positions(N=number_of_particles, rho=rho)
+    conf['m'] = 1.0
+
+    # Ideal gas
+    conf['r'] = (np.random.rand(number_of_particles, D)-0.5) * conf.simbox.lengths
+
+    # Test direct
+    calc_struct_fact = rp.CalculatorStructureFactor(conf, backend='GPU')
+    calc_struct_fact.generate_q_vectors(q_max=10.0)
+    print(f'{calc_struct_fact.q_vectors.shape = }')
+    calc_struct_fact.update()
+    struc_fact = calc_struct_fact.read(bins=32)
+
+    assert np.isclose(sum(struc_fact['S(|q|)'])/len(struc_fact['S(|q|)']), 1.0, atol=0.2)
+
+
 if __name__ == '__main__':  # pragma: no cover
     test_structure_factor()
     test_structure_factor_backends()
+    test_structure_factor_gpu()
+
