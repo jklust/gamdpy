@@ -49,13 +49,16 @@ particle_types = []
 masses = []
 topologies = []
 
-for cl in chain_lengths:
+molecule_dicts = []
+
+
+for index, cl in enumerate(chain_lengths):
     pos_this_mol = []
     types_this_mol = []
     masses_this_mol = []
     for i in range(cl):
         pos_this_mol.append( [ i*1.0, (i%2)*.1, 0. ] ) # x, y, z for this particle
-        types_this_mol.append( 0 )
+        types_this_mol.append( index ) # all particles in a molecule have the same type, but this differs from molecule to molecule
         masses_this_mol.append( 1.0 )  
 
     # Setup configuration: Single molecule first, then duplicate
@@ -69,6 +72,13 @@ for cl in chain_lengths:
     particle_types.append(types_this_mol)
     masses.append(masses_this_mol)
     topologies.append(top_this_mol)
+
+    dict_this_mol = {"positions" : pos_this_mol,
+                     "particle_types" : types_this_mol,
+                     "masses" : masses_this_mol,
+                     "topology" : top_this_mol}
+    molecule_dicts.append(dict_this_mol)
+
     print(f'Initial Positions for molecule with chain length: {cl}')
     for position in pos_this_mol:
         print('\t\t', position)
@@ -86,7 +96,8 @@ for cl in chain_lengths:
 
 
 #configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(6, 6, 6), safety_distance=2.0)
-configuration = rp.replicate_molecules(topologies, positions, particle_types, masses, num_mols_each_type, safety_distance=3.0)
+#configuration = rp.replicate_molecules(topologies, positions, particle_types, masses, num_mols_each_type, safety_distance=3.0)
+configuration = rp.replicate_molecules2(molecule_dicts, num_mols_each_type, safety_distance=3.0)
 configuration.randomize_velocities(temperature=temperature)
 
 print(f'Number of molecules: {len(configuration.topology.molecules[f"MyMolecule{chain_lengths[0]}"])}, {len(configuration.topology.molecules[f"MyMolecule{chain_lengths[1]}"])}')
@@ -111,9 +122,12 @@ exclusions = dihedrals.get_exclusions(configuration)
 
 # Make pair potential
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
-sig = 1.00
-eps = 1.00
-cut = 2.50
+sig = [[1.00, 0.95],
+       [0.95, 0.9]]
+eps = [[1.00, 0.95],
+       [0.95, 0.90]]
+cut = np.array(sig)*2.5
+
 
 
 pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
