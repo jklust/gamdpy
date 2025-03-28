@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import math
+import sys
 from numba import cuda
 
 # rumdpy
@@ -130,6 +131,14 @@ class Simulation():
         if 'ptype' in self.memory.keys():
             del self.memory['ptype']
         self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
+        if 'script_name' not in self.memory.keys():
+            script_name = sys.argv[0]
+            self.memory.attrs['script_name'] = script_name
+            if isinstance(script_name,str) and script_name != '':
+                with open(script_name, 'r') as file:
+                    script_content = file.read()
+                self.memory.attrs['script_content'] = script_content
+
 
         self.runtime_actions = runtime_actions
 
