@@ -144,10 +144,11 @@ class Simulation():
 
         compute_flags = None
         for runtime_action in self.runtime_actions:
-            if compute_flags is not None and runtime_action.get_compute_flags() is not None:
-                raise ValueError('Can not handle more than one compute_flags in runtime_actions')
-            else:
-                compute_flags = runtime_action.get_compute_flags()
+            if runtime_action.get_compute_flags() is not None:
+                if compute_flags is not None:
+                    raise ValueError('Can not handle more than one compute_flags in runtime_actions')
+                else:
+                    compute_flags = runtime_action.get_compute_flags()
 
         self.compute_flags = rp.get_default_compute_flags() # configuration.compute_flags
         if compute_flags is not None:

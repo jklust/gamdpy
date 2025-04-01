@@ -64,8 +64,6 @@ class Bonds(Interaction):
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
-        if compute_stresses:
-            print('WARNING: computation of stresses is not implemented yet for bonds')
 
         if verbose:
             print('get_kernel: Bonds:')
@@ -99,13 +97,13 @@ class Bonds(Interaction):
         bondpotential_function = numba.njit(self.bond_potential)
 
         virial_factor = numba.float32( 0.5/configuration.D)
+        half = numba.float32(0.5)
 
         def bond_calculator(vectors, scalars, ptype, sim_box, indices, values):
 
             dr = cuda.local.array(shape=D,dtype=numba.float32)
             dist_sq = dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr)
             u, s, umm = bondpotential_function(math.sqrt(dist_sq), values[indices[2]])
-            half = numba.float32(0.5)
 
             for k in range(D):
                 cuda.atomic.add(vectors, (f_id, indices[0], k), -dr[k]*s)      # Force

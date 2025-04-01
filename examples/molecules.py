@@ -54,7 +54,7 @@ print()
 rp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
 
 #configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(6, 6, 6), safety_distance=2.0)
-configuration = rp.replicate_molecules([top], [positions], [particle_types], [masses], [216], safety_distance=2.0)
+configuration = rp.replicate_molecules([top], [positions], [particle_types], [masses], [216], safety_distance=2.0, compute_flags={"stresses":True})
 
 
 configuration.randomize_velocities(temperature=temperature)
@@ -98,7 +98,8 @@ integrator = rp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.004)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
+                   rp.ScalarSaver(32),
+                   rp.StressSaver(32, compute_flags={'stresses':True}),
                    rp.MomentumReset(100)]
 
 # Setup simulation
@@ -145,6 +146,12 @@ for block in sim.run_timeblocks():
 print(sim.summary()) 
 print(configuration)
 
+W = rp.extract_scalars(sim.output, 'W')
+full_stress_tensor = rp.extract_stress_tensor(sim.output)
+mean_diagonal_sts = (full_stress_tensor[:,0,0] + full_stress_tensor[:,1,1] + full_stress_tensor[:,2,2])/3
+
+print("Mean diagonal stress", np.mean(mean_diagonal_sts) )
+print("Pressure", np.mean(W)*rho/N + temperature*rho)
 
 print('\nAnalyse structure with:')
 print('   python3 analyze_structure.py Data/molecules')

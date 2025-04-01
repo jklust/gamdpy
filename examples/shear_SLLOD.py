@@ -94,8 +94,8 @@ num_steps_transient = int(strain_transient / (sr*dt) ) + 1
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [rp.ConfigurationSaver(include_simbox=True), 
                    rp.MomentumReset(100),
-                   rp.StressSaver(sc_output),
-                   rp.ScalarSaver(sc_output, {'stresses':True})]
+                   rp.StressSaver(sc_output, compute_flags={'stresses':True}),
+                   rp.ScalarSaver(sc_output)]
 
 
 print(f'num_blocks={num_blocks}')

@@ -795,7 +795,7 @@ def duplicate_molecule(topology, positions, particle_types, masses, cells, safet
 
     return configuration
 
-def replicate_molecules(mol_topology_list, mol_positions_list, particle_type_list, masses_list, num_molecules_each_type_list, safety_distance, random_rotations=True):
+def replicate_molecules(mol_topology_list, mol_positions_list, particle_type_list, masses_list, num_molecules_each_type_list, safety_distance, random_rotations=True, compute_flags=None):
     """ Construct a configuration containing different molecules, with the numbers of each type specified
 
         Parameters:
@@ -834,7 +834,7 @@ def replicate_molecules(mol_topology_list, mol_positions_list, particle_type_lis
     np.random.shuffle(mol_types)
 
 
-    configuration = Configuration(D=D, N=total_num_particles)
+    configuration = Configuration(D=D, N=total_num_particles, compute_flags=compute_flags)
     configuration.topology = replicate_topologies(mol_topology_list, num_molecules_each_type_list, mol_types, size_molecule_type_list)
 
     max_cell_length = max(cell_length_list)

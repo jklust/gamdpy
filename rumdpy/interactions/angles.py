@@ -31,6 +31,9 @@ class Angles(Interaction):
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
+        if compute_stresses:
+            print('WARNING: computation of stresses is not implemented yet for angles')
+
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]

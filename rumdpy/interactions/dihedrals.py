@@ -32,6 +32,8 @@ class Dihedrals(Interaction):
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
+        if compute_stresses:
+            print('WARNING: computation of stresses is not implemented yet for dihedrals')
 
         if compute_u:
             u_id = configuration.sid['U']
