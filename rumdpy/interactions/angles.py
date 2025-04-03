@@ -10,8 +10,9 @@ from rumdpy import Configuration
 
 class Angles(Interaction): 
 
-    def __init__(self, indices, parameters):
+    def __init__(self, potential, indices, parameters):
         
+        self.potential = potential
         self.indices = np.array(indices, dtype=np.int32) 
         self.params = np.array(parameters, dtype=np.float32)
 
@@ -34,7 +35,6 @@ class Angles(Interaction):
         if compute_stresses:
             print('WARNING: computation of stresses is not implemented yet for angles')
 
-
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
         u_id = configuration.sid['U']
@@ -56,36 +56,27 @@ class Angles(Interaction):
                         sw_id = configuration.vectors.indices['sw']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
-    
-        def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
-           
-            kspring = values[indices[3]][0]
-            angle = values[indices[3]][1]
+        potential_function = numba.njit(self.potential)
 
+        def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
+            
+            params = cuda.local.array(shape=2, dtype=numba.float32)
+            params[0] = values[indices[3]][0]
+            params[1] = values[indices[3]][1]
+            
             dr_1 = cuda.local.array(shape=D,dtype=numba.float32)
             dr_2 = cuda.local.array(shape=D,dtype=numba.float32)
 
             dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr_1)
             dist_sq_dr_function(vectors[r_id][indices[2]], vectors[r_id][indices[1]], sim_box, dr_2)
 
-            c11 = dr_1[0]*dr_1[0] + dr_1[1]*dr_1[1] + dr_1[2]*dr_1[2]
-            c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
-            c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
+            f_1, f_2, u = potential_function(dr_1, dr_2, params)
 
-            cCon = math.cos(math.pi - angle);
-            cD = math.sqrt(c11*c22)
-            cc = c12/cD 
-
-            f = -kspring*(cc - cCon)
             for k in range(D):
-                f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
-                f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
+                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1[k])      # Force
+                cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1[k]-f_2[k])
+                cuda.atomic.add(vectors, (f_id, indices[2], k), f_2[k])
 
-                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      # Force
-                cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
-                cuda.atomic.add(vectors, (f_id, indices[2], k), f_2)
-            
-            u = numba.float32(0.5)*kspring*(cc-cCon)*(cc-cCon)
             onethird = numba.float32(1.0/3.0);
             cuda.atomic.add(scalars, (indices[0], u_id), u*onethird) 
             cuda.atomic.add(scalars, (indices[1], u_id), u*onethird)

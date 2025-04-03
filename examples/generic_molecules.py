@@ -28,13 +28,14 @@ for n in range(0, configuration.N, 4):
 bonds = rp.Bonds(bond_potential, bond_params, bond_indices)
 
 # Angles
+angle_potential = rp.cos_angle_function
 angle_params = [[k, angle0],]
 angle_indices = []
 for n in range(0, configuration.N, 4):
     angle_indices.append([n, n+1, n+2, 0])
     angle_indices.append([n+1, n+2, n+3, 0])
 
-angles = rp.Angles(angle_indices, angle_params) 
+angles = rp.Angles(angle_potential, angle_indices, angle_params) 
 
 # Dihedrals
 dihedral_params = [rbcoef, ]
@@ -92,6 +93,6 @@ Etot_mean = np.mean(Etot)/configuration.N
 Etot_std = np.std(Etot)/configuration.N
 
 print("Temp:  %.2f  Etot: %.2e (%.2e)" % (temp,  Etot_mean, Etot_std))
-print("Angle: %.2f (%.2f) " % (np.mean(angles_array), np.std(angles_array)))
-print("Dihedral: %.2f (%.2f) " % (np.mean(dihedrals_array), np.std(dihedrals_array)))
+print("Angle mean: %.2f (standard deviation %.2f) " % (np.mean(angles_array), np.std(angles_array)))
+print("Dihedral mean: %.2f (standard deviation %.2f) " % (np.mean(dihedrals_array), np.std(dihedrals_array)))
 
