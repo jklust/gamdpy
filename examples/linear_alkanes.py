@@ -48,8 +48,9 @@ bond_params = [[0.8, 1000.], ]
 interactions['bonds'] = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
 # Make angle interactions
+angle_potential = rp.cos_angle_function
 angle0, k = 2.0, 500.0
-interactions['angles'] = rp.Angles(configuration.topology.angles, parameters=[[k, angle0],]) 
+interactions['angles'] = rp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],]) 
 
 # Make dihedral interactions
 rbcoef=[.0, 5.0, .0, .0, .0, .0]

@@ -7,6 +7,7 @@ from .hertzian import hertzian
 
 # Bond potentials
 from .harmonic_bond_function import harmonic_bond_function
+from .cos_angle_function import cos_angle_function
 
 # Generate potentials
 from .make_IPL_n import make_IPL_n 
