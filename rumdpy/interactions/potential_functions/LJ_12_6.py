@@ -1,9 +1,6 @@
-import numpy as np
 import numba
-import math
-from numba import cuda
 
-def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
+def LJ_12_6(dist, params):  
     """ The 12-6 Lennard-Jones potential
 
     See :func:`rumdpy.apply_shifted_potential_cutoff` for a usage example.
@@ -11,6 +8,8 @@ def LJ_12_6(dist, params):  # LJ: U(r)  =        A12*r**-12 +     A6*r**-6
     .. math::
 
         u(r) = A_{12} r^{-12} + A_6 r^{-6}
+        
+        u'(r) = -12*A_{12} r^{-13} - 6*A_6 r^{-7}
 
     Parameters
     ----------
