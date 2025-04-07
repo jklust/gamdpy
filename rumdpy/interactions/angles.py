@@ -28,6 +28,9 @@ class Angles(Interaction):
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
+        if D != 3:
+            raise ValueError("Angle interactions only support D=3 (three dimensional) simulations")
+
         compute_u = compute_flags['U']
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
@@ -59,7 +62,10 @@ class Angles(Interaction):
         potential_function = numba.njit(self.potential)
 
         def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
-            
+            '''
+            Algorithm is based on D.C. Rapaport, The Art of Molecular Dynamics Simulations, 
+            Cambridge University Press (1995).
+            '''
             params = cuda.local.array(shape=2, dtype=numba.float32)
             params[0] = values[indices[3]][0]
             params[1] = values[indices[3]][1]
@@ -70,18 +76,27 @@ class Angles(Interaction):
             dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr_1)
             dist_sq_dr_function(vectors[r_id][indices[2]], vectors[r_id][indices[1]], sim_box, dr_2)
 
-            f_1, f_2, u = potential_function(dr_1, dr_2, params)
+            c11 = dr_1[0]*dr_1[0] + dr_1[1]*dr_1[1] + dr_1[2]*dr_1[2]
+            c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
+            c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
+
+            cD = math.sqrt(c11*c22)
+            angle = math.acos(c12/cD) 
+
+            u, f = potential_function(angle, params)
 
             for k in range(D):
-                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1[k])      # Force
-                cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1[k]-f_2[k])
-                cuda.atomic.add(vectors, (f_id, indices[2], k), f_2[k])
+                f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
+                f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
 
-            onethird = numba.float32(1.0/3.0);
-            cuda.atomic.add(scalars, (indices[0], u_id), u*onethird) 
-            cuda.atomic.add(scalars, (indices[1], u_id), u*onethird)
-            cuda.atomic.add(scalars, (indices[2], u_id), u*onethird)
+                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      
+                cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
+                cuda.atomic.add(vectors, (f_id, indices[2], k), f_2)
 
+            onethird = numba.float32(1.0/3.0)*u;
+            cuda.atomic.add(scalars, (indices[0], u_id), onethird) 
+            cuda.atomic.add(scalars, (indices[1], u_id), onethird)
+            cuda.atomic.add(scalars, (indices[2], u_id), onethird)
 
             return
         
