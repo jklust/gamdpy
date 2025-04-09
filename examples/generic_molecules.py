@@ -38,12 +38,13 @@ for n in range(0, configuration.N, 4):
 angles = rp.Angles(angle_potential, angle_indices, angle_params) 
 
 # Dihedrals
+dihedral_potential = rp.ryckbell_dihedral
 dihedral_params = [rbcoef, ]
 dihedral_indices = []
 for n in range(0, configuration.N, 4):
     dihedral_indices.append([n, n+1, n+2, n+3, 0])
 
-dihedrals = rp.Dihedrals(dihedral_indices, dihedral_params)
+dihedrals = rp.Dihedrals(dihedral_potential, dihedral_indices, dihedral_params)
 
 # Exlusion list
 #exclusions = angles.get_exclusions(configuration)

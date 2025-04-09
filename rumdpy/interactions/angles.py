@@ -11,7 +11,6 @@ from rumdpy import Configuration
 class Angles(Interaction): 
 
     def __init__(self, potential, indices, parameters):
-        
         self.potential = potential
         self.indices = np.array(indices, dtype=np.int32) 
         self.params = np.array(parameters, dtype=np.float32)
@@ -66,12 +65,17 @@ class Angles(Interaction):
             Algorithm is based on D.C. Rapaport, The Art of Molecular Dynamics Simulations, 
             Cambridge University Press (1995).
             '''
-            params = cuda.local.array(shape=2, dtype=numba.float32)
-            params[0] = values[indices[3]][0]
-            params[1] = values[indices[3]][1]
+            
+            nparams = 2 #numba.int32(values.shape[1])
+            params = cuda.local.array(shape=nparams, dtype=numba.float32)
+
+            for n in range(nparams):
+                params[n] = values[indices[3]][n]
             
             dr_1 = cuda.local.array(shape=D,dtype=numba.float32)
             dr_2 = cuda.local.array(shape=D,dtype=numba.float32)
+            
+            one = numba.float32(1.0)
 
             dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr_1)
             dist_sq_dr_function(vectors[r_id][indices[2]], vectors[r_id][indices[1]], sim_box, dr_2)
@@ -81,7 +85,13 @@ class Angles(Interaction):
             c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
 
             cD = math.sqrt(c11*c22)
-            angle = math.acos(c12/cD) 
+            ca = c12/cD
+           
+            if  ca > one:
+                ca = one
+            elif ca < -one:
+                ca = -one
+            angle = math.acos(ca) 
 
             u, f = potential_function(angle, params)
 
