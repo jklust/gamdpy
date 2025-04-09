@@ -73,8 +73,9 @@ angle0, k = 2.0, 500.0
 angles = rp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],]) 
 
 # Make dihedral interactions
+dihedral_potential = rp.ryckbell_dihedral
 rbcoef=[.0, 5.0, .0, .0, .0, .0]    
-dihedrals = rp.Dihedrals(configuration.topology.dihedrals, parameters=[rbcoef, ])
+dihedrals = rp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, parameters=[rbcoef, ])
 
 # Exlusion list
 exclusions = dihedrals.get_exclusions(configuration)
