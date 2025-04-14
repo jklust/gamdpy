@@ -117,8 +117,8 @@ class Dihedrals(Interaction):
                 f2 = f*c22*(t4*dr_1[k] + t5*dr_2[k] + t6*dr_3[k])/(cD*cB2)
 
                 cuda.atomic.add(vectors, (f_id, indices[0], k), f1)      # Force
-                cuda.atomic.add(vectors, (f_id, indices[1], k), -(1.0 + cR1)*f1 + cR2*f2)
-                cuda.atomic.add(vectors, (f_id, indices[2], k), cR1*f1 - (1.0 + cR2)*f2)
+                cuda.atomic.add(vectors, (f_id, indices[1], k), -(one + cR1)*f1 + cR2*f2)
+                cuda.atomic.add(vectors, (f_id, indices[2], k), cR1*f1 - (one + cR2)*f2)
                 cuda.atomic.add(vectors, (f_id, indices[3], k), f2)
 
             u_per_part = numba.float32(0.25)*u    
