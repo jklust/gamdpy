@@ -44,16 +44,16 @@ interactions = {} # Putting interactions in a dictionary to practice having them
 
 # Make bond interactions
 bond_potential = rp.harmonic_bond_function
-bond_params = [[0.8, 1000.], ]
+bond_params = [[0.407, 2074.], ]
 interactions['bonds'] = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
 # Make angle interactions
 angle_potential = rp.cos_angle_function
-angle0, k = 2.0, 500.0
+angle0, k = 1.9, 400.0
 interactions['angles'] = rp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],]) 
 
 # Make dihedral interactions
-rbcoef=[.0, 5.0, .0, .0, .0, .0]
+rbcoef=[15.5000,  20.3050, -21.9170, -5.1150,  43.8340, -52.6070]
 dihedral_potential = rp.ryckbell_dihedral
 interactions['dihedrals'] = rp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, parameters=[rbcoef, ])
 
