@@ -19,7 +19,7 @@ def test_potential_functions() -> None:
         assert np.all(np.isclose(ipl_n(r, (a,)), expected)), f'Problem with make_IPL_n, {(n,r,a)=}'
 
     # Test add_potential_functions
-    LJ = rp.add_potential_functions(rp.make_IPL_n(12), 1, rp.make_IPL_n(6))
+    LJ = rp.add_potential_functions(rp.make_IPL_n(12), rp.make_IPL_n(6, first_parameter=1))
     for r, a12, a6 in [(1,1,-1), (2**(1/6),3,-3), (2**(1/6),4,-4), (2,4,4), (2,4,-4)]:
         expected = rp.LJ_12_6(r, (a12, a6))
         assert np.all(np.isclose(LJ(r, (a12,a6)), expected)), f'Problem with  add_potential_functions, {(n,a12,a6)=}'
