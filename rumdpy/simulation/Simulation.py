@@ -177,7 +177,7 @@ class Simulation():
         elif self.storage == 'memory':
             output = self.memory
         else:
-            print(f"Warning: self.output can't recognize self.storage option, returning None")
+            print("Warning: self.output can't recognize self.storage option, returning None")
             output = None
         return output
 
@@ -620,4 +620,202 @@ class Simulation():
             optimal_compute_plan['pb'] = pb
             optimal_compute_plan['tp'] = tp
         return total_min_time, local_min_time
+
+
+    def autotune(self):
+        flag = cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS
+        cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = False
+
+        initial_compute_plan = self.compute_plan.copy()
+        timesteps = self.steps_per_block
+        repeats = 1
+
+        # Binary choises: Take self.compute_plan as starting point, and add alternatives if appropiate 
+        gridsyncs = [initial_compute_plan['gridsync'], ]
+        if gridsyncs[0] != True:
+            gridsyncs.append(True)
+        if gridsyncs[0] != False and self.configuration.N > 10000:
+            gridsyncs.append(False)
+
+        nblists = [initial_compute_plan['nblist'], ]
+        if nblists[0] != 'N squared' and self.configuration.N < 32000:
+            nblists.append('N squared')
+        if nblists[0] != 'linked lists' and self.configuration.N > 2000:
+            nblists.append('linked lists')
+
+        UtilizeNIIIs = [initial_compute_plan['UtilizeNIII'], ]
+        if UtilizeNIIIs[0] != False:
+            UtilizeNIIIs.append(False)
+        if UtilizeNIIIs[0] != True:
+            UtilizeNIIIs.append(True)
+
+
+        pb = self.compute_plan['pb']
+        pbs = [pb//2, pb, pb*2]
+
+        optimal_compute_plan = initial_compute_plan.copy()
+        results = []
+        # Loop over binary parameters
+        total_min_time = 1e9
+        binary_min_time = 1e9
+        for nblist in nblists:
+            self.compute_plan['nblist'] = nblist
+            for gridsync in gridsyncs:
+                self.compute_plan['gridsync'] = gridsync
+                for UtilizeNIII in UtilizeNIIIs:
+                    self.compute_plan['UtilizeNIII'] = UtilizeNIII
+                    
+                    # Get time for default 'pb', 'tp' to check if its worth to proceede with these choises
+                    self.compute_plan['pb'] = initial_compute_plan['pb']
+                    self.compute_plan['tp'] = initial_compute_plan['tp']
+                    print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
+                    self.JIT_and_test_kernel(adjust_compute_plan=False)
+                    if self.compute_plan['tp'] == 0 or self.compute_plan['gridsync'] != gridsync: 
+                        continue
+        
+                    local_min_time = 1e9
+                    total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
+                                                                        timesteps, repeats, total_min_time, local_min_time, 
+                                                                        optimal_compute_plan, verbose=False)
+                    self.compute_plan['min_time'] = min_time
+                    if min_time < binary_min_time:
+                        binary_min_time = min_time
+                    results.append(self.compute_plan.copy())
+        
+        for compute_plan in results:
+            if compute_plan['min_time'] < 1.15 * binary_min_time:
+                        
+                local_min_time = 1e9
+                self.compute_plan = compute_plan.copy()
+                nblist = compute_plan['nblist']
+                gridsync = compute_plan['gridsync']
+                UtilizeNIII = compute_plan['UtilizeNIII']
+                print(f'\n {nblist+",":12}\t{gridsync=}\t{UtilizeNIII=}:\t', end='')
+
+                pb = compute_plan['pb']
+                pb_min_time = 1e9
+                initial_min_time = -1e9
+                while 4 <= pb <= 1024:
+                    self.compute_plan['pb'] = pb
+                    print(f' {pb=} ', end='')
+                    total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
+                    if initial_min_time<0:
+                        initial_min_time = min_time
+                    #print(f'[{min_time:.3}, {pb_min_time:.3}]')
+                    if min_time > 1.01 * pb_min_time:
+                        break
+                    if min_time < pb_min_time:
+                        pb_min_time = min_time
+                    pb *= 2
+                pb = compute_plan['pb'] // 2
+                if initial_min_time < 1.01*pb_min_time: # Is it worth trying smaller pb?
+                    while 4 <= pb <= 1024:
+                        self.compute_plan['pb'] = pb
+                        print(f' {pb=} ', end='')
+                        total_min_time, local_min_time, min_time = self.autotune_tp(compute_plan['tp'], 1, compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time)
+                        #print(f'[{min_time:.3}, {pb_min_time:.3}]')
+                        if min_time > 1.01 * pb_min_time:
+                            break
+                        if min_time < pb_min_time:
+                            pb_min_time = min_time
+                        pb = pb // 2
+
+        self.compute_plan = optimal_compute_plan
+        self.JIT_and_test_kernel()
+        print()
+        cuda.config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
+
+
+    def autotune_tp(self, initial_tp, delta_tp, initial_compute_plan, timesteps, repeats, optimal_compute_plan, total_min_time, local_min_time):
+        tp = initial_tp
+        tp_min_time = 1e9
+        while 0 < tp <= 64:
+            #print(self.compute_plan['pb'], tp, (self.compute_plan['pb']*tp) % 32)
+            if (self.compute_plan['pb']*tp) % 32 == 0:
+                self.compute_plan['tp'] = tp
+                self.JIT_and_test_kernel(adjust_compute_plan=False)
+                if self.compute_plan['tp'] != tp: #or self.compute_plan['gridsync'] != gridsync: 
+                    break
+                total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
+                                                                    timesteps, repeats, total_min_time, local_min_time, 
+                                                                    optimal_compute_plan, verbose=False)
+                if min_time > 1.05 * tp_min_time:
+                    break
+                if min_time < tp_min_time:
+                    tp_min_time = min_time
+            tp += delta_tp
+        tp = initial_tp - delta_tp
+        while 0 < tp <= 64:
+            if (self.compute_plan['pb']*tp) % 32 == 0:
+                self.compute_plan['tp'] = tp
+                self.JIT_and_test_kernel(adjust_compute_plan=False)
+                if self.compute_plan['tp'] != tp: #or self.compute_plan['gridsync'] != gridsync: 
+                    break
+                total_min_time, local_min_time, min_time = self.autotune_skin(initial_compute_plan['skin'], 0.2, 
+                                                                    timesteps, repeats, total_min_time, local_min_time, 
+                                                                    optimal_compute_plan, verbose=False)
+                if min_time > 1.05 * tp_min_time:
+                    break
+                if min_time < tp_min_time:
+                    tp_min_time = min_time
+            tp -= delta_tp
+        return total_min_time, local_min_time, tp_min_time
+
+ 
+    def autotune_skin(self, initial_skin, delta_skin, timesteps, repeats, total_min_time, local_min_time, optimal_compute_plan, verbose=False):
+        min_time = 1e9
+        min_skin = -0.1
+        
+        # Upscan
+        min_time, min_skin = self.scan_skin(timesteps, repeats, initial_skin, delta_skin, min_time, min_skin)
+        
+        # Downscan
+        min_time, min_skin = self.scan_skin(timesteps, repeats, initial_skin-delta_skin, -delta_skin, min_time, min_skin)
+        
+        max_TPS = repeats * timesteps / min_time * 1000
+        if min_time < local_min_time:
+            local_min_time = min_time
+            print(f" ({self.compute_plan['pb']}x{self.compute_plan['tp']},{min_skin:.2f}):{max_TPS:.2f}", end=' ', flush=True)
+        else:
+            print('.', end='', flush=True)
+        if min_time < total_min_time:
+            total_min_time = min_time
+            optimal_compute_plan['UtilizeNIII'] = self.compute_plan['UtilizeNIII']
+            optimal_compute_plan['nblist'] = self.compute_plan['nblist']
+            optimal_compute_plan['gridsync'] = self.compute_plan['gridsync']
+            optimal_compute_plan['skin'] = min_skin
+            optimal_compute_plan['pb'] = self.compute_plan['pb']
+            optimal_compute_plan['tp'] = self.compute_plan['tp']
+        return total_min_time, local_min_time, min_time
+
+    def scan_skin(self, timesteps, repeats, skin, delta_skin, min_time, min_skin):
+        while 0.0 < skin < 1.45: # Should keep on going until eg. linked lists throw an error
+            self.compute_plan['skin'] = skin
+            self.update_params()
+            self.configuration.copy_to_device() # By _not_ copying back to host later we dont change configuration
+            start = cuda.event()
+            end = cuda.event()
+            start.record()
+            for i in range(repeats):
+                self.integrate_self(0.0, timesteps)
+            end.record()
+            end.synchronize()
+            time_elapsed = cuda.event_elapsed_time(start, end)
+            if time_elapsed < min_time:
+                min_time = time_elapsed
+                min_skin = skin
+            elif time_elapsed > 1.1*min_time:
+                break
+            skin += delta_skin
+        return min_time, min_skin
+
+
+
+
+
+
+
+
+
+
 

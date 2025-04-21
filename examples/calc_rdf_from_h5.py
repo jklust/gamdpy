@@ -18,7 +18,7 @@ nblocks, nconfs, _ , N, D = output['block'].shape
 
 # Create configuration object
 configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Simbox(D, output.attrs['simbox_initial'])
+configuration.simbox = rp.Orthorhombic(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 # Call the rdf calculator
 calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)

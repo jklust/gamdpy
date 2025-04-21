@@ -40,7 +40,7 @@ if run_NVT:
 
     # Setup runtime actions, i.e. actions performed during simulation of timeblocks
     runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
+                   rp.ScalarSaver(),
                    rp.MomentumReset(100)]
 
 
@@ -74,7 +74,7 @@ sc_output = 8
 dt = 0.01
 sr = 0.02 # restuls for different values shown in comments below. This value only takes 4 seconds to run so good for running as a test
 
-configuration.simbox = rp.Simbox_LeesEdwards(configuration.D, configuration.simbox.lengths)
+configuration.simbox = rp.LeesEdwards(configuration.D, configuration.simbox.lengths)
 
 integrator_SLLOD = rp.integrators.SLLOD(shear_rate=sr, dt=dt)
 
@@ -94,6 +94,7 @@ num_steps_transient = int(strain_transient / (sr*dt) ) + 1
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [rp.ConfigurationSaver(include_simbox=True), 
                    rp.MomentumReset(100),
+                   rp.StressSaver(sc_output),
                    rp.ScalarSaver(sc_output, {'stresses':True})]
 
 
@@ -112,12 +113,19 @@ for block in sim_SLLOD.run_timeblocks():
 print(sim_SLLOD.summary())
 
 
-U, K, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'Sxy'])
+U, K, W, V_sxy = rp.extract_scalars(sim_SLLOD.output, ['U', 'K', 'W', 'Sxy'])
 N = configuration.N
 u, k, sxy = U/N,K/N, V_sxy / configuration.get_volume()
+
+# alternative (newer way) to get the shear stress
+full_stress_tensor = rp.extract_stress_tensor(sim_SLLOD.output)
+sxy_alt = full_stress_tensor[:,0,1]
+
 times = np.arange(len(u)) * sc_output *  dt
-stacked_output = np.column_stack((times, u, k, sxy))
+stacked_output = np.column_stack((times, u, k, sxy, sxy_alt))
 np.savetxt('shear_run.txt', stacked_output, delimiter=' ', fmt='%f')
+
+
 
 strains = times * sr
 

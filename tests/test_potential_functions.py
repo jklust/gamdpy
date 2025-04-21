@@ -42,6 +42,23 @@ def test_potential_functions() -> None:
     assert np.isclose(pot_harm_rep_2[1], -du_dr/r), "Problem with rp.harmonic_repulsion"
     assert np.isclose(pot_harm_rep_2[2], eps/sig**2), "Problem with rp.harmonic_repulsion"
 
+    # Test Hertzian pair potential, u=eps*(1-r/sig)**alpha
+    params = 1.0, 2.0, 1.0  # Same as "harmonic repulsion" above
+    dist = 0.5
+    pot_hertzian = rp.hertzian(dist, params)
+    assert np.isclose(pot_hertzian[0],0.25), "Problem with rp.hertzian"
+    assert np.isclose(pot_hertzian[1],2.0), "Problem with rp.hertzian"
+    assert np.isclose(pot_hertzian[2],2.0), "Problem with rp.hertzian"
+    eps, alpha, sig = 1.43, 3.1, 1.24
+    r = 0.98
+    pot_hertzian_2 = rp.hertzian(r, [eps, alpha, sig])
+    assert np.isclose(pot_hertzian_2[0] , eps*(1.0-r/sig)**alpha ), "Problem with rp.hertzian"
+    assert np.isclose(pot_hertzian_2[1] , alpha*eps*(1.0-r/sig)**(alpha-1)/sig/r ), "Problem with rp.hertzian"
+    assert np.isclose(pot_hertzian_2[2] , eps*alpha*(alpha-1)*(1.0-r/sig)**(alpha-2)/sig/sig ), "Problem with rp.hertzian"
+
+
+
+
     # needs to add test for apply_shifted_force_cutoff, apply_shifted_potential_cutoff
 
 if __name__ == '__main__':  # pragma: no cover

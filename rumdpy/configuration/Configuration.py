@@ -2,9 +2,9 @@ import numpy as np
 import numba
 from numba import cuda
 from .colarray import colarray
-from .Simbox import Simbox
+from ..simulation_boxes import Orthorhombic
+from .topology import Topology, duplicate_topology
 from ..simulation.get_default_compute_flags import get_default_compute_flags
-#import .Simbox
 
 # IO
 import h5py
@@ -79,9 +79,16 @@ class Configuration:
                           }
 
 
-    def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, D: int, N: int = None, type_names=None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
+
+        self.type_names = type_names
+        self.index_from_type_name = {}
+        if type_names:
+            for index, type_name in enumerate(type_names):
+                self.index_from_type_name[type_name] = index
+
         self.compute_flags = get_default_compute_flags()
         if compute_flags != None:
             # only keys present in the default are processed
@@ -123,6 +130,7 @@ class Configuration:
             sid_index += 1
 
         self.simbox = None
+        self.topology = Topology()
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
         self.itype = itype
@@ -138,6 +146,19 @@ class Configuration:
 
     def __repr__(self):
         return f'Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})'
+
+    def __code__(self):
+        import sys
+        np.set_printoptions(threshold=sys.maxsize)
+        code_str  = "# Define configuration class\n"
+        code_str += f"from rumdpy import Configuration\n"
+        code_str += f"configuration = Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})\n"
+        # Following part needs to be done with a read function from the .h5
+        for key in self.vector_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        for key in self.scalar_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        return code_str
 
     def __str__(self):
         if self.N == None:
@@ -233,7 +254,7 @@ class Configuration:
 
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
-        return self.simbox.volume(self.simbox.lengths)
+        return self.simbox.get_volume()
 
     def set_kinetic_temperature(self, temperature, ndofs=None):
         if ndofs is None:
@@ -280,7 +301,7 @@ class Configuration:
         from .make_lattice import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         return
 
     def make_positions(self, N, rho):
@@ -333,11 +354,17 @@ class Configuration:
         pos *= box_length/part_per_line
         # Saving to Configuration object
         self['r'] = pos
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         # Check all particles are in the box (-L/2, L/2)
         assert np.any(np.abs(pos))<0.5*box_length
 
         return
+    
+    def atomic_scale(self, density):
+        actual_rho = self.N / self.get_volume()
+        scale_factor = (actual_rho / density)**(1/3)
+        self.vectors['r'] *= scale_factor
+        self.simbox.lengths *= scale_factor
 
 
 # Helper functions
@@ -407,7 +434,7 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
 
     configuration = Configuration(D=3)
     configuration['r'] = positions[:N, :]
-    configuration.simbox = Simbox(D, simbox_data)
+    configuration.simbox = Orthorhombic(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
 
@@ -500,7 +527,7 @@ def configuration_from_hdf5(filename: str, reset_images=False, compute_flags=Non
         r_im = f['r_im'][:]
     N, D = r.shape
     configuration = Configuration(D=D, compute_flags=compute_flags)
-    configuration.simbox = Simbox(D, lengths)
+    configuration.simbox = Orthorhombic(D, lengths)
     configuration['r'] = r
     configuration['v'] = v
     configuration.ptype = ptype
@@ -642,7 +669,7 @@ def configuration_from_rumd3(filename: str, reset_images=False, compute_flags=No
             m_array[idx] = masses[ptype]
 
     configuration = Configuration(D=3, compute_flags=compute_flags)
-    configuration.simbox = Simbox(3, lengths)
+    configuration.simbox = Orthorhombic(3, lengths)
     configuration['r'] = r_array
     configuration['v'] = v_array
     configuration.r_im = im_array
@@ -713,3 +740,37 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
     # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump
+
+def duplicate_molecule(topology, positions, particle_types, masses, cells, safety_distance, random_rotations=True):
+    D=3
+    num_molecules = cells[0] * cells[1] * cells[2]
+    particles_per_per_molecule = len(positions)
+    num_particles = num_molecules*particles_per_per_molecule
+    configuration = Configuration(D=3, N=num_particles)
+    configuration.topology = duplicate_topology(topology, num_molecules)
+
+    positions_array = np.array(positions)
+
+    positions_array -= np.min(positions_array, axis=0) # Shift positions: smallest coordinates = 0
+    cell_length = np.max(positions_array) + safety_distance
+    simbox_data = np.array(cells) * cell_length
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    count = 0
+    for ix in range(cells[0]):
+        for iy in range(cells[1]):
+            for iz in range(cells[2]):
+                arr = np.arange(D)
+                if random_rotations:
+                    np.random.shuffle(arr)
+                configuration['r'][count:count+particles_per_per_molecule,0] = positions_array[:,arr[0]] + ix*cell_length
+                configuration['r'][count:count+particles_per_per_molecule,1] = positions_array[:,arr[1]] + iy*cell_length
+                configuration['r'][count:count+particles_per_per_molecule,2] = positions_array[:,arr[2]] + iz*cell_length
+                configuration['m'][count:count+particles_per_per_molecule] = masses
+                configuration.ptype[count:count+particles_per_per_molecule] = particle_types
+                count += particles_per_per_molecule
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration
+

@@ -14,6 +14,9 @@ This is the developers version of the rumdpy package, NOT for general consumptio
 
 [Examples](examples/README.md)
 
+[Benchmarks (preliminary)](benchmarks/README.md)
+
+
 ## Overall structure of the package
 
 ### 1. Configuration
@@ -27,6 +30,7 @@ Classes implementing a simulation algorithm. Currently implemented:
 - class NVE
 - class NVT : Nose-Hoover thermostat 
 - class NVT_Langevin
+- class NPT_Atomic
 - class NPT_Langevin
 - class NVU_RT
 
@@ -42,10 +46,18 @@ Classes implementing interactions that can be applied to particles in the system
 
 An interaction is responsible for keeping any internal datastructures up to date (in particular: class PairPotential is resposible for keeping its neighbor-list (class NbList up to date). 
 
-### 4. class Simulation
-Takes a Configuration, an Integrator, and a (list of) Interaction(s) and sets up a simulation. Also controls when momentum-resetting and output is performed. Performing simulation is done by a method of this class.
+### 4. Runtime actions
+Classes implementing actions on the configuration which are not related to the interactions or the integration of the equation of motion.
+These classes include momentum reset and savers.
+- class MomentumReset
+- class ConfigurationSaver
+- class ScalarSaver
 
-### 5. Evaluator
+### 5. Simulation
+This class takes a Configuration, an Integrator, a (list of) Interaction(s) and a list of Runtime actions and sets up a simulation. 
+Performing simulation is done by a method of this class.
+
+### 6. Evaluator
 Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
 # Info for developers
@@ -98,21 +110,11 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Post analysis for multicomponents, Lorenzo/Danqui
 - [ ] NVU integrator (tests missing), Mark
 
-## Output Branch (branch origin/output) LORENZO
-### This branch is an attempt to make memory and disk output identical from user prospective
-### Points to discuss/issues to address
-- [X] sim.output is an h5py file, if in memory it uses driver='core'
-- [X] sim.output can be generalized to be a different file type easily (only change in the Simulation().__init__)
-- [ ] issue/feature 0: the output file is created when Simulation is initiated and stays there until close
-- [ ] issue 1: the output file needs to be closed by the user before instantiating a new Simulation object
-- [ ] fix   1: the Simulation object might create a new file every time (might cause memory problems)
-- [ ] issue 2: there is an issue if two Simulation object are initialized at the same time with memory saving
-- [ ] structure inside h5py: static info + a group for each evaluator
-
 ## TODO or decide not necessary, before paper/'going public'
 - [X] Molecules (angles, dihedrals) Jesper
 - [ ] Molecules (Interface) Jesper, Ulf
-- [ ] Settle on io format
+- [ ] Molecular stress, Jesper/Nick
+- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
 - [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
@@ -123,7 +125,7 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Requirements/dependencies, especially to use grid-sync, ADD LINK NUMBA DOC 
 - [ ] Auto-tuner, TBS
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
-- [ ] Define hdf5 'template', discuss if h5md https://www.nongnu.org/h5md/ Lorenzo/output branch
+- [ ] structure inside h5py: static info + a group for each runtime action (Lorenzo)
 - [X] Test neighborlist integrity before and during simulations (after each timeblock)
 - [X] Automatic reallocate larger neighborlist when needed, and redo simulation of last timeblock
 - [ ] Benchmarking
@@ -133,8 +135,6 @@ A good place to see how this is done without implementing all functions twice is
 - [ ] Include support for different types in CalculatorStructureFactor, Ulf
 - [X] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
 - [X] Remove imports of rumdpy inside rumdpy modules, Lorenzo
-- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
-- [ ] Molecular stress, Jesper/Nick
 - [ ] Decide status of gravity interaction, should it be included in planar_interactions, Thomas
 
 ## TODO, long term:

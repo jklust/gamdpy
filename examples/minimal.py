@@ -8,7 +8,6 @@ import rumdpy as rp
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3)
-print(repr(configuration))
 configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
@@ -35,10 +34,6 @@ sim = rp.Simulation(configuration, [pair_pot, ], integrator, runtime_actions,
 for timeblock in sim.run_timeblocks():
         print(sim.status(per_particle=True))
 print(sim.summary())
-
-print(repr(configuration))
-print(str(configuration))
-
 
 # Print current status of configuration
 print(configuration)

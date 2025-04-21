@@ -7,6 +7,9 @@ import h5py
 from .runtime_action import RuntimeAction
 
 class ScalarSaver(RuntimeAction):
+    """ Runtime action for saving scalar data (such as thermodynamic properties) during a timeblock
+    every `steps_between_output` time steps.
+    """
 
     def __init__(self, steps_between_output:int = 16, compute_flags = None, verbose=False) -> None:
 
@@ -71,7 +74,7 @@ class ScalarSaver(RuntimeAction):
         config.CUDA_LOW_OCCUPANCY_WARNINGS = flag
 
     def make_zero_kernel(self):
-        
+
         def zero_kernel(array):
             Nx, Ny = array.shape
             #i, j = cuda.grid(2) # doing simple 1 thread kernel for now ...
@@ -152,7 +155,7 @@ class ScalarSaver(RuntimeAction):
         if compute_stresses:
             sx_id = configuration.vectors.indices['sx']
 
-        volume_function = numba.njit(configuration.simbox.volume)
+        volume_function = numba.njit(configuration.simbox.get_volume_function())
 
         def kernel(grid, vectors, scalars, r_im, sim_box, step, runtime_action_params):
             """     

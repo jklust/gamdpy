@@ -52,7 +52,7 @@ class Angles(Interaction):
                     if D > 3:
                         sw_id = configuration.vectors.indices['sw']
 
-        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+        dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
     
         def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
            

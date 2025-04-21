@@ -95,7 +95,7 @@ class Bonds(Interaction):
                         sw_id = configuration.vectors.indices['sw']
 
 
-        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
+        dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
         bondpotential_function = numba.njit(self.bond_potential)
 
         virial_factor = numba.float32( 0.5/configuration.D)

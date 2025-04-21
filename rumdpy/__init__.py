@@ -4,10 +4,14 @@
 
 # Import from configuration subpackage
 # The configuration subpackage contains details about the configuration (positions, energies, etc)
-# The class Simbox has informations about the simulation box
+# The (abstract base) class SimulationBox, and derived classes Orthrhombic and LeesEdwards have information about the simulation box
 from .configuration.Configuration import Configuration
 from .configuration.Configuration import configuration_to_hdf5, configuration_from_hdf5, configuration_to_rumd3, configuration_from_rumd3, configuration_to_lammps
-from .configuration.Simbox import Simbox, Simbox_LeesEdwards
+from .configuration.Configuration import duplicate_molecule
+from .simulation_boxes.orthorhombic import Orthorhombic
+from .simulation_boxes.lees_edwards import LeesEdwards
+from .configuration.topology import Topology
+from .configuration.topology import bonds_from_positions, angles_from_bonds, dihedrals_from_angles, molecules_from_bonds, duplicate_topology
 from .configuration.colarray import colarray 
 from .configuration import unit_cells
 # make_lattice is imported in configuration/__init__.py
@@ -30,7 +34,7 @@ from .interactions import Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 
 # Import from runtime_actions subpackage (Actions that can be inserted into the stimulation  kernel)
-from .runtime_actions import RuntimeAction, add_runtime_actions_list, ConfigurationSaver, ScalarSaver, MomentumReset
+from .runtime_actions import RuntimeAction, add_runtime_actions_list, ConfigurationSaver, ScalarSaver, MomentumReset, StressSaver, extract_stress_tensor
 
 # Import from calculators subpackage
 from .calculators import CalculatorHydrodynamicCorrelations, CalculatorHydrodynamicProfile, CalculatorWidomInsertion
@@ -47,9 +51,11 @@ from .tools.Evaluator import Evaluator
 
 # Import from misc
 # Misc folder contains scripts that have no better place in the code
+from .misc.select_gpu import select_gpu
 from .misc.plot_scalars import plot_scalars
 from .misc.make_function import make_function_constant, make_function_ramp, make_function_sin
 from .misc.extract_scalars import extract_scalars
+from .misc.plot_molecule import plot_molecule
 
 # Import from visualization 
 #from .visualization import *
