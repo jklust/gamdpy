@@ -10,8 +10,8 @@ from rumdpy import Configuration
 
 class Angles(Interaction): 
 
-    def __init__(self, indices, parameters):
-        
+    def __init__(self, potential, indices, parameters):
+        self.potential = potential
         self.indices = np.array(indices, dtype=np.int32) 
         self.params = np.array(parameters, dtype=np.float32)
 
@@ -27,10 +27,15 @@ class Angles(Interaction):
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
+        if D != 3:
+            raise ValueError("Angle interactions only support D=3 (three dimensional) simulations")
+
         compute_u = compute_flags['U']
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
+        if compute_stresses:
+            print('WARNING: computation of stresses is not implemented yet for angles')
 
         # Unpack indices for vectors and scalars to be compiled into kernel
         r_id, f_id = [configuration.vectors.indices[key] for key in ['r', 'f']]
@@ -53,14 +58,24 @@ class Angles(Interaction):
                         sw_id = configuration.vectors.indices['sw']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
-    
-        def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
-           
-            kspring = values[indices[3]][0]
-            angle = values[indices[3]][1]
+        potential_function = numba.njit(self.potential)
 
+        def angle_calculator(vectors, scalars, ptype, sim_box, indices, values):
+            '''
+            Algorithm is based on D.C. Rapaport, The Art of Molecular Dynamics Simulations, 
+            Cambridge University Press (1995).
+            '''
+            
+            nparams = 2 #numba.int32(values.shape[1])
+            params = cuda.local.array(shape=nparams, dtype=numba.float32)
+
+            for n in range(nparams):
+                params[n] = values[indices[3]][n]
+            
             dr_1 = cuda.local.array(shape=D,dtype=numba.float32)
             dr_2 = cuda.local.array(shape=D,dtype=numba.float32)
+            
+            one = numba.float32(1.0)
 
             dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr_1)
             dist_sq_dr_function(vectors[r_id][indices[2]], vectors[r_id][indices[1]], sim_box, dr_2)
@@ -69,25 +84,29 @@ class Angles(Interaction):
             c12 = dr_1[0]*dr_2[0] + dr_1[1]*dr_2[1] + dr_1[2]*dr_2[2]
             c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
 
-            cCon = math.cos(math.pi - angle);
             cD = math.sqrt(c11*c22)
-            cc = c12/cD 
+            ca = c12/cD
+           
+            if  ca > one:
+                ca = one
+            elif ca < -one:
+                ca = -one
+            angle = math.acos(ca) 
 
-            f = -kspring*(cc - cCon)
+            u, f = potential_function(angle, params)
+
             for k in range(D):
                 f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
                 f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
 
-                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      # Force
+                cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      
                 cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
                 cuda.atomic.add(vectors, (f_id, indices[2], k), f_2)
-            
-            u = numba.float32(0.5)*kspring*(cc-cCon)*(cc-cCon)
-            onethird = numba.float32(1.0/3.0);
-            cuda.atomic.add(scalars, (indices[0], u_id), u*onethird) 
-            cuda.atomic.add(scalars, (indices[1], u_id), u*onethird)
-            cuda.atomic.add(scalars, (indices[2], u_id), u*onethird)
 
+            onethird = numba.float32(1.0/3.0)*u;
+            cuda.atomic.add(scalars, (indices[0], u_id), onethird) 
+            cuda.atomic.add(scalars, (indices[1], u_id), onethird)
+            cuda.atomic.add(scalars, (indices[2], u_id), onethird)
 
             return
         

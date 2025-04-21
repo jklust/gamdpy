@@ -114,7 +114,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Molecules (angles, dihedrals) Jesper
 - [ ] Molecules (Interface) Jesper, Ulf
 - [ ] Molecular stress, Jesper/Nick
-- [ ] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
+- [X] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
 - [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick

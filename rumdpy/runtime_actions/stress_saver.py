@@ -14,6 +14,11 @@ class StressSaver(RuntimeAction):
         if type(steps_between_output) != int or steps_between_output < 0:
             raise ValueError(f'steps_between_output ({steps_between_output}) should be non-negative integer.')
         self.steps_between_output = steps_between_output
+        self.compute_flags = compute_flags
+        self.verbose = verbose # DOES THIS EVER GET USED????
+
+    def get_compute_flags(self):
+        return self.compute_flags
 
 
     def setup(self, configuration, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:

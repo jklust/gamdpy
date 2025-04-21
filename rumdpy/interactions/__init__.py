@@ -10,7 +10,8 @@ from .pair_potential import PairPotential
 
 # Fixed interactions
 from .make_fixed_interactions import make_fixed_interactions
-from .planar_interactions import make_planar_calculator, setup_planar_interactions
+from .planar_interactions import make_planar_calculator, setup_planar_interactions  # old interface for planar interactions
+from .planar import Planar  # new interface for planar interactions
 from .tether import Tether
 from .relaxtemp import Relaxtemp
 from .gravity import Gravity

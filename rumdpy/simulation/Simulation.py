@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import math
+import sys
 from numba import cuda
 
 # rumdpy
@@ -130,15 +131,24 @@ class Simulation():
         if 'ptype' in self.memory.keys():
             del self.memory['ptype']
         self.memory.create_dataset("ptype", data=configuration.ptype, shape=(self.configuration.N), dtype=np.int32)
+        if 'script_name' not in self.memory.keys():
+            script_name = sys.argv[0]
+            self.memory.attrs['script_name'] = script_name
+            if isinstance(script_name,str) and script_name != '':
+                with open(script_name, 'r') as file:
+                    script_content = file.read()
+                self.memory.attrs['script_content'] = script_content
+
 
         self.runtime_actions = runtime_actions
 
         compute_flags = None
         for runtime_action in self.runtime_actions:
-            if compute_flags is not None and runtime_action.get_compute_flags() is not None:
-                raise ValueError('Can not handle more than one compute_flags in runtime_actions')
-            else:
-                compute_flags = runtime_action.get_compute_flags()
+            if runtime_action.get_compute_flags() is not None:
+                if compute_flags is not None:
+                    raise ValueError('Can not handle more than one compute_flags in runtime_actions')
+                else:
+                    compute_flags = runtime_action.get_compute_flags()
 
         self.compute_flags = rp.get_default_compute_flags() # configuration.compute_flags
         if compute_flags is not None:

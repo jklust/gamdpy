@@ -69,6 +69,12 @@ class PairPotential(Interaction):
         plt.legend()
         plt.show()
 
+    def evaluate_potential_function(self, r, types):
+        params, max_cut = self.convert_user_params()
+        u, s, lap = self.pairpotential_function(r, params[types[0], types[1]])
+        return u
+
+
     def check_datastructure_validity(self) -> bool:
         nbflag = self.nblist.d_nbflag.copy_to_host()
         if nbflag[0] != 0 or nbflag[1] != 0:

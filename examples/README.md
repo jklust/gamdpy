@@ -46,6 +46,7 @@ The following examples of data analysis scripts needs a filename as commandline 
 - [ASD.py](ASD.py) : ASymmetric Dumbbells (toy model of toluene).
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
 - [generic_molecules.py](generic_molecules.py): Simulation of a linear molecule with bond, angle, and dihedral potentials
+- [rubber_cube.py](rubber_cube.py): A rubber cube modeled as particles connected by springs
 
 ## Lattice models
 

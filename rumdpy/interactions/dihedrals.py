@@ -11,8 +11,8 @@ from rumdpy import Configuration
 
 class Dihedrals(Interaction): 
 
-    def __init__(self, indices, parameters):
-        
+    def __init__(self, potential, indices, parameters):
+        self.potential = potential
         self.indices = np.array(indices, dtype=np.int32) 
         self.params = np.array(parameters, dtype=np.float32)
 
@@ -28,10 +28,15 @@ class Dihedrals(Interaction):
         pb, tp, gridsync, UtilizeNIII = [compute_plan[key] for key in ['pb', 'tp', 'gridsync', 'UtilizeNIII']] 
         num_blocks = (N - 1) // pb + 1
 
+        if D != 3:
+            raise ValueError("Dihedral interactions only support D=3 (three dimensional) systems")
+
         compute_u = compute_flags['U']
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
+        if compute_stresses:
+            print('WARNING: computation of stresses is not implemented yet for dihedrals')
 
         if compute_u:
             u_id = configuration.sid['U']
@@ -54,15 +59,20 @@ class Dihedrals(Interaction):
         #u_id = configuration.sid['U']
 
         dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
-    
+        potential_function = numba.njit(self.potential)
+   
         def dihedral_calculator(vectors, scalars, ptype, sim_box, indices, values):
-           
-            p = cuda.local.array(shape=6,dtype=numba.float32)
-            numbers = cuda.local.array(shape=6,dtype=numba.float32)
-
-            for n in range(6):
+            '''
+            Algorithm is based on D.C. Rapaport, The Art of Molecular Dynamics Simulations, 
+            Cambridge University Press (1995).
+            '''
+            
+            nparams = 6
+            p = cuda.local.array(shape=nparams,dtype=numba.float32)
+            for n in range(nparams):
                 p[n] = values[indices[4]][n]
-                numbers[n] = n
+
+            one = numba.float32(1.0)
 
             dr_1 = cuda.local.array(shape=D,dtype=numba.float32)
             dr_2 = cuda.local.array(shape=D,dtype=numba.float32)
@@ -83,10 +93,8 @@ class Dihedrals(Interaction):
             cB1 = c11*c22 - c12*c12
             cB2 = c22*c33 - c23*c23
             cD = math.sqrt(cB1*cB2)
-            cc = cA/cD
+            cd = cA/cD
 
-
-            f = -(p[1]+(numbers[2]*p[2]+(numbers[3]*p[3]+(numbers[4]*p[4]+numbers[5]*p[5]*cc)*cc)*cc)*cc)
             t1 = cA
             t2 = c11*c23 - c12*c13
             t3 = -cB1
@@ -96,16 +104,23 @@ class Dihedrals(Interaction):
             cR1 = c12/c22
             cR2 = c23/c22
 
+            if cd > one:
+                cd = one
+            elif cd < -one:
+                cd = -one
+
+            dihedral =  math.pi - math.acos(cd)
+            u, f = potential_function(dihedral, p)
+            
             for k in range(3):
                 f1 = f*c22*(t1*dr_1[k] + t2*dr_2[k] + t3*dr_3[k])/(cD*cB1)
                 f2 = f*c22*(t4*dr_1[k] + t5*dr_2[k] + t6*dr_3[k])/(cD*cB2)
 
                 cuda.atomic.add(vectors, (f_id, indices[0], k), f1)      # Force
-                cuda.atomic.add(vectors, (f_id, indices[1], k), -(1.0 + cR1)*f1 + cR2*f2)
-                cuda.atomic.add(vectors, (f_id, indices[2], k), cR1*f1 - (1.0 + cR2)*f2)
+                cuda.atomic.add(vectors, (f_id, indices[1], k), -(one + cR1)*f1 + cR2*f2)
+                cuda.atomic.add(vectors, (f_id, indices[2], k), cR1*f1 - (one + cR2)*f2)
                 cuda.atomic.add(vectors, (f_id, indices[3], k), f2)
 
-            u = p[0]+(p[1]+(p[2]+(p[3]+(p[4]+p[5]*cc)*cc)*cc)*cc)*cc           
             u_per_part = numba.float32(0.25)*u    
 
             if compute_u:

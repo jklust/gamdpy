@@ -52,8 +52,8 @@ class Bonds(Interaction):
         self.d_indices = cuda.to_device(self.indices_array)
         self.d_params = cuda.to_device(self.potential_params_array)
         return (self.d_indices, self.d_params)
-        
-    
+
+
     def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
         # Unpack parameters from configuration and compute_plan
         D, N = configuration.D, configuration.N
@@ -64,8 +64,6 @@ class Bonds(Interaction):
         compute_w = compute_flags['W']
         compute_lap = compute_flags['lapU']
         compute_stresses = compute_flags['stresses']
-        if compute_stresses:
-            print('WARNING: computation of stresses is not implemented yet for bonds')
 
         if verbose:
             print('get_kernel: Bonds:')
@@ -99,19 +97,34 @@ class Bonds(Interaction):
         bondpotential_function = numba.njit(self.bond_potential)
 
         virial_factor = numba.float32( 0.5/configuration.D)
-    
+        half = numba.float32(0.5)
+
         def bond_calculator(vectors, scalars, ptype, sim_box, indices, values):
-            
+
             dr = cuda.local.array(shape=D,dtype=numba.float32)
             dist_sq = dist_sq_dr_function(vectors[r_id][indices[1]], vectors[r_id][indices[0]], sim_box, dr)
             u, s, umm = bondpotential_function(math.sqrt(dist_sq), values[indices[2]])
-                
+
             for k in range(D):
                 cuda.atomic.add(vectors, (f_id, indices[0], k), -dr[k]*s)      # Force
                 cuda.atomic.add(vectors, (f_id, indices[1], k), +dr[k]*s)
                 if compute_w:
                     cuda.atomic.add(scalars, (indices[0], w_id), dr[k]*dr[k]*s*virial_factor)    # Virial
                     cuda.atomic.add(scalars, (indices[1], w_id), dr[k]*dr[k]*s*virial_factor)
+                if compute_stresses:
+                    cuda.atomic.add(vectors[sx_id], (indices[0], k), - half * s * dr[0] * dr[k])
+                    cuda.atomic.add(vectors[sx_id], (indices[1], k), - half * s * dr[0] * dr[k])
+                    if D > 1:
+                        cuda.atomic.add(vectors[sy_id], (indices[0], k), - half * s * dr[1] * dr[k])
+                        cuda.atomic.add(vectors[sy_id], (indices[1], k), - half * s * dr[1] * dr[k])
+                        if D > 2:
+                            cuda.atomic.add(vectors[sz_id], (indices[0], k), - half * s * dr[2] * dr[k])
+                            cuda.atomic.add(vectors[sz_id], (indices[1], k), - half * s * dr[2] * dr[k])
+                            if D > 3:
+                                cuda.atomic.add(vectors[sw_id], (indices[0], k), - half * s * dr[3] * dr[k])
+                                cuda.atomic.add(vectors[sw_id], (indices[1], k), - half * s * dr[3] * dr[k])
+
+
             if compute_u:
                 cuda.atomic.add(scalars, (indices[0], u_id), u*numba.float32(0.5)) # Potential enerrgy
                 cuda.atomic.add(scalars, (indices[1], u_id), u*numba.float32(0.5))
@@ -119,9 +132,10 @@ class Bonds(Interaction):
                 lap = numba.float32(1-D)*s + umm                                   # Laplacian
                 cuda.atomic.add(scalars, (indices[0], lap_id), lap)
                 cuda.atomic.add(scalars, (indices[1], lap_id), lap)
-            
+
+
             return
-        
+
         return make_fixed_interactions(configuration, bond_calculator, compute_plan, verbose=False)
 
     def get_exclusions(self, configuration, max_number_exclusions=20):
@@ -137,4 +151,4 @@ class Bonds(Interaction):
     
         assert np.max(exclusions[:,-1]) <= max_number_exclusions
         return exclusions
-    
+

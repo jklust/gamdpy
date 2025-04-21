@@ -37,12 +37,14 @@ bond_params = [[1.0, 1000.], ]
 bonds = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
 # Make angle interactions
+angle_potential = rp.cos_angle_function
 angle_params = [[k, angle0],]
-angles = rp.Angles(configuration.topology.angles, angle_params) 
+angles = rp.Angles(angle_potential, configuration.topology.angles, angle_params) 
 
 # Make dihedral interactions
+dihedral_potential = rp.ryckbell_dihedral
 dihedral_params = [rbcoef, ]
-dihedrals = rp.Dihedrals(configuration.topology.dihedrals, dihedral_params)
+dihedrals = rp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, dihedral_params)
 
 # Exlusion list
 exclusions = dihedrals.get_exclusions(configuration)
