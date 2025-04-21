@@ -1,12 +1,9 @@
-#  **rumdpy [rum-dee-pai]** 
-## Roskilde University Molecular Dynamics Python Package
+#  **gamdpy [gam-dee-pai]** 
+## GPU Accelerated Molecular Dynamics in Python
 
-Rumdpy implements molecular dynamics on GPU's in Python, relying heavily on the numba package ([numba.org](https://numba.pydata.org/)) which does JIT (Just-In-Time) compilation both to CPU and GPU (cuda). 
-The rumdpy package being pure Python (letting numba do the heavy lifting of generating fast code) results in an extremely extendable package: simply by interjecting Python functions in the right places, 
+Gamdpy implements molecular dynamics on GPU's in Python, relying heavily on the numba package ([numba.org](https://numba.pydata.org/)) which does JIT (Just-In-Time) compilation both to CPU and GPU (cuda). 
+The gamdpy package being pure Python (letting numba do the heavy lifting of generating fast code) results in an extremely extendable package: simply by interjecting Python functions in the right places, 
 the (experienced) user can extend most aspect of the code, including: new integrators, new pair-potentials, new properties to be calculated during simulation, new particle properties, ...  
-
-## NOTE
-This is the developers version of the rumdpy package, NOT for general consumption just yet. Do NOT trust any of the results produced! Be prepared for interfaces and structure to change overnight. 
 
 [Installation](installation.md)
 
@@ -200,7 +197,7 @@ git reset HEAD --hard
 ```
 
 ## How to test the code
-Running `pytest` in root (rumdpy) directory will run all tests.
+Running `pytest` in root (gamdpy) directory will run all tests.
 This will use the settings in the file `pytest.ini`.
 
 Install needed packages:
@@ -243,7 +240,7 @@ python3 tests/test_examples.py
 Running doctest of a single file:
 
 ```bash
-python3 -m doctest -v rumdpy/calculators/calculator_radial_distribution.py
+python3 -m doctest -v gamdpy/calculators/calculator_radial_distribution.py
 ```
 
 ### Coverage of tests
