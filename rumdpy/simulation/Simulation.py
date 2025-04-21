@@ -76,6 +76,7 @@ class Simulation():
                  runtime_actions: list[RuntimeAction],
                  num_steps=0, num_timeblocks=0, steps_per_timeblock=0,
                  compute_plan=None, storage='output.h5',
+                 #compute_flags=None, 
                  verbose=False, timing=True,
                  steps_in_kernel_test=1):
 

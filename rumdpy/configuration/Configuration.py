@@ -11,9 +11,6 @@ from ..simulation.get_default_compute_flags import get_default_compute_flags
 import h5py
 import gzip
 
-from ..simulation_boxes.simulationbox import SimulationBox
-
-
 # TODO: add possibility of "with ... as conf:" TypeError: 'Configuration' object does not support the context manager protocol
 
 class Configuration:
