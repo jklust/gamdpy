@@ -25,16 +25,22 @@ dt = 0.004  # timestep
 num_timeblocks = 8            # Do simulation in this many 'timeblocks'. 
 steps_per_timeblock = 1*1024  # ... each of this many steps
 
+
+
 for temperature in ['0.70', '1.10', '1.50']:
     print('\n\nTemperature: ' + temperature)
     
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                    rp.ScalarSaver(), 
+                    rp.MomentumReset(100)]
+
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator,
+    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions, 
                         num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                        steps_between_momentum_reset=100,
                         storage='Data/LJ_r0.973_T'+temperature+'.h5') 
 
     print('Equilibration:')

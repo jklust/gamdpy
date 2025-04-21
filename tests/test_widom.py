@@ -23,13 +23,15 @@ def test_widom_insertion():
     temperature = 1.0
     integrator = rp.integrators.NVT(temperature=1.0, tau=0.2, dt=0.0)  # dummy dt
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                       rp.ScalarSaver(), 
+                       rp.MomentumReset(16)]
+
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator,
-                        steps_between_momentum_reset=16,
-                        num_timeblocks=2,
-                        steps_per_timeblock=32,
-                        storage='memory'
-                        )
+    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+                        num_timeblocks=2, steps_per_timeblock=32,
+                        storage='memory')
 
     # Setup the Widom's particle insertion calculator
     num_ghost_particles = 500_000

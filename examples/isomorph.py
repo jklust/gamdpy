@@ -39,12 +39,15 @@ for index, rho in enumerate(rhos):
     # Setup integrator
     integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
+    # Setup runtime actions, i.e. actions performed during simulation of timeblocks
+    runtime_actions = [rp.ConfigurationSaver(), 
+                       rp.ScalarSaver(16, {'W':True}), 
+                       rp.MomentumReset(100)]
+
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator,
+    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                         num_timeblocks=16,  # try something like 128 for better statistics,
-                        compute_flags={'W':True},
                         steps_per_timeblock=512,
-                        steps_between_momentum_reset=100,
                         storage='memory') 
     
     # Setup on-the-fly calculation of Radial Distribution Function

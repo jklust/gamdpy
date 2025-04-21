@@ -33,11 +33,13 @@ configuration.randomize_velocities(temperature=0.7)
 integrator1 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 integrator2 = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(1), 
+                   rp.MomentumReset(100)]
+
 # Setup Simulations
-sim1 = rp.Simulation(configuration, pair_pot, integrator1,
-                     num_timeblocks=4,
-                     steps_per_timeblock=512,
-                     scalar_output=1,
+sim1 = rp.Simulation(configuration, pair_pot, integrator1, runtime_actions,
+                     num_timeblocks=4, steps_per_timeblock=512,
                      storage='memory')
 
 print(configuration['r'][1])
@@ -55,12 +57,12 @@ print(sim1.status(per_particle=True))
 U2, K2 = rp.extract_scalars(sim1.output, ['U', 'K'], first_block=0)
 E2 = U2 + K2 
 
-sim2 = rp.Simulation(configuration, pair_pot, integrator2,
-                     num_timeblocks=4,
-                     steps_per_timeblock=512,
-                     scalar_output=1,
+sim2 = rp.Simulation(configuration, pair_pot, integrator2, runtime_actions,
+                     num_timeblocks=4, steps_per_timeblock=512,
                      storage='memory')
 
+print(configuration['r'][1])
+                     
 print('Integrator2, Production:', end='\t')
 for block in sim2.run_timeblocks():
     pass

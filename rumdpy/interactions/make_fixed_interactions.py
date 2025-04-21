@@ -16,7 +16,7 @@ def make_fixed_interactions(configuration, fixed_potential, compute_plan, verbos
         print(f'\tNumber of threads {num_blocks * pb * tp}')
 
     # Prepare user-specified functions for inclusion in kernel(s)
-    # NOTE: Include check they can be called with right parameters and returns the right number and type of parameters 
+    # NOTE: Include check they can be called with right parameters and return the right number and type of parameters 
 
     potential_calculator = numba.njit(fixed_potential)
 

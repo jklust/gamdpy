@@ -136,7 +136,7 @@ class CalculatorWidomInsertion:
         params_function = numba.njit(self.pair_potential.params_function)
         # pairpotential_function = numba.njit(self.pair_potential.pairpotential_function)
         pairpotential_function = self.pair_potential.pairpotential_function 
-        dist_sq_function = numba.njit(self.configuration.simbox.dist_sq_function)
+        dist_sq_function = numba.njit(self.configuration.simbox.get_dist_sq_function())
 
         def update_kernel(vectors, sim_box, ptype, params, ghost_positions, ptype_ghost, temperature, boltzmann_factors):
             global_id = cuda.grid(1)

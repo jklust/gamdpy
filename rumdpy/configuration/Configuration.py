@@ -1,10 +1,11 @@
 import numpy as np
 import numba
+import math
 from numba import cuda
 from .colarray import colarray
-from .Simbox import Simbox
+from ..simulation_boxes import Orthorhombic
+from .topology import Topology, duplicate_topology, replicate_topologies
 from ..simulation.get_default_compute_flags import get_default_compute_flags
-#import .Simbox
 
 # IO
 import h5py
@@ -79,9 +80,16 @@ class Configuration:
                           }
 
 
-    def __init__(self, D: int, N: int = None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
+    def __init__(self, D: int, N: int = None, type_names=None, compute_flags=None, ftype=np.float32, itype=np.int32) -> None:
         self.D = D
         self.N = N
+
+        self.type_names = type_names
+        self.index_from_type_name = {}
+        if type_names:
+            for index, type_name in enumerate(type_names):
+                self.index_from_type_name[type_name] = index
+
         self.compute_flags = get_default_compute_flags()
         if compute_flags != None:
             # only keys present in the default are processed
@@ -123,6 +131,7 @@ class Configuration:
             sid_index += 1
 
         self.simbox = None
+        self.topology = Topology()
         self.ptype_function = self.make_ptype_function()
         self.ftype = ftype
         self.itype = itype
@@ -138,6 +147,19 @@ class Configuration:
 
     def __repr__(self):
         return f'Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})'
+
+    def __code__(self):
+        import sys
+        np.set_printoptions(threshold=sys.maxsize)
+        code_str  = "# Define configuration class\n"
+        code_str += f"from rumdpy import Configuration\n"
+        code_str += f"configuration = Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})\n"
+        # Following part needs to be done with a read function from the .h5
+        for key in self.vector_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        for key in self.scalar_columns:
+            code_str += f"configuration['{key}'] = {self[key]}\n"
+        return code_str
 
     def __str__(self):
         if self.N == None:
@@ -233,7 +255,7 @@ class Configuration:
 
     def get_volume(self):
         """ Get volume of simulation box associated with configuration """
-        return self.simbox.volume(self.simbox.lengths)
+        return self.simbox.get_volume()
 
     def set_kinetic_temperature(self, temperature, ndofs=None):
         if ndofs is None:
@@ -280,7 +302,7 @@ class Configuration:
         from .make_lattice import make_lattice
         positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
         self['r'] = positions
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         return
 
     def make_positions(self, N, rho):
@@ -333,11 +355,17 @@ class Configuration:
         pos *= box_length/part_per_line
         # Saving to Configuration object
         self['r'] = pos
-        self.simbox = Simbox(self.D, box_vector)
+        self.simbox = Orthorhombic(self.D, box_vector)
         # Check all particles are in the box (-L/2, L/2)
         assert np.any(np.abs(pos))<0.5*box_length
 
         return
+    
+    def atomic_scale(self, density):
+        actual_rho = self.N / self.get_volume()
+        scale_factor = (actual_rho / density)**(1/3)
+        self.vectors['r'] *= scale_factor
+        self.simbox.lengths *= scale_factor
 
 
 # Helper functions
@@ -407,7 +435,7 @@ def make_configuration_fcc(nx, ny, nz, rho, N=None):
 
     configuration = Configuration(D=3)
     configuration['r'] = positions[:N, :]
-    configuration.simbox = Simbox(D, simbox_data)
+    configuration.simbox = Orthorhombic(D, simbox_data)
     configuration['m'] = np.ones(N, dtype=np.float32)  # Set masses
     configuration.ptype = np.zeros(N, dtype=np.int32)  # Set types
 
@@ -500,7 +528,7 @@ def configuration_from_hdf5(filename: str, reset_images=False, compute_flags=Non
         r_im = f['r_im'][:]
     N, D = r.shape
     configuration = Configuration(D=D, compute_flags=compute_flags)
-    configuration.simbox = Simbox(D, lengths)
+    configuration.simbox = Orthorhombic(D, lengths)
     configuration['r'] = r
     configuration['v'] = v
     configuration.ptype = ptype
@@ -642,7 +670,7 @@ def configuration_from_rumd3(filename: str, reset_images=False, compute_flags=No
             m_array[idx] = masses[ptype]
 
     configuration = Configuration(D=3, compute_flags=compute_flags)
-    configuration.simbox = Simbox(3, lengths)
+    configuration.simbox = Orthorhombic(3, lengths)
     configuration['r'] = r_array
     configuration['v'] = v_array
     configuration.r_im = im_array
@@ -680,8 +708,8 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
 
     """
     D = configuration.D
-    if D != 3:
-        raise ValueError('Only 3D configurations are supported')
+    if D != 3 and D!=2:
+        raise ValueError('Only 3D and 2D configurations are supported')
     masses = configuration['m']
     positions = configuration['r']
     image_coordinates = configuration.r_im
@@ -695,21 +723,238 @@ def configuration_to_lammps(configuration, timestep=0) -> str:
     number_of_atoms = positions.shape[0]
     header += f'ITEM: NUMBER OF ATOMS\n{number_of_atoms:d}\n'
     header += f'ITEM: BOX BOUNDS pp pp pp\n'
-    for k in range(3):
+    for k in range(D):
         header += f'{-simulation_box[k] / 2:e} {simulation_box[k] / 2:e}\n'
+    if D==2:
+        header += f'{-1 / 2:e} {1 / 2:e}\n'
     # Atoms
     atom_data = 'ITEM: ATOMS id type mass x y z ix iy iz vx vy vz fx fy fz'
     for i in range(number_of_atoms):
         atom_data += f'\n{i + 1:d} {ptypes[i] + 1:d} {masses[i]:f} '
-        for k in range(3):
+        for k in range(D):
             atom_data += f'{positions[i, k]:f} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{image_coordinates[i, k]:d} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{velocities[i, k]:f} '
-        for k in range(3):
+        if D==2:
+            atom_data += f'{0.0:f} '
+        for k in range(D):
             atom_data += f'{forces[i, k]:f} '
+        if D==2:
+            atom_data += f'{0.0:f} '
         #atom_data += '\n'
     # Combine header and atom lengths
     lammps_dump = header + atom_data
     return lammps_dump
+
+def duplicate_molecule(topology, positions, particle_types, masses, cells, safety_distance, random_rotations=True):
+    
+    D=len(positions[0])
+    num_molecules = 1
+    for i in range(D):
+        num_molecules *= cells[i]
+    particles_per_per_molecule = len(positions)
+    num_particles = num_molecules*particles_per_per_molecule
+    configuration = Configuration(D=D, N=num_particles)
+    configuration.topology = duplicate_topology(topology, num_molecules)
+
+    positions_array = np.array(positions)
+
+    positions_array -= np.min(positions_array, axis=0) # Shift positions: smallest coordinates = 0
+    cell_length = np.max(positions_array) + safety_distance
+    simbox_data = np.array(cells) * cell_length
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    count = 0
+    if D<3:
+        cells = list(cells)
+        cells.append(1)    
+    for ix in range(cells[0]):
+        for iy in range(cells[1]):
+            for iz in range(cells[2]):
+                arr = np.arange(D)
+                if random_rotations:
+                    np.random.shuffle(arr)
+                configuration['r'][count:count+particles_per_per_molecule,0] = positions_array[:,arr[0]] + ix*cell_length
+                configuration['r'][count:count+particles_per_per_molecule,1] = positions_array[:,arr[1]] + iy*cell_length
+                if D>2:
+                    configuration['r'][count:count+particles_per_per_molecule,2] = positions_array[:,arr[2]] + iz*cell_length
+                configuration['m'][count:count+particles_per_per_molecule] = masses
+                configuration.ptype[count:count+particles_per_per_molecule] = particle_types
+                count += particles_per_per_molecule
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration
+
+def replicate_molecules(mol_topology_list, mol_positions_list, particle_type_list, masses_list, num_molecules_each_type_list, safety_distance, random_rotations=True, compute_flags=None):
+    """ Construct a configuration containing different molecules, with the numbers of each type specified
+
+        Parameters:
+            mol_topology_list (list): A list of topologies, one for each molecule type to be replicated
+            mol_positions_list (list): A list of position-lists, one position list for each molecule type, where a position list is a NxD array but as a list
+            particle_type_list (list): A list of type_lists, where each type-list is a list of the atom types for that molecule type
+            masses_list (list): A list of mass-lists, where each mass list is a list of atom masses for that molecule type
+            num_molecules_each_type_list (list): A list of integers, specifying how many molecules of each type are to be included
+            safety_distance (float): A length to be added in all directions to the size of the bounding box to be used  for each molecule when placing them initially on a lattice
+            random_rotation (Bool): Whether the x,y,z coordinates in each molecule should be randomly permutated to give a simple randomization of orientations.
+        Returns:
+            configuration (Configuration): the resulting configuration with all molecules replicated and including the corresponding replicated topology
+    """
+    D = 3
+    num_molecule_types = len(mol_topology_list)
+    total_num_particles = 0
+    total_num_molecules = 0
+    mol_types = []
+    positions_array_list = []
+    cell_length_list = []
+    size_molecule_type_list = []
+
+    for idx in range(num_molecule_types):
+        num_mol_this_type = num_molecules_each_type_list[idx]
+        total_num_particles += len(mol_positions_list[idx]) * num_mol_this_type
+        total_num_molecules += num_mol_this_type
+        mol_types += [idx] * num_mol_this_type
+        positions_array = np.array(mol_positions_list[idx])
+        positions_array -= np.min(positions_array, axis=0)
+        positions_array_list.append(positions_array)
+        size_molecule_type_list.append( len(mol_positions_list[idx]) )
+        cell_length = np.max(positions_array) + safety_distance
+        cell_length_list.append(cell_length)
+
+    # shuffle molecule types randomly. But commented out for now.
+    np.random.shuffle(mol_types)
+
+
+    configuration = Configuration(D=D, N=total_num_particles, compute_flags=compute_flags)
+    configuration.topology = replicate_topologies(mol_topology_list, num_molecules_each_type_list, mol_types, size_molecule_type_list)
+
+    max_cell_length = max(cell_length_list)
+    # make a cubic box big enough to hold the total number of molecules
+    num_cells_axis = math.ceil(total_num_molecules**(1/3))
+    simbox_data = np.ones(D) * (num_cells_axis * max_cell_length)
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    mol_count = 0
+    particle_count = 0
+    for ix in range(num_cells_axis):
+        for iy in range(num_cells_axis):
+            for iz in range(num_cells_axis):
+                if mol_count < total_num_molecules:
+                    # add a molecule
+                    this_mol_type = mol_types[mol_count]
+                    particles_this_molecule = size_molecule_type_list[this_mol_type]
+                    arr = np.arange(D)
+                    if random_rotations:
+                        np.random.shuffle(arr)
+
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,0] = positions_array_list[this_mol_type][:,arr[0]] + ix*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,1] = positions_array_list[this_mol_type][:,arr[1]] + iy*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,2] = positions_array_list[this_mol_type][:,arr[2]] + iz*max_cell_length
+                    configuration['m'][particle_count:particle_count+particles_this_molecule] = masses_list[this_mol_type]
+                    configuration.ptype[particle_count:particle_count+particles_this_molecule] = particle_type_list[this_mol_type]
+                    particle_count += particles_this_molecule
+
+                    mol_count += 1
+
+    assert mol_count == total_num_molecules
+    assert particle_count == total_num_particles
+
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration
+
+
+
+def replicate_molecules2(molecule_dicts, num_molecules_each_type_list, safety_distance, random_rotations=True):
+    """ Construct a configuration containing different molecules, with the numbers of each type specified
+
+        Parameters:
+            moleculde_dicts (list): A list of dictionaries, each of which contains keys "positions", "particle_types", "masses" and "topology", whose values are corresponding lists of data for that molecule
+            num_molecules_each_type_list (list): A list of integers, specifying how many molecules of each type are to be included
+            safety_distance (float): A length to be added in all directions to the size of the bounding box to be used  for each molecule when placing them initially on a lattice
+            random_rotation (Bool): Whether the x,y,z coordinates in each molecule should be randomly permutated to give a simple randomization of orientations.
+        Returns:
+            configuration (Configuration): the resulting configuration with all molecules replicated and including the corresponding replicated topology
+    """
+    D = 3
+    num_molecule_types = len(molecule_dicts)
+    total_num_particles = 0
+    total_num_molecules = 0
+    mol_types = []
+    positions_array_list = []
+    cell_length_list = []
+    size_molecule_type_list = []
+
+    # unpack the list of molecule dictionaries and make lists of positions, particle_types, masses and topologies
+    mol_topology_list = []
+    mol_positions_list = []
+    particle_type_list = []
+    masses_list = []
+    for idx in range(num_molecule_types):
+        mol_positions_list.append(molecule_dicts[idx]["positions"])
+        particle_type_list.append(molecule_dicts[idx]["particle_types"])
+        masses_list.append(molecule_dicts[idx]["masses"])
+        mol_topology_list.append(molecule_dicts[idx]["topology"])
+
+    # tally the total numbers of particles and molecules, make shifted arrays of possitions for each molecule type
+    for idx in range(num_molecule_types):
+        num_mol_this_type = num_molecules_each_type_list[idx]
+        total_num_particles += len(mol_positions_list[idx]) * num_mol_this_type
+        total_num_molecules += num_mol_this_type
+        mol_types += [idx] * num_mol_this_type
+        positions_array = np.array(mol_positions_list[idx])
+        positions_array -= np.min(positions_array, axis=0)
+        positions_array_list.append(positions_array)
+        size_molecule_type_list.append( len(mol_positions_list[idx]) )
+        cell_length = np.max(positions_array) + safety_distance
+        cell_length_list.append(cell_length)
+
+    # shuffle molecule types randomly
+    np.random.shuffle(mol_types)
+
+
+    configuration = Configuration(D=D, N=total_num_particles)
+    configuration.topology = replicate_topologies(mol_topology_list, num_molecules_each_type_list, mol_types, size_molecule_type_list)
+
+    max_cell_length = max(cell_length_list)
+    # make a cubic box big enough to hold the total number of molecules
+    num_cells_axis = math.ceil(total_num_molecules**(1/3))
+    simbox_data = np.ones(D) * (num_cells_axis * max_cell_length)
+    configuration.simbox = Orthorhombic(D, simbox_data)
+
+    mol_count = 0
+    particle_count = 0
+    for ix in range(num_cells_axis):
+        for iy in range(num_cells_axis):
+            for iz in range(num_cells_axis):
+                if mol_count < total_num_molecules:
+                    # add a molecule
+                    this_mol_type = mol_types[mol_count]
+                    particles_this_molecule = size_molecule_type_list[this_mol_type]
+                    arr = np.arange(D)
+                    if random_rotations:
+                        np.random.shuffle(arr)
+
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,0] = positions_array_list[this_mol_type][:,arr[0]] + ix*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,1] = positions_array_list[this_mol_type][:,arr[1]] + iy*max_cell_length
+                    configuration['r'][particle_count:particle_count+particles_this_molecule,2] = positions_array_list[this_mol_type][:,arr[2]] + iz*max_cell_length
+                    configuration['m'][particle_count:particle_count+particles_this_molecule] = masses_list[this_mol_type]
+                    configuration.ptype[particle_count:particle_count+particles_this_molecule] = particle_type_list[this_mol_type]
+                    particle_count += particles_this_molecule
+
+                    mol_count += 1
+
+    assert mol_count == total_num_molecules
+    assert particle_count == total_num_particles
+
+    for i in range(configuration.D):
+        configuration['r'][:,i] -= configuration.simbox.lengths[i]/2
+
+    return configuration

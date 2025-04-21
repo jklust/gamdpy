@@ -64,10 +64,9 @@ def get_default_compute_plan(configuration):
         tp = 16
 
     # skin: used when updating nblist
-    skin = np.float32(0.5)
+    skin = 0.5
     if N > 6 * 1024:
-        skin = np.float32(
-            1.0)  # We are (for now) using a N^2 nblist updater, so make the nblist be valid for many steps for large N.
+        skin = np.float32( 1.0)  # make the nblist be valid for many steps for large N.
 
     # UtilizeNIII: Boolean flag indicating if Newton's third law (NIII) should be utilized (see pairpotential_calculator).
     # Utilization of NIII is implemented by using atomic add's to the force array, 
@@ -81,7 +80,10 @@ def get_default_compute_plan(configuration):
     if N * tp > 4 * num_cc_cores:  # Heuristic
         gridsync = False
 
-    nblist = 'N squared' # Alternative: "linked lists"
+    nblist = 'N squared'
+    if N > 6_000:  # Heuristic
+        nblist = 'linked lists'
+        skin = 0.5
 
     return {'pb': pb, 'tp': tp, 'skin': skin, 
             'UtilizeNIII': UtilizeNIII, 'gridsync': gridsync, 'nblist': nblist}

@@ -53,9 +53,13 @@ if integrator_name=='NPT_Langevin':
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
 
-sim = rp.Simulation(configuration, pair_pot, integrator,
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32, {'Fsq':True, 'lapU':True}), ]
+
+
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    compute_flags={'Fsq':True, 'lapU':True},
                     compute_plan=compute_plan, storage='memory')
 
 for block in sim.run_timeblocks():

@@ -28,21 +28,23 @@ for n in range(0, configuration.N, 4):
 bonds = rp.Bonds(bond_potential, bond_params, bond_indices)
 
 # Angles
+angle_potential = rp.cos_angle_function
 angle_params = [[k, angle0],]
 angle_indices = []
 for n in range(0, configuration.N, 4):
     angle_indices.append([n, n+1, n+2, 0])
     angle_indices.append([n+1, n+2, n+3, 0])
 
-angles = rp.Angles(angle_indices, angle_params) 
+angles = rp.Angles(angle_potential, angle_indices, angle_params) 
 
 # Dihedrals
+dihedral_potential = rp.ryckbell_dihedral
 dihedral_params = [rbcoef, ]
 dihedral_indices = []
 for n in range(0, configuration.N, 4):
     dihedral_indices.append([n, n+1, n+2, n+3, 0])
 
-dihedrals = rp.Dihedrals(dihedral_indices, dihedral_params)
+dihedrals = rp.Dihedrals(dihedral_potential, dihedral_indices, dihedral_params)
 
 # Exlusion list
 #exclusions = angles.get_exclusions(configuration)
@@ -64,10 +66,16 @@ else:
 # Compute plan
 compute_plan = rp.get_default_compute_plan(configuration)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+# 
+
 # Setup simulation
-sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator,
+sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
                     num_timeblocks=10, steps_per_timeblock=256,
-                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage='memory')
 
 angles_array, dihedrals_array = [], []
@@ -86,6 +94,6 @@ Etot_mean = np.mean(Etot)/configuration.N
 Etot_std = np.std(Etot)/configuration.N
 
 print("Temp:  %.2f  Etot: %.2e (%.2e)" % (temp,  Etot_mean, Etot_std))
-print("Angle: %.2f (%.2f) " % (np.mean(angles_array), np.std(angles_array)))
-print("Dihedral: %.2f (%.2f) " % (np.mean(dihedrals_array), np.std(dihedrals_array)))
+print("Angle mean: %.2f (standard deviation %.2f) " % (np.mean(angles_array), np.std(angles_array)))
+print("Dihedral mean: %.2f (standard deviation %.2f) " % (np.mean(dihedrals_array), np.std(dihedrals_array)))
 

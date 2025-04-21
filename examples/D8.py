@@ -17,11 +17,12 @@ pair_potential = rp.PairPotential(pair_func, params=[2.0, 1.0], max_num_nbs=8192
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.08, dt=0.001)
 
-sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_between_momentum_reset=100,
-                    compute_flags={'W':True, 'lapU':False},
-                    num_timeblocks=16,
-                    steps_per_timeblock=128,
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32)]
+
+sim = rp.Simulation(configuration, pair_potential, integrator, runtime_actions, 
+                    num_timeblocks=16, steps_per_timeblock=128,
                     storage='memory')
 
 for _ in sim.run_timeblocks():

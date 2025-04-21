@@ -69,6 +69,12 @@ class PairPotential(Interaction):
         plt.legend()
         plt.show()
 
+    def evaluate_potential_function(self, r, types):
+        params, max_cut = self.convert_user_params()
+        u, s, lap = self.pairpotential_function(r, params[types[0], types[1]])
+        return u
+
+
     def check_datastructure_validity(self) -> bool:
         nbflag = self.nblist.d_nbflag.copy_to_host()
         if nbflag[0] != 0 or nbflag[1] != 0:
@@ -174,8 +180,7 @@ class PairPotential(Interaction):
         ptype_function = numba.njit(configuration.ptype_function)
         params_function = numba.njit(self.params_function)
         pairpotential_calculator = numba.njit(pairpotential_calculator)
-        dist_sq_dr_function = numba.njit(configuration.simbox.dist_sq_dr_function)
-        #dist_sq_function = numba.njit(configuration.simbox.dist_sq_function)
+        dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
     
         @cuda.jit( device=gridsync )  
         def calc_forces(vectors, cscalars, ptype, sim_box, nblist, params):

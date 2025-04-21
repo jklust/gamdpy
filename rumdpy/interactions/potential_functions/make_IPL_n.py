@@ -3,7 +3,7 @@ import numba
 import math
 from numba import cuda
 
-def make_IPL_n(n: float) -> callable:
+def make_IPL_n(n: float, first_parameter:int = 0) -> callable:
     """ Inverse Power Law Potential
 
     .. math::
@@ -29,7 +29,7 @@ def make_IPL_n(n: float) -> callable:
         #     U(r) =           An*r**-n
         #     Um(r) =        n*An*r**-(n+1)
         # s = -Um/r =        n*An*r**-(n+2), Fx = s*dx
-        An = params[0]
+        An = params[first_parameter]
         invDist = numba.float32(1.0) / dist
 
         u = An * invDist ** n

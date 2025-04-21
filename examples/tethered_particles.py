@@ -52,11 +52,13 @@ pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 # Setup integrator: NVT
 integrator = rp.integrators.NVT(temperature=2.0, tau=0.2, dt=0.005)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver()]
+
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
-sim = rp.Simulation(configuration, [pair_pot, tether], integrator,
-                    num_timeblocks=16,
-                    steps_per_timeblock=1024,
-                    steps_between_momentum_reset=0,  # No momentum reset needed for tethered particles
+sim = rp.Simulation(configuration, [pair_pot, tether], integrator, runtime_actions,
+                    num_timeblocks=16, steps_per_timeblock=1024,
                     storage='memory')
 
 # Run simulation one block at a time

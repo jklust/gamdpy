@@ -17,21 +17,19 @@ def calc_dynamics_(blocks, ptype, simbox, block0, conf_index0, block1, conf_inde
         dR_i_sq = np.sum( dR_type**2, axis=1)
         msd[time_index, i] += np.mean(dR_i_sq)
         m4d[time_index, i] += np.mean(dR_i_sq ** 2)
-        if qvalues!=None:
-            Fs[time_index, i] += np.mean(np.cos(dR_type*qvalues[i]))
+        Fs[time_index, i] += np.mean(np.cos(dR_type*qvalues[i]))
 
     return msd, m4d, Fs
 
 
 def calc_dynamics(trajectory, first_block, qvalues=None):
-    if qvalues!=None and type(qvalues)==float:
-        qvalues = np.ones(1)*qvalues # Accept scalar (for single component systems) and upgrade to numpy array 
-    
     ptype = trajectory['ptype'][:].copy()
     attributes = trajectory.attrs
     
     simbox = attributes['simbox_initial'].copy()
     num_types = np.max(ptype) + 1
+    if isinstance(qvalues, float):
+        qvalues = np.ones(num_types)*qvalues
     num_blocks, conf_per_block, _, N, D = trajectory['block'].shape
     blocks = trajectory['block']  # If picking out dataset in inner loop: Very slow!
 

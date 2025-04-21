@@ -1,7 +1,4 @@
-import numpy as np
 import numba
-import math
-from numba import cuda
 
 def apply_shifted_force_cutoff(pair_potential):  
     # Cut-off by computing potential twice, avoiding changes to params

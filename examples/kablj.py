@@ -45,15 +45,15 @@ Ttarget_function = rp.make_function_ramp(value0=2.000,       x0=running_time*(1/
                                          value1=temperature, x1=running_time*(1/4))
 integrator = rp.integrators.NVT(temperature=Ttarget_function, tau=0.2, dt=dt)
 
-sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=num_timeblocks, 
-                    steps_per_timeblock=steps_per_timeblock,
-                    steps_between_momentum_reset=100,
-                    scalar_output=None, # Do not save data for equilibration run
-                    conf_output=None,
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.MomentumReset(100),]
+
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions, 
+                    num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     storage="memory") 
+
 for block in sim.run_timeblocks():
-    print(f'{block=:4}  {sim.status(per_particle=True)}')
+    print(f'{sim.status(per_particle=True)}')
 print(sim.summary())
 
 # Print current status of configuration
@@ -62,14 +62,21 @@ print(configuration)
 print('\nProduction:')
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
 
-sim = rp.Simulation(configuration, pair_pot, integrator,
-                    num_timeblocks=num_timeblocks, 
-                    steps_per_timeblock=steps_per_timeblock,
-                    steps_between_momentum_reset=100,
-                    compute_flags={'Fsq':True, 'lapU':True},
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(16, {'Fsq':True, 'lapU':True}), 
+                   rp.MomentumReset(100)]
+
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(16, {'Fsq':True, 'lapU':True}), ]
+
+
+sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+                    num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     storage=filename)
 for block in sim.run_timeblocks():
-    print(f'{block=:4}  {sim.status(per_particle=True)}')
+    print(f'{sim.status(per_particle=True)}')
 print(sim.summary())
 
 # Print current status of configuration

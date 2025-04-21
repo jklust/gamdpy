@@ -51,10 +51,13 @@ integrator0 = rp.integrators.NVT(Ttarget_function, tau=0.2, dt=dt)
 compute_plan = rp.get_default_compute_plan(configuration)
 print(compute_plan)
 
-sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0,
+runtime_actions = [rp.MomentumReset(100), 
+                   rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(32, {'Fsq':True, 'lapU':True}), ]
+
+
+sim = rp.Simulation(configuration, [pair_pot, bonds], integrator0, runtime_actions,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    compute_flags={'Fsq':True, 'lapU':True},
-                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage=filename)
 
 print('High Temperature followed by cooling and equilibration:')
@@ -64,9 +67,8 @@ for block in sim.run_timeblocks():
 print(sim.summary())
 
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=dt)
-sim = rp.Simulation(configuration, [pair_pot, bonds], integrator,
+sim = rp.Simulation(configuration, [pair_pot, bonds], integrator, runtime_actions,
                     num_timeblocks=num_blocks, steps_per_timeblock=steps_per_block,
-                    steps_between_momentum_reset=100,
                     compute_plan=compute_plan, storage=filename)
 
 # Setup on-the-fly calculation of Radial Distribution Function

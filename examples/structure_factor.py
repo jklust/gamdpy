@@ -19,18 +19,21 @@ pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
 pair_potential = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
-sim = rp.Simulation(configuration, pair_potential, integrator,
-                    steps_between_momentum_reset=100,
-                    num_timeblocks=16,
-                    steps_per_timeblock=512,
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver(), 
+                   rp.MomentumReset(100)]
+
+
+sim = rp.Simulation(configuration, pair_potential, integrator, runtime_actions,
+                    num_timeblocks=16, steps_per_timeblock=512,
                     storage='memory')
 
 print("Equilibration run")
 sim.run()
 
 print("Production run")
-q_max = 12.0  # Change to 18.0 to include second peak
-calc_struct_fact = rp.CalculatorStructureFactor(configuration)
+q_max = 18.0
+calc_struct_fact = rp.CalculatorStructureFactor(configuration, backend='GPU')
 calc_struct_fact.generate_q_vectors(q_max=q_max)
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))

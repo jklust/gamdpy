@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+
 import rumdpy as rp
 import numba
 
@@ -68,7 +69,7 @@ class CalculatorStructureFactor:
 
     """
 
-    BACKENDS = ['CPU multi core', 'CPU single core']
+    BACKENDS = ['CPU multi core', 'CPU single core', 'GPU']
 
     def __init__(self, 
                  configuration: rp.Configuration, 
@@ -100,9 +101,15 @@ class CalculatorStructureFactor:
         self.list_of_rho_q = []
         self.list_of_rho_S_q = []
 
-        # if first 3 letters is CPU then generate the compute_rho_q function
+        self.wallclock_times = []
+
+        # 3 first letters is CPU or GPU
         if backend[:3] == 'CPU':
             self._compute_rho_q = self._generate_compute_rho_q(backend)
+        if backend == 'GPU':
+            self.nthreads = 64
+            self.update_kernel = self._make_update_kernel()
+            self._compute_rho_q = self._compute_rho_q_gpu
 
     def generate_q_vectors(self, q_max:float):
         """ Generate q-vectors inside a sphere of radius q_max """
@@ -120,6 +127,59 @@ class CalculatorStructureFactor:
         self.n_vectors = n_vectors[selection]
         self.q_lengths = np.linalg.norm(self.q_vectors, axis=1)
         self.sum_S_q = np.zeros_like(self.q_lengths)
+
+    def _make_update_kernel(self):
+        import math
+        from numba import cuda
+        from numba import float32 as flt
+
+        def kernel(r_vectors, q_vectors, form_factors, rho_q_real, rho_q_imag):
+            num = q_vectors.shape[0]  # Number of q vectors
+            tid = cuda.grid(1)
+
+            if tid < num:
+                this_q = q_vectors[tid]
+                real, imag = flt(0.0), flt(0.0)
+                N = flt(0.0)
+                for n in range(r_vectors.shape[0]):
+                    pos = r_vectors[n]
+                    dot = flt(0.0)
+                    for d in range(r_vectors.shape[1]):
+                        dot += pos[d] * this_q[d]
+                    real += form_factors[n]*math.cos(dot)
+                    imag += form_factors[n]*math.sin(dot)
+                    N += form_factors[n]
+                NN = flt(1.0)/math.sqrt(N)
+                rho_q_real[tid] =  NN*real
+                rho_q_imag[tid] =  NN*imag
+            return
+        return cuda.jit(device=0)(kernel)
+
+    def _compute_rho_q_gpu(self, r_vectors, q_vectors, form_factors):
+        from numba import cuda
+
+        # Copy data to device
+        d_r_vectors = cuda.to_device(r_vectors) #, q_vectors, form_factors, rho_q_real, rho_q_imag
+        d_q_vectors = cuda.to_device(q_vectors)
+        d_form_factors = cuda.to_device(form_factors)
+        rho_q_real = np.zeros(q_vectors.shape[0], dtype=np.float32)
+        d_rho_q_real = cuda.to_device(rho_q_real)
+        d_rho_q_imag = cuda.device_array_like(d_rho_q_real)
+
+        # Compute using GPU kernel
+        start = numba.cuda.event()
+        end = numba.cuda.event()
+        num = self.q_vectors.shape[0]
+        nblocks = (num // self.nthreads) + 1
+        start.record()
+        self.update_kernel[nblocks, self.nthreads](d_r_vectors, d_q_vectors, d_form_factors, d_rho_q_real, d_rho_q_imag)
+        end.record()
+        end.synchronize()
+        self.wallclock_times.append(start.elapsed_time(end))
+        rho_q_real = d_rho_q_real.copy_to_host()
+        rho_q_imag = d_rho_q_imag.copy_to_host()
+
+        return rho_q_real + 1j*rho_q_imag
 
 
     @staticmethod

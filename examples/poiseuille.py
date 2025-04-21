@@ -75,10 +75,14 @@ integrator = rp.integrators.NVE(dt=0.005)
 # Compute plan
 compute_plan = rp.get_default_compute_plan(configuration)
 
+# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+runtime_actions = [rp.ConfigurationSaver(), 
+                   rp.ScalarSaver()]
+
 # Setup Simulation. Total number of time steps: num_blocks * steps_per_block
-sim = rp.Simulation(configuration, [pair_pot, tether, grav, relax], integrator,
+sim = rp.Simulation(configuration, [pair_pot, tether, grav, relax], integrator, runtime_actions, 
                     num_timeblocks=100, steps_per_timeblock=64,
-                    steps_between_momentum_reset=0, storage='memory', compute_plan=compute_plan)
+                    storage='memory', compute_plan=compute_plan)
 
 prof = rp.CalculatorHydrodynamicProfile(configuration, 0)
 
