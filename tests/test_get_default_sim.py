@@ -1,7 +1,7 @@
 """ Test the get_default_sim function. """
 
 def test_get_default_sim():
-    import rumdpy as rp
+    import gamdpy as rp
     sim = rp.get_default_sim()
     assert isinstance(sim, rp.Simulation)
     assert isinstance(sim.configuration, rp.Configuration)

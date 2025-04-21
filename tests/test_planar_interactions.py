@@ -4,7 +4,7 @@ import numpy as np
 def test_planar_interactions_old_interface() -> None:
     import math
     import numpy as np
-    import rumdpy as rp
+    import gamdpy as rp
 
     # Create a configuration object
     rho, T = 1.5, 1.44
@@ -33,7 +33,7 @@ def test_planar_interactions_old_interface() -> None:
     except KeyError: print("rp.setup_planar_interactions should have 'interaction_params' key but it hasn't")
 
 def test_planar_interactions() -> None:
-    import rumdpy as rp
+    import gamdpy as rp
     # Make planar interaction
     N = 16
     potential = rp.harmonic_repulsion

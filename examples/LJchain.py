@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Generate configuration with a FCC lattice
 rho = 1.0

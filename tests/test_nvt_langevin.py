@@ -7,7 +7,7 @@ def test_step_langevin(verbose=False, plot_figures=False) -> None:
     import time
 
 
-    import rumdpy as rp
+    import gamdpy as rp
 
     # State-point
     temperature = 1.2

@@ -8,7 +8,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-import rumdpy as rp
+import gamdpy as rp
 
 
 RHO = 1.2

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 import math
 
 temperature, density, npart, D = 3.40410425853, 0.34, 2401, 4

@@ -2,7 +2,7 @@
 
 """
 
-import rumdpy as rp
+import gamdpy as rp
 import numpy as np
 
 # Setup configuration: FCC Lattice

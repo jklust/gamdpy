@@ -8,7 +8,7 @@ pressure, density and isothermal compressibility.
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3, compute_flags={'Vol':True})

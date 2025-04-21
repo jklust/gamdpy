@@ -4,7 +4,7 @@ import numba
 import numpy as np
 import pandas as pd
 
-import rumdpy as rp
+import gamdpy as rp
 
 integrator_name = 'NVE'
 if 'NVT' in sys.argv:

@@ -5,7 +5,7 @@ For an even simpler script, see minimal.py
 
 """
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup fcc configuration
 configuration = rp.Configuration(D=3)

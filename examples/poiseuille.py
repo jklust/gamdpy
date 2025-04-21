@@ -14,7 +14,7 @@ import os
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Some system parameters
 nx, ny, nz = 6, 6, 10

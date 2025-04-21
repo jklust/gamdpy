@@ -1,5 +1,5 @@
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 # Simulation parameters
 rho, temperature = 0.9, 1.5

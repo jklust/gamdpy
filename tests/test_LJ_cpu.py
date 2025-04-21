@@ -8,7 +8,7 @@ def test_cpu(nconf='1', integrator_type='NVE', potential='KABLJ'):
     os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
     os.environ["NUMBA_DISABLE_JIT"] = "1"
     os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
     import numba
     from numba import cuda

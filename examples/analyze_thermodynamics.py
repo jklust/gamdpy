@@ -9,7 +9,7 @@ using the `extract_scalars` function from the `rumdpy` package.
 """
 
 import matplotlib.pyplot as plt
-import rumdpy as rp
+import gamdpy as rp
 import numpy as np
 import sys
 

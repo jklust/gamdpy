@@ -2,7 +2,7 @@
 
 import numba
 
-import rumdpy as rp
+import gamdpy as rp
 
 N = 1024  # Number of particles (65536)
 temperature = 1.0

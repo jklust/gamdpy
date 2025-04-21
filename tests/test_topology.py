@@ -1,5 +1,5 @@
 def test_topology():
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
     import random
 

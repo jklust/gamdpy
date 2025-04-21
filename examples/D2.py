@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration. BCC Lattice
 configuration = rp.Configuration(D=2)

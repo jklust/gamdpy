@@ -1,5 +1,5 @@
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 def trappe_ua_molecule(molecule_name, positions, particle_types, type_names):
     """

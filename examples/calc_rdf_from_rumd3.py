@@ -2,7 +2,7 @@
 
 import os
 
-import rumdpy as rp
+import gamdpy as rp
 
 file_to_read = "Data/NVT_N4000_T2.0_rho1.2_KABLJ_rumd3/TrajectoryFiles"
 

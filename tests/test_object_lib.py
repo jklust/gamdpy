@@ -1,5 +1,5 @@
 def test_object_lib():
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
     ''' Test for the object_lib.py file. object_lib.py contains examples of Configuration and PairPotential classes '''
 

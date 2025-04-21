@@ -79,7 +79,7 @@ def check_gpu(device_id=None):
     else:
         device = cuda.select_device(device_id)
         
-    from rumdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
+    from gamdpy.cc_cores_per_SM_dict import cc_cores_per_SM_dict 
     if device.compute_capability in cc_cores_per_SM_dict:
         cc_cores_per_SM = cc_cores_per_SM_dict[device.compute_capability]
     else:

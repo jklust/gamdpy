@@ -10,7 +10,7 @@ os.environ["NUMBA_ENABLE_CUDASIM"] = "1"
 os.environ["NUMBA_DISABLE_JIT"] = "1"
 os.environ["NUMBA_CUDA_DEBUGINFO"] = "1"
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup fcc configuration
 configuration = rp.Configuration(D=3)

@@ -16,7 +16,7 @@ import pickle
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup pair potential.
 pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

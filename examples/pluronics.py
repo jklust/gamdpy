@@ -1,5 +1,5 @@
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 rp.select_gpu()
 

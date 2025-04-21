@@ -6,7 +6,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup simulation of single-component Lennard-Jones liquid
 temperature: float = 2.0

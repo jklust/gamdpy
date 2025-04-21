@@ -3,7 +3,7 @@
 NVT simulation of the Kob-Andersen mixture, and compare results with Rumd3 (rumd.org)
 """
 
-import rumdpy as rp
+import gamdpy as rp
 
 import matplotlib.pyplot as plt
 import numpy as np

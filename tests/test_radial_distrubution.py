@@ -4,7 +4,7 @@ from itertools import product
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 def test_radial_distribution():
     spatial_dimensions = 1, 2, 3, 4

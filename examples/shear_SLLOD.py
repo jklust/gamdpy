@@ -6,7 +6,7 @@ and Lees-Edwards boundary conditions. Runs one shear rate but easy to make a loo
 """
 import os
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 import matplotlib.pyplot as plt
 
 run_NVT = True # False # 

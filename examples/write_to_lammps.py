@@ -1,7 +1,7 @@
 """ Example of writing a configuration to a LAMMPS dump file. """
 import os
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3)

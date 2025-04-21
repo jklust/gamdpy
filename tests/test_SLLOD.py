@@ -13,7 +13,7 @@ def test_SLLOD(run_NVT=False):
     import numpy as np
     import matplotlib.pyplot as plt
 
-    import rumdpy as rp
+    import gamdpy as rp
 
     # Setup pair potential: Single component 12-6 Lennard-Jones
     pairfunc = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)

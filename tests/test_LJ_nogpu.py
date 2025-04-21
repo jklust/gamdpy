@@ -6,7 +6,7 @@ class Test(unittest.TestCase):
        pass 
 
     def test_(self):
-        import rumdpy as rp
+        import gamdpy as rp
         import numpy as np
         
         # Generate configurations with a FCC lattice

@@ -1,6 +1,6 @@
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # cells = [2, 2, 2]
 EXPECTED_FCC_POSITIONS = np.array(

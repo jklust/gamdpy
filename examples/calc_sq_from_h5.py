@@ -2,7 +2,7 @@
 
 import os
 
-import rumdpy as rp
+import gamdpy as rp
 
 file_to_read = "LJ_T0.70.h5"
 

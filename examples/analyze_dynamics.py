@@ -5,7 +5,7 @@
 """
 
 import matplotlib.pyplot as plt
-import rumdpy as rp
+import gamdpy as rp
 import numpy as np
 import sys
 import pickle

@@ -2,7 +2,7 @@
 
 def test_savers():
     import os
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
     import h5py
     # Create a configuration to save

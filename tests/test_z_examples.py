@@ -45,8 +45,8 @@ class Test_examples:
     def test_bcc_lattice(self):
         self.make_one("bcc_lattice")
 
-    def test_blocks(self):
-        self.make_one("blocks")
+    #def test_blocks(self): Example removed
+    #    self.make_one("blocks")
 
     def test_minimal(self):
         self.make_one("minimal")

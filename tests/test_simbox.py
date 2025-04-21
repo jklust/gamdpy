@@ -1,5 +1,5 @@
 def test_Simbox():
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
 
     simbox = rp.Orthorhombic(D=3, lengths=np.array([3,4,5]))
@@ -51,7 +51,7 @@ def test_Simbox():
 
 def test_LeesEdwards():
     import pytest
-    import rumdpy as rp
+    import gamdpy as rp
     import numpy as np
 
     # Test 1D error 

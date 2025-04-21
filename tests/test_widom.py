@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import rumdpy as rp
+import gamdpy as rp
 
 def test_widom_insertion():
     np.random.seed(0)

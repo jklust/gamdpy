@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import rumdpy as rp
+import gamdpy as rp
 
 def test_structure_factor():
     # verbose = False

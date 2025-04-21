@@ -4,7 +4,7 @@ Simulation of a Lennard-Jones crystal in the NVT ensemble.
 
 """
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3)

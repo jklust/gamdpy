@@ -1,6 +1,6 @@
 def test_npt_atomic() -> None:
     import numpy as np
-    import rumdpy as rp
+    import gamdpy as rp
 
     from object_lib import configuration_SC as configuration
 #    configuration = rp.Configuration(D=3, compute_flags={'W':True})

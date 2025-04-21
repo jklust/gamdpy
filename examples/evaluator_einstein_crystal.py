@@ -14,7 +14,7 @@ The mean displacement from the ideal lattice, sqrt(2*u_spring), is calculated an
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration: FCC Lattice
 configuration = rp.Configuration(D=3)

@@ -6,7 +6,7 @@ from math import pi, sin, cos
 import numpy as np
 import matplotlib.pyplot as plt
 
-import rumdpy as rp
+import gamdpy as rp
 
 # A rotated cube of particles
 lattice_length = 8 # Number of particles in each direction

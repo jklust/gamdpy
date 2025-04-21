@@ -1,6 +1,6 @@
 import numba
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 import matplotlib.pyplot as plt
 
 rho = 0.6

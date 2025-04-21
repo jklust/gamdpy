@@ -1,7 +1,7 @@
 """ Simulate a system of asymmetric dumbbells (ASD) with a Lennard-Jones potential and a harmonic bond potential. """
 
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 # Specify state point
 rho = 1.863  # Atomic density = Molecular density * 2

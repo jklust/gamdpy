@@ -5,7 +5,7 @@
     analyze_structure filename
 """
 
-import rumdpy as rp
+import gamdpy as rp
 import numpy as np
 import numba
 import matplotlib.pyplot as plt

@@ -2,7 +2,7 @@ import numpy as np
 
 
 def test_potential_functions() -> None:
-    import rumdpy as rp
+    import gamdpy as rp
     import numba
 
     # note: this example assumes these functions were implemented correctly in version bfa77f6e

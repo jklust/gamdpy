@@ -8,7 +8,7 @@ This script verifies that several thermodynamics quantity are properly produced.
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Here you can decide to use "NPT_Atomic" or "NPT_Langevin"
 flag = "Atomic"

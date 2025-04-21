@@ -7,7 +7,7 @@ Created on Thu Mar 13 13:33:58 2025
 """
 
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 rp.select_gpu()
 

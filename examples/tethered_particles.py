@@ -9,7 +9,7 @@
 """
 import os
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup a default fcc configuration
 use_list = True

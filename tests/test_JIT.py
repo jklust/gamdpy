@@ -3,7 +3,7 @@ import os
 
 @pytest.mark.slow
 def test_JIT():
-       import rumdpy as rp
+       import gamdpy as rp
        import numpy as np
        os.environ['NUMBA_CUDA_LOW_OCCUPANCY_WARNINGS'] = '0'
 

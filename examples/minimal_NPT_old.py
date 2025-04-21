@@ -7,7 +7,7 @@ It's possible to switch between Langevin and Atomic NPT integrators.
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Here you can decide to use "NPT_Atomic" or "NPT_Langevin"
 flag = "Atomic"

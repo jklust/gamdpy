@@ -14,7 +14,7 @@ between neighboring spins, which favor alignment.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import rumdpy as rp
+import gamdpy as rp
 from math import sin, cos, pi
 
 # Setup configuration

@@ -14,7 +14,7 @@ And 〈...〉 is an average for all possible positions of the ghost particle
 
 import numpy as np
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration: FCC Lattice
 rho = 0.4  # Number density

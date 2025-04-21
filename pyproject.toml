@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "rumdpy"
+name = "gamdpy"
 version = "0.0.1"
 authors = [
     {name="Thomas Schrøder", email="tbs@ruc.dk" },
@@ -11,12 +11,11 @@ authors = [
     {name="Nick Bailey"},
     {name="Jesper Schmidt Hansen"},
     {name="Lorenzo Costigliola"},
-    {name="Rishabh Sharma"},
 ]
 maintainers = [
   { name="Thomas Schrøder", email="tbs@ruc.dk" }
 ]
-description = "Roskilde University Molecular Dynamics Python Package"
+description = "GPU Accelerated Molecular Dynamics in Python "
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
@@ -42,5 +41,5 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://gitlab.com/tbs.cph/rumdpy-dev"
-Issues = "https://gitlab.com/tbs.cph/rumdpy-dev/-/issues"
+Repository = "https://github.com/ThomasBechSchroeder/gamdpy"
+Issues = "https://github.com/ThomasBechSchroeder/gamdpy/issues"

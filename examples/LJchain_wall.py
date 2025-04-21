@@ -1,7 +1,7 @@
 import sys
 import numpy as np
-import rumdpy as rp
-from rumdpy.integrators import nvt_nh
+import gamdpy as rp
+from gamdpy.integrators import nvt_nh
 # from rumdpy.interactions import pair, bond, planar
 import numba
 from numba import cuda

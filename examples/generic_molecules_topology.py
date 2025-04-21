@@ -1,7 +1,7 @@
 
 
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 
 # Sim. params 
 rho, temperature = 1.0, 1.5

@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import rumdpy as rp
+import gamdpy as rp
 from numba import cuda, config
 import pytest
 

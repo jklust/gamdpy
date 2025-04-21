@@ -13,7 +13,7 @@
 
     """
 
-import rumdpy as rp
+import gamdpy as rp
 import os
 
 # Setup configuration: FCC Lattice

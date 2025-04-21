@@ -5,7 +5,7 @@ Note more lattices are available, or you can define your own lattice.
 
 """
 
-import rumdpy as rp
+import gamdpy as rp
 
 # Setup configuration. BCC Lattice
 configuration = rp.Configuration(D=3)

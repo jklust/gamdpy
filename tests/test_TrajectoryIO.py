@@ -4,7 +4,7 @@ def test_TrajectoryIO():
     import os
     import pytest
     import h5py
-    import rumdpy as rp
+    import gamdpy as rp
 
     ## Perform a short simulation
     # Create a starting configuration
