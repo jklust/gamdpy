@@ -3,7 +3,7 @@
 
 Gamdpy implements molecular dynamics on GPU's in Python, relying heavily on the numba package ([numba.org](https://numba.pydata.org/)) which does JIT (Just-In-Time) compilation both to CPU and GPU (cuda). 
 The gamdpy package being pure Python (letting numba do the heavy lifting of generating fast code) results in an extremely extendable package: simply by interjecting Python functions in the right places, 
-the (experienced) user can extend most aspect of the code, including: new integrators, new pair-potentials, new properties to be calculated during simulation, new particle properties, ...  
+the (experienced) user can extend most aspect of the code, including new integrators, new pair-potentials, new properties to be calculated during simulation, new particle properties, ...  
 
 [Installation](installation.md)
 
@@ -19,7 +19,7 @@ the (experienced) user can extend most aspect of the code, including: new integr
 ### 1. Configuration
 A class containing all relevant information about a configuration, including the simulation box (class sim_box). 
 - Vectors (r, v, f, etc): (N,D) float array storing D-dimensional vector for each particle 
-- Scalars (mass, kinetic energy, etc) (N,) float array storing scalar each particle 
+- Scalars (mass, kinetic energy, etc.) (N,) float array storing scalar each particle 
 - sim_box (data describing box + functions implementing how to calculate distances and how to implement BC). For now: only Cuboid box.  
 
 ### 2. Integrators
@@ -39,9 +39,9 @@ Classes implementing interactions that can be applied to particles in the system
 - fixed interactions (interactions known beforehand): 
   - bonds (angles, dihedrals to be implemented)
   - planar interactions: smooth walls, gravity, electric fields, ...
-  - point interactions, e.g. tethering (to be implemented)
+  - point interactions, e.g., tethering (to be implemented)
 
-An interaction is responsible for keeping any internal datastructures up to date (in particular: class PairPotential is resposible for keeping its neighbor-list (class NbList up to date). 
+An interaction is responsible for keeping any internal datastructures up to date (in particular: class PairPotential is responsible for keeping its neighbor-list (class NbList up to date). 
 
 ### 4. Runtime actions
 Classes implementing actions on the configuration which are not related to the interactions or the integration of the equation of motion.
@@ -63,24 +63,24 @@ Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
 - Inherited from rumd3: pb (particles per block), tp (threads per particle)
 - Hoping to avoid from rumd3: sorting (gets too complicated).
-- To be implemented: Autotuner. For now we are relying on default parameters dependent on number of particles and number of core on GPU (see misc.py/get_default_compute_plan).
+- To be implemented: Autotuner. For now, we are relying on default parameters dependent on the number of particles and number of cores on GPU (see misc.py/get_default_compute_plan).
 
-Synchronization is of utmost importance for correctness. For example, all forces needs to be calculated before the integrator starts moving the particles. 
+Synchronization is of the utmost importance for correctness. For example, all forces need to be calculated before the integrator starts moving the particles. 
 Traditionally (and in rumd3) this is done by kernel-calls: it is guaranteed that one kernel finishes before the next begins (unless you explicitly ask otherwise). 
 
-Unfortunately kernel calls are slow, especially in numba.cuda (as compared to c++.cuda). 
-A rough estimate is that the maximum number of time steps per second (TPS) that can be achieved using kernel calls for synchronization is about 5000 - a far cry from the ~100.000 TPS that can be achieved for small systems using "grid synchronization": Calling 'grid.sync()' inside a kernel ensures all threads in the grid gets syncronised (i.e., no threads proceeds beyond this statement before all threads have reached this statement). 
+Unfortunately, kernel calls are slow, especially in numba.cuda (as compared to c++.cuda). 
+A rough estimate is that the maximum number of time steps per second (TPS) that can be achieved using kernel calls for synchronization is about 5000 - a far cry from the ~100.000 TPS that can be achieved for small systems using "grid synchronization": Calling 'grid.sync()' inside a kernel ensures all threads in the grid get synchronised (i.e., no threads proceed beyond this statement before all threads have reached this statement). 
 
-There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to chose between the two ways of synchronization. 
+There is a limit to how many thread blocks can be used with grid synchronization, which makes it inefficient at large system sizes, so we need to be able to choose between the two ways of synchronization. 
 A good place to see how this is done without implementing all functions twice is in 'integrators.py'
  
 ## TODO, short term
-- [x] Break single file into several files/modules 
+- [x] Break a single file into several files/modules 
 - [x] Start using GIT
 - [x] Make it into a python package that can be installed locally by pip
 - [x] cut = 2.5 hardcoded - change that! -> 'max_cut' now part of interaction parameters for pair-potential 
-- [x] Implement springs, as an example of 'fixed interactions' (needs testing for gridsync==False). 
-- [x] Implement (fixed) planar interactions, eg. smooth walls, gravity, and electric fields.
+- [x] Implement springs as an example of 'fixed interactions' (needs testing for gridsync==False). 
+- [x] Implement (fixed) planar interactions, e.g., smooth walls, gravity, and electric fields.
 - [x] Implement exclusion list 
 - [x] upload to GitLab
 - [x] Use 'colarray' for vectors in Configuration
@@ -111,7 +111,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Molecules (angles, dihedrals) Jesper
 - [ ] Molecules (Interface) Jesper, Ulf
 - [ ] Molecular stress, Jesper/Nick
-- [X] Stress calculation for bonds. Perhaps warning not included for angles, dihedrals, Nick/Jesper
+- [X] Stress calculation for bonds. Perhaps warning is not included for angles, dihedrals, Nick/Jesper
 - [X] Implement O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
@@ -124,13 +124,13 @@ A good place to see how this is done without implementing all functions twice is
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] structure inside h5py: static info + a group for each runtime action (Lorenzo)
 - [X] Test neighborlist integrity before and during simulations (after each timeblock)
-- [X] Automatic reallocate larger neighborlist when needed, and redo simulation of last timeblock
+- [X] Automatic reallocate larger neighborlist when needed, and redo simulation of the last timeblock
 - [ ] Benchmarking
 - [ ] Charge (Water, SPCflexible), Jesper et al.
 - [X] Remove NVE_Toxvaerd Nick
 - [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
 - [ ] Include support for different types in CalculatorStructureFactor, Ulf
-- [X] More robust procedure for zeroing the forces (right now done by neighbor list and requires that there be exactly one pair potential present), Thomas
+- [X] More robust procedure for zeroing the forces (right now done by a neighbor list and requires that there be exactly one pair potential present), Thomas
 - [X] Remove imports of rumdpy inside rumdpy modules, Lorenzo
 - [ ] Decide status of gravity interaction, should it be included in planar_interactions, Thomas
 
@@ -146,18 +146,18 @@ A good place to see how this is done without implementing all functions twice is
 - Git ( https://git-scm.com/doc, https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell ).
 - Sphinx ( https://www.sphinx-doc.org/ ) for documentation, 
 - ... to be hosted on readthedocs ( https://about.readthedocs.com/ ). Model: https://numba.readthedocs.io.
-- Hypothesis (property based testing, https://hypothesis.readthedocs.io ).
+- Hypothesis (property-based testing, https://hypothesis.readthedocs.io ).
 - doctest (no more failing examples in examples/docs!, see colarray.py for example).
 - Jupyter notebooks for tutorials. Testing: nbmake?, testbook?
-- Automatic testing upon uploading (CI). How to get acces to GPU's?.
+- Automatic testing upon uploading (CI). How to get access to GPU's?.
 - Systematic benchmarking. Substantial degradation in performance will be considered a bug.
 
 ## Checklist for developing a new feature
-- Copy code that resembles what you want to do, and modify it to your needs.
+- Copy code that resembles what you want to do and modify it to your needs.
 - Write tests in a file placed in tests (run pytest to check that it works).
 - Write an example and place it in examples, add it to the examples/README.md
 - Write documentation in the docstrings of the code (run doctests to check that it works).
-- Include the new feature in the documentation, e.g. you may need to edit docs/source/api.rst
+- Include the new feature in the documentation, e.g., you may need to edit docs/source/api.rst
 
 ## Some git cmd which might be useful
 
@@ -166,13 +166,13 @@ Getting hash of your master (Head)
 git log --pretty=format:'%h' -n 1
 ```
 
-Creating a public branch (on the repository) starting from current master/branch
+Creating a public branch (on the repository) starting from the current master / branch
 ```sh
 git checkout -b your_branch
 git push -u origin your_branch
 ```
 
-Difference in a single file between branches. Can use hash instead of master/branch
+Difference in a single file between branches. Can use hash instead of master / branch
 ```sh
 git diff origin branch -- rumdpy/Simulation.py
 git diff hash1 hash2 -- rumdpy/Simulation.py
@@ -186,7 +186,7 @@ Show version of a file in another branch
 git show branch:file
 ```
 
-Reset last commit. It will not delete any file but will go back removing last commit and the add related to that commit
+Reset the last commit. It will not delete any file but will go back removing the last commit and the adding related to that commit
 ```sh
 git reset HEAD~
 ```
@@ -212,26 +212,26 @@ Running pytest:
 python3 -m pytest
 ```
 
-Running all test typical takes several minutes.
+Running all tests typically takes several minutes.
 Slow tests can be skipped by running (test functions decorated with `@pytest.mark.slow`):
 
 ```sh
 python3 -m pytest -m "not slow"
 ```
 
-Running pytest with -x option makes pytest stop after first failure
+Running pytest with an -x option makes pytest stop after the first failure
 ```sh
 pytest -x
 ```
 
-Running pytest starting from last failed test
+Running pytest starting from the last failed test
 ```sh
 pytest --lf
 ```
 
 ### Test of specific features
 
-Test scripts are located in the `tests` directory. Most can be executed (in a verbose mode) as script:
+Test scripts are located in the `tests` directory. Most can be executed (in a verbose mode) as a script:
 
 ```bash
 python3 tests/test_examples.py
@@ -252,7 +252,7 @@ pip install coverage
 coverage run -m pytest
 ```
 
-After the tests are finished do:
+After the tests are finished, do:
 
 ```sh
 coverage report -m
@@ -265,7 +265,7 @@ or `coverage html`.
 To building the documentation using sphinx, https://www.sphinx-doc.org
 (needs `pip install myst_nb pydata_sphinx_theme`)
 
-Install needed packages:
+Install the necessary packages:
 
 ```sh
 pip install sphinx myst_nb pydata_sphinx_theme
@@ -278,7 +278,7 @@ cd docs
 make html
 ```
 
-Open webpage with firefox (or your favorite browers):
+Open a webpage with firefox (or your favorite browsers):
 
 ```sh
 firefox build/html/index.html
@@ -296,7 +296,7 @@ make clean
 ## LinkerError: libcudadevrt.a not found
 A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
 is to make a symbolic link to the missing file. 
-This can be done by running the somthing like the below in the terminal:
+This can be done by running the something like the below in the terminal:
 
 ```bash
 ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
