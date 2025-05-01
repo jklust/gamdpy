@@ -152,7 +152,7 @@ class Configuration:
         import sys
         np.set_printoptions(threshold=sys.maxsize)
         code_str  = "# Define configuration class\n"
-        code_str += f"from rumdpy import Configuration\n"
+        code_str += f"from gamdpy import Configuration\n"
         code_str += f"configuration = Configuration(D={self.D}, N={self.N}, compute_flags={self.compute_flags})\n"
         # Following part needs to be done with a read function from the .h5
         for key in self.vector_columns:
@@ -285,9 +285,9 @@ class Configuration:
 
         The lattice is constructed by replicating the unit cell in all directions.
         Unit cell is a dictonary with `fractional_coordinates` for particles, and
-        the `lattice_constants` as a list of lengths of the unit cell in all directions.
+        the `lattice_constants` as a list of unit cell lengths in all directions.
 
-        Unit cells are avalible in rumdpy.unit_cells
+        Unit cells are available in gamdpy.unit_cells
 
         Example
         -------
@@ -504,8 +504,8 @@ def configuration_from_hdf5(filename: str, reset_images=False, compute_flags=Non
     Returns
     -------
 
-    configuration : rumdpy.Configuration
-        a rumdpy configuration object
+    configuration : gamdpy.Configuration
+        a gamdpy configuration object
 
     Example
     -------

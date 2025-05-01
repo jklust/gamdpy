@@ -1,17 +1,21 @@
 # This class is used for loading the output of a simulation as a dictionary following the formatting of sim.output or save sim.output to file
 # Can be also used to convert between output formats (rumd3 -> rumdpy supported so far)
+
 import sys
-import numpy as np
 import os
 import time
+
+import numpy as np
+import h5py
+
 
 # This class is a wrapper for several possible inputs/output
 class TrajectoryIO():
     """ 
-    This class handles loading and saving of simulation data.
+    This class handles the loading and saving of simulation data.
     When the class can be instanciated with an output from a previous simulation.
     The data can be saved in self.h5 in the same format of the sim.output object.
-    When the class is instanciated without input, self.h5 is None and can be assigned afterwards (used to save output from memory simulation)
+    When the class is instanciated without an input, self.h5 is None and can be assigned afterward (used to save output from memory simulation)
 
     Parameters
     ----------
@@ -41,8 +45,6 @@ class TrajectoryIO():
     The simulation output is divided into 2 blocks, each of them with 24 configurations
 
     """
-    
-    import h5py
 
     def __init__(self, name=""):
         import importlib.util           # This python library can be used if module can be imported
@@ -87,14 +89,12 @@ class TrajectoryIO():
 
     def load_h5(self, name:str) -> h5py.File:
         """ Makes self.h5 a view of the .h5 files """
-        import h5py
         return h5py.File(name, "r")
 
     # Load from TrajectoryFiles (std rumd3 output)
     # It assumes trajectories are spaced in log2
     def load_rumd3(self, name:str) -> h5py.File:
         """ Reads a rumd3 TrajectoryFiles folder and convert it into rumdpy .h5 output. This function returns a memory .h5"""
-        import h5py
         import os, gzip, glob
         import pandas as pd
 

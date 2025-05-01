@@ -5,7 +5,7 @@
 
 #   How to build the documentation:
 # cd docs
-# pip install myst_nb pydata-sphinx-theme
+# pip install sphinx myst_nb pydata-sphinx-theme
 # make html
 # make latexpdf
 
@@ -15,12 +15,11 @@
 import os, sys
 sys.path.insert(0, os.path.abspath('../..'))
 
-import rumdpy
+import gamdpy
 
-project = 'rumdpy'
-copyright = '2024, Thomas Schrøder, Ulf R. Pedersen, Rishabh Sharma, Lorenzo Costigliola'
-author = 'Thomas Schrøder, Ulf R. Pedersen, Rishabh Sharma, Lorenzo Costigliola'
-release = rumdpy.__version__
+project = 'gamdpy'
+author = 'Thomas B. Schrøder, Ulf R. Pedersen, Lorenzo Costigliola, Nicholas Bailey, Jesper Hansen and contributors'
+release = gamdpy.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -51,4 +50,4 @@ myst_enable_extensions = [
 #html_theme = 'alabaster'
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
-html_logo = '_static/logo_777x147.png'
+# html_logo = '_static/logo_777x147.png'
