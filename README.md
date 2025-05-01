@@ -298,7 +298,6 @@ A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadev
 is to make a symbolic link to the missing file. 
 This can be done by running the somthing like the below in the terminal:
 
-
 ```bash
 ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
 ```
