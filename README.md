@@ -7,7 +7,7 @@ the (experienced) user can extend most aspect of the code, including new integra
 
 [Installation](installation.md)
 
-[The users guide to rumdpy](http://dirac.ruc.dk/~urp/2024/rumdpy/)
+[The users guide to rumdpy](https://dirac.ruc.dk/~urp/gamdpy/)
 
 [Examples](examples/README.md)
 
