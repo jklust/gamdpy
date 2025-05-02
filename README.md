@@ -7,7 +7,7 @@ the (experienced) user can extend most aspect of the code, including new integra
 
 [Installation](installation.md)
 
-[The users guide to rumdpy](https://dirac.ruc.dk/~urp/gamdpy/)
+[The users guide to gamdpy](https://dirac.ruc.dk/~urp/gamdpy/)
 
 [Examples](examples/README.md)
 
@@ -19,8 +19,8 @@ the (experienced) user can extend most aspect of the code, including new integra
 ### 1. Configuration
 A class containing all relevant information about a configuration, including the simulation box (class sim_box). 
 - Vectors (r, v, f, etc): (N,D) float array storing D-dimensional vector for each particle 
-- Scalars (mass, kinetic energy, etc.) (N,) float array storing scalar each particle 
-- sim_box (data describing box + functions implementing how to calculate distances and how to implement BC). For now: only Cuboid box.  
+- Scalars (mass, kinetic energy, etc.): (N,) float array storing scalar for each particle 
+- sim_box (data describing box + functions implementing how to calculate distances and how to implement BC). For now:orthorombic (default) and lees_edwards 
 
 ### 2. Integrators
 Classes implementing a simulation algorithm. Currently implemented: 
@@ -29,7 +29,7 @@ Classes implementing a simulation algorithm. Currently implemented:
 - class NVT_Langevin
 - class NPT_Atomic
 - class NPT_Langevin
-- class NVU_RT
+- class NVU_RT (Experimental)
 
 Temperature/Pressure can be controlled by a user-supplied function, see examples/kablj.py
 
@@ -37,25 +37,25 @@ Temperature/Pressure can be controlled by a user-supplied function, see examples
 Classes implementing interactions that can be applied to particles in the system:  
 - class PairPotential (stores potential parameters and the neighbour list to use (class NbList)
 - fixed interactions (interactions known beforehand): 
-  - bonds (angles, dihedrals to be implemented)
+  - bonds, angles, and dihedrals
   - planar interactions: smooth walls, gravity, electric fields, ...
-  - point interactions, e.g., tethering (to be implemented)
+  - point interactions, e.g., tethering
 
 An interaction is responsible for keeping any internal datastructures up to date (in particular: class PairPotential is responsible for keeping its neighbor-list (class NbList up to date). 
 
 ### 4. Runtime actions
 Classes implementing actions on the configuration which are not related to the interactions or the integration of the equation of motion.
 These classes include momentum reset and savers.
-- class MomentumReset
 - class ConfigurationSaver
 - class ScalarSaver
+- class MomentumReset
 
 ### 5. Simulation
 This class takes a Configuration, an Integrator, a (list of) Interaction(s) and a list of Runtime actions and sets up a simulation. 
 Performing simulation is done by a method of this class.
 
 ### 6. Evaluator
-Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
+Takes a Configuration and a (list of) Interaction(s), and evaluates properties and assign them to the appropiate fields in the configuration.
 
 # Info for developers
 
@@ -63,10 +63,9 @@ Takes a Configuration and a (list of) Interaction(s), and evaluates properties.
 
 - Inherited from rumd3: pb (particles per block), tp (threads per particle)
 - Hoping to avoid from rumd3: sorting (gets too complicated).
-- To be implemented: Autotuner. For now, we are relying on default parameters dependent on the number of particles and number of cores on GPU (see misc.py/get_default_compute_plan).
 
 Synchronization is of the utmost importance for correctness. For example, all forces need to be calculated before the integrator starts moving the particles. 
-Traditionally (and in rumd3) this is done by kernel-calls: it is guaranteed that one kernel finishes before the next begins (unless you explicitly ask otherwise). 
+Traditionally (and in rumd3) this is done by kernel-calls (a kernel is a function running on the GPU, called from the CPU): it is guaranteed that one kernel finishes before the next begins (unless you explicitly ask otherwise). 
 
 Unfortunately, kernel calls are slow, especially in numba.cuda (as compared to c++.cuda). 
 A rough estimate is that the maximum number of time steps per second (TPS) that can be achieved using kernel calls for synchronization is about 5000 - a far cry from the ~100.000 TPS that can be achieved for small systems using "grid synchronization": Calling 'grid.sync()' inside a kernel ensures all threads in the grid get synchronised (i.e., no threads proceed beyond this statement before all threads have reached this statement). 
@@ -98,14 +97,13 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Include scalar column names in output, Lorenzo
 - [X] Include vector column names in output, Lorenzo
 - [X] Documentation/Tutorials/Best practices
-- [ ] Reserve name on pypi, conda? Thomas
 - [X] Generalize make_configuration to different lattices, Ulf
 - [X] Read configurations from file (Lorenzo: added function load_output in tools)
 - [X] Runtime actions to include conf_saver and scalar_output, Thomas
 - [X] Per particles thermostat using interaction
 - [X] Post analysis, RDF and Sq 
 - [X] Post analysis for multicomponents, Lorenzo/Danqui
-- [ ] NVU integrator (tests missing), Mark
+
 
 ## TODO or decide not necessary, before paper/'going public'
 - [X] Molecules (angles, dihedrals) Jesper
@@ -116,16 +114,17 @@ A good place to see how this is done without implementing all functions twice is
 - [X] Test O($N$) nblist update and mechanism for choosing between this and O($N^2$)
 - [X] Allow more flexible/dynamical changing which data to be stored in Configuration, Nick
 - [ ] make GitLab/Hub address users, not ourselves (remove dev-state of page)
-- [ ] make installable by pip for all, by uploading to pypi
+- [ ] Reserve name on pypi, conda? Thomas
+- [ ] make installable by pip for all, by uploading to pypi, Thomas
 - [ ] Use 'colarray' for scalars in Configuration (needs switching of dimensions)
 - [ ] Configuration: include r_im in vectors
 - [ ] Requirements/dependencies, especially to use grid-sync, ADD LINK NUMBA DOC 
-- [ ] Auto-tuner, TBS
+- [X] Auto-tuner, TBS
 - [X] "grid to large for gridsync" should be handled ( CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE )
 - [ ] structure inside h5py: static info + a group for each runtime action (Lorenzo)
 - [X] Test neighborlist integrity before and during simulations (after each timeblock)
 - [X] Automatic reallocate larger neighborlist when needed, and redo simulation of the last timeblock
-- [ ] Benchmarking
+- [X] Benchmarking
 - [ ] Charge (Water, SPCflexible), Jesper et al.
 - [X] Remove NVE_Toxvaerd Nick
 - [ ] Decide status of tools.save_configuration.py (is it necessary? move to Configuration.py ?) Lorenzo
@@ -133,6 +132,7 @@ A good place to see how this is done without implementing all functions twice is
 - [X] More robust procedure for zeroing the forces (right now done by a neighbor list and requires that there be exactly one pair potential present), Thomas
 - [X] Remove imports of rumdpy inside rumdpy modules, Lorenzo
 - [ ] Decide status of gravity interaction, should it be included in planar_interactions, Thomas
+- [ ] NVU integrator (tests missing), Mark
 
 ## TODO, long term:
 - [ ] Constraints
@@ -291,15 +291,3 @@ make clean
 ```
 
 
-# Known issues
-
-## LinkerError: libcudadevrt.a not found
-A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
-is to make a symbolic link to the missing file. 
-This can be done by running the something like the below in the terminal:
-
-```bash
-ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
-```
-
-in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.
