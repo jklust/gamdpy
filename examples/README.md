@@ -1,33 +1,11 @@
 # Examples
 
-List of examples of simulations (mostly in order of increasing complexity).
-The simulations in the examples are very short to ensure fast execution, however, you might want to make them longer.
+List simulation examples (mostly in order of increasing complexity).
+The simulations in the examples are very short to ensure fast execution; however, you might want to make them longer.
 
 ## Basic
 
-- [minimal.py](minimal.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NVT integrator. 
-- [minimal_cpu.py](minimal_cpu.py) : Like minimal.py but running on the cpu using numba CUDA simulator.
-- [minimal_NPT.py](minimal_NPT.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NPT integrators.
-- [blocks.py](blocks.py) : Like minimal.py but specifying directly how a simulation is performed in blocks.
-
-## Analysis
-
-- [thermodynamics.py](thermodynamics.py) : Calculate thermodynamic properties.
-- [isochore.py](isochore.py) : Performing several simulations in one script, here an isochore.
-- [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), useful when a lot of short simulations are performed.
-- [test_stress.py](test_stress.py) : Like blocks.py but calculates also the stress tensor and prints it after each block.
-- [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
-- [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'.
-- [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
-- [widoms_particle_insertion.py](widoms_particle_insertion.py) Widom's particle insertion method for calculating the chemical potential.
-- [evaluator_inverse_powerlaw.py](evaluator_inverse_powerlaw.py) Simulate Lennard-Jones system and evaluate the inverse power law potential.
-- [evaluator_einstein_crystal.py](evaluator_einstein_crystal.py) Simulate Lennard-Jones crystal and evaluate the harmonic tether potential.
-
-The following examples of data analysis scripts needs a filename as commandline argument, e.g. "python3 analyze_structure.py filename". 
-
-- [analyze_structure.py](analyze_structure.py) Calculates rdf (radial distribution function) for configurations in filename.h5, and stores it in filename_rdf.pdf and filename_rdf.pkl (a pickle file with the computed data).
-
-- [analyze_dynamics.py](analyze_dynamics.py) Calculates several dynamical properties (mean squared displacement, non-Gaussian parameter, and incoherent intermediate scattering function) from trajectory stored in filename.h5. Resulting data is stored in filename_dynamics.pkl and plotted in filename_dynamics.pdf.
+- [minimal.py](minimal.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NVT integrator.
 
 ## Atomistic models
 
@@ -46,26 +24,46 @@ The following examples of data analysis scripts needs a filename as commandline 
 - [ASD.py](ASD.py) : ASymmetric Dumbbells (toy model of toluene).
 - [LJchain.py](LJchain.py) : LJ chains (coarse grained polymer model).
 - [generic_molecules.py](generic_molecules.py): Simulation of a linear molecule with bond, angle, and dihedral potentials
-- [rubber_cube.py](rubber_cube.py): A rubber cube modeled as particles connected by springs
 
-## Lattice models
+## Integrators
 
-- [xy_model.py](xy_model.py) : The classical XY model of rotators on a 2D square lattice
+- [minimal_NPT.py](minimal_NPT.py) : Minimal example simulating a single component Lennard-Jones (LJ) system using the NPT integrators.
 
 ## Input and output
 
 Input and output can be done in formats that are not directly supported by the package.
 
-- [write_to_lammps.py](write_to_lammps.py) : Write dump file in LAMMPS format. Can be open by external tools like OVITO or VMD.
+- [write_to_lammps.py](write_to_lammps.py) : Write a dump file in LAMMPS format. Can be open by external tools like OVITO or VMD.
+
+## Runtime analysis
+
+- [thermodynamics.py](thermodynamics.py) : Calculate thermodynamic properties.
+- [isochore.py](isochore.py) : Performing several simulations (an isochore) in one script.
+- [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), useful when a lot of short simulations are performed.
+- [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
+- [3Dviz.ipynb](3Dviz.ipynb) : Jupyter notebook demonstrating 3D visualization of cooling SC/KA Lennard-Jones using the package 'k3d'.
+- [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
+- [widoms_particle_insertion.py](widoms_particle_insertion.py) Widom's particle insertion method for calculating the chemical potential.
+- [evaluator_inverse_powerlaw.py](evaluator_inverse_powerlaw.py) Simulate a Lennard-Jones system and evaluate the inverse power law potential.
+- [evaluator_einstein_crystal.py](evaluator_einstein_crystal.py) Simulate a Lennard-Jones crystal and evaluate the harmonic tether potential.
 
 ## Post-processing
 
-Examples of postprocessing existing rumdpy/rumd3 data. 
+Examples of postprocessing existing gamdpy/rumd3 data. 
 These scripts require the output produced with minimal.py or a rumd3 TrajectoryFile.
 
 - [calc_rdf_from_h5.py](calc_rdf_from_h5.py) : Read a simulation saved as h5 and calculate the RDF.
 - [calc_rdf_from_rumd3.py](calc_rdf_from_rumd3.py) : Read a simulation saved as "TrajectoryFiles" from rumd3 and calculate the RDF.
 - [calc_sq_from_h5.py](calc_sq_from_h5.py) : Read a simulation saved as h5 and calculate the structure factor S(q).
 
-## Other
+The following examples of data analysis scripts need a filename as a commandline argument, e.g. "python3 analyze_structure.py filename". 
+
+- [analyze_structure.py](analyze_structure.py) Calculates rdf (radial distribution function) for configurations in filename.h5, and stores it in filename_rdf.pdf and filename_rdf.pkl (a pickle file with the computed data).
+- [analyze_dynamics.py](analyze_dynamics.py) Calculates several dynamical properties (mean squared displacement, non-Gaussian parameter, and incoherent intermediate scattering function) from the trajectory stored in filename.h5. Resulting data is stored in filename_dynamics.pkl and plotted in filename_dynamics.pdf.
+
+## Miscellaneous
+
+- [minimal_cpu.py](minimal_cpu.py) : Like minimal.py but running on the cpu using numba CUDA simulator.
 - [NVU_RT_kob_andersen.py](NVU_RT_kob_andersen.py) : Use NVU ray tracing integrator
+- [xy_model.py](xy_model.py) : The classical XY model of rotators on a 2D square lattice
+- [rubber_cube.py](rubber_cube.py): A rubber cube modeled as particles connected by springs

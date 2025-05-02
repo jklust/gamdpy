@@ -5,14 +5,14 @@
     analyze_structure filename
 """
 
-import gamdpy as rp
+import gamdpy as gp
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
 import sys
 import pickle
 
-rp.select_gpu()
+gp.select_gpu()
 
 argv = sys.argv.copy()
 argv.pop(0)  # remove scriptname
@@ -22,17 +22,17 @@ else:
     filename = 'Data/LJ_r0.973_T0.70_toread' # Used in testing
 
 # Load existing data
-output = rp.tools.TrajectoryIO(filename+'.h5').get_h5()
+output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
 
 # Create configuration object
-configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Orthorhombic(D, output.attrs['simbox_initial'])
+configuration = gp.Configuration(D=D, N=N)
+configuration.simbox = gp.Orthorhombic(D, output.attrs['simbox_initial'])
 configuration.ptype = output['ptype']
 configuration.copy_to_device()
 # Call the rdf calculator
-calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=300)
+calc_rdf = gp.CalculatorRadialDistribution(configuration, bins=300)
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)
 #       the zero is to select the position array and discard images

@@ -9,38 +9,38 @@ and compute the mean.
 
 import numpy as np
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
-pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
-pair_pot = rp.PairPotential(pair_func, params=[1.0, 1.0, 2.5], max_num_nbs=1000)
+pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
+pair_pot = gp.PairPotential(pair_func, params=[1.0, 1.0, 2.5], max_num_nbs=1000)
 
 # Setup integrator: NVT
-integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
+integrator = gp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(16), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(16),
+                   gp.MomentumReset(100)]
 
 
 # Setup Simulation.
-sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=32,
                     steps_per_timeblock=2048,
                     storage='memory')
 
 # Create evaluator for the inverse power law potential (IPL)
 #     (replace with your potential of interest)
-pair_func_ref = rp.apply_shifted_potential_cutoff(rp.LJ_12_6)
-ipl12 = rp.PairPotential(pair_func_ref, params=[4.0, 0.0, 2.5], max_num_nbs=1000)
-evaluator = rp.Evaluator(sim.configuration, ipl12)
+pair_func_ref = gp.apply_shifted_potential_cutoff(gp.LJ_12_6)
+ipl12 = gp.PairPotential(pair_func_ref, params=[4.0, 0.0, 2.5], max_num_nbs=1000)
+evaluator = gp.Evaluator(sim.configuration, ipl12)
 
 # Run simulation
 u_ipl = []

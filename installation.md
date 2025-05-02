@@ -1,48 +1,54 @@
 # Installation
 
-## Linux
-
-To install `rumdpy` you need a computer 
+To install `gamdpy` you need a computer 
 with a Nvidia GPU, and the following software installed:
 
 1. the [CUDA toolkit](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html), and
-2. the [numba](https://numba.pydata.org/numba-doc/latest/user/installing.html) python package with CUDA GPU support (install `cudatoolkit`).
+2. the [numba](https://numba.readthedocs.io/) python package with CUDA GPU support (install `cudatoolkit`).
 
-Ensure that this is working before proceeding with the installation of `rumdpy`.
+Ensure that this is working before proceeding with the installation of `gampdy`.
 
-### Using pip
+## Linux
 
-Install the package from the GitLab repository:
+Ensure that the CUDA toolkit and numba is installed (see above) by executing the below
 
 ```sh
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev
+python3 -c "import numba.cuda; print(numba.cuda.get_current_device().name)"
+```
+
+### Install with the Python Package Index (pip)
+
+Install the package from the GitHub repository:
+
+```sh
+pip install git+https://github.com/ThomasBechSchroeder/gamdpy.git
 ```
 
 ### From source (for developers)
 
 If you want to inspect or modify the source code, the package can installed by cloning the source code 
-from GitLab to a local directory (change `[some_directory]` to the desired path):
+from GitHub to a local directory (change `[some_directory]` to the desired path):
 
 ```sh
 cd [some_directory]
-git clone https://gitlab.com/tbs.cph/rumdpy-dev.git/  # Clone latest developers version
-cd rumdpy-dev
+git clone https://github.com/ThomasBechSchroeder/gamdpy.git  # Clone latest developers version
+cd gamdpy
 python3 -m venv venv  # Create virtual enviroment
 . venv/bin/activate   # ... and activate
-pip install -e .      # Install rumdpy 
+pip install -e .      # Install gamdpy 
 ```
 
-Update to latest version by executing
+Update to a latest version by executing
 
 ```sh
 git pull
 ```
 
-in the `rumdpy-dev` directory.
+in the `gamdpy` directory.
 
 ## Windows (using WSL)
 
-The following show how to install `rumdpy` 
+The following show how to install `gamdpy` 
 on windows using Windows Subsystem For Linux (WSL).
 
 ### Install WSL
@@ -61,7 +67,7 @@ The default installation is Ubuntu, for others check: <https://learn.microsoft.c
 - in the tab bar click on "v" and select ubuntu
 ```sh 
 sudo apt-get update
-sudo apt-get install python3.10
+sudo apt-get install python3.10  # or another version
 sudo apt-get install pip
 ```
 
@@ -87,10 +93,10 @@ sudo apt install nvidia-cuda-toolkit
 - modify `.bashrc` adding: `export LD_LIBRARY_PATH="/usr/lib/wsl/lib/"` from <https://github.com/numba/numba/issues/7104>
 
 
-### Install rumdpy
+### Install gamdpy
 
 ```sh
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+pip install git+https://github.com/ThomasBechSchroeder/gamdpy.git
 ```
 
 ## Windows (using Anaconda)
@@ -99,9 +105,9 @@ pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
 
 Install Anaconda: <https://docs.anaconda.com/anaconda/install/windows/>
 
-### Install rumdpy 
+### Install gamdpy 
 
-Finally, we install `rumdpy` (and `pip`) using Powershell Prompt in Anaconda
+Finally, we install `gamdpy` (and `pip`) using Powershell Prompt in Anaconda
 
 - open Anaconda Powershell as admin (from search)
 
@@ -111,5 +117,18 @@ conda install anaconda::pip
 conda install anaconda::git
 conda config --set channel_priority flexible
 conda install cudatoolkit
-pip install git+https://gitlab.com/tbs.cph/rumdpy-dev.git
+pip install git+https://github.com/ThomasBechSchroeder/gamdpy.git
 ```
+
+# Known issues
+
+## LinkerError: libcudadevrt.a not found
+A workaround to fix the error `numba.cuda.cudadrv.driver.LinkerError: libcudadevrt.a not found` 
+is to make a symbolic link to the missing file. 
+This can be done by running the something like the below in the terminal:
+
+```bash
+ln -s /usr/lib/x86_64-linux-gnu/libcudadevrt.a .
+```
+
+in the folder of the script. Note that the path to `libcudadevrt.a` to the file may vary depending on the system.

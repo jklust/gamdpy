@@ -1,22 +1,22 @@
-""" Simple example of performing several simulation in one go using rumdpy.
+""" Simple example of performing several simulation in one go using gamdpy.
 
 Simulation of heating a Lennard-Jones crystal on an isochore in the NVT ensemble.
 For an even simpler script, see minimal.py
 
 """
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Setup fcc configuration
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[6, 6, 6], rho=0.973)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=[6, 6, 6], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.6)
 
 # Setup pair potential.
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Specify duration of simulations. 
 # Increase 'num_timelocks' for longer runs, better statistics, AND larger storage consumption
@@ -31,17 +31,17 @@ for temperature in ['0.70', '1.10', '1.50']:
     print('\n\nTemperature: ' + temperature)
     
     # Setup integrator
-    integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
+    integrator = gp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
 
     # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-    runtime_actions = [rp.ConfigurationSaver(), 
-                    rp.ScalarSaver(), 
-                    rp.MomentumReset(100)]
+    runtime_actions = [gp.ConfigurationSaver(),
+                    gp.ScalarSaver(),
+                    gp.MomentumReset(100)]
 
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions, 
+    sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions, 
                         num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                        storage='Data/LJ_r0.973_T'+temperature+'.h5') 
+                        storage='Data/LJ_r0.973_T'+temperature+'.h5')
 
     print('Equilibration:')
     for block in sim.run_timeblocks():

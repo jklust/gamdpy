@@ -2,7 +2,7 @@
 
 import os
 
-import gamdpy as rp
+import gamdpy as gp
 
 file_to_read = "LJ_T0.70.h5"
 
@@ -12,18 +12,18 @@ if not os.path.isfile(file_to_read):
     exit()
 
 # Load existing data
-output = rp.tools.TrajectoryIO(file_to_read).get_h5()
+output = gp.tools.TrajectoryIO(file_to_read).get_h5()
 # Read number of particles N and dimensions from data
 nblocks, nconfs, _ , N, D = output['block'].shape
 
 # Set up the configuration object
 # Create configuration object
-configuration = rp.Configuration(D=D, N=N)
-configuration.simbox = rp.Orthorhombic(D, output.attrs['simbox_initial'])
+configuration = gp.Configuration(D=D, N=N)
+configuration.simbox = gp.Orthorhombic(D, output.attrs['simbox_initial'])
 configuration.copy_to_device()
 
 # Call the rdf calculator
-calc_sq = rp.CalculatorStructureFactor(configuration)
+calc_sq = gp.CalculatorStructureFactor(configuration)
 calc_sq.generate_q_vectors(q_max=18)
 
 # NOTE: the structure of the block is (outer_block, inner_steps, pos&img, npart, dimensions)

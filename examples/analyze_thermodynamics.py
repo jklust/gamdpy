@@ -1,7 +1,7 @@
 """ Investigation of thermodynamic properties
 
 This example show how thermodynamic data can be extracted
-using the `extract_scalars` function from the `rumdpy` package.
+using the `extract_scalars` function from the `gamdpy` package.
 
     Usage:
 
@@ -9,7 +9,7 @@ using the `extract_scalars` function from the `rumdpy` package.
 """
 
 import matplotlib.pyplot as plt
-import gamdpy as rp
+import gamdpy as gp
 import numpy as np
 import sys
 
@@ -17,7 +17,7 @@ import sys
 max_plot_points = 100_000
 
 filename = sys.argv[1] # get filename (without .h5)
-output = rp.tools.TrajectoryIO(filename+'.h5')
+output = gp.tools.TrajectoryIO(filename+'.h5')
 output = output.get_h5()
 
 nblocks, nconfs, _ , N, D = output['block'].shape
@@ -27,7 +27,7 @@ rho = N/volume
 
 # Extract potential energy (U), virial (W), and kinetic energy (K)
 # first_block can be used to skip the initial "equilibration".
-U, W, K = rp.extract_scalars(output, ['U', 'W', 'K'], first_block=0)
+U, W, K = gp.extract_scalars(output, ['U', 'W', 'K'], first_block=0)
 
 mU = np.mean(U)
 mW = np.mean(W)

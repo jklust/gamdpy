@@ -1,4 +1,4 @@
-""" Example of performing several simulation in one go using rumdpy.
+""" Example of performing several simulation in one go using gamdpy.
 
 An isomorph is traced out using the gamma method. The script demomstrates
 the possibility of keeping the output of the simulation in memory (storage='memory').
@@ -16,12 +16,12 @@ import pickle
 
 import numpy as np
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Setup pair potential.
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 T = 2.00
 rhos = [1.00, 1.05, 1.10, 1.15, 1.20, 1.20]
@@ -31,27 +31,27 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T}')
 
     # Setup fcc configuration
-    configuration = rp.Configuration(D=3, compute_flags={'W':True})
-    configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
+    configuration = gp.Configuration(D=3, compute_flags={'W':True})
+    configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=rho)
     configuration['m'] = 1.0
     configuration.randomize_velocities(temperature=2 * T)
 
     # Setup integrator
-    integrator = rp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
+    integrator = gp.integrators.NVT(temperature=T, tau=0.2, dt=0.0025)
 
     # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-    runtime_actions = [rp.ConfigurationSaver(), 
-                       rp.ScalarSaver(16, {'W':True}), 
-                       rp.MomentumReset(100)]
+    runtime_actions = [gp.ConfigurationSaver(),
+                       gp.ScalarSaver(16, {'W':True}),
+                       gp.MomentumReset(100)]
 
     # Setup Simulation
-    sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+    sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                         num_timeblocks=16,  # try something like 128 for better statistics,
                         steps_per_timeblock=512,
                         storage='memory') 
     
     # Setup on-the-fly calculation of Radial Distribution Function
-    calc_rdf = rp.CalculatorRadialDistribution(configuration, bins=1000)
+    calc_rdf = gp.CalculatorRadialDistribution(configuration, bins=1000)
 
     print('Equilibration:', end='\t')
     for block in sim.run_timeblocks():
@@ -64,14 +64,14 @@ for index, rho in enumerate(rhos):
     print(sim.status(per_particle=True))
     
     # Do data analysis
-    U, W = rp.extract_scalars(sim.output, ['U', 'W'], first_block=1)
+    U, W = gp.extract_scalars(sim.output, ['U', 'W'], first_block=1)
     dU = U - np.mean(U)
     dW = W - np.mean(W)
     gamma = np.dot(dW,dU)/np.dot(dU,dU)
     R = np.dot(dW,dU)/(np.dot(dW,dW)*np.dot(dU,dU))**0.5
     print(f'Gamma = {gamma:.3f},  R = {R:.3f}')
 
-    dynamics = rp.tools.calc_dynamics(sim.output, 0, qvalues=7.5*rho**(1/3))
+    dynamics = gp.tools.calc_dynamics(sim.output, 0, qvalues=7.5*rho**(1/3))
     rdf = calc_rdf.read()
     data.append({'rho':rho, 'T':float(T), 'dynamics':dynamics, 'rdf':rdf})
 

@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import gamdpy as rp
+import gamdpy as gp
 import math
 
 temperature, density, npart, D = 3.40410425853, 0.34, 2401, 4
 
-configuration = rp.Configuration(D=D)
+configuration = gp.Configuration(D=D)
 # Setup configuration. SC Lattice in 4D
 configuration.make_positions(N=npart, rho=density)
 # Setup masses and velocities
@@ -13,22 +13,22 @@ configuration['m'] = 1.0  # Set all masses to 1.0
 configuration.randomize_velocities(temperature=temperature)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
-pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator
-integrator = rp.integrators.NVT(temperature=temperature, tau=0.08, dt=0.001)
+integrator = gp.integrators.NVT(temperature=temperature, tau=0.08, dt=0.001)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 
 # Setup Simulation
-sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=16, steps_per_timeblock=4096,
                     storage='memory')
 
@@ -36,7 +36,7 @@ sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
 sim.run(verbose=False)
 sim.run(verbose=False)
 
-U, W, K = rp.extract_scalars(sim.output, ['U', 'W', 'K'], first_block=1)
+U, W, K = gp.extract_scalars(sim.output, ['U', 'W', 'K'], first_block=1)
 dU = U - np.mean(U)
 dW = W - np.mean(W)
 gamma = np.dot(dW,dU)/np.dot(dU,dU)

@@ -14,30 +14,30 @@ The mean displacement from the ideal lattice, sqrt(2*u_spring), is calculated an
 
 import numpy as np
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
 #  anchor_points = np.array(configuration['r']).copy()
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
-pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
 eps, sig, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[eps, sig, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[eps, sig, cut], max_num_nbs=1000)
 
 # Setup integrator: NVT
-integrator = rp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
+integrator = gp.integrators.NVT(temperature=0.7, tau=0.2, dt=0.005)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(32), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(32),
+                   gp.MomentumReset(100)]
 
 # Setup Simulation.
-sim = rp.Simulation(
+sim = gp.Simulation(
     configuration, pair_pot, integrator, runtime_actions,
     num_timeblocks=16,
     steps_per_timeblock=1024,
@@ -46,14 +46,14 @@ sim = rp.Simulation(
 
 # Create evaluator for einstein crystal
 #     (replace with your potential of interest)
-none_interacting = pair_pot = rp.PairPotential(pair_func, params=[0.0, 1.0, 2.5], max_num_nbs=1000)
-harmonic_springs = rp.Tether()  #  U = 0.5*k*(r-r0)^2
+none_interacting = pair_pot = gp.PairPotential(pair_func, params=[0.0, 1.0, 2.5], max_num_nbs=1000)
+harmonic_springs = gp.Tether()  #  U = 0.5*k*(r-r0)^2
 harmonic_springs.set_anchor_points_from_lists(
     particle_indices=list(range(configuration.N)),
     spring_constants=[1.0]*configuration.N,
     configuration=configuration
 )
-evaluator = rp.Evaluator(sim.configuration, [none_interacting, harmonic_springs])
+evaluator = gp.Evaluator(sim.configuration, [none_interacting, harmonic_springs])
 
 # Run simulation
 u_spring = []
@@ -63,7 +63,7 @@ for block in sim.run_timeblocks():
     this_u_spring = evaluator.configuration['U']
     u_spring.append(np.sum(this_u_spring))
 
-    # Use the harmonic potential energy to calculate 
+    # Use the harmonic potential energy to calculate
     #   the displacement relative to the ideal lattice
     dr = np.sqrt(2*this_u_spring)
     displacements.append(dr)
