@@ -6,25 +6,25 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Setup simulation of single-component Lennard-Jones liquid
 temperature: float = 2.0
 density: float = 0.973
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=density)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=density)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=1.44)
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_potential = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
-integrator = rp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
-                   rp.MomentumReset(100)]
+pair_potential = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+integrator = gp.integrators.NVT(temperature=temperature, tau=0.2, dt=0.005)
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 
-sim = rp.Simulation(configuration, pair_potential, integrator, runtime_actions,
+sim = gp.Simulation(configuration, pair_potential, integrator, runtime_actions,
                     num_timeblocks=16, steps_per_timeblock=512,
                     storage='memory')
 
@@ -33,7 +33,7 @@ sim.run()
 
 print("Production run")
 q_max = 18.0
-calc_struct_fact = rp.CalculatorStructureFactor(configuration, backend='GPU')
+calc_struct_fact = gp.CalculatorStructureFactor(configuration, backend='GPU')
 calc_struct_fact.generate_q_vectors(q_max=q_max)
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))

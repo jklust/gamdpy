@@ -1,8 +1,8 @@
 import sys
 import numpy as np
-import gamdpy as rp
+import gamdpy as gp
 from gamdpy.integrators import nvt_nh
-# from rumdpy.interactions import pair, bond, planar
+# from gamdpy.interactions import pair, bond, planar
 import numba
 from numba import cuda
 import pandas as pd
@@ -23,8 +23,8 @@ wall_dimension = 2
 nxy, nz = 8, 4
 
 # Generate configuration with a FCC lattice (higher rho, to make room for walls)
-c1 = rp.Configuration(D=3)
-c1.make_lattice(rp.unit_cell.FCC, cells=[nxy, nxy, nz], rho=1.5)
+c1 = gp.Configuration(D=3)
+c1.make_lattice(gp.unit_cell.FCC, cells=[nxy, nxy, nz], rho=1.5)
 c1['m'] = 1.0
 c1.randomize_velocities(temperature=1.44)
 
@@ -47,36 +47,36 @@ print('simbox: ', c1.simbox.lengths)
 if include_walls:
     print('wall_distance: ', wall_dist)
 
-compute_plan = rp.get_default_compute_plan(c1)
+compute_plan = gp.get_default_compute_plan(c1)
  
 # Setup bond interactions (This is the bare-bones way - It should be possible to setup and replicate molecules)
 if include_springs:
-    bond_potential = rp.harmonic_bond_function
+    bond_potential = gp.harmonic_bond_function
     potential_params_list = [[1.12, 1000.], [1.0, 1000.], [1.12, 1000.]]
     fourth = np.arange(0,c1.N,4)
     bond_particles_list = [np.array((fourth, fourth+1)).T, np.array((fourth+1, fourth+2)).T, np.array((fourth+2, fourth+3)).T] 
-    bonds = rp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
+    bonds = gp.setup_bonds(c1, bond_potential, potential_params_list, bond_particles_list, compute_plan, verbose=True)
     
 # Setup two smooth walls implemented as 'planar interactions'
 if include_walls:
-    wall_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(9,3))
+    wall_potential = gp.apply_shifted_force_cutoff(gp.make_LJ_m_n(9,3))
     A = 4.0*math.pi/3*rho
     potential_params_list = [[A/15.0, -A/2.0, 3.0], [A/15.0, -A/2.0, 3.0]]    # Ingebrigtsen & Dyre (2014)
     particles_list =        [np.arange(c1.N),       np.arange(c1.N)]          # All particles feel the walls
     wall_point_list =       [[0, 0, wall_dist/2.0], [0, 0, -wall_dist/2.0] ]
     normal_vector_list =    [[0,0,1],               [0,0,-1]]                 # Carefull!
-    walls = rp.setup_planar_interactions(c1, wall_potential, potential_params_list, 
+    walls = gp.setup_planar_interactions(c1, wall_potential, potential_params_list,
                                         particles_list, wall_point_list, normal_vector_list, compute_plan, verbose=True)
 
 # Add gravity. NOTE: Carefull about PBC, since planar interactions takes abs(distance)
 if include_gravity:
-    potential = numba.njit(rp.make_IPL_n(-1)) # numba.njit should not be necesarry
+    potential = numba.njit(gp.make_IPL_n(-1)) # numba.njit should not be necesarry
     mg = 2
     potential_params_list = [[mg, 10*wall_dist],]       # Big cutoff, to avoid weird PBC effects
     particles_list =        [np.arange(c1.N),]          # All particles feel the gravity
     point_list =            [[0, 0, -wall_dist/2.0] ]   # Defining 0 for potential energy
     normal_vector_list =    [[0,0,1],     ]
-    gravity = rp.setup_planar_interactions(c1, potential, potential_params_list, 
+    gravity = gp.setup_planar_interactions(c1, potential, potential_params_list,
                                         particles_list, point_list, normal_vector_list, compute_plan, verbose=True)
     
 # Other features you can setup with planar interactions, using different potential-functions include:
@@ -89,12 +89,12 @@ if include_springs:
     exclusions = bonds['exclusions'] # Should be a list, which could be empty
 
 # Setup pair interactions
-pair_potential = rp.apply_shifted_force_cutoff(rp.make_LJ_m_n(12,6))
+pair_potential = gp.apply_shifted_force_cutoff(gp.make_LJ_m_n(12,6))
 sigma =   [[1.0, 0.88], [0.88, 0.80]] # Setting up KABLJ. If all particles are type 0, 
 epsilon = [[1.0, 0.50], [0.50, 1.50]] # ... this reverts to single componant LJ
 cutoff = np.array(sigma)*2.5
-params = rp.LJ_12_6_params_from_sigma_epsilon_cutoff(sigma, epsilon, cutoff)
-LJ = rp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
+params = gp.LJ_12_6_params_from_sigma_epsilon_cutoff(sigma, epsilon, cutoff)
+LJ = gp.PairPotential(c1, pair_potential, params=params, max_num_nbs=1000, compute_plan=compute_plan)
 pairs = LJ.get_interactions(c1, exclusions=exclusions, compute_plan=compute_plan, verbose=True)
 
 # Add up interactions (For now: pair_interaction needs to be first, and there can be only one)
@@ -106,12 +106,12 @@ if include_walls:
 if include_gravity:
     interactions_list.append(gravity)
 
-interactions, interaction_params = rp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
+interactions, interaction_params = gp.add_interactions_list(c1, interactions_list, compute_plan, verbose=True,)
 
-T0 = rp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
-#T1 = rp.make_function_constant(value= 1.8)
-T1 = rp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
-#T1 = rp.make_function_sin(offset=0.45, period=200, amplitude=0.1)
+T0 = gp.make_function_ramp(value0=10.0, x0=10.0, value1=1.8, x1=20.0)
+#T1 = gp.make_function_constant(value= 1.8)
+T1 = gp.make_function_ramp(value0=1.8, x0=200., value1=1.2, x1=400)
+#T1 = gp.make_function_sin(offset=0.45, period=200, amplitude=0.1)
 
 # Setup NVT intergrator(s)
 integrate0, integrator_params0 = nvt_nh.setup(c1, interactions, T0, tau=0.2, dt=0.001, compute_plan=compute_plan) # Equilibrate
@@ -188,7 +188,7 @@ df['vol'] = np.prod(c1.simbox.lengths)
 if include_walls:
     df['vol'] /= c1.simbox.lengths[wall_dimension] * wall_dist
    
-rp.plot_scalars(df, c1.N, c1.D, figsize=(10,8), block=False)
+gp.plot_scalars(df, c1.N, c1.D, figsize=(10,8), block=False)
 
 if include_springs:
     plt.figure() 

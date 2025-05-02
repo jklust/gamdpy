@@ -1,5 +1,5 @@
 import numpy as np
-import gamdpy as rp
+import gamdpy as gp
 
 def trappe_ua_molecule(molecule_name, positions, particle_types, type_names):
     """
@@ -13,11 +13,11 @@ def trappe_ua_molecule(molecule_name, positions, particle_types, type_names):
     for i in range(len(particle_types)):
         assert type_names[particle_types[i]] in trappe_known_types
 
-    top = rp.Topology(molecule_names=[molecule_name, ])
-    top.bonds = rp.bonds_from_positions(positions, cut_off=1.1, bond_type=0)
-    top.angles = rp.angles_from_bonds(top.bonds, angle_type=0)
-    top.dihedrals = rp.dihedrals_from_angles(top.angles, dihedral_type=0)
-    top.molecules[molecule_name] = rp.molecules_from_bonds(top.bonds)
+    top = gp.Topology(molecule_names=[molecule_name, ])
+    top.bonds = gp.bonds_from_positions(positions, cut_off=1.1, bond_type=0)
+    top.angles = gp.angles_from_bonds(top.bonds, angle_type=0)
+    top.dihedrals = gp.dihedrals_from_angles(top.angles, dihedral_type=0)
+    top.molecules[molecule_name] = gp.molecules_from_bonds(top.bonds)
 
     molecule = {}
     molecule['top'] = top
@@ -32,31 +32,31 @@ def trappe_ua_interactions(configuration, type_names):
     interactions = {} 
 
     # Make bond interactions # Should rund through list at update bond-type accordording to atom-types
-    bond_potential = rp.harmonic_bond_function
+    bond_potential = gp.harmonic_bond_function
     bond_params = [[0.8, 1000.], ]
-    interactions['bonds'] = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
+    interactions['bonds'] = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
     # Make angle interactions
-    angle_potential = rp.cos_angle_function
+    angle_potential = gp.cos_angle_function
     angle0, k = 2.0, 500.0
-    interactions['angles'] = rp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],]) 
+    interactions['angles'] = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],])
 
     # Make dihedral interactions
     rbcoef=[.0, 5.0, .0, .0, .0, .0]
-    dihedral_potential = rp.ryckbell_dihedral
-    interactions['dihedrals'] = rp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, parameters=[rbcoef, ])
+    dihedral_potential = gp.ryckbell_dihedral
+    interactions['dihedrals'] = gp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, parameters=[rbcoef, ])
 
     # Exlusion list
     exclusions = interactions['dihedrals'].get_exclusions(configuration)
 
     # Make pair potential
-    pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
     sig = [[1.00, 0.80],
            [0.80, 0.88]]
     eps = [[1.00, 1.50],
            [1.50, 0.50]]
     cut = np.array(sig)*2.5
-    interactions['pair_pot'] = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+    interactions['pair_pot'] = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
     return interactions
     
@@ -81,7 +81,7 @@ particle_types[1] = 1
 molecule = trappe_ua_molecule('alkane', positions, particle_types, type_names=['CH2', 'CH3'])
 print(molecule)
 
-configuration = rp.duplicate_molecule(molecule['top'], molecule['positions'], molecule['particle_types'], 
+configuration = gp.duplicate_molecule(molecule['top'], molecule['positions'], molecule['particle_types'],
                                       molecule['masses'], cells=(6, 6, 6), safety_distance=2.0)
 configuration.randomize_velocities(temperature=temperature)
 
@@ -91,22 +91,22 @@ print(f'Number of particles: {configuration.N}\n')
 interactions = trappe_ua_interactions(configuration, type_names=['CH2', 'CH3'])
 
 # Make integrator
-integrator = rp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.002)
+integrator = gp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.002)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 # Setup simulation
-sim = rp.Simulation(configuration, list(interactions.values()), integrator, runtime_actions,
+sim = gp.Simulation(configuration, list(interactions.values()), integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     storage='memory')
 
 print('\nCompression and equilibration: ')
 dump_filename = 'Data/alkanes_compress.lammps'
 with open(dump_filename, 'w') as f:
-    print(rp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
+    print(gp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
 
 initial_rho = configuration.N / configuration.get_volume()
 for block in sim.run_timeblocks():
@@ -116,7 +116,7 @@ for block in sim.run_timeblocks():
     print(sim.status(per_particle=True), f'rho= {current_rho:.3}', end='\t')
     print(f'P= {(N*temperature + np.sum(configuration["W"]))/volume:.3}') # pV = NkT + W
     with open(dump_filename, 'a') as f:
-        print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
+        print(gp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
     # Scale configuration to get closer to final density, rho
     if block<sim.num_blocks / 2:
@@ -128,19 +128,19 @@ for block in sim.run_timeblocks():
 print(sim.summary()) 
 print(configuration)
 
-sim = rp.Simulation(configuration, list(interactions.values()), integrator, runtime_actions,
+sim = gp.Simulation(configuration, list(interactions.values()), integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     compute_plan=sim.compute_plan, storage=filename+'.h5')
 
 print('\nProduction: ')
 dump_filename = 'Data/alkanes_dump.lammps'
 with open(dump_filename, 'w') as f:
-    print(rp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
+    print(gp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
 
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
     with open(dump_filename, 'a') as f:
-        print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
+        print(gp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
 print(sim.summary()) 
 print(configuration)

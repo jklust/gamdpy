@@ -14,16 +14,16 @@ between neighboring spins, which favor alignment.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import gamdpy as rp
+import gamdpy as gp
 from math import sin, cos, pi
 
 # Setup configuration
 L = 128
 N = L*L
-configuration = rp.Configuration(D=1, N=N)
+configuration = gp.Configuration(D=1, N=N)
 configuration['r'] = 2*pi*np.random.random(N).reshape(N,1)  # "positions" are theta angles of the rotators
 configuration['m'] = np.ones(N)  # "masses" are moment of inertia
-configuration.simbox = rp.Orthorhombic(1, np.array([2*pi]))
+configuration.simbox = gp.Orthorhombic(1, np.array([2*pi]))
 configuration.randomize_velocities(temperature=100)
 
 # Generate bonds to neighbours in square lattice with periodic boundaries
@@ -45,22 +45,22 @@ def neighbour_potential(delta_theta: float, params: np.ndarray) -> tuple:
     return eps*u, eps*s, eps*curvature
 neighbour_bond_potential = neighbour_potential
 neighbour_bond_params = [[1.0], ]
-neighbour_bond_interaction = rp.Bonds(neighbour_bond_potential, neighbour_bond_params, neighbour_bonds)
+neighbour_bond_interaction = gp.Bonds(neighbour_bond_potential, neighbour_bond_params, neighbour_bonds)
 
 # Setup integrator
-integrator = rp.integrators.NVT_Langevin(temperature=0.4, alpha=0.4, dt=0.01, seed=2025)
+integrator = gp.integrators.NVT_Langevin(temperature=0.4, alpha=0.4, dt=0.01, seed=2025)
 
 # Setup runtime actions
-runtime_actions = [rp.ConfigurationSaver(),
-                   rp.ScalarSaver(),
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 # Compute plan
-compute_plan = rp.get_default_compute_plan(configuration)
+compute_plan = gp.get_default_compute_plan(configuration)
 
 # Setup simulation
 interactions = [neighbour_bond_interaction, ]
-sim = rp.Simulation(configuration, interactions, integrator, runtime_actions,
+sim = gp.Simulation(configuration, interactions, integrator, runtime_actions,
                     num_timeblocks=16, steps_per_timeblock=2048,
                     compute_plan=compute_plan, storage='memory')
 

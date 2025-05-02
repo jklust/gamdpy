@@ -8,7 +8,7 @@ This script verifies that several thermodynamics quantity are properly produced.
 
 import numpy as np
 
-import gamdpy as rp
+import gamdpy as gp
 
 # Here you can decide to use "NPT_Atomic" or "NPT_Langevin"
 flag = "Atomic"
@@ -16,31 +16,31 @@ my_T, my_rho, my_p = 2.0, 0.754289412611, 4.7     # Pressure should be P=4.7 for
 
 # Choose integrator
 if flag=="Atomic":
-    integrator = rp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
+    integrator = gp.integrators.NPT_Atomic  (temperature=my_T, tau=0.4, pressure=my_p, tau_p=20, dt=0.001)
 elif flag=="Langevin":
-    rp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001,
+    gp.integrators.NPT_Langevin(temperature=my_T, pressure=my_p, alpha=0.1, alpha_baro=0.0001, mass_baro=0.0001,
                                                              volume_velocity=0.0, barostatModeISO=True, boxFlucCoord=2, dt=0.001, seed=2023)
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3, compute_flags={'Vol':True})
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho) 
+configuration = gp.Configuration(D=3, compute_flags={'Vol':True})
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=my_rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=my_T, seed=0)
 
 # Setup pair potential: Single component 12-6 Lennard-Jones
-pair_func = rp.apply_shifted_potential_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # NVT equilibration for calculation of c_V and Thermal pressure coefficient
-integratorNVT = rp.integrators.NVT(temperature=my_T, tau=0.2, dt=0.001)
+integratorNVT = gp.integrators.NVT(temperature=my_T, tau=0.2, dt=0.001)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(32), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(32),
+                   gp.MomentumReset(100)]
 
-sim = rp.Simulation(configuration, pair_pot, integratorNVT, runtime_actions, 
+sim = gp.Simulation(configuration, pair_pot, integratorNVT, runtime_actions, 
                     num_timeblocks=8, steps_per_timeblock=16384,
                     storage='memory')
 # Equilibration run
@@ -50,7 +50,7 @@ sim.run()
 # Data run
 print("Data run")
 sim.run()
-U, W, K, Vol = rp.extract_scalars(sim.output, ['U', 'W', 'K', 'Vol'], first_block=1)
+U, W, K, Vol = gp.extract_scalars(sim.output, ['U', 'W', 'K', 'Vol'], first_block=1)
 # Full c_V (not excess)
 c_V = np.std(U+K)**2/my_T**2/configuration.N
 dU = U - np.mean(U)
@@ -67,12 +67,12 @@ print(f"Specific heat at constant volume: {c_V}")
 print()
 
 # NPT Simulation 
-sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=8, steps_per_timeblock=16384,
                     storage='memory')
 sim.run()
 sim.run()
-U, W, K, Vol = rp.extract_scalars(sim.output, ['U', 'W', 'K', 'Vol'], first_block=1)
+U, W, K, Vol = gp.extract_scalars(sim.output, ['U', 'W', 'K', 'Vol'], first_block=1)
 H = K + U + my_p * Vol      # enthalpy H = Etot + PV  
 dH = H - np.mean(H)
 dV = Vol - np.mean(Vol)

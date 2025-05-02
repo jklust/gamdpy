@@ -8,7 +8,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-import gamdpy as rp
+import gamdpy as gp
 
 
 RHO = 1.2
@@ -41,25 +41,25 @@ def run_simulations():
     #configuration['r'][27,2] += 0.01 # Perturb z-coordinate of particle 27
 
     # Setup pair potential: Binary Kob-Andersen LJ mixture.
-    pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+    pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
     sig = [[1.00, 0.80],
            [0.80, 0.88]]
     eps = [[1.00, 1.50],
            [1.50, 0.50]]
     # sig, eps = 1, 1
     cut = np.array(sig)*2.5
-    pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+    pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
-    nve_integrator = rp.integrators.NVE(dt=NVE_DT)
+    nve_integrator = gp.integrators.NVE(dt=NVE_DT)
     if DO_NVE_EQ:
-        conf = rp.Configuration(D=3, compute_flags={'Fsq':True})
-        conf.make_lattice(rp.unit_cells.FCC, cells=[4, 4, 4], rho=RHO)
+        conf = gp.Configuration(D=3, compute_flags={'Fsq':True})
+        conf.make_lattice(gp.unit_cells.FCC, cells=[4, 4, 4], rho=RHO)
         conf['m'] = 1.0
         conf.randomize_velocities(temperature=TEMPERATURE)
         conf.ptype[::5] = 1     # Every fifth particle set to type 1 (4:1 mixture)
         print(f"========== NVE EQ ({NVE_EQ_STEPS//NVE_EQ_STEPS_PER_TIMEBLOCK} blocks) ==========")
 
-        sim = rp.Simulation(
+        sim = gp.Simulation(
             conf, pair_pot, nve_integrator,
             num_timeblocks=NVE_EQ_STEPS//NVE_EQ_STEPS_PER_TIMEBLOCK, 
             steps_per_timeblock=NVE_EQ_STEPS_PER_TIMEBLOCK,
@@ -75,7 +75,7 @@ def run_simulations():
         print(f"========== NVE PROD ({NVE_PROD_STEPS//NVE_PROD_STEPS_PER_TIMEBLOCK} blocks) ==========")
         conf, _ = load_conf_from_npz(NVE_EQ_CONF_OUTPUT)
 
-        sim = rp.Simulation(
+        sim = gp.Simulation(
             conf, pair_pot, nve_integrator,
             num_timeblocks=NVE_PROD_STEPS//NVE_PROD_STEPS_PER_TIMEBLOCK, 
             steps_per_timeblock=NVE_PROD_STEPS_PER_TIMEBLOCK,
@@ -86,10 +86,10 @@ def run_simulations():
                 print(f'{block=:4}  {sim.status(per_particle=True)}')
         print(sim.summary())
         
-        u, = rp.extract_scalars(sim.output, ['U'], first_block=0, D=conf.D)
+        u, = gp.extract_scalars(sim.output, ['U'], first_block=0, D=conf.D)
         target_u = np.mean(u[len(u)*3//4:])
         for block in sim.run_timeblocks():
-            ev = rp.Evaluator(conf, pair_pot)
+            ev = gp.Evaluator(conf, pair_pot)
             ev.evaluate()
             conf_u = np.sum(conf['U'])
             if conf_u <= target_u:
@@ -101,7 +101,7 @@ def run_simulations():
 
     conf, target_u = load_conf_from_npz(NVE_PROD_CONF_OUTPUT)
 
-    nvu_integrator = rp.integrators.NVU_RT(
+    nvu_integrator = gp.integrators.NVU_RT(
         target_u=target_u,
         max_abs_val=2,
         threshold=1e-5,
@@ -116,7 +116,7 @@ def run_simulations():
 
     if DO_NVU_PROD:
         print(f"========== NVU PROD ({NVU_PROD_STEPS//NVU_PROD_STEPS_PER_TIMEBLOCK} blocks) ==========")
-        sim = rp.Simulation(
+        sim = gp.Simulation(
             conf, pair_pot, nvu_integrator,
             num_timeblocks=NVU_PROD_STEPS//NVU_PROD_STEPS_PER_TIMEBLOCK, 
             steps_per_timeblock=NVU_PROD_STEPS_PER_TIMEBLOCK,
@@ -131,26 +131,26 @@ def run_simulations():
         print(sim.summary())
 
 
-def save_conf_to_npz(path: str, conf: rp.Configuration, target_u: float) -> None:
+def save_conf_to_npz(path: str, conf: gp.Configuration, target_u: float) -> None:
     np.savez(path, r=conf["r"], v=conf["v"], ptype=conf.ptype, 
              target_u=target_u, simbox_initial=conf.simbox.lengths, 
              m=conf["m"])
     
 
-def load_conf_from_npz(path: str) -> Tuple[rp.Configuration, float]:
+def load_conf_from_npz(path: str) -> Tuple[gp.Configuration, float]:
     conf_data = np.load(path)
     n, d = conf_data["r"].shape
-    conf = rp.Configuration(N=n, D=d, compute_flags={'Fsq':True})
+    conf = gp.Configuration(N=n, D=d, compute_flags={'Fsq':True})
     conf["r"] = conf_data["r"]
     conf["m"] = conf_data.get("m", 1)
     conf["v"] = conf_data["v"]
     conf.ptype = conf_data["ptype"]
-    conf.simbox = rp.Orthorhombic(D=d, lengths=conf_data["simbox_initial"])
+    conf.simbox = gp.Orthorhombic(D=d, lengths=conf_data["simbox_initial"])
     return conf, float(conf_data["target_u"])
 
 def get_rdf(conf, positions, first_block, conf_per_block):
     _, nconf, _n, _d = positions.shape
-    cal_rdf = rp.CalculatorRadialDistribution(conf, bins=500)
+    cal_rdf = gp.CalculatorRadialDistribution(conf, bins=500)
     for i in range(positions.shape[0]):
         if i < first_block:
             continue
@@ -165,9 +165,9 @@ def get_rdf(conf, positions, first_block, conf_per_block):
     return rdf
 
 def plot_output():
-    nve_prod_output = rp.tools.TrajectoryIO(NVE_PROD_OUTPUT).get_h5()
+    nve_prod_output = gp.tools.TrajectoryIO(NVE_PROD_OUTPUT).get_h5()
     conf, target_u = load_conf_from_npz(NVE_PROD_CONF_OUTPUT)
-    nvu_prod_output = rp.tools.TrajectoryIO(NVU_PROD_OUTPUT).get_h5()
+    nvu_prod_output = gp.tools.TrajectoryIO(NVU_PROD_OUTPUT).get_h5()
 
     conf_per_block = 1024 // (NVE_PROD_STEPS // NVE_PROD_STEPS_PER_TIMEBLOCK)
     nve_rdf = get_rdf(conf, nve_prod_output["block"][:, :, 0, :, :], 0, conf_per_block)
@@ -196,8 +196,8 @@ def plot_output():
     ax.set_ylabel(r"$g(r)$")
     fig.savefig("rdf.svg")
 
-    nve_msd = rp.tools.calc_dynamics(nve_prod_output, first_block=0)["msd"]
-    nvu_msd = rp.tools.calc_dynamics(nvu_prod_output, first_block=NVU_EQ_BLOCKS)["msd"]
+    nve_msd = gp.tools.calc_dynamics(nve_prod_output, first_block=0)["msd"]
+    nvu_msd = gp.tools.calc_dynamics(nvu_prod_output, first_block=NVU_EQ_BLOCKS)["msd"]
 
     n_msd, n_ptype = nvu_msd.shape
     fig = plt.figure(figsize=(10, 5))

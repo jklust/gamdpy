@@ -5,7 +5,7 @@
 """
 
 import matplotlib.pyplot as plt
-import gamdpy as rp
+import gamdpy as gp
 import numpy as np
 import sys
 import pickle
@@ -18,9 +18,9 @@ else:
     filename = 'Data/LJ_r0.973_T0.70_toread' # Used in testing
 
 # Load existing data
-output = rp.tools.TrajectoryIO(filename+'.h5').get_h5()
+output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
 
-dynamics = rp.tools.calc_dynamics(output, 0, qvalues=7.5)
+dynamics = gp.tools.calc_dynamics(output, 0, qvalues=7.5)
 with open(filename+'_dynamics.pkl', 'wb') as f:     
     pickle.dump(dynamics, f)
 print(f"Wrote: {filename+'_dynamics.pkl'}")

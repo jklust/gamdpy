@@ -1,7 +1,7 @@
 
 
 import numpy as np
-import gamdpy as rp
+import gamdpy as gp
 
 # Sim. params 
 rho, temperature = 1.0, 1.5
@@ -11,13 +11,13 @@ angle0, k = 2.0, 500.0
 rbcoef=[.0, 50.0, .0, .0, .0, .0]
 
 # Generate configuration with a FCC lattice
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=(8, 8, 8), rho=rho)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=(8, 8, 8), rho=rho)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=temperature)
 
 # Make bonds
-bond_potential = rp.harmonic_bond_function
+bond_potential = gp.harmonic_bond_function
 bond_params = [[1.0, 1000.], ]
 bond_indices = []
 for n in range(0, configuration.N, 4):
@@ -25,26 +25,26 @@ for n in range(0, configuration.N, 4):
     bond_indices.append([n+1, n+2, 0])
     bond_indices.append([n+2, n+3, 0])
 
-bonds = rp.Bonds(bond_potential, bond_params, bond_indices)
+bonds = gp.Bonds(bond_potential, bond_params, bond_indices)
 
 # Angles
-angle_potential = rp.cos_angle_function
+angle_potential = gp.cos_angle_function
 angle_params = [[k, angle0],]
 angle_indices = []
 for n in range(0, configuration.N, 4):
     angle_indices.append([n, n+1, n+2, 0])
     angle_indices.append([n+1, n+2, n+3, 0])
 
-angles = rp.Angles(angle_potential, angle_indices, angle_params) 
+angles = gp.Angles(angle_potential, angle_indices, angle_params)
 
 # Dihedrals
-dihedral_potential = rp.ryckbell_dihedral
+dihedral_potential = gp.ryckbell_dihedral
 dihedral_params = [rbcoef, ]
 dihedral_indices = []
 for n in range(0, configuration.N, 4):
     dihedral_indices.append([n, n+1, n+2, n+3, 0])
 
-dihedrals = rp.Dihedrals(dihedral_potential, dihedral_indices, dihedral_params)
+dihedrals = gp.Dihedrals(dihedral_potential, dihedral_indices, dihedral_params)
 
 # Exlusion list
 #exclusions = angles.get_exclusions(configuration)
@@ -53,28 +53,28 @@ exclusions = dihedrals.get_exclusions(configuration)
 
 
 # Make pair potential
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 # Make integrator
 if NVE:
-    integrator = rp.integrators.NVE(dt=0.001)
+    integrator = gp.integrators.NVE(dt=0.001)
 else:
-    integrator = rp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.002)
+    integrator = gp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.002)
 
 # Compute plan
-compute_plan = rp.get_default_compute_plan(configuration)
+compute_plan = gp.get_default_compute_plan(configuration)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 # 
 
 # Setup simulation
-sim = rp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
+sim = gp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
                     num_timeblocks=10, steps_per_timeblock=256,
                     compute_plan=compute_plan, storage='memory')
 
@@ -87,7 +87,7 @@ for block in sim.run_timeblocks():
 print(sim.summary()) 
 
 columns = ['U', 'W', 'K',] 
-data = np.array(rp.extract_scalars(sim.output, columns, first_block=1)) 
+data = np.array(gp.extract_scalars(sim.output, columns, first_block=1))
 temp = 2.0/3.0*np.mean(data[2])/configuration.N
 Etot = data[0] + data[2]
 Etot_mean = np.mean(Etot)/configuration.N

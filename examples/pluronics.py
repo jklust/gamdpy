@@ -1,7 +1,7 @@
 import numpy as np
-import gamdpy as rp
+import gamdpy as gp
 
-rp.select_gpu()
+gp.select_gpu()
 
 # Simulation params 
 rho, temperature  = 0.38, 1.2
@@ -37,9 +37,9 @@ for i in range(N_A):
     masses.append( 1.0 )  
 
 # Setup configuration: Single molecule first, then duplicate
-top = rp.Topology(['MyMolecule', ])
-top.bonds = rp.bonds_from_positions(positions, cut_off=bond_length+.1, bond_type=0)
-top.molecules['MyMolecule'] = rp.molecules_from_bonds(top.bonds)
+top = gp.Topology(['MyMolecule', ])
+top.bonds = gp.bonds_from_positions(positions, cut_off=bond_length+.1, bond_type=0)
+top.molecules['MyMolecule'] = gp.molecules_from_bonds(top.bonds)
 
 print('Initial Positions:')
 for position in positions:
@@ -50,24 +50,24 @@ print()
 
 # This call creates the pdf "molecule.pdf" with a drawing of the molecule 
 # Use block=True to visualize the molecule before running the simulation
-rp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
+gp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
 
-configuration = rp.duplicate_molecule(top, positions, particle_types, masses, cells=(4, 4, 4), safety_distance=2.0)
+configuration = gp.duplicate_molecule(top, positions, particle_types, masses, cells=(4, 4, 4), safety_distance=2.0)
 configuration.randomize_velocities(temperature=temperature)
 
 print(f'Number of molecules: {len(configuration.topology.molecules["MyMolecule"])}')
 print(f'Number of particles: {configuration.N}\n')
 
 # Make bond interactions
-bond_potential = rp.harmonic_bond_function
+bond_potential = gp.harmonic_bond_function
 bond_params = [[0.8, 1000.], ]
-bonds = rp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
+bonds = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
 # Exlusion list
 exclusions = bonds.get_exclusions(configuration)
 
 # Make pair potential
-pair_func = rp.apply_shifted_force_cutoff(rp.LJ_12_6_sigma_epsilon)
+pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
 sig = [[1.00, 1.00,],
        [1.00, 1.00,],]
 eps = [[1.00, 1.00],
@@ -75,26 +75,26 @@ eps = [[1.00, 1.00],
 cut = [[1.12, 1.12,],
        [1.12, 2.50,],]
 
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 # Make integrator
 dt = 0.005
-integrator = rp.integrators.NVT_Langevin(temperature=temperature, alpha=0.1, dt=0.004, seed=234)
+integrator = gp.integrators.NVT_Langevin(temperature=temperature, alpha=0.1, dt=0.004, seed=234)
 
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
-runtime_actions = [rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), 
-                   rp.MomentumReset(100)]
+runtime_actions = [gp.ConfigurationSaver(),
+                   gp.ScalarSaver(),
+                   gp.MomentumReset(100)]
 
 # Setup simulation
-sim = rp.Simulation(configuration, [pair_pot, bonds,], integrator, runtime_actions,
+sim = gp.Simulation(configuration, [pair_pot, bonds,], integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     storage='memory')
 
 print('\nCompression and equilibration: ')
 dump_filename = 'Data/pluronics_compress.lammps'
 with open(dump_filename, 'w') as f:
-    print(rp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
+    print(gp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
 
 initial_rho = configuration.N / configuration.get_volume()
 for block in sim.run_timeblocks():
@@ -104,7 +104,7 @@ for block in sim.run_timeblocks():
     print(sim.status(per_particle=True), f'rho= {current_rho:.3}', end='\t')
     print(f'P= {(N*temperature + np.sum(configuration["W"]))/volume:.3}') # pV = NkT + W
     with open(dump_filename, 'a') as f:
-        print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
+        print(gp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
     # Scale configuration to get closer to final density, rho
     if block<sim.num_blocks / 2:
@@ -116,19 +116,19 @@ for block in sim.run_timeblocks():
 print(sim.summary()) 
 print(configuration)
 
-sim = rp.Simulation(configuration, [pair_pot, bonds, ], integrator, runtime_actions,
+sim = gp.Simulation(configuration, [pair_pot, bonds, ], integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
                     compute_plan=sim.compute_plan, storage=filename+'.h5')
 
 print('\nProduction: ')
 dump_filename = 'Data/pluronics_dump.lammps'
 with open(dump_filename, 'w') as f:
-    print(rp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
+    print(gp.configuration_to_lammps(sim.configuration, timestep=0), file=f)
 
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
     with open(dump_filename, 'a') as f:
-        print(rp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
+        print(gp.configuration_to_lammps(sim.configuration, timestep=sim.steps_per_block*(block+1)), file=f)
 
 print(sim.summary()) 
 print(configuration)

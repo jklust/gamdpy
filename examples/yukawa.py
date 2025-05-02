@@ -1,7 +1,7 @@
 """ Example of a user defined potential, example of a Yukawa potential.
 
 This script demonstrates how to define a user-defined potential function
-and use it in a rumdpy simulation. The example uses the Yukawa potential
+and use it in a gamdpy simulation. The example uses the Yukawa potential
 as an example, but the same approach can be used for other pair potentials.
 
 Comments
@@ -17,7 +17,7 @@ as described in the numba documentation:
 
     https://numba.readthedocs.io/en/stable/cuda/cudapysupported.html#math
 
-This example uses a syntax similar to the backend of rumdpy, making it easy to
+This example uses a syntax similar to the backend of gamdpy, making it easy to
 include the code in the package, and making it available to the community.
 
 It is recommended ensuring that the analytical derivatives are correct.
@@ -30,7 +30,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numba
 
-import gamdpy as rp
+import gamdpy as gp
 
 
 def yukawa(dist, params):
@@ -111,25 +111,25 @@ plt.legend()
 plt.show()
 
 # Setup configuration: FCC Lattice
-configuration = rp.Configuration(D=3)
-configuration.make_lattice(rp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
+configuration = gp.Configuration(D=3)
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7)
 
 # Setup pair potential: Single component Yukawa system
-pair_func = rp.apply_shifted_potential_cutoff(yukawa)  # Note: We use the above yukawa function here
+pair_func = gp.apply_shifted_potential_cutoff(yukawa)  # Note: We use the above yukawa function here
 sig, eps, cut = 1.0, 1.0, 2.5
-pair_pot = rp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 # Setup integrator: NVT
-integrator = rp.integrators.NVE(dt=0.005)
+integrator = gp.integrators.NVE(dt=0.005)
 
-runtime_actions = [rp.MomentumReset(100), 
-                   rp.ConfigurationSaver(), 
-                   rp.ScalarSaver(), ]
+runtime_actions = [gp.MomentumReset(100),
+                   gp.ConfigurationSaver(),
+                   gp.ScalarSaver(), ]
 
 # Setup Simulation.
-sim = rp.Simulation(configuration, pair_pot, integrator, runtime_actions,
+sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
                     num_timeblocks=32, steps_per_timeblock=1024,
                     storage='memory')
 
