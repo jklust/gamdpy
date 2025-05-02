@@ -4,7 +4,7 @@ To install `gamdpy` you need a computer
 with a Nvidia GPU, and the following software installed:
 
 1. the [CUDA toolkit](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html), and
-2. the [numba](https://numba.pydata.org/numba-doc/latest/user/installing.html) python package with CUDA GPU support (install `cudatoolkit`).
+2. the [numba](https://numba.readthedocs.io/) python package with CUDA GPU support (install `cudatoolkit`).
 
 Ensure that this is working before proceeding with the installation of `gampdy`.
 
