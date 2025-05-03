@@ -10,8 +10,9 @@ from gamdpy import Configuration
 
 # Could include flags of dimensions to work on
 class MomentumReset(RuntimeAction):
-    """ Runtime action that sets the total momentum of configuration to zero
-    every `steps_between_action` time step.
+    """ 
+    Runtime action that sets the total momentum of configuration to zero
+    every `steps_between_reset` time step.
     """
 
     def __init__(self, steps_between_reset: int) -> None:

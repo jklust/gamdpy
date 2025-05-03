@@ -4,7 +4,7 @@ from numba import cuda
 
 class Topology():
     """ 
-    contains information about the topology, e.g. which bonds, angles and dihedrals are in the system
+    This class contains information about the topology, e.g. which bonds, angles and dihedrals are in the system.
     """
 
     def __init__(self, molecule_names=None):
