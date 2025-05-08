@@ -1,0 +1,11 @@
+numpy
+numba
+pandas
+matplotlib
+h5py
+sympy
+scipy
+
+sphinx
+myst_nb 
+pydata_sphinx_theme
