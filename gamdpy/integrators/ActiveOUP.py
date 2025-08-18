@@ -12,37 +12,44 @@ class ActiveOUP(Integrator):
     r""" Active Ornstein-Uhlenbeck Particle (AOUP).
 
     Implementation of overdamped active Ornstein-Uhlenbeck dynamics.
-    Active Ornstein-Uhlenbeck Particle,is an active matter model in which overdamped particles are subject to a colored Ornstein-Uhlenbeck noise.
-    Ref.[Fodor2016]
+    Active Ornstein-Uhlenbeck Particle, is an active matter model in which overdamped particles are subject to a colored Ornstein-Uhlenbeck noise,
+    see Ref. [Fodor2016]_.
 
-    The equations of motion read:
+    The equations of motion:
+
     .. math::
-        \dot{\mathbf{r}}_i = -\mu\nabla_i\Phi + \mathbf{\eta}_i + \mathbf{\xi}_i
+        \dot{x_i} = -\mu f_i + \eta_i + \xi_i
 
-    where i refers to the particle label,:math: \mu to their mobility and :math: \Phi is an interaction potential.
+    where :math:`\mu` is a mobility, and :math:`f` is an interaction potential.
+    :math:`\xi` is an uncorrelated gauss distributed thermal noise:
 
-    :math: \xi is an uncorrelated gauss distributed thermal noise: :math: \langle \xi_{i_\alpha}(t)\xi_{j\beta}(t')\rangle = 2D_T \delta_{ij} \delta_{\alpha \beta} \delta(t-t')
-    here :math: D_T is a diffusion coefficient and greek latters correspond to spatial components.
+    .. math::
+        \langle \xi_{i_\alpha}(t)\xi_{j\beta}(t')\rangle = 2D_T \delta_{ij} \delta_{\alpha \beta} \delta(t-t')
 
-    :math: \eta_i are Ornstein-Uhlenbeck processes, solution of 
-    ..math::
+    here :math:`D_T` is a diffusion coefficient, and greek letters correspond to spatial components.
+    :math:`\eta_i` are Ornstein-Uhlenbeck processes, solution of
+
+    .. math::
             \dot{\mathbf{\eta}}_i = -\frac{\mathbf{\eta}_i}{\tau} + \frac{\sqrt{D_A}}{\tau} \mathbf{\zeta}_i
 
-        with :math: \langle \zeta_{i\alpha}(t) \zeta_{j\beta}(t')\rangle = 2\delta_{ij} \delta_{\alpha \beta} \delta(t-t')
+    with :math:`\langle \zeta_{i\alpha}(t) \zeta_{j\beta}(t')\rangle = 2\delta_{ij} \delta_{\alpha \beta} \delta(t-t')`
     
-    The autocorrelation of :math: \eta then is
+    The autocorrelation of :math:`\eta` then is
+
     .. math::
             \langle \eta_{i\alpha}(t)\eta_{j\beta}(t')\rangle= \delta_{ij} \delta_{\alpha \beta} \frac{D_A}{\tau} e^{\frac{|t-t'|}{\tau}}
     
-    so :math: D_A controls the amplitude of the noise and :math \tau its persistence time.
+    so :math:`D_A` controls the amplitude of the noise and :math:`\tau` its persistence time.
 
-    The equations are discretized using the Euler-Maruyama method ref. [Higham2001] with a timestep :math: dt:
-    ..math::
-        \mathbf{r}_i(t+dt) = \mathbf{r}_i(t)+(\mu\mathbf{F}_i + \mathbf{\eta}_i)dt + \sqrt{2 D_T}\sqrt(dt)*N(0,1)
-    ..math::
-        \mathbf{\eta}_i(t+dt) = \mathbf{\eta}_i(t)-\frac{\mathbf{\eta}_i}{\tau}dt + \frac{\sqrt{2 D_A}}{\tau}*N(0,1)
+    The equations are discretized using the Euler-Maruyama method [Higham2001]_ with a timestep :math:`dt`:
 
-    where N(0,1) is a normal distributed pseudo random number.
+    .. math::
+        \mathbf{r}_i(t+dt) = \mathbf{r}_i(t)+(\mu\mathbf{F}_i + \mathbf{\eta}_i)dt + \sqrt{2 D_T}\sqrt{dt} N(0,1)
+
+    .. math::
+        \mathbf{\eta}_i(t+dt) = \mathbf{\eta}_i(t)-\frac{\mathbf{\eta}_i}{\tau}dt + \frac{\sqrt{2 D_A}}{\tau} N(0,1)
+
+    where :math:`N(0,1)` is a normal distributed pseudo random number.
 
     
     Parameters
@@ -63,16 +70,16 @@ class ActiveOUP(Integrator):
         
     References
     ----------
-    [Fodor2016] Etienne Fodor et al. 
-    “How Far from Equilibrium Is Active Matter?” 
-    Phys. Rev. Lett. 117 (3 July 2016), p. 038103
-    https://link.aps.org/doi/10.1103/PhysRevLett.117.038103
 
+    .. [Fodor2016] Etienne Fodor et al.
+       “How Far from Equilibrium Is Active Matter?”
+       Phys. Rev. Lett. 117 (3 July 2016), p. 038103
+       https://doi.org/10.1103/PhysRevLett.117.038103
 
-    [Higham2001] Higham, D. J. (2001). 
-    An Algorithmic Introduction to Numerical Simulation of Stochastic Differential Equations.
-    SIAM Review, 43(3), 525–546.
-    https://doi.org/10.1137/S0036144500378302
+    .. [Higham2001] Higham, D. J. (2001).
+       "An Algorithmic Introduction to Numerical Simulation of Stochastic Differential Equations."
+       SIAM Review, 43(3), 525–546.
+       https://doi.org/10.1137/S0036144500378302
 
     Examples
     --------

@@ -80,6 +80,10 @@ Other integrators
    :members:
    :exclude-members: get_kernel, get_params
 
+.. autoclass:: gamdpy.ActiveOUP
+   :members:
+   :exclude-members: get_kernel, get_params
+
 .. _interactions:
 
 Interactions
