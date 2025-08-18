@@ -26,7 +26,7 @@ class ActiveOUP(Integrator):
     .. math::
         \langle \xi_{i_\alpha}(t)\xi_{j\beta}(t')\rangle = 2D_T \delta_{ij} \delta_{\alpha \beta} \delta(t-t')
 
-    here :math:`D_T` is a diffusion coefficient, and greek letters correspond to spatial components.
+    here :math:`D_T` is a diffusion coefficient, and Greek letters correspond to spatial components.
     :math:`\eta_i` are Ornstein-Uhlenbeck processes, solution of
 
     .. math::
@@ -37,7 +37,7 @@ class ActiveOUP(Integrator):
     The autocorrelation of :math:`\eta` then is
 
     .. math::
-            \langle \eta_{i\alpha}(t)\eta_{j\beta}(t')\rangle= \delta_{ij} \delta_{\alpha \beta} \frac{D_A}{\tau} e^{\frac{|t-t'|}{\tau}}
+            \langle \eta_{i\alpha}(t)\eta_{j\beta}(t')\rangle= \delta_{ij} \delta_{\alpha \beta} \frac{D_A}{\tau} e^{\frac{-|t-t'|}{\tau}}
     
     so :math:`D_A` controls the amplitude of the noise and :math:`\tau` its persistence time.
 
