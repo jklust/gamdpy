@@ -1,5 +1,16 @@
 # Change log for `gamdpy`
 
+## Version 0.8.3dev
+
+### Bug fixes
+
+* Fixed bug in make_lattice that gave wrong density for D!=3 and rho!=None.
+
+### New features
+
+* Integrator gamdpy.ActiveOUP for Active Ornstein-Uhlenbeck Particle.
+* Smooth truncation with Cubic spline using the modifier gamdpy.apply_cubic_spline_cutoff
+
 ## Version 0.8.2, Aug 3, 2025
 
 ### Bug fixes
