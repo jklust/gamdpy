@@ -69,7 +69,7 @@ class EAM_ZJW_2004(Interaction):
 
         N = configuration.N
         self.electron_density = np.zeros(N, np.float32)
-        self.embedding_energy_and_grad = np.zeros((N,2), np.float32)
+        self.embedding_energy_and_grad = np.zeros((N, 3), np.float32)
         
         self.d_electron_density = cuda.to_device(self.electron_density)
         self.d_embedding_energy_and_grad = cuda.to_device(self.embedding_energy_and_grad)
@@ -138,14 +138,15 @@ class EAM_ZJW_2004(Interaction):
             f_p = - f * (beta + twenty*pow19 / (one + pow20) )/r_e # 1st derivative
             f_pp = -f_p*(beta + (twenty*pow19)/(one+pow20)) - f*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20) - ((twenty*pow19)/(one+pow20))**2/r_e) # second derivative
             f_pp /= r_e
-            return f, f_p, f_pp
+            # instead of f_p, it is more useful to return -f_p/r (corresponding to the variable 's' in the context of pair potentials)
+            return f, -f_p/dist, f_pp
 
         assert UtilizeNIII == False # FOR NOW (?)
 
         virial_factor = numba.float32( 0.5/configuration.D )
         # MAY NOT NEED THIS FUNCTION:
         def electron_density_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
-            rho, rho_p, rho_pp = electron_density_function(ij_dist, ij_params)
+            rho, rho_s, rho_pp = electron_density_function(ij_dist, ij_params)
             #half = numba.float32(0.5)
             #for k in range(D):
             #    my_f[k] = my_f[k] - dr[k]*s                         # Force
@@ -198,8 +199,8 @@ class EAM_ZJW_2004(Interaction):
                     cut = params_other_type[-1] # FIGURE OUT THE CUTOFF!!!!
                     if dist_sq < cut*cut:
                         # maybe cut out the middleman here and just call electron_density_function
-                        rho, rho_p, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
-                        print(global_id, other_id, math.sqrt(dist_sq), rho, rho_p, rho_pp)
+                        rho, rho_s, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
+                        #print(global_id, other_id, math.sqrt(dist_sq), rho, rho_s, rho_pp)
                         cuda.atomic.add(elec_dens, global_id, rho)
 
                         #electron_density_calculator(math.sqrt(dist_sq), ij_params, my_dr, my_f, my_cscalars, my_stress, vectors[f_id], other_id)
@@ -236,7 +237,7 @@ class EAM_ZJW_2004(Interaction):
                     F_primeprime = -F_e*eta**2*pow(rrs, eta-two) * (one + (eta-one) * math.log(rrs)) / rho_s**2
                 embed_en_grad[global_id, 0] = F_rho
                 embed_en_grad[global_id, 1] = F_prime
-                # embed_en_grad[global_id, 2] = F_primeprime # NOT ALLOCATED YET
+                embed_en_grad[global_id, 2] = F_primeprime
                 #if global_id < num_part: # == 0:
                 #    print(global_id, rho, F_rho, F_prime, F_primeprime)
 
@@ -276,11 +277,14 @@ class EAM_ZJW_2004(Interaction):
                 my_type = ptype_function(global_id, ptype)
             
             cuda.syncthreads() # Make sure initializing global variables to zero is done
-
+            assert UtilizeNIII == False
             if global_id < num_part:
                 my_type = ptype_function(global_id, ptype)
                 params_my_type = params[my_type]
-                
+                my_embedding_energy = embed_en_grad[global_id, 0]
+                my_embedding_grad = embed_en_grad[global_id, 1]
+                my_embedding_second_der = embed_en_grad[global_id, 2]
+
                 for i in range(my_t, nblist[global_id, max_nbs], tp):
                     other_id = nblist[global_id, i] 
                     other_type = ptype_function(other_id, ptype)
@@ -289,25 +293,50 @@ class EAM_ZJW_2004(Interaction):
                     #ij_params = params_function(my_type, other_type, params)
                     cut = params_other_type[-1] # STILL NOT SURE WHAT IS CORRECT HERE
                     if dist_sq < cut*cut:
-                        pass
-                        # 1. call electron density calculator and get f, f_p, f_pp
-                        
-                        # 2. access electron density array to get the total density at current atom, as well as the embedding energy and its derivatives
-                        
-                        # get expression for forces
-                        
-                        
-                        # include contributions from pair part.
-                        
-                        
-                        # include stresses
-                        #pairpotential_calculator(math.sqrt(dist_sq), ij_params, my_dr, my_f, my_cscalars, my_stress, vectors[f_id], other_id)
+                        other_embedding_energy = embed_en_grad[other_id, 0]
+                        other_embedding_grad = embed_en_grad[other_id, 1]
+                        #other_embedding_second_der = embed_en_grad[other_id, 2]
 
+                        sum_embed_grad = my_embedding_energy + other_embedding_energy
+
+                        rho, rho_s, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
+                        for k in range(D):
+                            my_f[k] = my_f[k] - my_dr[k]*rho_s * sum_embed_grad                        # Force
+                            cuda.atomic.add(vectors[f_id], (other_id, k), my_dr[k]*rho_s * sum_embed_grad)
+                        ## TO DO
+                        # 1. include energy, virial, [stresses later]
+                        
+                        # 2. Test energy sum time series while simulating with LJ
+                        
+                        # 3. Try to run with EAM potential
+
+                        # 4. include contributions from pair part.
+                        
+                        # 5. deal with different types
+                        
+                        
+                        # 6. include stresses
+                        
+
+                # Now add this thread's contribution to the global force array (and stresses)
+                for k in range(D):
+                    cuda.atomic.add(vectors[f_id], (global_id, k), my_f[k])
+                    if compute_stresses:
+                        cuda.atomic.add(vectors[sx_id], (global_id, k), my_stress[0,k])
+                        if D > 1:
+                            cuda.atomic.add(vectors[sy_id], (global_id, k), my_stress[1,k])
+                            if D > 2:
+                                cuda.atomic.add(vectors[sz_id], (global_id, k), my_stress[2,k])
+                                if D > 3:
+                                    cuda.atomic.add(vectors[sw_id], (global_id, k), my_stress[3,k])
+
+
+                # (... and scalars)
                 for k in range(num_cscalars):
                     cuda.atomic.add(cscalars, (global_id, k), my_cscalars[k])
 
             return 
-        
+
         nblist_check_and_update = self.nblist.get_kernel(configuration, compute_plan, compute_flags, verbose)
 
         if gridsync:
