@@ -209,7 +209,7 @@ class EAM_ZJW_2004(Interaction):
             # now can calculate the embedding energy for this particle
             params_my_type = params[my_type]
             cuda.syncthreads() # Need all threads to have finished adding their contributions before we calculate F
-            if my_t == 0:
+            if global_id < num_part and my_t == 0:
                 rho = elec_dens[global_id]
                 rho_e = params_my_type[2]
                 rho_s = params_my_type[3]
@@ -235,9 +235,11 @@ class EAM_ZJW_2004(Interaction):
                     F_rho = F_e * (one-eta*math.log(rrs))*pow(rrs, eta)
                     F_prime = -F_e*eta**2*pow(rrs, eta-one)*math.log(rrs) / rho_s
                     F_primeprime = -F_e*eta**2*pow(rrs, eta-two) * (one + (eta-one) * math.log(rrs)) / rho_s**2
-                embed_en_grad[global_id, 0] = F_rho
+                embed_en_grad[global_id, 0] = F_rho # maybe not needed if we just write to the energy array now?
                 embed_en_grad[global_id, 1] = F_prime
                 embed_en_grad[global_id, 2] = F_primeprime
+                # We can write the embedding part of the potential energy to the global array already now
+                cscalars[global_id, u_id] = F_rho
                 #if global_id < num_part: # == 0:
                 #    print(global_id, rho, F_rho, F_prime, F_primeprime)
 
@@ -293,16 +295,16 @@ class EAM_ZJW_2004(Interaction):
                     #ij_params = params_function(my_type, other_type, params)
                     cut = params_other_type[-1] # STILL NOT SURE WHAT IS CORRECT HERE
                     if dist_sq < cut*cut:
-                        other_embedding_energy = embed_en_grad[other_id, 0]
+                        #other_embedding_energy = embed_en_grad[other_id, 0]
                         other_embedding_grad = embed_en_grad[other_id, 1]
                         #other_embedding_second_der = embed_en_grad[other_id, 2]
 
-                        sum_embed_grad = my_embedding_energy + other_embedding_energy
+                        sum_embed_grad = my_embedding_grad + other_embedding_grad
 
                         rho, rho_s, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
                         for k in range(D):
                             my_f[k] = my_f[k] - my_dr[k]*rho_s * sum_embed_grad                        # Force
-                            cuda.atomic.add(vectors[f_id], (other_id, k), my_dr[k]*rho_s * sum_embed_grad)
+                            #cuda.atomic.add(vectors[f_id], (other_id, k), my_dr[k]*rho_s * sum_embed_grad)
                         ## TO DO
                         # 1. include energy, virial, [stresses later]
                         
@@ -318,6 +320,7 @@ class EAM_ZJW_2004(Interaction):
                         # 6. include stresses
                         
 
+                        
                 # Now add this thread's contribution to the global force array (and stresses)
                 for k in range(D):
                     cuda.atomic.add(vectors[f_id], (global_id, k), my_f[k])
