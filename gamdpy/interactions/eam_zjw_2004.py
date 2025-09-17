@@ -143,7 +143,8 @@ class EAM_ZJW_2004(Interaction):
 
         assert UtilizeNIII == False # FOR NOW (?)
 
-        virial_factor = numba.float32( 0.5/configuration.D )
+        virial_factor = numba.float32( 1.0/configuration.D )
+        #virial_factor = numba.float32( 0.5/configuration.D )
         # MAY NOT NEED THIS FUNCTION:
         def electron_density_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
             rho, rho_s, rho_pp = electron_density_function(ij_dist, ij_params)
@@ -305,17 +306,19 @@ class EAM_ZJW_2004(Interaction):
                         for k in range(D):
                             my_f[k] = my_f[k] - my_dr[k]*rho_s * sum_embed_grad                        # Force
                             #cuda.atomic.add(vectors[f_id], (other_id, k), my_dr[k]*rho_s * sum_embed_grad)
-                        ## TO DO
-                        # 1. include energy, virial, [stresses later]
-                        
-                        # 2. Test energy sum time series while simulating with LJ
-                        
-                        # 3. Try to run with EAM potential
+                        if compute_w:
+                            my_cscalars[w_id] += my_embedding_grad*dist_sq*rho_s*virial_factor       # Virial
 
-                        # 4. include contributions from pair part.
+
+                        ## TO DO
+
+                        # 1. include contributions from pair part.
                         
-                        # 5. deal with different types
+                        # 2. Test energy conservation on NVE with pair part included
+
+                        # 3. deal with different types
                         
+                        # 4. Test energy conservation with different types
                         
                         # 6. include stresses
                         
