@@ -144,7 +144,7 @@ class EAM_ZJW_2004(Interaction):
         assert UtilizeNIII == False # FOR NOW (?)
 
         virial_factor = numba.float32( 1.0/configuration.D )
-        #virial_factor = numba.float32( 0.5/configuration.D )
+        virial_factor_half = numba.float32( 0.5/configuration.D )
         # MAY NOT NEED THIS FUNCTION:
         def electron_density_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
             rho, rho_s, rho_pp = electron_density_function(ij_dist, ij_params)
@@ -244,6 +244,37 @@ class EAM_ZJW_2004(Interaction):
                 #if global_id < num_part: # == 0:
                 #    print(global_id, rho, F_rho, F_prime, F_primeprime)
 
+        # Should I jit it after defining it?
+        @cuda.jit( device = gridsync )
+        def pair_contribution(dist, params):
+            r_e = params[0]
+            alpha = params[4]
+            beta = params[5]
+            A = params[6]
+            B = params[7]
+            kappa = params[8]
+            lamb = params[9]
+            one = numba.float32(1.0)
+            r_sc = dist / r_e
+
+            nineteen = numba.float32(19.)
+            twenty = numba.float32(20.)
+            pow19_kap = math.pow(r_sc - kappa, 19)
+            pow20_kap = math.pow(r_sc - kappa, 20)
+            pow19_lam = math.pow(r_sc - lamb, 19)
+            pow20_lam = math.pow(r_sc - lamb, 20)
+
+            denom_kap = one + pow20_kap
+            denom_lam = one + pow20_lam
+            phi_A = A * math.exp(-alpha*(r_sc-one)) / denom_kap
+            phi_B = B * math.exp(-beta*(r_sc-one)) / denom_lam
+            phi = phi_A - phi_B
+
+            phi_p =  (- phi_A * (alpha + twenty*pow19_kap / (one + pow20_kap) )/r_e # 1st derivative
+                      + phi_B * (beta + twenty*pow19_lam / (one + pow20_lam) )/r_e # 1st derivative
+            )
+            phi_pp = numba.float32(0.)
+            return phi, -phi_p/dist, phi_pp
 
         @cuda.jit( device=gridsync )  
         def calc_forces(vectors, cscalars, ptype, sim_box, nblist, params, elec_dens, embed_en_grad):
@@ -293,35 +324,47 @@ class EAM_ZJW_2004(Interaction):
                     other_type = ptype_function(other_id, ptype)
                     params_other_type = params[other_type]
                     dist_sq = dist_sq_dr_function(vectors[r_id][other_id], vectors[r_id][global_id], sim_box, my_dr)
-                    #ij_params = params_function(my_type, other_type, params)
-                    cut = params_other_type[-1] # STILL NOT SURE WHAT IS CORRECT HERE
+                    cut = params_other_type[-1]
                     if dist_sq < cut*cut:
+                        dist = math.sqrt(dist_sq)
                         #other_embedding_energy = embed_en_grad[other_id, 0]
                         other_embedding_grad = embed_en_grad[other_id, 1]
                         #other_embedding_second_der = embed_en_grad[other_id, 2]
 
                         sum_embed_grad = my_embedding_grad + other_embedding_grad
 
-                        rho, rho_s, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
+                        rho, rho_s, rho_pp = electron_density_function(dist, params_other_type)
                         for k in range(D):
                             my_f[k] = my_f[k] - my_dr[k]*rho_s * sum_embed_grad                        # Force
-                            #cuda.atomic.add(vectors[f_id], (other_id, k), my_dr[k]*rho_s * sum_embed_grad)
                         if compute_w:
                             my_cscalars[w_id] += my_embedding_grad*dist_sq*rho_s*virial_factor       # Virial
 
+                        # Now for the pair part. Same as in PairPotential.pairpotential_calculator
+                        u_pair, s_pair, umm_pair = pair_contribution(dist, params_my_type) # INCORRECT FOR MIXED TYPES!!!
+                        half = numba.float32(0.5)
+                        for k in range(D):
+                            my_f[k] = my_f[k] - my_dr[k]*s_pair                         # Force
+                            if compute_w:
+                                my_cscalars[w_id] += my_dr[k]*my_dr[k]*s_pair*virial_factor_half       # Virial
+                            if compute_stresses:
+                                for k2 in range(D):
+                                    my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*s_pair      # stress tensor
+                        if compute_u:
+                            my_cscalars[u_id] += half*u_pair                                # Potential energy
+                if compute_lap:
+                    my_cscalars[lap_id] += numba.float32(1-D)*s_pair + umm_pair          # Laplacian
 
                         ## TO DO
-
-                        # 1. include contributions from pair part.
+                        # 1  Include second derivative in pair_contribution
+                        # 2. deal with different types
                         
-                        # 2. Test energy conservation on NVE with pair part included
-
-                        # 3. deal with different types
+                        # 3. Test energy conservation with different types
                         
-                        # 4. Test energy conservation with different types
+                        # 4. Find a way to test physical properties for a pure system
+                        # 5. Find a physics test for an alloy.
                         
                         # 6. include stresses
-                        
+                        # 7. Include Laplacian
 
                         
                 # Now add this thread's contribution to the global force array (and stresses)
