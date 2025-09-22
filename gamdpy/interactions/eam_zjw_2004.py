@@ -251,9 +251,11 @@ class EAM_ZJW_2004(Interaction):
             phi_p = phi_A_p - phi_B_p
 
 
-            phi_A_pp = -phi_A_p*(alpha + (twenty*pow19_kap)/(one+pow20_kap)) - phi_A*( (twenty*nineteen*math.pow(r_sc - kappa, 18))/(one+pow20_kap) - ((twenty*pow19_kap)/(one+pow20_kap))**2) / r_e
+            phi_A_pp = -phi_A_p*(alpha + (twenty*pow19_kap)/(one+pow20_kap)) - phi_A*( (twenty*nineteen*math.pow(r_sc - kappa, 18))/(one+pow20_kap) -
+                                                                                      ((twenty*pow19_kap)/(one+pow20_kap))**2) / r_e
             phi_A_pp /= r_e
-            phi_B_pp = -phi_B_p*(beta + (twenty*pow19_lam)/(one+pow20_lam)) - phi_B*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20_lam) - ((twenty*pow19_lam)/(one+pow20_lam))**2) / r_e
+            phi_B_pp = -phi_B_p*(beta + (twenty*pow19_lam)/(one+pow20_lam)) - phi_B*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20_lam) -
+                                                                                     ((twenty*pow19_lam)/(one+pow20_lam))**2) / r_e
             phi_B_pp /= r_e
             phi_pp = phi_A_pp - phi_B_pp
 
@@ -316,38 +318,46 @@ class EAM_ZJW_2004(Interaction):
 
                         sum_embed_grad = my_embedding_grad + other_embedding_grad
 
-                        rho, rho_s, rho_pp = electron_density_function(dist, params_other_type)
+                        other_rho, other_rho_s, other_rho_pp = electron_density_function(dist, params_other_type)
                         for k in range(D):
-                            my_f[k] = my_f[k] - my_dr[k]*rho_s * sum_embed_grad                        # Force
+                            my_f[k] = my_f[k] - my_dr[k]*other_rho_s * sum_embed_grad                        # Force
                         if compute_w:
-                            my_cscalars[w_id] += my_embedding_grad*dist_sq*rho_s*virial_factor       # Virial
+                            my_cscalars[w_id] += my_embedding_grad*dist_sq*other_rho_s*virial_factor       # Virial
 
-                        # Now for the pair part. Same as in PairPotential.pairpotential_calculator
-                        my_u_pair, my_s_pair, my_umm_pair = pair_contribution(dist, params_my_type) # INCORRECT FOR MIXED TYPES!!!
-                        other_u_pair, other_s_pair, other_umm_pair = pair_contribution(dist, params_other_type)
+                        # Now for the pair part. Similar PairPotential.pairpotential_calculator but have to combine the "my" and "other" parts"
+                        my_rho, my_rho_s, my_rho_pp = electron_density_function(dist, params_my_type)
+                        my_phi, my_phi_s, my_phi_pp = pair_contribution(dist, params_my_type)
+                        other_phi, other_phi_s, other_phi_pp = pair_contribution(dist, params_other_type)
                         half = numba.float32(0.5)
+                        zero = numba.float32(0.)
+                        # Some optimization is possible by splitting the alloy pair potential between threads.
+                        # So this thread  only calculates pair_contribution for this type, and adds the corresponding contrbutino to the neighbor's force also
+                        u_pair = half * ((other_rho / my_rho) * my_phi + (my_rho / other_rho) * other_phi)
+                        s_pair = half * ((other_rho_s/my_rho) * my_phi - (other_rho/my_rho**2) * my_rho_s * my_phi + (other_rho/my_rho) * my_phi_s +
+                                         (my_rho_s / other_rho) * other_phi - (my_rho / other_rho**2) * other_rho_s * other_phi + (my_rho / other_rho) * other_phi_s )
+                        umm_pair = zero # NOT IMPLEMENTED YET (will be  a monster expression, more complicated than s_pair, but built out of the derivatives already calculated)
+
                         for k in range(D):
-                            my_f[k] = my_f[k] - my_dr[k]*my_s_pair                         # Force
+                            my_f[k] = my_f[k] - my_dr[k]*s_pair                         # Force
                             if compute_w:
-                                my_cscalars[w_id] += my_dr[k]*my_dr[k]*my_s_pair*virial_factor_half       # Virial
+                                my_cscalars[w_id] += my_dr[k]*my_dr[k]*s_pair*virial_factor_half       # Virial
                             if compute_stresses:
                                 for k2 in range(D):
-                                    my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*my_s_pair      # stress tensor
+                                    my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*s_pair      # stress tensor
                         if compute_u:
-                            my_cscalars[u_id] += half*my_u_pair                                # Potential energy
+                            my_cscalars[u_id] += half*u_pair                                # Potential energy
                 if compute_lap:
-                    my_cscalars[lap_id] += numba.float32(1-D)*my_s_pair + my_umm_pair          # Laplacian
+                    my_cscalars[lap_id] += numba.float32(1-D)*s_pair + umm_pair          # Laplacian
+
 
                         ## TO DO
-                        # 1  Include second derivative in pair_contribution DONE
-                        # 2. deal with different types
-                        
-                        # 3. Test energy conservation with different types
+                        # 1. Re think force contribution from many-body term for alloys
+                        # 2. Test energy conservation with two actually different types
                         
                         # 4. Find a way to test physical properties for a pure system
                         # 5. Find a physics test for an alloy.
                         
-                        # 6. include stresses
+                        # 6. include many-body contribution to stresses
                         # 7. Include Laplacian
 
                         
