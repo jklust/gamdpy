@@ -316,16 +316,17 @@ class EAM_ZJW_2004(Interaction):
                         other_embedding_grad = embed_en_grad[other_id, 1]
                         #other_embedding_second_der = embed_en_grad[other_id, 2]
 
-                        sum_embed_grad = my_embedding_grad + other_embedding_grad
-
+                        # See comment about possible optimization a few lines down
+                        my_rho, my_rho_s, my_rho_pp = electron_density_function(dist, params_my_type)
                         other_rho, other_rho_s, other_rho_pp = electron_density_function(dist, params_other_type)
+
+                        effective_s = other_rho_s * my_embedding_grad + my_rho_s * other_embedding_grad
                         for k in range(D):
-                            my_f[k] = my_f[k] - my_dr[k]*other_rho_s * sum_embed_grad                        # Force
+                            my_f[k] = my_f[k] - my_dr[k]*effective_s                        # Force
                         if compute_w:
                             my_cscalars[w_id] += my_embedding_grad*dist_sq*other_rho_s*virial_factor       # Virial
 
                         # Now for the pair part. Similar PairPotential.pairpotential_calculator but have to combine the "my" and "other" parts"
-                        my_rho, my_rho_s, my_rho_pp = electron_density_function(dist, params_my_type)
                         my_phi, my_phi_s, my_phi_pp = pair_contribution(dist, params_my_type)
                         other_phi, other_phi_s, other_phi_pp = pair_contribution(dist, params_other_type)
                         half = numba.float32(0.5)
@@ -351,14 +352,13 @@ class EAM_ZJW_2004(Interaction):
 
 
                         ## TO DO
-                        # 1. Re think force contribution from many-body term for alloys
-                        # 2. Test energy conservation with two actually different types
+                        # 1. Test energy conservation with two actually different types
                         
-                        # 4. Find a way to test physical properties for a pure system
-                        # 5. Find a physics test for an alloy.
+                        # 2. Find a way to test physical properties for a pure system
+                        # 3. Find a physics test for an alloy.
                         
-                        # 6. include many-body contribution to stresses
-                        # 7. Include Laplacian
+                        # 4. include many-body contribution to stresses
+                        # 5. Include Laplacian
 
                         
                 # Now add this thread's contribution to the global force array (and stresses)
