@@ -136,7 +136,7 @@ class EAM_ZJW_2004(Interaction):
             pow20 = math.pow(r_sc - lamb, 20)
             f = f_e * math.exp(-beta*(r_sc - one)) / (one + pow20)
             f_p = - f * (beta + twenty*pow19 / (one + pow20) )/r_e # 1st derivative
-            f_pp = -f_p*(beta + (twenty*pow19)/(one+pow20)) - f*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20) - ((twenty*pow19)/(one+pow20))**2/r_e) # second derivative
+            f_pp = -f_p*(beta + (twenty*pow19)/(one+pow20)) - f*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20) - ((twenty*pow19)/(one+pow20))**2)/r_e # second derivative
             f_pp /= r_e
             # instead of f_p, it is more useful to return -f_p/r (corresponding to the variable 's' in the context of pair potentials)
             return f, -f_p/dist, f_pp
@@ -145,27 +145,9 @@ class EAM_ZJW_2004(Interaction):
 
         virial_factor = numba.float32( 1.0/configuration.D )
         virial_factor_half = numba.float32( 0.5/configuration.D )
-        # MAY NOT NEED THIS FUNCTION:
-        def electron_density_calculator(ij_dist, ij_params, dr, my_f, cscalars, my_stress, f, other_id):
-            rho, rho_s, rho_pp = electron_density_function(ij_dist, ij_params)
-            #half = numba.float32(0.5)
-            #for k in range(D):
-            #    my_f[k] = my_f[k] - dr[k]*s                         # Force
-            #    if compute_w:
-            #        cscalars[w_id] += dr[k]*dr[k]*s*virial_factor       # Virial
-            #    if compute_stresses:
-            #        for k2 in range(D):
-            #            my_stress[k,k2] -= half*dr[k]*dr[k2]*s      # stress tensor
-            #if compute_u:
-            #    cscalars[u_id] += half*u                                # Potential energy
-            #if compute_lap:
-            #    cscalars[lap_id] += numba.float32(1-D)*s + umm          # Laplacian 
-            return rho
 
         electron_density_function = numba.njit(electron_density_function)
         ptype_function = numba.njit(configuration.ptype_function)
-        #params_function = numba.njit(self.params_function)
-        #electron_density_calculator = numba.njit(electron_density_calculator)
         dist_sq_dr_function = numba.njit(configuration.simbox.get_dist_sq_dr_function())
         dist_sq_function = numba.njit(configuration.simbox.get_dist_sq_function())
     
@@ -184,9 +166,9 @@ class EAM_ZJW_2004(Interaction):
             max_nbs = nblist.shape[1]-1
             if global_id < num_part:
                 elec_dens[global_id] = zero
-            my_type = ptype_function(global_id, ptype)
-            
 
+            cuda.syncthreads() # necessary (I think) so nobody is setting elec_dens for this particle to zero after other threads have begun to add to it
+            my_type = ptype_function(global_id, ptype)
             my_dr = cuda.local.array(shape=D,dtype=numba.float32)
 
             if global_id < num_part:
@@ -194,22 +176,16 @@ class EAM_ZJW_2004(Interaction):
                     other_id = nblist[global_id, i]
                     other_type = ptype_function(other_id, ptype)
                     params_other_type = params[other_type]
-                    #dist_sq = dist_sq_dr_function(vectors[r_id][other_id], vectors[r_id][global_id], sim_box, my_dr)
                     dist_sq = dist_sq_function(vectors[r_id][other_id], vectors[r_id][global_id], sim_box)
-                    #ij_params = params_function(my_type, other_type, params)
-                    cut = params_other_type[-1] # FIGURE OUT THE CUTOFF!!!!
+                    cut = params_other_type[-1]
                     if dist_sq < cut*cut:
-                        # maybe cut out the middleman here and just call electron_density_function
                         rho, rho_s, rho_pp = electron_density_function(math.sqrt(dist_sq), params_other_type)
                         #print(global_id, other_id, math.sqrt(dist_sq), rho, rho_s, rho_pp)
                         cuda.atomic.add(elec_dens, global_id, rho)
 
-                        #electron_density_calculator(math.sqrt(dist_sq), ij_params, my_dr, my_f, my_cscalars, my_stress, vectors[f_id], other_id)
-
             cuda.syncthreads() # synchronize to ensure that all threads updating the electron density for a given particle have finished
             # now can calculate the embedding energy for this particle
             params_my_type = params[my_type]
-            cuda.syncthreads() # Need all threads to have finished adding their contributions before we calculate F
             if global_id < num_part and my_t == 0:
                 rho = elec_dens[global_id]
                 rho_e = params_my_type[2]
@@ -270,10 +246,17 @@ class EAM_ZJW_2004(Interaction):
             phi_B = B * math.exp(-beta*(r_sc-one)) / denom_lam
             phi = phi_A - phi_B
 
-            phi_p =  (- phi_A * (alpha + twenty*pow19_kap / (one + pow20_kap) )/r_e # 1st derivative
-                      + phi_B * (beta + twenty*pow19_lam / (one + pow20_lam) )/r_e # 1st derivative
-            )
-            phi_pp = numba.float32(0.)
+            phi_A_p = - phi_A * (alpha + twenty*pow19_kap / (one + pow20_kap) ) / r_e # use denom_kap ?
+            phi_B_p = - phi_B * (beta + twenty*pow19_lam / (one + pow20_lam) ) / r_e
+            phi_p = phi_A_p - phi_B_p
+
+
+            phi_A_pp = -phi_A_p*(alpha + (twenty*pow19_kap)/(one+pow20_kap)) - phi_A*( (twenty*nineteen*math.pow(r_sc - kappa, 18))/(one+pow20_kap) - ((twenty*pow19_kap)/(one+pow20_kap))**2) / r_e
+            phi_A_pp /= r_e
+            phi_B_pp = -phi_B_p*(beta + (twenty*pow19_lam)/(one+pow20_lam)) - phi_B*( (twenty*nineteen*math.pow(r_sc - lamb, 18))/(one+pow20_lam) - ((twenty*pow19_lam)/(one+pow20_lam))**2) / r_e
+            phi_B_pp /= r_e
+            phi_pp = phi_A_pp - phi_B_pp
+
             return phi, -phi_p/dist, phi_pp
 
         @cuda.jit( device=gridsync )  
@@ -340,22 +323,23 @@ class EAM_ZJW_2004(Interaction):
                             my_cscalars[w_id] += my_embedding_grad*dist_sq*rho_s*virial_factor       # Virial
 
                         # Now for the pair part. Same as in PairPotential.pairpotential_calculator
-                        u_pair, s_pair, umm_pair = pair_contribution(dist, params_my_type) # INCORRECT FOR MIXED TYPES!!!
+                        my_u_pair, my_s_pair, my_umm_pair = pair_contribution(dist, params_my_type) # INCORRECT FOR MIXED TYPES!!!
+                        other_u_pair, other_s_pair, other_umm_pair = pair_contribution(dist, params_other_type)
                         half = numba.float32(0.5)
                         for k in range(D):
-                            my_f[k] = my_f[k] - my_dr[k]*s_pair                         # Force
+                            my_f[k] = my_f[k] - my_dr[k]*my_s_pair                         # Force
                             if compute_w:
-                                my_cscalars[w_id] += my_dr[k]*my_dr[k]*s_pair*virial_factor_half       # Virial
+                                my_cscalars[w_id] += my_dr[k]*my_dr[k]*my_s_pair*virial_factor_half       # Virial
                             if compute_stresses:
                                 for k2 in range(D):
-                                    my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*s_pair      # stress tensor
+                                    my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*my_s_pair      # stress tensor
                         if compute_u:
-                            my_cscalars[u_id] += half*u_pair                                # Potential energy
+                            my_cscalars[u_id] += half*my_u_pair                                # Potential energy
                 if compute_lap:
-                    my_cscalars[lap_id] += numba.float32(1-D)*s_pair + umm_pair          # Laplacian
+                    my_cscalars[lap_id] += numba.float32(1-D)*my_s_pair + my_umm_pair          # Laplacian
 
                         ## TO DO
-                        # 1  Include second derivative in pair_contribution
+                        # 1  Include second derivative in pair_contribution DONE
                         # 2. deal with different types
                         
                         # 3. Test energy conservation with different types
