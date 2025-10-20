@@ -151,7 +151,7 @@ full_stress_tensor = gp.StressSaver.extract(sim.output)
 mean_diagonal_sts = (full_stress_tensor[:,0,0] + full_stress_tensor[:,1,1] + full_stress_tensor[:,2,2])/3
 
 print("Mean diagonal stress", np.mean(mean_diagonal_sts) )
-print("Pressure", np.mean(W)*rho/N + temperature*rho)
+print("Pressure", np.mean(W)*rho + temperature*rho)
 
 
 print('\nAnalyse the saved simulation with scripts found in "examples"')
