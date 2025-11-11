@@ -330,7 +330,7 @@ class Configuration:
         else:
             self['v'] = np.zeros((self.N, self.D), np.float32)
 
-    def make_lattice(self, unit_cell: dict, cells: list, rho: float = None) -> None:
+    def make_lattice(self, unit_cell: dict, cells: list, rho: float = None, ptype_unit_cell: list = None) -> None:
         """ Generate a lattice configuration
 
         The lattice is constructed by replicating the unit cell in all directions.
@@ -351,6 +351,9 @@ class Configuration:
         rho : float
             Number density
 
+        ptype_unit_cell : list
+            Types of the particles in the unit cell
+
         Example
         -------
 
@@ -362,9 +365,11 @@ class Configuration:
 
         """
         from .make_lattice import make_lattice
-        positions, box_vector = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho)
-        self['r'] = positions
-        self.simbox = Orthorhombic(self.D, box_vector)
+        lattice = make_lattice(unit_cell=unit_cell, cells=cells, rho=rho, ptype_unit_cell=ptype_unit_cell)
+        self['r'] = lattice["positions"]
+        self.simbox = Orthorhombic(self.D, lattice["box_vector"])
+        if "ptype" in lattice:
+            self.ptype = lattice["ptype"]
         return
 
     def make_positions(self, N, rho: float) -> None:

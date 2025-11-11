@@ -86,7 +86,8 @@ def test_fcc_lattice():
     # plot = False
 
     cells = [2, 2, 2]
-    positions, box_vector = gp.configuration.make_lattice(gp.unit_cells.FCC, cells)
+    lattice = gp.configuration.make_lattice(gp.unit_cells.FCC, cells)
+    positions, box_vector = lattice["positions"], lattice["box_vector"]
     configuration = gp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = gp.Orthorhombic(configuration.D, box_vector)
@@ -116,7 +117,8 @@ def test_fcc_lattice_method():
 
 def test_bcc_lattice():
     cells = [2, 2, 2]
-    positions, box_vector = gp.configuration.make_lattice(gp.unit_cells.BCC, cells)
+    lattice = gp.configuration.make_lattice(gp.unit_cells.BCC, cells)
+    positions, box_vector  = lattice["positions"], lattice["box_vector"]
     configuration = gp.Configuration(D=3)
     configuration['r'] = positions
     configuration.simbox = gp.Orthorhombic(configuration.D, box_vector)
@@ -142,7 +144,8 @@ def test_hexagonal():
     # plot = False
 
     cells = [4, 2]
-    positions, box_vector = gp.configuration.make_lattice(gp.unit_cells.HEXAGONAL, cells=cells)
+    lattice = gp.configuration.make_lattice(gp.unit_cells.HEXAGONAL, cells=cells)
+    positions, box_vector = lattice["positions"], lattice["box_vector"]
     configuration = gp.Configuration(D=2)
     configuration['r'] = positions
     configuration.simbox = gp.Orthorhombic(configuration.D, box_vector)
@@ -180,7 +183,8 @@ def test_set_new_density(verbose=False):
         kwargs = lattice_kwargs[lattice_key]
         if verbose:
             print(f"Testing new density of {rho} for {lattice_key}: {kwargs}")
-        positions, box_vector = gp.configuration.make_lattice(**kwargs, rho=rho)
+        lattice = gp.configuration.make_lattice(**kwargs, rho=rho)
+        positions, box_vector = lattice["positions"], lattice["box_vector"]
         N = positions.shape[0]
         D = positions.shape[1]
         D_box_vector = box_vector.shape[0]
