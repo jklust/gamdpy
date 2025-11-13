@@ -7,6 +7,7 @@ class k3d_Visualization():
         from k3d.colormaps import matplotlib_color_maps
         self.simulation = simulation
         self.conf = simulation.configuration
+        # index 0 corresponds to 'r'
         self.plt_points = k3d.points(positions=self.conf['r'],
                             point_sizes=np.ones((self.conf.N),dtype=np.float32),
                             shader='mesh',
@@ -15,7 +16,7 @@ class k3d_Visualization():
                             color_range=[-6, 0],
                             name='Atoms'
                            )
-        Lx, Ly, Lz = self.conf.simbox.lengths
+        Lx, Ly, Lz = self.conf.simbox.get_lengths()
    
         self.plt_box = k3d.lines(vertices=[ [-Lx/2, -Ly/2, -Lz/2], [-Lx/2, -Ly/2, +Lz/2], 
                                             [-Lx/2, +Ly/2, -Lz/2], [+Lx/2, -Ly/2, -Lz/2], 
@@ -25,7 +26,7 @@ class k3d_Visualization():
                                         [1,4], [1,5], [2,4], [2,6], [3,5], [3,6],
                                         [7,4], [7,5], [7,6]], 
                                 indices_type='segment',
-                                shader='mesh', width=min((Lx, Ly, Lz))/100, 
+                                shader='mesh', width=float(min((Lx, Ly, Lz))/100), 
                                 name='Simulation Box'
                                 )
         self.plt_time_text = k3d.text2d('Time: ', position=[0.01, 0.15], is_html=True)
@@ -60,25 +61,30 @@ class k3d_Visualization():
         self.w0 = widgets.interactive(self.update, block=self.play, choice=self.attribute_dropdown)
         self.w1 = widgets.interactive(self.set_color_range, choice=self.attribute_dropdown)
 
-        
+
     def display(self):
         self.plot.display()
-        
+
     def update(self, block, choice):
-        self.plt_points.positions = self.simulation.vectors_list[block]['r']
-        model_time = (block+1)*self.simulation.dt*self.simulation.steps_per_block
+        restart_num = f"restart{block:04d}"
+        # index 0 corresponds to 'r'
+        self.plt_points.positions = self.simulation.output[f'/restarts/{restart_num}/vectors'][0]
+        dt=self.simulation.output['/'].attrs['dt']
+        model_time = (block+1)*dt*self.simulation.steps_per_block
         self.plt_time_text.text = f'Time: {model_time:.2f}'
         self.plt_temp_text.text = f'Temp: {self.simulation.integrator.temperature(model_time):.3f}'
         if choice==6:
-            self.plt_points.attribute = np.float32(self.conf.ptype)
+            #self.plt_points.attribute = np.float32(self.conf.ptype)
+            self.plt_points.attribute = np.float32(self.simulation.output[f'initial_configuration/ptype'])
         else:
-            self.plt_points.attribute = self.simulation.scalars_list[block][:,choice]
-        Lx, Ly, Lz = self.simulation.simbox_data_list[block]
+            #self.plt_points.attribute = self.simulation.output[f'/restarts/{restart_num}/scalars'][:,choice]
+            self.plt_points.attribute = self.simulation.output[f'/restarts/{restart_num}/scalars'][:,choice]
+        Lx, Ly, Lz = self.simulation.output[f'/restarts/{restart_num}'].attrs['simbox_data']
         self.plt_box.vertices=[[-Lx/2, -Ly/2, -Lz/2], [-Lx/2, -Ly/2, +Lz/2], 
                       [-Lx/2, +Ly/2, -Lz/2], [+Lx/2, -Ly/2, -Lz/2], 
                       [-Lx/2, +Ly/2, +Lz/2], [+Lx/2, -Ly/2, +Lz/2], 
                       [+Lx/2, +Ly/2, -Lz/2], [+Lx/2, +Ly/2, +Lz/2]],
-        
+
     def set_color_range(self, choice):
         labels = {0:'Potential:', 1:'Virial:', 2:'Laplace U:', 3:'m:', 4:'Kinetic nrg:', 5:'F^2', 6:'Type'}
         self.plt_fn_text.text = labels[choice]
