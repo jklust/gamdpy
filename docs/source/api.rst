@@ -112,6 +112,8 @@ Pair potential functions
 
 .. autofunction:: gamdpy.SAAP
 
+.. autofunction:: gamdpy.universal_zbl_potential
+
 Generators
 ^^^^^^^^^^
 

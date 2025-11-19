@@ -44,5 +44,5 @@ print('(visualize requires that ovito is installed):')
 print('   python3 analyze_structure.py LJ_T0.70')
 print('   python3 analyze_dynamics.py LJ_T0.70')
 print('   python3 analyze_thermodynamics.py LJ_T0.70')
-print('   python3 visualize.py LJ_T0.70.h5')
+print('   python3 visualize.py LJ_T0.7which nvcc0.h5')
 

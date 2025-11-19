@@ -38,6 +38,20 @@ def test_potential_functions() -> None:
     pot_SAAP = gp.SAAP(dist, params)
     assert len(pot_SAAP) == 3, "Problem with gp.SAAP"
 
+    # Test the universal ZBL potential
+    sigma, epsilon = params = 1.23, 0.92
+    r = 1.364
+    pot_zbl = gp.universal_zbl_potential(r, params)
+    # print(pot_zbl)
+    cs = 0.18175, 0.50986, 0.28022, 0.02817
+    bs = 3.19980, 0.94229, 0.40290, 0.20162
+    u_check = 0.0
+    for i in range(4):
+        u_check += epsilon * cs[i] * sigma * np.exp(-bs[i] * r / sigma) / r
+    assert np.isclose(pot_zbl[0], u_check), "Problem with gp.universal_zbl_potential"
+    assert np.isclose(pot_zbl[1], 0.3020571)
+    assert np.isclose(pot_zbl[2], 0.73724324)
+
     # Test harmonic repulsion, here u=(1-r)²
     pair_pot = gp.PairPotential(gp.harmonic_repulsion, params=params, max_num_nbs=128)
     params = 2.0, 1.0

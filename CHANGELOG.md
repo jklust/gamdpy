@@ -10,6 +10,7 @@
 
 * Integrator gamdpy.ActiveOUP for Active Ornstein-Uhlenbeck Particle.
 * Smooth truncation with Cubic spline using the modifier gamdpy.apply_cubic_spline_cutoff
+* Added Universal ZBL Pair Potential as gamdpy.universal_zbl_potential
 
 ## Version 0.8.2, Aug 3, 2025
 
