@@ -217,8 +217,6 @@ class EAM_ZJW_2004(Interaction):
                 embed_en_grad[global_id, 2] = F_primeprime
                 # We can write the embedding part of the potential energy to the global array already now
                 cscalars[global_id, u_id] = F_rho
-                #if global_id < num_part: # == 0:
-                #    print(global_id, rho, F_rho, F_prime, F_primeprime)
 
         # Should I jit it after defining it?
         @cuda.jit( device = gridsync )
@@ -332,7 +330,7 @@ class EAM_ZJW_2004(Interaction):
                         half = numba.float32(0.5)
                         zero = numba.float32(0.)
                         # Some optimization is possible by splitting the alloy pair potential between threads.
-                        # So this thread  only calculates pair_contribution for this type, and adds the corresponding contrbutino to the neighbor's force also
+                        # So this thread  only calculates pair_contribution for this type, and adds the corresponding contribution to the neighbor's force also
                         u_pair = half * ((other_rho / my_rho) * my_phi + (my_rho / other_rho) * other_phi)
                         s_pair = half * ((other_rho_s/my_rho) * my_phi - (other_rho/my_rho**2) * my_rho_s * my_phi + (other_rho/my_rho) * my_phi_s +
                                          (my_rho_s / other_rho) * other_phi - (my_rho / other_rho**2) * other_rho_s * other_phi + (my_rho / other_rho) * other_phi_s )
@@ -352,11 +350,9 @@ class EAM_ZJW_2004(Interaction):
 
 
                         ## TO DO
-                        # 1. Test energy conservation with two actually different types
-                        
-                        # 2. Find a way to test physical properties for a pure system
-                        # 3. Find a physics test for an alloy.
-                        
+                        # 1. Test energy conservation with two actually different types DONE
+                        # 2. Find a way to test physical properties for a pure system DONE
+                        # 3. Find a physics test for an alloy. DONE
                         # 4. include many-body contribution to stresses
                         # 5. Include Laplacian
 
