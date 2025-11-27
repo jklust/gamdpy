@@ -136,6 +136,10 @@ Modifies are typically used to smoothly truncate the potential at a certain dist
 
 .. autofunction:: gamdpy.apply_shifted_force_cutoff
 
+.. autofunction:: gamdpy.apply_cubic_spline_cutoff
+
+.. autofunction:: gamdpy.apply_gromacs_cutoff
+
 Fixed interactions
 ~~~~~~~~~~~~~~~~~~
 
