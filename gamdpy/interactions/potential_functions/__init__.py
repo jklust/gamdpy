@@ -10,6 +10,7 @@ from .LJ_SF import LJ_SF
 # Intra-molecular potentials
 from .harmonic_bond_function import harmonic_bond_function
 from .cos_angle_function import cos_angle_function
+from .harmonic_angle_function import harmonic_angle_function
 from .ryckbell_dihedral import ryckbell_dihedral
 
 # Generate potentials
