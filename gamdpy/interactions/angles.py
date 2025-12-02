@@ -8,7 +8,27 @@ from .make_fixed_interactions import make_fixed_interactions   # bonds is an exa
 from .interaction import Interaction
 from gamdpy import Configuration
 
-class Angles(Interaction): 
+class Angles(Interaction):
+    """ Fixed angle interactions between particle triplet
+
+    Parameters
+    ----------
+
+    angle_potential : function
+        A angle potential function, see :func:`gamdpy.harmonic_angle_function` for an example.
+
+    indices : list
+        A list of indices, each containing the indices of the particles involved in a bond and the bond type.
+
+    potential_params : list
+        A list of parameters for each angle type.
+
+    See Also
+    --------
+
+    gamdpy.harmonic_angle_function
+
+    """
 
     def __init__(self, potential, indices, parameters):
         self.potential = potential

@@ -12,21 +12,21 @@ import math
 from numba import cuda
 
 def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
-    """ Harmonic angle potential
+    r""" Harmonic angle potential,
 
     .. math::
 
-        u(\theta) = \\frac{1}{2} k (\theta - \theta_0)^2
+        u(\theta) = \frac{k}{2} (\theta - \theta_0)^2
 
     Parameters
     ----------
 
     theta : float
-        Angle defined by three neighboring particles in a molecule.
-        Angle zero corresponds to atoms 0, 1, 2 lying consecutively along a straight line, ie pi minus the angle subtended by atoms 0 and 2 at 1
+        Angle (radians) defined by three neighboring particles in a molecule.
+        Angle zero corresponds to atoms 0, 1, 2 lying consecutively along a straight line, i.e. :math:`\pi` minus the angle subtended by atoms 0 and 2 at 1
 
     params : array-like
-        \theta_0, k \theta_0 is defined differently to angle theta, ie with zero corresponding to zero angle
+        :math:`\theta_0`, is defined differently to angle :math:`\theta`, ie with zero corresponding to zero angle
         subtended by atoms 0 and 2 at 1
 
 
@@ -36,7 +36,7 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     u : float
         Potential energy
     d_u_cos_theta_neg: float
-        The negative derivatve of the potential energy with respect to cos(theta)
+        Negative derivative of the potential energy with respect to cos(theta)
 
     See Also
     --------
@@ -44,7 +44,6 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     gamdpy.Angles
 
     """
-
 
     theta_0 = math.pi - params[1]
 

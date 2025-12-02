@@ -7,20 +7,24 @@ from numba import cuda
 
 
 def cos_angle_function(angle, params):
-    """ Cosine angle potential
+    r"""Cosine angle potential,
 
     .. math::
-        u(\\theta) = \\frac{k}{2} (\\cos(\\theta) - \\cos(\\theta_0))^2
+
+        u(\theta) = \frac{k}{2} (\cos(\theta) - \cos(\theta_0))^2
 
     Parameters
     ----------
-        angle: Current angle
-        params: Parameter array - angle spring coefficient and zero force angle
-    
-    Returns
-    -------
-        u: Potential energy
-        f: Force multiplier
+    theta : float
+        Angle (radians).
+    params : array-like
+        [k, theta_0]  Spring constant and zero-force angle.
+
+    See Also
+    --------
+
+    gamdpy.harmonic_angle_function
+
     """
     
     kspring, angle0 = params[0], params[1]
@@ -34,4 +38,3 @@ def cos_angle_function(angle, params):
     u = numba.float32(0.5)*kspring*dcos_angle**2
 
     return  u, f
-

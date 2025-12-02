@@ -169,9 +169,22 @@ Generators
 Bond functions
 ^^^^^^^^^^^^^^
 
-A *bond potential* is needed for the :class:`~gamdpy.Bonds` class.
+A *bond potential* function is needed for the :class:`~gamdpy.Bonds` class.
 
 .. autofunction:: gamdpy.harmonic_bond_function
+
+.. autofunction:: gamdpy.gp.cos_angle_function
+
+
+Angle functions
+^^^^^^^^^^^^^^^
+
+An *angle potential* function is needed for the :class:`~gamdpy.Angles` class.
+
+.. autofunction:: gamdpy.harmonic_angle_function
+
+.. autofunction:: gamdpy.cos_angle_function
+
 
 
 .. _runtime_actions:
