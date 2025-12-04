@@ -42,7 +42,7 @@ configuration.randomize_velocities(temperature=temperature)
 # Make bonds
 bond_potential = gp.harmonic_bond_function
 bond_params = [[bond0, kspring], ]
-bonds = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
+bonds = gp.Bonds(bond_potential, configuration.topology.bonds, bond_params)
 
 # Angles
 angle_potential = gp.cos_angle_function

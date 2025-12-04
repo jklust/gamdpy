@@ -30,10 +30,10 @@ class Angles(Interaction):
 
     """
 
-    def __init__(self, potential, indices, parameters):
-        self.potential = potential
-        self.indices = np.array(indices, dtype=np.int32) 
-        self.params = np.array(parameters, dtype=np.float32)
+    def __init__(self, angle_potential, angle_indices, angle_parameters):
+        self.potential = angle_potential
+        self.indices = np.array(angle_indices, dtype=np.int32)
+        self.params = np.array(angle_parameters, dtype=np.float32)
 
 
     def get_params(self, configuration: Configuration, compute_plan: dict, verbose=False) -> tuple:

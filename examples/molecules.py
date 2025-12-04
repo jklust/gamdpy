@@ -73,19 +73,19 @@ print(f'Number of particles: {configuration.N}\n')
 # Make bond interactions
 bond_potential = gp.harmonic_bond_function
 bond_params = [[0.8, 1000.], ]
-bonds = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
+bonds = gp.Bonds(bond_potential, configuration.topology.bonds, bond_params)
 
 # Make angle interactions
 angle_potential = gp.cos_angle_function
 #angle_potential = gp.harmonic_angle_function
 angle0, k = 2.0, 500.0
 #k *= math.sin(angle0)**2 # for harmonic_angle to have consistency with cos function at small deviations from angle0
-angles = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[angle0, k],])
+angles = gp.Angles(angle_potential, configuration.topology.angles, angle_parameters=[[angle0, k],])
 
 # Make dihedral interactions
 dihedral_potential = gp.ryckbell_dihedral
 rbcoef=[.0, 5.0, .0, .0, .0, .0]    
-dihedrals = gp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, parameters=[rbcoef, ])
+dihedrals = gp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, dihedral_parameters=[rbcoef, ])
 
 # Exlusion list
 exclusions = dihedrals.get_exclusions(configuration)
