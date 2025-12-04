@@ -105,8 +105,8 @@ class Angles(Interaction):
             c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
 
             cD = math.sqrt(c11*c22)
-            ca = c12/cD
-           
+            ca = -c12/cD # minus so that the angle is the one subtended at the center atom by the other two
+ 
             if  ca > one:
                 ca = one
             elif ca < -one:
@@ -116,8 +116,8 @@ class Angles(Interaction):
             u, f = potential_function(angle, params)
 
             for k in range(D):
-                f_1 = f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
-                f_2 = f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
+                f_1 = -f*( (c12/c11)*dr_1[k] - dr_2[k] )/cD
+                f_2 = -f*( dr_1[k] - (c12/c22)*dr_2[k] )/cD
 
                 cuda.atomic.add(vectors, (f_id, indices[0], k), f_1)      
                 cuda.atomic.add(vectors, (f_id, indices[1], k), -f_1-f_2)
@@ -177,7 +177,7 @@ class Angles(Interaction):
         c22 = dr_2[0]*dr_2[0] + dr_2[1]*dr_2[1] + dr_2[2]*dr_2[2]
 
         cD = math.sqrt(c11*c22)
-        cc = c12/cD 
+        cc = -c12/cD 
 
         angle = math.acos(cc)
         

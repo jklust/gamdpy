@@ -30,7 +30,8 @@ def cos_angle_function(angle, params):
     angle0, kspring = params[0], params[1]
 
     # Definition the calc. angle is pi-angle0 - see Rapaport 
-    cos_angle_0 = math.cos(math.pi - angle0)
+    #cos_angle_0 = math.cos(math.pi - angle0)
+    cos_angle_0 = math.cos(angle0)
     cos_angle = math.cos(angle) 
     dcos_angle = cos_angle - cos_angle_0
 

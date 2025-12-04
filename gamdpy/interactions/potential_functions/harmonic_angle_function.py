@@ -46,8 +46,7 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
 
     """
 
-    theta_0 = math.pi - params[0]
-
+    theta_0 = params[0]
     kspring = params[1]
     s = math.sin(theta)
     u = numba.float32(0.5) * kspring * (theta - theta_0) ** 2
