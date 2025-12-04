@@ -22,14 +22,10 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     ----------
 
     theta : float
-        Angle (radians) defined by three neighboring particles in a molecule.
-        Angle zero corresponds to atoms 0, 1, 2 lying consecutively along a straight line, i.e. :math:`\pi` minus the angle subtended by atoms 0 and 2 at 1
+        Angle (radians) defined by three neighboring particles in a molecule, more precisely: the angle subtended by atoms 0 and 2 at 1
 
     params : array-like
          :math:`\theta_0`, the angle of minimum energy, :math:`k_{spring}`, the spring constant.
-        :math:`\theta_0`, is defined differently to angle :math:`\theta`, ie with zero corresponding to zero angle
-        subtended by atoms 0 and 2 at 1
-
 
     Returns
     -------
