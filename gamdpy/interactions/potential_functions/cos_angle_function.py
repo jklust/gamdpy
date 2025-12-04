@@ -18,7 +18,7 @@ def cos_angle_function(angle, params):
     theta : float
         Angle (radians).
     params : array-like
-        [k, theta_0]  Spring constant and zero-force angle.
+        [theta_0, k] Angle of minimum energy (zero force)) and spring constant.
 
     See Also
     --------
@@ -27,7 +27,7 @@ def cos_angle_function(angle, params):
 
     """
     
-    kspring, angle0 = params[0], params[1]
+    angle0, kspring = params[0], params[1]
 
     # Definition the calc. angle is pi-angle0 - see Rapaport 
     cos_angle_0 = math.cos(math.pi - angle0)

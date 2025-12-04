@@ -100,7 +100,7 @@ bonds = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 # Make angle interactions
 angle0, k = 2.0, 500.0
 angle_potential = gp.cos_angle_function
-angles = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],])
+angles = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[angle0, k],])
 
 # Make dihedral interactions
 rbcoef=[.0, 5.0, .0, .0, .0, .0]    

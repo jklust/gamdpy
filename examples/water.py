@@ -46,7 +46,7 @@ bonds = gp.Bonds(bond_potential, bond_params, configuration.topology.bonds)
 
 # Angles
 angle_potential = gp.cos_angle_function
-angle_params = [[kangle, angle0],]
+angle_params = [[angle0, kangle],]
 angles = gp.Angles(angle_potential, configuration.topology.angles, angle_params)
 
 # Angle exclusions

@@ -80,7 +80,7 @@ angle_potential = gp.cos_angle_function
 #angle_potential = gp.harmonic_angle_function
 angle0, k = 2.0, 500.0
 #k *= math.sin(angle0)**2 # for harmonic_angle to have consistency with cos function at small deviations from angle0
-angles = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[k, angle0],])
+angles = gp.Angles(angle_potential, configuration.topology.angles, parameters=[[angle0, k],])
 
 # Make dihedral interactions
 dihedral_potential = gp.ryckbell_dihedral

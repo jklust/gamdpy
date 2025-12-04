@@ -26,6 +26,7 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
         Angle zero corresponds to atoms 0, 1, 2 lying consecutively along a straight line, i.e. :math:`\pi` minus the angle subtended by atoms 0 and 2 at 1
 
     params : array-like
+         :math:`\theta_0`, the angle of minimum energy, :math:`k_{spring}`, the spring constant.
         :math:`\theta_0`, is defined differently to angle :math:`\theta`, ie with zero corresponding to zero angle
         subtended by atoms 0 and 2 at 1
 
@@ -45,9 +46,9 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
 
     """
 
-    theta_0 = math.pi - params[1]
+    theta_0 = math.pi - params[0]
 
-    kspring = params[0]
+    kspring = params[1]
     s = math.sin(theta)
     u = numba.float32(0.5) * kspring * (theta - theta_0) ** 2
     d_u_d_cos_theta_neg = kspring * (theta - theta_0) /  (s+numba.float32(0.000001))
