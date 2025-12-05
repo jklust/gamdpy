@@ -29,9 +29,9 @@ def test_EAM_ZJW2004_Cu(main_dir=None):
     T = TK * kB/eV
 
     if main_dir is None:
-        main_dir = os.path.join(os.getcwd(), "tests")
+        main_dir = os.path.join(os.getcwd(), "science_tests", "EAM-ZJW-2004")
 
-    reference_data_dir = os.path.join(main_dir, "reference_data")
+    reference_data_dir = main_dir # os.path.join(main_dir, "reference_data")
     conf_file_path = os.path.join(reference_data_dir, f"Cu-liquid-rho{rho:.4f}-T{T:.4f}.h5")
 
 
@@ -57,7 +57,7 @@ def test_EAM_ZJW2004_Cu(main_dir=None):
         U, W = gp.ScalarSaver.extract(sim.output, ['U', 'W'], per_particle=False, first_block=0)
 
     # Read reference data, saved from an equivalent LAMMPS simulations
-    ref_data_path = os.path.join(reference_data_dir, "lammps_eam_Cu_ref.dat")
+    ref_data_path = os.path.join(reference_data_dir, "Data_lammps", "lammps_eam_Cu_ref.dat")
 
     ref_data = np.loadtxt(ref_data_path) # Note: ref_data has 513 rows, not 512
 
