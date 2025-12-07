@@ -1,17 +1,29 @@
 import numba
 
-def apply_cubic_spline_cutoff(pair_potential):  
-    # Cut-off by computing potential twice, avoiding changes to params
-    """ Apply cubic spline cutoff to a pair-potential function
+def apply_cubic_spline_cutoff(pair_potential):
+    r""" Apply cubic spline cutoff to a pair-potential function
 
     Actually the cubic spline is applied to the pair force as done by LAMMPS
     (see https://docs.lammps.org/pair_lj_smooth.html).
-     The potential energy is given by a quartic function in the transition region.It is shifted
-     in each region to ensure its continuity at the inner and outer cutoffs.
+    The potential energy is given by a quartic function in the transition region.
+    Specifically, if :math:`u(r)` is the original potential, then the (modified) truncated potential is
 
-    Note: calls original potential function  twice each time, avoiding changes to params.
-    The four coefficients of the spline are also computed each time, along with the two energy
-    shift constants, which results in a small but noticeable performance cost.
+    .. math::
+       u_m(r) = u(r) + K \quad (r < r_i),
+
+    .. math::
+       u_m(r) = C_0 + C_1 [r-r_i] + \frac{C_2}{2} [r-r_i]^2 + \frac{C_3}{3} [r-r_i]^3 + \frac{C_4}{4} [r-r_i]^4 \quad (r_i \le r \le r_c),
+
+    and
+
+    .. math::
+       u_m(r) = 0 \quad (r > r_c),
+
+    The parameters (the :math:`C`'s and the :math:`K`) for a smooth truncation are computed automatically:
+    At the inner cutoff radius, the force and its first derivative match the unsmoothed potential (:math:`u(r)`).
+    At the outer cutoff radius, both the force and the first derivative are zero.
+
+    The last two values of the parameter array (`params`) are the inner and outer cutoffs: `[..., r_i, r_c]`.
 
     Parameters
     ----------
@@ -26,6 +38,12 @@ def apply_cubic_spline_cutoff(pair_potential):
             a function where a cubic spline cutoff is applied to original function
 
     """
+
+    # Cut-off by computing potential twice, avoiding changes to params
+    # Note: calls original potential function  twice each time, avoiding changes to params.
+    # The four coefficients of the spline are also computed each time, along with the two energy
+    # shift constants, which results in a small but noticeable performance cost.
+
     pair_pot = numba.njit(pair_potential)
 
     @numba.njit
@@ -33,7 +51,6 @@ def apply_cubic_spline_cutoff(pair_potential):
         cut_outer = params[-1]
         cut_inner = params[-2]
         Delta_r = cut_outer - cut_inner
-
 
         u_bare, s_bare, umm_bare = pair_pot(dist, params)
         u_cut_inner, s_cut_inner, umm_cut_inner = pair_pot(cut_inner, params)

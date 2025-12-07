@@ -24,6 +24,17 @@ class PairPotential(Interaction):
         Maximum number of neighbors per particle to allocate in the neighbor list.
     exclusions : array_like
         List of particle indices to exclude from interactions for each particle.
+
+    Example
+    -------
+
+    The standard Lennard-Jones potential shifted and truncated at 2.5:
+
+    >>> pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
+    >>> sig, eps, cut = 1.0, 1.0, 2.5
+    >>> pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
+    >>> interactions = [pair_pot, ]  # Passed to a Simulation instance
+
     """
 
     def __init__(self, pairpotential_function, params, max_num_nbs, exclusions=None):

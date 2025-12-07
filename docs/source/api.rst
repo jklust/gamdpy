@@ -95,6 +95,10 @@ This will typically include a *pair potential* and *fix interactions* like gravi
 Pair potential
 ~~~~~~~~~~~~~~
 
+Evaluating pair potentials is typically computationally expensive.
+For efficiency, instances of the class below only compute forces between two particles
+when their separation is less than a specified cutoff distance.
+
 .. autoclass:: gamdpy.PairPotential
    :members:
    :exclude-members: check_datastructure_validity, get_kernel, get_params
@@ -142,6 +146,9 @@ Modifies are typically used to smoothly truncate the potential at a certain dist
 
 Fixed interactions
 ~~~~~~~~~~~~~~~~~~
+
+Fixed interactions (covalent bonds, angles, gravitational forces, walls, or tethers to an anchor points) are evaluated at every time step.
+This is contrast to non-bonded pair interactions, which are only computed for particle pairs within the non-bonded cutoff distance.
 
 Classes
 ^^^^^^^
