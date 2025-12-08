@@ -36,7 +36,7 @@ from .interactions import interaction, add_interactions_list, NbList2, NbListLin
 from .interactions import PairPotential, TabulatedPairPotential, PairPotentialNsquared, EAM_ZJW_2004
 from .interactions import Bonds, Angles, Dihedrals
 from .interactions import make_fixed_interactions, make_planar_calculator, setup_planar_interactions
-from .interactions import Gravity, Relaxtemp, Tether
+from .interactions import Planar, Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 from .interactions.potential_parameters import *
 

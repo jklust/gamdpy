@@ -161,9 +161,9 @@ Classes
 
 .. autoclass:: gamdpy.Tether
 
-.. autoclass:: gamdpy.Gravity
-
 .. autoclass:: gamdpy.Relaxtemp
+
+.. autoclass:: gamdpy.Planar
 
 Generators
 ^^^^^^^^^^
@@ -181,9 +181,6 @@ Bond functions
 A *bond potential* function is needed for the :class:`~gamdpy.Bonds` class.
 
 .. autofunction:: gamdpy.harmonic_bond_function
-
-.. autofunction:: gamdpy.gp.cos_angle_function
-
 
 Angle functions
 ^^^^^^^^^^^^^^^
