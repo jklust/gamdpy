@@ -5,11 +5,13 @@ def apply_shifted_force_cutoff(pair_potential):
     """ Apply shifted force cutoff to a pair-potential function
 
     If the input pair potential is :math:`u(r)`, then the shifted force potential is
-    :math:`u(r) - u(r_{c}) + s(r_{c})(r - r_{c})`, where :math:`r_c` is the cutoff distance,
-    and :math:`s(r) = -u'(r)/r`.
 
+    .. math::
+        u_m(r) = u(r) - u(r_{c}) + s(r_{c})(r - r_{c}) \quad (r<r_c)
 
-    Note: calls original potential function  twice, avoiding changes to params
+    and :math:`u_m(r)=0` for :math:`r>r_c`,
+    where :math:`r_c` is the cutoff distance, and  :math:`s(r) = -u'(r)/r`.
+    The last entry the parameter array (`params`) is the cutoff: `[..., r_c]`.
 
     Parameters
     ----------
