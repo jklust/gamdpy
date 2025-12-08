@@ -31,6 +31,18 @@ def test_potential_functions() -> None:
     potLJ_gp = gp.make_potential_function_from_sympy(potLJ, (s, e))
     assert potLJ_gp(1, (2,3)) == gp.LJ_12_6_sigma_epsilon(1, [2, 3]), "Problem with gp.make_potential_function_from_sympy"
 
+    # Test Yukawa potential
+    params = [1.23, 0.891]
+    dist = 3.45
+    pot_yukawa = gp.yukawa(dist, params)
+    assert len(pot_yukawa) == 3, "Problem with gp.yukawa"
+    # print(pot_yukawa)
+    u_yukawa_test = params[1]*params[0]*np.exp(-dist/params[0])/dist
+    # print(u_yukawa_test, pot_yukawa)
+    assert np.isclose(pot_yukawa[0], u_yukawa_test), "Problem with gp.yukawa"
+    assert np.isclose(pot_yukawa[1], 0.0061450177), "Problem with gp.yukawa"
+    assert np.isclose(pot_yukawa[2], 0.02499608), "Problem with gp.yukawa"
+
     # Test SAAP potential
     number_of_params = 8
     params = [1.0]*number_of_params

@@ -110,6 +110,8 @@ Pair potential functions
 
 .. autofunction:: gamdpy.LJ_12_6_sigma_epsilon
 
+.. autofunction:: gamdpy.yukawa
+
 .. autofunction:: gamdpy.harmonic_repulsion
 
 .. autofunction:: gamdpy.hertzian
