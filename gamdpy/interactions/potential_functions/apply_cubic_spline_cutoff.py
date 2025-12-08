@@ -22,6 +22,7 @@ def apply_cubic_spline_cutoff(pair_potential):
     The parameters (the :math:`C`'s and the :math:`K`) for a smooth truncation are computed automatically:
     At the inner cutoff radius, the force and its first derivative match the unsmoothed potential (:math:`u(r)`).
     At the outer cutoff radius, both the force and the first derivative are zero.
+    See SM of Ref. [Leoni2025]_ for more details.
 
     The last two values of the parameter array (`params`) are the inner and outer cutoffs: `[..., r_i, r_c]`.
 
@@ -36,6 +37,14 @@ def apply_cubic_spline_cutoff(pair_potential):
 
         potential: callable
             a function where a cubic spline cutoff is applied to original function
+
+    References
+    ----------
+
+    .. [Leoni2025] Fabio Leoni, John Russo, Francesco Sciortino, and Taiki Yanagishima.
+       "Generating Ultrastable Glasses by Homogenizing the Local Virial Stress".
+       Phys. Rev. Lett. 134, 128201 (2025)
+       https://doi.org/10.1103/PhysRevLett.134.128201
 
     """
 
