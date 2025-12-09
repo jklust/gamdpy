@@ -174,3 +174,8 @@ class Test_examples:
     def test_quench_trajectory(self): 
         self.make_one("quench_trajectory", ['Data/KABLJ_Rho1.200_T0.400_toread_quench.h5', ])
 
+    def test_active_ornstein_uhlenbeck(self):
+        self.make_one("active_ornstein_uhlenbeck", ["Data/ActiveOUP.h5"])
+
+    def test_zbl(self):
+        self.make_one("zbl", ["Data/zbl.h5"])
