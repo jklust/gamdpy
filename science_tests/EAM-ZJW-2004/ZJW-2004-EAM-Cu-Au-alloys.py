@@ -27,7 +27,7 @@ paramsAu = np.append(paramsAu, cut)
 # in the code for the FCC unit cell the corner atom is the first of the four in the unit cell, so the type list should be [1, 0, 0, 0]
 
 
-def FindMinimumEnthalpy(rho_array, ptype_unit_cell, plotindex = None, plotlabel=None):
+def FindMinimumEnthalpy(rho_array, ptype_unit_cell, plotindex = None, plotlabel=None, writepdfpng=False):
 
     eam_pot = gp.EAM_ZJW_2004([paramsCu, paramsAu], max_num_nbs=1000)
 
@@ -81,7 +81,13 @@ def FindMinimumEnthalpy(rho_array, ptype_unit_cell, plotindex = None, plotlabel=
         plt.xlabel(r"rho [Å^-3]")
         plt.ylabel(r"E [eV/atom]")
         plt.legend()
-        #plt.savefig("E_vs_rho_%s.pdf" % plotlabel)
+        if writepdfpng:
+            pdfname = "E_vs_rho_%s.pdf" % plotlabel
+            plt.savefig(pdfname)
+            print("Wrote" + pdfname)
+            pngname = "E_vs_rho_%s.png" % plotlabel
+            plt.savefig(pngname)
+            print("Wrote" + pngname)
 
     a_min = pow(4/rho_min, 1/3)
     return rho_min, E_min, a_min
@@ -90,14 +96,14 @@ verbose = True
 
 # Cu
 rho_array = np.arange(0.075, 0.095, 0.001)
-rho_Cu, E_Cu, a_Cu = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[0, 0, 0, 0], plotindex=1, plotlabel="Cu")
+rho_Cu, E_Cu, a_Cu = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[0, 0, 0, 0], plotindex=1, plotlabel="Cu",writepdfpng=False)
 assert math.isclose(a_Cu, 3.615, rel_tol=0.001) # Gola et al 2018
 if verbose:
     print(f"a_Cu and reference value {a_Cu:.5f} 3.615")
     
 # Au
 rho_array = np.arange(0.050, 0.070, 0.001)
-rho_Au, E_Au, a_Au = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[1, 1, 1, 1], plotindex=2, plotlabel="Au")
+rho_Au, E_Au, a_Au = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[1, 1, 1, 1], plotindex=2, plotlabel="Au",writepdfpng=False)
 assert math.isclose(a_Au, 4.080, rel_tol=0.001) # Gola et al 2018
 if verbose:
     print(f"a_Au and reference value {a_Au:.5f} 4.080")
@@ -105,7 +111,7 @@ if verbose:
 
 # Cu3Au
 rho_array = np.arange(0.065, 0.085, 0.001)
-rho_Cu3Au, E_Cu3Au, a_Cu3Au = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[1, 0, 0, 0], plotindex=3, plotlabel="Cu3Au")
+rho_Cu3Au, E_Cu3Au, a_Cu3Au = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[1, 0, 0, 0], plotindex=3, plotlabel="Cu3Au",writepdfpng=True)
 E_mixing_Cu3Au = E_Cu3Au - 0.75*E_Cu - 0.25*E_Au
 assert math.isclose(a_Cu3Au, 3.750, abs_tol=0.001) #  Gola et al 2018
 assert math.isclose(E_mixing_Cu3Au, -0.093, abs_tol=0.0015) #  Gola et al 2018
@@ -118,7 +124,7 @@ if verbose:
 
 # CuAu3
 rho_array = np.arange(0.055, 0.075, 0.001)
-rho_CuAu3, E_CuAu3, a_CuAu3 = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[0, 1, 1, 1], plotindex=4, plotlabel="CuAu3")
+rho_CuAu3, E_CuAu3, a_CuAu3 = FindMinimumEnthalpy(rho_array, ptype_unit_cell=[0, 1, 1, 1], plotindex=4, plotlabel="CuAu3",writepdfpng=True)
 E_mixing_CuAu3 = E_CuAu3 - 0.25*E_Cu - 0.75*E_Au
 assert math.isclose(a_CuAu3, 3.976, rel_tol=0.001) #  Gola et al 2018
 assert math.isclose(E_mixing_CuAu3, -0.095, abs_tol=0.001) #  Gola et al 2018
@@ -128,5 +134,6 @@ if verbose:
     print(f"E_mixing_CuAu3 and reference value {E_mixing_CuAu3:.5f} -0.095")
 
 
+if __name__ == "__main__":
+    plt.show(block=True)
 
-plt.show()
