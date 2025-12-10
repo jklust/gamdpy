@@ -13,6 +13,9 @@ import os
 
 # to allow this script to be run by testing need to specify that the location
 # of theinput file is the same as that of the script itself
+
+cwd = os.getcwd()
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 filename = os.path.join(script_dir, 'ZJW-2004-parameters.txt')
@@ -31,11 +34,13 @@ for element in column_names:
 
     EAM_ZJW_2004_params[element] = df[element].to_numpy()
 
-outfilename = "EAM_ZJW_2004_params_TMP.py"
+outfilename = "EAM_ZJW_2004_params.py.tmp"
 
-with open(outfilename, "w") as f:
-    f.write("from numpy import array\n")
-    print("EAM_ZJW_2004_params = ", EAM_ZJW_2004_params, file=f)
+if script_dir == cwd:
 
-print("Wrote parameters as a dictionary to", outfilename)
-print("Copy to EAM_ZJW_2004_params.py if necessary")
+    with open(outfilename, "w") as f:
+        f.write("from numpy import array\n")
+        print("EAM_ZJW_2004_params = ", EAM_ZJW_2004_params, file=f)
+        
+    print("Wrote parameters as a dictionary to", outfilename)
+    print("Rename to EAM_ZJW_2004_params.py if necessary to replace")
