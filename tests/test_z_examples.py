@@ -105,6 +105,9 @@ class Test_examples:
     def test_LJchain(self):
         self.make_one("LJchain", ["Data/LJchain10_Rho1.00_T0.700.h5", "Data/LJchain10_Rho1.00_T0.700_compress.h5"])
 
+    def test_LJchain_continue(self):
+        self.make_one("LJchain_continue", ["Data/LJchain10_Rho1.00_T0.700_c1.h5"])
+
     def test_write_to_lammps(self):
         self.make_one("write_to_lammps", ["dump.initial", "dump.lammps"])
 
