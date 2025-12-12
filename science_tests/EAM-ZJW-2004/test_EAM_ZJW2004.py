@@ -27,11 +27,10 @@ import matplotlib.pyplot as plt
 from scipy.constants import atomic_mass, elementary_charge, Boltzmann, Avogadro
 
 Aa = 1.e-10 # Angstrom in m
-Na = Avogadro # 6.02214076e23
-gPerMole = 1.e-3/Na
-Da = atomic_mass # 1.66053906892e-27
-eV = elementary_charge # 1.602176634e-19
-kB = Boltzmann # 1.380649e-23
+gPerMole = 1.e-3/Avogadro
+Da = atomic_mass
+eV = elementary_charge
+kB = Boltzmann
 
 rho = 0.085 # number density in inverse cubic Angstrom
 TK = 2500 # Temperature in Kelvin
