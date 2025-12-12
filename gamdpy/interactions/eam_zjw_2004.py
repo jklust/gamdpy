@@ -321,6 +321,9 @@ class EAM_ZJW_2004(Interaction):
                         effective_s = other_rho_s * my_embedding_grad + my_rho_s * other_embedding_grad
                         for k in range(D):
                             my_f[k] = my_f[k] - my_dr[k]*effective_s                        # Force
+                            if compute_stresses:
+                                for k2 in range(D):
+                                    my_stress[k,k2] -= my_embedding_grad * other_rho_s * my_dr[k]*my_dr[k2]      # stress tensor
                         if compute_w:
                             my_cscalars[w_id] += my_embedding_grad*dist_sq*other_rho_s*virial_factor       # Virial
 
@@ -353,7 +356,7 @@ class EAM_ZJW_2004(Interaction):
                         # 1. Test energy conservation with two actually different types DONE
                         # 2. Find a way to test physical properties for a pure system DONE
                         # 3. Find a physics test for an alloy. DONE
-                        # 4. include many-body contribution to stresses
+                        # 4. include many-body contribution to stresses DONE
                         # 5. Include Laplacian
 
                         

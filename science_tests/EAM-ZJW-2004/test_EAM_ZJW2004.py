@@ -1,6 +1,6 @@
 """ Science test for EAM.
 
-Explanatino of modes:
+Explanation of modes:
     
     1. mode=="ci": run both setup and the test function(s), but a shortened version of both.
     If any files are written they should be deleted. Do not check agreement with reference data
@@ -8,7 +8,7 @@ Explanatino of modes:
     2. mode == "nightly": Don't run setup, only run the test files, but with full length, and use assertions to test for
     agreement with reference data. Do not keep output files.
 
-    3. mode == "use": If "setup" is passed on the command-line then run the setup function with full duration. Otherwise
+    3. mode == "interactive": If "setup" is passed on the command-line then run the setup function with full duration. Otherwise
     run the test(s) with full duration. If running from the command line display graphs ie call plt.show(). Keep output files,
     which have temporary names (ending in .tmp) to avoid overwriting the version-controlled ones.
 
@@ -24,12 +24,14 @@ import h5py
 
 import matplotlib.pyplot as plt
 
+from scipy.constants import atomic_mass, elementary_charge, Boltzmann, Avogadro
+
 Aa = 1.e-10 # Angstrom in m
-Na = 6.02214076e23
+Na = Avogadro # 6.02214076e23
 gPerMole = 1.e-3/Na
-Da = 1.66053906892e-27
-eV = 1.602176634e-19
-kB = 1.380649e-23
+Da = atomic_mass # 1.66053906892e-27
+eV = elementary_charge # 1.602176634e-19
+kB = Boltzmann # 1.380649e-23
 
 rho = 0.085 # number density in inverse cubic Angstrom
 TK = 2500 # Temperature in Kelvin
@@ -53,7 +55,7 @@ paramsAu = np.append(paramsAu, cutAu)
 def test_EAM_ZJW2004_Cu(mode):
     print("EAM (ZJW-2004) pure Cu test")
     print(f"Temperature in eV {T:.4}")
-    # mode is "ci" or "nightly" or "use"
+    # mode is "ci" or "nightly" or "interactive"
     if mode == "ci" or mode == "nightly":
         main_dir = os.path.join(os.getcwd(), "science_tests", "EAM-ZJW-2004")
     else:
@@ -75,7 +77,7 @@ def test_EAM_ZJW2004_Cu(mode):
     runtime_actions = [gp.MomentumReset(100),
                        gp.ScalarSaver(scalar_interval)]
 
-    num_timeblocks = {False:2, True:1}[mode=="ci"] # full length for "nightly" and "use"
+    num_timeblocks = {False:2, True:1}[mode=="ci"] # full length for "nightly" and "interactive"
     sim = gp.Simulation(conf, [eam_pot], integrator, num_timeblocks=num_timeblocks, steps_per_timeblock=1024, runtime_actions=runtime_actions, storage='memory')
 
     for block in sim.run_timeblocks():
@@ -86,7 +88,6 @@ def test_EAM_ZJW2004_Cu(mode):
     my_times = gp.ScalarSaver.get_times(sim.output, first_block=0)
 
 
-
     # Read reference data, saved from an equivalent LAMMPS simulations
     ref_data_path = os.path.join(reference_data_dir, "Data_lammps", "lammps_eam_Cu_ref.dat")
 
@@ -94,7 +95,7 @@ def test_EAM_ZJW2004_Cu(mode):
     ref_data = np.loadtxt(ref_data_path)
     U_ref = ref_data[:-1,2]  # Note: ref_data has 513 rows, not 512, hence the -1 in the row range.
 
-    if mode in ['use', 'nightly']:
+    if mode in ['interactive', 'nightly']:
         # in these cases we actually make an assert-based test
         diff_U_sq = (U-U_ref)**2
         # sum the first 200 squared differences (representing 800 time steps)
@@ -103,7 +104,7 @@ def test_EAM_ZJW2004_Cu(mode):
         assert SSD < 0.1
     # for later times the differences begin to grow as expected
     # Make figure and save as pdf+png (though when running as a test ie mode == "ci" or mode == "nightly")
-    if mode == "use":
+    if mode == "interactive":
         plt.figure(100)
         plt.plot(my_times, U, label="gamdpy")
         plt.plot(my_times, U_ref, label="LAMMPS")
@@ -113,9 +114,7 @@ def test_EAM_ZJW2004_Cu(mode):
         plt.savefig("eam_Cu_gamdy_vs_lammps.png.tmp", format='png')
         plt.legend()
         print("Wrote graphical presentation of results as pdf and png files with extra suffix .tmp. \
-              Remove the suffix by renaming if you wish to replace the version-ctronolled output files")
-
-
+              Remove the suffix by renaming if you wish to replace the version-controlled output files")
 
 
 def FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell, plotindex = None, plotlabel=None, writepdfpng=False):
@@ -196,7 +195,7 @@ def test_CuAu_alloys(mode, verbose=True):
     # Cu
     rho_array = np.arange(0.075, 0.095, 0.001)
     rho_Cu, E_Cu, a_Cu = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[0, 0, 0, 0], plotindex=1, plotlabel="Cu", writepdfpng=False)
-    if mode in ['nightly', 'use']:
+    if mode in ['nightly', 'interactive']:
         assert math.isclose(a_Cu, 3.615, rel_tol=0.001) # Gola et al 2018
     if verbose:
         print(f"a_Cu and reference value {a_Cu:.5f} 3.615")
@@ -204,7 +203,7 @@ def test_CuAu_alloys(mode, verbose=True):
     # Au
     rho_array = np.arange(0.050, 0.070, 0.001)
     rho_Au, E_Au, a_Au = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[1, 1, 1, 1], plotindex=2, plotlabel="Au", writepdfpng=False)
-    if mode in ['nightly', 'use']:
+    if mode in ['nightly', 'interactive']:
         assert math.isclose(a_Au, 4.080, rel_tol=0.001) # Gola et al 2018
     if verbose:
         print(f"a_Au and reference value {a_Au:.5f} 4.080")
@@ -212,9 +211,9 @@ def test_CuAu_alloys(mode, verbose=True):
 
     # Cu3Au
     rho_array = np.arange(0.065, 0.085, 0.001)
-    rho_Cu3Au, E_Cu3Au, a_Cu3Au = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[1, 0, 0, 0], plotindex=3, plotlabel="Cu3Au", writepdfpng=(mode=="use"))
+    rho_Cu3Au, E_Cu3Au, a_Cu3Au = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[1, 0, 0, 0], plotindex=3, plotlabel="Cu3Au", writepdfpng=(mode=="interactive"))
     E_mixing_Cu3Au = E_Cu3Au - 0.75*E_Cu - 0.25*E_Au
-    if mode in ['nightly', 'use']:
+    if mode in ['nightly', 'interactive']:
         assert math.isclose(a_Cu3Au, 3.750, abs_tol=0.001) #  Gola et al 2018
         assert math.isclose(E_mixing_Cu3Au, -0.093, abs_tol=0.0015) #  Gola et al 2018
     # the absolute difference is just bigger than 0.001 eV/atom here so I made the tolerance 0.0015
@@ -226,9 +225,9 @@ def test_CuAu_alloys(mode, verbose=True):
 
     # CuAu3
     rho_array = np.arange(0.055, 0.075, 0.001)
-    rho_CuAu3, E_CuAu3, a_CuAu3 = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[0, 1, 1, 1], plotindex=4, plotlabel="CuAu3", writepdfpng=(mode=="use"))
+    rho_CuAu3, E_CuAu3, a_CuAu3 = FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell=[0, 1, 1, 1], plotindex=4, plotlabel="CuAu3", writepdfpng=(mode=="interactive"))
     E_mixing_CuAu3 = E_CuAu3 - 0.25*E_Cu - 0.75*E_Au
-    if mode in ['nightly', 'use']:
+    if mode in ['nightly', 'interactive']:
         assert math.isclose(a_CuAu3, 3.976, rel_tol=0.001) #  Gola et al 2018
         assert math.isclose(E_mixing_CuAu3, -0.095, abs_tol=0.001) #  Gola et al 2018
     
@@ -260,7 +259,7 @@ def setup(mode):
                        gp.ScalarSaver(16),
                        gp.RestartSaver()]
 
-    num_timeblocks = {False:15, True:2}[mode=="ci"] # full length for "nightly" and "use"
+    num_timeblocks = {False:15, True:2}[mode=="ci"] # full length for "nightly" and "interactive"
     output_filename = 'test_eam.h5'
     sim = gp.Simulation(conf, [eam_pot], integrator, num_timeblocks=num_timeblocks, steps_per_timeblock=1024, runtime_actions=runtime_actions, storage=output_filename)
 
@@ -315,8 +314,8 @@ def setup(mode):
 mode = "ci" # default
 if "nightly" in sys.argv:
     mode = "nightly"
-if "use" in sys.argv:
-    mode = "use" # if both present then go with "use"
+if "interactive" in sys.argv:
+    mode = "interactive" # if both present then go with "interactive"
 
 # RUN SETUP
 
@@ -331,6 +330,6 @@ test_EAM_ZJW2004_Cu(mode)
 test_CuAu_alloys(mode)
 
 if __name__ == '__main__':
-    if mode == "use" and "setup" not in sys.argv:
+    if mode == "interactive" and "setup" not in sys.argv:
         plt.show()
 
