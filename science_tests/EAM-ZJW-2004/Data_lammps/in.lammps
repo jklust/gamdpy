@@ -33,9 +33,12 @@ timestep			${dt}
 #fix				1 all nvt temp 2500 2500 ${tau_relax}
 fix				1 all nve
 
+
+compute myPressure all pressure thermo_temp
+
 # Output settings
 thermo			4
-thermo_style		custom step temp pe ke etotal press
+thermo_style		custom step temp pe ke etotal press pxx pyy pzz pyz pxz pxy
 
 dump			1 all atom 100 dump.cu.run.lammpstrj
 run			2048

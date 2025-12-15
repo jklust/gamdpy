@@ -31,6 +31,9 @@ gPerMole = 1.e-3/Avogadro
 Da = atomic_mass
 eV = elementary_charge
 kB = Boltzmann
+inGPa = eV/Aa**3/1e9 # to convert pressure units eV/Aa^3 to GPa
+in_bar = inGPa*1e4  # to convert pressure units eV/Aa^3 to bar
+
 
 rho = 0.085 # number density in inverse cubic Angstrom
 TK = 2500 # Temperature in Kelvin
@@ -65,7 +68,7 @@ def test_EAM_ZJW2004_Cu(mode):
 
 
     with h5py.File(conf_file_path) as f:
-        conf = gp.Configuration.from_h5(f,"configuration")
+        conf = gp.Configuration.from_h5(f,"configuration", compute_flags={'stresses':True})
 
 
     eam_pot = gp.EAM_ZJW_2004([paramsCu], max_num_nbs=1000)
@@ -74,6 +77,7 @@ def test_EAM_ZJW2004_Cu(mode):
     scalar_interval = 4
 
     runtime_actions = [gp.MomentumReset(100),
+                       gp.StressSaver(scalar_interval, compute_flags={'stresses':True}),
                        gp.ScalarSaver(scalar_interval)]
 
     num_timeblocks = {False:2, True:1}[mode=="ci"] # full length for "nightly" and "interactive"
@@ -85,7 +89,13 @@ def test_EAM_ZJW2004_Cu(mode):
 
     U, W = gp.ScalarSaver.extract(sim.output, ['U', 'W'], per_particle=False, first_block=0)
     my_times = gp.ScalarSaver.get_times(sim.output, first_block=0)
-
+    stress_tensor = gp.StressSaver.extract(sim.output)
+    sxx = stress_tensor[:,0,0]
+    syy = stress_tensor[:,1,1]
+    szz = stress_tensor[:,2,2]
+    sxy = stress_tensor[:,0,1]
+    sxz = stress_tensor[:,0,2]
+    syz = stress_tensor[:,1,2]
 
     # Read reference data, saved from an equivalent LAMMPS simulations
     ref_data_path = os.path.join(reference_data_dir, "Data_lammps", "lammps_eam_Cu_ref.dat")
@@ -93,14 +103,37 @@ def test_EAM_ZJW2004_Cu(mode):
 
     ref_data = np.loadtxt(ref_data_path)
     U_ref = ref_data[:-1,2]  # Note: ref_data has 513 rows, not 512, hence the -1 in the row range.
+    sxx_ref = -ref_data[:-1, 6] / in_bar
+    syy_ref = -ref_data[:-1, 7] / in_bar
+    szz_ref = -ref_data[:-1, 8] / in_bar
+    syz_ref = -ref_data[:-1, 9] / in_bar
+    sxz_ref = -ref_data[:-1, 10] / in_bar
+    sxy_ref = -ref_data[:-1, 11] / in_bar
 
+    
     if mode in ['interactive', 'nightly']:
         # in these cases we actually make an assert-based test
         diff_U_sq = (U-U_ref)**2
-        # sum the first 200 squared differences (representing 800 time steps)
-        SSD = np.sum(diff_U_sq[:200])
+        compare = 200 # sum the first 200 squared differences (representing 800 time steps)
+        SSD = np.sum(diff_U_sq[:compare])
     
         assert SSD < 0.1
+
+        # Now compare stress components
+        diff_sts_xx_sq = (sxx - sxx_ref)**2
+        diff_sts_yy_sq = (syy - syy_ref)**2
+        diff_sts_zz_sq = (szz - szz_ref)**2
+        diff_sts_yz_sq = (syz - syz_ref)**2
+        diff_sts_xz_sq = (sxz - sxz_ref)**2
+        diff_sts_xy_sq = (sxy - sxy_ref)**2
+
+        SSD_sts_all_components = ( np.sum(diff_sts_xx_sq[:compare]) +
+                                   np.sum(diff_sts_yy_sq[:compare]) +
+                                   np.sum(diff_sts_zz_sq[:compare]) +
+                                   np.sum(diff_sts_yz_sq[:compare]) +
+                                   np.sum(diff_sts_xz_sq[:compare]) +
+                                np.sum(diff_sts_xy_sq[:compare]) )
+        assert SSD_sts_all_components < 1e-6
     # for later times the differences begin to grow as expected
     # Make figure and save as pdf+png (though when running as a test ie mode == "ci" or mode == "nightly")
     if mode == "interactive":
@@ -115,6 +148,8 @@ def test_EAM_ZJW2004_Cu(mode):
         print("Wrote graphical presentation of results as pdf and png files with extra suffix .tmp. \
               Remove the suffix by renaming if you wish to replace the version-controlled output files")
 
+        # Perhaps want to make figures showing the comparison of stress for all 6 components
+        
 
 def FindMinimumEnthalpyCuAu(rho_array, ptype_unit_cell, plotindex = None, plotlabel=None, writepdfpng=False):
 
