@@ -7,7 +7,7 @@ import gamdpy as gp
 from .interaction import Interaction
 
 class EAM_ZJW_2004(Interaction):
-    """  Embedded atom many-body potential for alloys involving 16 elements as published by Zhou, Johnson, Wadley, Phys. Rev. B 2004.
+    r"""  Embedded atom many-body potential for alloys involving 16 elements as published by Zhou, Johnson, Wadley, Phys. Rev. B 2004.
 
     Parameters
     ----------
@@ -19,6 +19,26 @@ class EAM_ZJW_2004(Interaction):
         Maximum number of neighbors per particle to allocate in the neighbor list.
     exclusions : array_like
         List of particle indices to exclude from interactions for each particle.
+
+    References
+    ----------
+
+        [Zhou2004]X. W. Zhou, R. A. Johnson, H. N. G. Wadley,
+        "Misfit-energy-increasing dislocations in vapor-deposited CoFe/NiFe multilayers"
+        Phys. Rev. B 69, 144113 (2004)
+        https://doi.org/10.1103/PhysRevB.69.144113
+
+    Examples
+    --------
+
+    Example of creaating a potential for pure copper.
+
+    >>> paramsCu = gp.EAM_ZJW_2004_params['Cu']
+    >>> cut = math.sqrt(5.) * paramsCu[0] # the original paper doesn't specify the actual value of the cutoff to use'
+    >>> paramsCu = np.append(paramsCu, cut)
+    >>> eam_pot = gp.EAM_ZJW_2004([paramsCu], max_num_nbs=1000) # for alloys just include other elements' parameters in the list
+
+
     """
 
     def __init__(self, params, max_num_nbs, exclusions=None):
