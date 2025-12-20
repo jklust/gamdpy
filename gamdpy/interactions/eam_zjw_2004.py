@@ -327,12 +327,12 @@ class EAM_ZJW_2004(Interaction):
                     other_type = ptype_function(other_id, ptype)
                     params_other_type = params[other_type]
                     dist_sq = dist_sq_dr_function(vectors[r_id][other_id], vectors[r_id][global_id], sim_box, my_dr)
-                    cut = params_other_type[-1]
+                    my_cut = params_my_type[-1]
+                    other_cut = params_other_type[-1]
+                    cut = max(my_cut, other_cut)
                     if dist_sq < cut*cut:
                         dist = math.sqrt(dist_sq)
-                        #other_embedding_energy = embed_en_grad[other_id, 0]
                         other_embedding_grad = embed_en_grad[other_id, 1]
-                        #other_embedding_second_der = embed_en_grad[other_id, 2]
 
                         # See comment about possible optimization a few lines down
                         my_rho, my_rho_s, my_rho_pp = electron_density_function(dist, params_my_type)
@@ -368,8 +368,8 @@ class EAM_ZJW_2004(Interaction):
                                     my_stress[k,k2] -= half*my_dr[k]*my_dr[k2]*s_pair      # stress tensor
                         if compute_u:
                             my_cscalars[u_id] += half*u_pair                                # Potential energy
-                if compute_lap:
-                    my_cscalars[lap_id] += numba.float32(1-D)*s_pair + umm_pair          # Laplacian
+                        if compute_lap:
+                            my_cscalars[lap_id] += numba.float32(1-D)*s_pair + umm_pair          # Laplacian
 
 
                         ## TO DO
