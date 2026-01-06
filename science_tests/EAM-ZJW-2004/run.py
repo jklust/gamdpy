@@ -142,8 +142,8 @@ def test_EAM_ZJW2004_Cu(mode):
         plt.plot(my_times, U_ref, label="LAMMPS")
         plt.xlabel("Time")
         plt.ylabel("Total potential energy (eV)")
-        plt.savefig("eam_Cu_gamdy_vs_lammps.pdf.tmp", format='pdf')
-        plt.savefig("eam_Cu_gamdy_vs_lammps.png.tmp", format='png')
+        plt.savefig("eam_Cu_gamdpy_vs_lammps.pdf.tmp", format='pdf')
+        plt.savefig("eam_Cu_gamdpy_vs_lammps.png.tmp", format='png')
         plt.legend()
         print("Wrote graphical presentation of results as pdf and png files with extra suffix .tmp. \
               Remove the suffix by renaming if you wish to replace the version-controlled output files")
