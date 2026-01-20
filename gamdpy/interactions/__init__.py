@@ -11,7 +11,7 @@ from .pair_potential_nsquared import PairPotentialNsquared
 from .tabulated_pair_potential import TabulatedPairPotential
 
 # Many body EAM
-from.eam_zjw_2004 import EAM_ZJW_2004
+from .eam_zjw_2004 import EAM_ZJW_2004
 
 # Fixed interactions
 from .make_fixed_interactions import make_fixed_interactions
