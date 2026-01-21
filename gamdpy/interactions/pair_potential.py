@@ -164,7 +164,7 @@ class PairPotential(Interaction):
 
 
 
-        pairpotential_function = self.pairpotential_function
+        pairpotential_function = numba.njit(self.pairpotential_function)
     
         if UtilizeNIII:
             virial_factor_NIII = numba.float32( 1.0/configuration.D)

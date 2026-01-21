@@ -1,7 +1,6 @@
 
 def test_apply_gromacs_cutoff(plot=False):
     import numpy as np
-
     import gamdpy as gp
 
     pair_pot_bare = gp.LJ_12_6_sigma_epsilon
@@ -59,13 +58,15 @@ def test_apply_gromacs_cutoff(plot=False):
         1.4: (-0.35459317532331097, -1.1942834996714082, -5.768193433122846),
         1.6: (-0.11811397750352626, -0.4921801632917777, -3.0455808541773877),
         1.8: (-0.01744051389029623, -0.13735330361158876, -2.1937169086509116),
-        1.99: (-2.541031881131417e-06, -0.0003817580316710645, -0.15115156157313392),
+        #1.99: (-2.541031881131417e-06, -0.0003817580316710645, -0.15115156157313392), # Change needed after removing jit'ing from cut-off function
+        1.99: (np.float32(-2.5480986e-06), np.float32(-0.00038173795), np.float32(-0.15115207)),
         2.0: (0.0, 0.0, 0.0)
     }
+
     for dr in test_dists:
         # print(f'{dr}: {pair_pot(dr, params)},') # Generate data (assume code is trusted, confirm visually by plots)
         pp = pair_pot(dr, params)
-        assert np.allclose(pp, reference_data[dr]), f'Gromacs switching for dr={dr} is incorrect'
+        assert np.allclose(pp, reference_data[dr]), f'Gromacs switching for dr={dr} is incorrect: {pp} <-> {reference_data[dr]}'
 
 if __name__ == '__main__':  # pragma: no cover
     test_apply_gromacs_cutoff(plot=True)

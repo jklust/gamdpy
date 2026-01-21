@@ -4,7 +4,6 @@ Further test could be done with some published benchmark result"""
 
 import numpy as np
 import gamdpy as gp
-from numba import njit
 
 def test_AOUP_interface():
     # Test positional arguments
@@ -49,7 +48,7 @@ def test_AOUP_simulation(verbose=False, plot=False):
     configuration.make_positions(N=2048, rho=density)
 
     # Setup pair potential.
-    pairfunc = njit(gp.harmonic_repulsion)
+    pairfunc = gp.harmonic_repulsion
     eps, sig = 0.00001, 1.0
     pairpot = gp.PairPotential(pairfunc, params=[eps, sig], max_num_nbs=1000)
     interactions = [pairpot, ]

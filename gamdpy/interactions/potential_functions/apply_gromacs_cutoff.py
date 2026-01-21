@@ -61,7 +61,7 @@ def apply_gromacs_cutoff(pair_potential: callable) -> callable:
     """
     pair_pot = numba.njit(pair_potential)
 
-    @numba.njit
+    #@numba.njit # Jit moved to 'last minut', i.e. PairPotential.get_kernel 
     def potential(dist, params): # pragma: no cover
         flt = numba.float32
         r_c = flt(params[-1])

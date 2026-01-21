@@ -7,8 +7,7 @@ configuration.make_lattice(unit_cell=gp.unit_cells.HEXAGONAL, cells=[16, 10], rh
 configuration['m'] = 1.0
 configuration.randomize_velocities(temperature=0.7 * 2)
 
-from numba import njit
-pair_func = njit(gp.harmonic_repulsion)
+pair_func = gp.harmonic_repulsion
 eps, sig = 10.0, 1.0
 pair_pot = gp.PairPotential(pair_func, params=[eps, sig], max_num_nbs=1000)
 
