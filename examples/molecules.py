@@ -84,10 +84,10 @@ angles = gp.Angles(angle_potential, configuration.topology.angles, angle_paramet
 
 # Make dihedral interactions
 dihedral_potential = gp.ryckbell_dihedral
-rbcoef=[.0, 5.0, .0, .0, .0, .0]    
+rbcoef=[.0, 5.0, .0, .0, .0, .0]
 dihedrals = gp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, dihedral_parameters=[rbcoef, ])
 
-# Exlusion list
+# Exclusion list
 exclusions = dihedrals.get_exclusions(configuration)
 #exclusions = bonds.get_exclusions(configuration)
 
