@@ -43,6 +43,13 @@ cf = dict(
     in_g_per_ml = unit_density*1e-3
 )
 
+
+# Examples of how a general function doing this could work:
+# cf = gp.conversion_factors(sigma_in_m = 3.4e-10, epsilon_in_K = 120, mass_in_u = 39.948)  # Argon units
+# cf = gp.conversion_factors(sigma_in_Angstrom= 3.4e-10, epsilon_in_kJ_per_mol = 3.23, mass_in_kg = 39.948e32)
+# cf =  gp.conversion_factors(sigma_in_m = 3.4e-10, epsilon_in_J = ..., mass_in_kg = ...)) # Do simulation in SI units (no advisable!)
+# cf =  gp.conversion_factors(sigma_in_Angstrom = 1, epsilon_in_kJ_per_mol = 1,  mass_in_u = 1)) # Do simulation in molar units units (no advisable!)
+
 print('Dictionary with conversion factors (from reduced units to SI units):')
 pprint(cf)
 
@@ -69,7 +76,9 @@ sim = gp.Simulation(configuration, [pair_pot], integrator, runtime_actions,
 
 # Run simulation and print information in SI units
 for timeblock in sim.run_timeblocks():
+    time = timeblock * sim.steps_per_block * sim.dt
     time_in_ps = timeblock * sim.steps_per_block * sim.dt * cf['in_ps']
+    energy =  np.mean(configuration['U'])
     energy_in_kJ_per_mol = np.mean(configuration['U']) * cf['in_kJ_per_mol']
     N, D = configuration.N, configuration.D
     dof = D * N - D
@@ -79,4 +88,4 @@ for timeblock in sim.run_timeblocks():
     rho = N/volume
     P = rho * T_kin + np.sum(configuration['W']) / volume
     pressure_in_MPa = P * cf['in_MPa']
-    print(f't = {time_in_ps:.1f} ps,  u = {energy_in_kJ_per_mol:.2f} kJ/mol,  T_kin = {T_kin_in_K:.1f} K,  P = {pressure_in_MPa:.1f} MPa')
+    print(f't = {time_in_ps:.1f} ps,  u = {energy_in_kJ_per_mol:.2f} kJ/mol,  T_kin = {T_kin_in_K:.1f} K,  P = {pressure_in_MPa:.1f} MPa (t = {time:.1f},  u = {energy:.2f},  T_kin = {T_kin:.1f},  P = {P:.1f})')
