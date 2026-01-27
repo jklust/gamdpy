@@ -102,6 +102,9 @@ class Test_examples:
     def test_widoms_particle_insertion(self):
         self.make_one("widoms_particle_insertion")
 
+    def test_lennard_jones_argon(self):
+        self.make_one("lennard_jones_argon")
+
     def test_LJchain(self):
         self.make_one("LJchain", ["Data/LJchain10_Rho1.00_T0.700.h5", "Data/LJchain10_Rho1.00_T0.700_compress.h5"])
 
