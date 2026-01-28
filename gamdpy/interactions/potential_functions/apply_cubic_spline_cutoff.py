@@ -58,6 +58,9 @@ def apply_cubic_spline_cutoff(pair_potential):
     # @numba.njit # Jit moved to 'last minut', i.e. PairPotential.get_kernel 
     def potential(dist, params): # pragma: no cover
         cut_outer = params[-1]
+        if dist>cut_outer:
+            return numba.float32(0.0), numba.float32(0.0), numba.float32(0.0)
+
         cut_inner = params[-2]
         Delta_r = cut_outer - cut_inner
 

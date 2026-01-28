@@ -31,6 +31,9 @@ def apply_shifted_force_cutoff(pair_potential):
     # @numba.njit # Jit moved to 'last minut', i.e. PairPotential.get_kernel 
     def potential(dist, params): # pragma: no cover
         cut = params[-1]
+        if dist>cut:
+            return numba.float32(0.0), numba.float32(0.0), numba.float32(0.0)
+
         u, s, umm = pair_pot(dist, params)
         u_cut, s_cut, umm_cut = pair_pot(cut, params)
         u -= u_cut - s_cut * cut * (dist - cut)
