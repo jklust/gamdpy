@@ -53,6 +53,7 @@ from .calculators import CalculatorRadialDistribution, CalculatorStructureFactor
 from .tools import TrajectoryIO, calc_dynamics, save_configuration, calc_conductivity
 # Side effect gp.calc_dynamics does also work! Same problem for integrators
 # TrajectoryIO, save_configuration and calc_dynamics are not directly imported and are called via gp.tools.*
+from .tools import conversion_factors
 
 # Tools/Evaluator are runtime actions with do not interact with the kernel
 from .tools.Evaluator import Evaluator
