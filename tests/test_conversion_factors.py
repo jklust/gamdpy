@@ -73,10 +73,10 @@ def test_conversion_factors_against_scipy_constants():
 def test_conversion_factors(verbose=False):
 
     # Test that wrong input raises errors
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(KeyError) as e:
         gp.conversion_factors(unit_energy=1.0, unit_energy_in_K=120)
         assert "Expected only one unit_energy" in str(e.value)
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(KeyError) as e:
         gp.conversion_factors(unit_length=1.0, unit_length_in_nm=3.4)
         assert "Expected only one unit_length" in str(e.value)
 
@@ -110,6 +110,10 @@ def test_conversion_factors(verbose=False):
     if verbose:
         print("  ..:: cgs units (centimetre–gram–second) ::.. ")
         pprint(cf_cgs)
+
+    # Check some standar SI conversion factors
+    cf = gp.conversion_factors()
+    assert cf["(kcal/mol)/Angstrom"] == pytest.approx(cf["kcal/mol"] / cf["Angstrom"])
 
 if __name__ == "__main__":
 

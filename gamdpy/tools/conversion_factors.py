@@ -3,55 +3,76 @@ from scipy.constants import Boltzmann
 
 
 def conversion_factors(**kwargs):
-    """ Function that return dictionary with conversion factors from reduced units to real units
+    """ Return conversion factors from simulation units to common physical units.
+
+    The function defines a set of *base simulation units* by specifying what
+    one unit of length, energy, and mass correspond to in SI (meters, joules,
+    kilograms). From these three base units it derives such as time, pressure, and more.
+    These are returned as a dictionary of multiplicative conversion factors.
+
+    Interpretation of the returned dictionary
+    -----------------------------------------
+    Each entry `cf[key]` is a factor that converts a value expressed in
+    simulation units to the unit indicated by `key`:
+    Example: to give simulation time in ps then use `t_ps = t_sim * cf['ps']`.
 
     Parameters
     ----------
-    **kwargs: Keyword arguments with unit length, energy and mass.
+    **kwargs
+        Exactly one keyword must be provided for each of the three base units:
+        `unit_length*`, `unit_energy*`, and `unit_mass*`. The suffix determines
+        the input unit, e.g.:
+
+          - Length: `unit_length_in_Angstrom`, `unit_length_in_nm`, ...
+          - Energy: `unit_energy_in_kJ_per_mol`, `unit_energy_in_K`, `unit_energy_in_eV`, ...
+          - Mass:   `unit_mass_in_u`, `unit_mass_in_g`, ...
+
+        If no keyword arguments are given, SI base units are assumed:
+        `unit_length = 1 m`, `unit_energy = 1 J`, `unit_mass = 1 kg`.
+
+        Special option:
+        `get_possible_inputs=True` returns a dictionary mapping all accepted
+        input keyword names to their conversion factors to SI.
+
+    Returns
+    -------
+    dict
+        Dictionary of conversion factors from simulation units to various units.
+        The dictionary includes (among others):
+          - length: m, cm, nm, Å, ...
+          - energy: J, kJ/mol, kcal/mol, K, eV, ...
+          - mass: kg, g, u, g/mol, ...
+          - time: s, ps, fs, ns, ...
+          - pressure: Pa, MPa, GPa, bar, atm, ...
+          - ...
+
+    Raises
+    ------
+    KeyError
+        If more than one keyword is provided for length, energy, or mass.
+    KeyError
+        If any of length, energy, or mass is not specified (and kwargs are not empty).
+
 
     Examples
     --------
 
     >>> from pprint import pprint
     >>> from gamdpy.tools import conversion_factors
-    >>> cf_SI = conversion_factors(unit_length=1.0, unit_energy=1.0, unit_mass=1.0)  # Standard SI units
-    >>> cf_SI = conversion_factors()  # Standard SI units (same as above)
-    >>> cf_Argon = conversion_factors(unit_length_in_Angstrom=3.4, unit_energy_in_K=120.0, unit_mass_in_u = 39.948) # Argon units
-    >>> cf_cgs = conversion_factors(unit_length_in_cm=1.0, unit_energy_in_erg=1.0, unit_mass_in_g=1.0)  # centimetre–gram–second units
-    >>> cf_molar = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kJ_per_mol=1.0, unit_mass_in_u = 1.0)  # Molar units
-    >>> cf_cal = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kcal_per_mol=1.0, unit_mass_in_u = 1.0)  # Calometric molar units
-    >>> cf_metal = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_eV=1.0, unit_mass_in_u = 1.0)  # Metallic units
-    >>> pprint(conversion_factors(get_possible_inputs=True))  # name, conversion_factor_to_SI_unit
-    {'unit_energy': 1.0,
-     'unit_energy_in_K': 1.380649e-23,
-     'unit_energy_in_Kelvin': 1.380649e-23,
-     'unit_energy_in_eV': 1.602176634e-19,
-     'unit_energy_in_erg': 1e-07,
-     'unit_energy_in_hartree': 4.359744722206e-18,
-     'unit_energy_in_kJ_per_mol': 1.6605390671738467e-21,
-     'unit_energy_in_kcal_per_mol': 6.947695457055374e-21,
-     'unit_energy_in_zeptojoule': 1e-21,
-     'unit_length': 1.0,
-     'unit_length_in_AU': 149597870700.0,
-     'unit_length_in_Angstrom': 1e-10,
-     'unit_length_in_bohr_radius': 5.29177210544e-11,
-     'unit_length_in_cm': 0.01,
-     'unit_length_in_nm': 1e-09,
-     'unit_length_in_parsec': 3.085677581491367e+16,
-     'unit_length_in_Å': 1e-10,
-     'unit_mass': 1.0,
-     'unit_mass_in_amu': 1.66053906892e-27,
-     'unit_mass_in_attograms': 1e-21,
-     'unit_mass_in_g': 0.001,
-     'unit_mass_in_gram_per_mol': 1.6605390671738466e-27,
-     'unit_mass_in_u': 1.66053906892e-27}
+    >>> cf = conversion_factors(unit_length=1.0, unit_energy=1.0, unit_mass=1.0)  # Standard SI units
+    >>> cf = conversion_factors()  # Standard SI units (same as above)
+    >>> cf = conversion_factors(unit_length_in_Angstrom=3.4, unit_energy_in_K=120.0, unit_mass_in_u = 39.948) # Argon units
+    >>> cf = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_kcal_per_mol=1.0, unit_mass_in_u=1.0)  # Molar units (LAMMPS real units)
+    >>> cf = conversion_factors(unit_length_in_cm=1.0, unit_energy_in_erg=1.0, unit_mass_in_g=1.0)  # centimetre–gram–second (CGS) system
+    >>> cf = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kJ_per_mol=1.0, unit_mass_in_u = 1.0)  # Atomistic SI-like units
+    >>> cf = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_eV=1.0, unit_mass_in_u = 1.0)  # Metallic units
     """
 
     # Check that one, and only one energy, length and mass is given
     for prefix in 'unit_length', 'unit_energy', 'unit_mass':
         matches = [k for k in kwargs if k.startswith(prefix)]
         if len(matches) > 1:
-            raise ValueError(f'Expected only one {prefix} key, but got {len(matches)}: {matches}')
+            raise KeyError(f'Expected only one {prefix} key, but got {len(matches)}: {matches}')
 
     # Fundamental constants (same format as scipy.constants)
     Avogadro = 6.02214076e+23  # 1 / mol
@@ -78,6 +99,7 @@ def conversion_factors(**kwargs):
         'unit_length_in_nm': 1e-9,
         'unit_length_in_Å': 1e-10,
         'unit_length_in_Angstrom': 1e-10,
+        'unit_length_in_Ångström': 1e-10,
         'unit_length_in_bohr_radius': bohr_radius,
         'unit_length_in_AU': astronomical_unit,
         'unit_length_in_parsec': parsec
@@ -126,8 +148,11 @@ def conversion_factors(**kwargs):
 
     # Derived units. N.B. Below we assume D=3 spatial dimensions
     unit_time = unit_length * (unit_mass / unit_energy) ** 0.5  # s
+    unit_force = unit_energy / unit_length
     unit_pressure = unit_energy / unit_length ** 3  # Pa
     unit_density = unit_mass / unit_length ** 3  # kg/m^3
+    unit_area = unit_length**2
+    unit_volume = unit_length**3
 
     return {
         # Length
@@ -183,6 +208,8 @@ def conversion_factors(**kwargs):
         "pg": unit_mass*1e15,
         "attogram": unit_mass*1e21,
         "ag": unit_mass*1e21,
+        "yoctogram": unit_mass*1e27,
+        "yg": unit_mass*1e27,
         "u": unit_mass/atomic_mass,
         "dalton": unit_mass/atomic_mass,
         "kg/mol": unit_mass * Avogadro,
@@ -208,6 +235,24 @@ def conversion_factors(**kwargs):
         'femtoseconds': unit_time * 1e15,
         'fs': unit_time * 1e15,
 
+        # Force
+        'unit_force': unit_force,  # N
+        'Newton': unit_force,
+        'N': unit_force,
+        'millinewton': unit_force*1e3,
+        'mN': unit_force*1e3,
+        'nanonewton': unit_force*1e9,
+        'nN': unit_force*1e9,
+        'piconewton': unit_force*1e12,
+        'pN': unit_force*1e12,
+        'femtonewton': unit_force*1e15,
+        'fN': unit_force*1e15,
+        'Dyne': unit_force * 1e5,  # CGS system
+        'dyn': unit_force * 1e5,
+        '(kcal/mol)/Angstrom': unit_force * 1e-3 / calorie * Avogadro / 1e10,  # from LAMMPS real units
+        '(kJ/mol)/Angstrom': unit_force * 1e-3 / Avogadro / 1e10,
+        'eV/Angstrom': unit_force / electron_volt / 1e10,  # from LAMMPS metallic units
+
         # Pressure
         'unit_pressure': unit_pressure,
         'Pascal': unit_pressure,
@@ -222,9 +267,11 @@ def conversion_factors(**kwargs):
         'bar': unit_pressure * 1e-5,
         'mbar': unit_pressure * 1e-2,
         'psi': unit_pressure / 6894.757293168361,
-        'torr': unit_pressure / 133,
+        'torr': unit_pressure / 133.322368,
         'atm': unit_pressure / 101325,
         'atmospheres': unit_pressure / 101325,
+        'Barye': unit_pressure * 10,
+        'Ba': unit_pressure * 10,
 
         # Density (3D)
         'unit_density': unit_density,  # kg/m³
@@ -232,5 +279,35 @@ def conversion_factors(**kwargs):
         'g/ml': unit_density * 1e-3,
         'g/cm3': unit_density * 1e-3,
         'grams_per_cubic_centimeter': unit_density * 1e-3,
+        'u/nm3': unit_density / atomic_mass * 1e-27,
+        'u/Å3': unit_density / atomic_mass * 1e-30,
 
+        # Area
+        'unit_area': unit_area,  # m²
+        'square_meter': unit_area,
+        'm2': unit_area,
+        'square_centimeter': unit_area*1e4,
+        'cm2': unit_area*1e4,
+        'square_millimeter': unit_area*1e6,
+        'mm2': unit_area*1e6,
+        'square_nanometer': unit_area*1e18,
+        'nm2': unit_area*1e18,
+        'square_Ångström': unit_area*1e20,
+        'square_Angstrom': unit_area*1e20,
+        'Å2': unit_area*1e20,
+
+        # Volume
+        'unit_volume': unit_volume,  # m³
+        'cubic_meter': unit_volume,
+        'm3': unit_volume,
+        'cubic_centimeter': unit_volume*1e6,
+        'cc': unit_volume*1e6,
+        'cm3': unit_volume*1e6,
+        'cubic_millimeter': unit_volume*1e9,
+        'mm3': unit_volume*1e9,
+        'cubic_nanometer': unit_volume*1e27,
+        'nm3': unit_volume*1e27,
+        'cubic_Angstrom': unit_volume*1e30,
+        'cubic_Ångström': unit_volume*1e30,
+        'Å3': unit_volume*1e30,
     }
