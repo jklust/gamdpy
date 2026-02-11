@@ -35,13 +35,13 @@ class Topology():
         return 
    
     def from_h5(self, h5group):
-        self.bonds = h5group['bonds'][:]
-        self.angles = h5group['angles'][:]
-        self.dihedrals = h5group['dihedrals'][:]
+        self.bonds = h5group['bonds'][:].tolist()
+        self.angles = h5group['angles'][:].tolist()
+        self.dihedrals = h5group['dihedrals'][:].tolist()
         molecule_keys = list(h5group['molecules'].keys())
         self.molecules = {}
         for key in molecule_keys:
-            self.molecules[key] = h5group['molecules'][key][:]
+            self.molecules[key] = h5group['molecules'][key][:].tolist()
 
         return 
 
