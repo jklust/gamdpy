@@ -11,9 +11,28 @@ import numba
 import math
 from numba import cuda
 
+
+
+
+def make_harmonic_angle_function(SMALL=1.e-6):
+    """
+    Create a version of harmonic_angle_function with a specified value of the regularization
+    parameter SMALL. This prevents overflow when dividing by small values of sin(theta).
+    """
+    def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
+        theta_0 = params[0]
+        kspring = params[1]
+        s = math.sin(theta)
+        u = numba.float32(0.5) * kspring * (theta - theta_0) ** 2
+        d_u_d_cos_theta_neg = kspring * (theta - theta_0) /  (s+SMALL)
+        return u, d_u_d_cos_theta_neg
+    return harmonic_angle_function
+
+
 def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     r""" Harmonic angle potential,
 
+    Original version but with a regularization parameter SMALL hard-coded in.
     .. math::
 
         u(\theta) = \frac{k}{2} (\theta - \theta_0)^2
@@ -46,9 +65,10 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     kspring = params[1]
     s = math.sin(theta)
     u = numba.float32(0.5) * kspring * (theta - theta_0) ** 2
-    d_u_d_cos_theta_neg = kspring * (theta - theta_0) / s
-    # Do we need to protect against dividing by zero?
-    #d_u_d_cos_theta_neg = kspring * (theta - theta_0) /  (s+numba.float32(0.000001))
+    #d_u_d_cos_theta_neg = kspring * (theta - theta_0) / s
+    # To protect against dividing by zero, inspired by LAMMPS:
+    SMALL = numba.float32(1.e-6)
+    d_u_d_cos_theta_neg = kspring * (theta - theta_0) /  (s+SMALL)
 
     return u, d_u_d_cos_theta_neg
 
