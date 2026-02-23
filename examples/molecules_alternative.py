@@ -107,7 +107,7 @@ C1 = -6.0
 C2 = 0.0
 C3 = 0.0
 C4 = 0.0 # only include first three
-# This gives RK coefficients -3.0, 3.0, 0,. 0., 0., 0.,
+# This gives RB coefficients -3.0, 3.0, 0,. 0., 0., 0.,
 
 # Convert to Ryckaert-Belleman cofficients using the formulas on the Gromacs documentation
 # https://manual.gromacs.org/documentation/current/reference-manual/functions/bonded-interactions.html
@@ -115,7 +115,7 @@ rbcoef=[C2 + 0.5*(C1+C3),
         0.5*(-C1 + 3.*C3),
         -C2 + 4.*C4,
         -2.*C3,-4.*C4,
-        0.] # that ensures the sum of the RK coefficients is automatically zero
+        0.] # that ensures the sum of the RB coefficients is automatically zero
 
 
 print(f'rbcoef {rbcoef}')
