@@ -8,10 +8,9 @@ gp.select_gpu()
 
 # This script matches the polyethylene model simulated in the LAMMSP tutorial that can be found here:
 # https://download.lammps.org/tutorial/hands-on-part1/LAMMPS_Hands-on.pdf
-# We create our system from scratch and equilibrate, rather than reading the same configuration file, so only statistical comparison
-# is possible.
+# We create our system from scratch and equilibrate, rather than reading the same configuration file, so only statistical comparison is possible.
 
-# In the tutorial they use a softer repulsion than the usual 12-6 Lennard-Jones, namely LJ 9-6, so we need to define that here. See 
+# In the tutorial they use a softer repulsion than the usual 12-6 Lennard-Jones, namely LJ 9-6, so we need to define that here.
 
 def LJ_9_6(dist, params):
     """ A softer 9-6 Lennard-Jone potential, as used in LAMMPS, see
@@ -32,32 +31,22 @@ https://www.afs.enea.it/software/lammps/doc19/html/pair_sdk.html
     return u, s, umm  # U(r), s == -U'(r)/r, U''(r)
 
 
-# Seems to be a discrepancy with LAMMPS. Mean potential energy is -1.175/atom,
-# AFTER FIXING THE POTENTIAL COEFFICIENT: U=-2.205, P=0.001185 which in atmospheres is 81.28 ie good enough
 
-#in LAMMPS you have to add the pair part and the molecular part and divide by 2000, and
-# I get -2.332. For the pressure in LAMMPS it's 78.9885 atmospheres. From analysze_thermodynamics I get the mean pressure as 0.00621 kcal(mol/AA^3, converting that into
-# atmospheres I get 425.8, so five times larger.
+# Regarding units: the internal units are kcal/mol, Angstrom, and amu (Dalton)
+# But we want to specify the temperature in K and the timestep in fs. To do this we unit
+# gamdpy's conversion_factors function which returns a dictionary allowing unit conversions.
+
+cf = gp.conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_kcal_per_mol=1.0, unit_mass_in_u=1.0)
 
 
 
-# temperature is 300 K
-T_K = 300.
-# real units, energy is kcal/mol
-N_A = 6.02214076e23
-kB = 1.380649e-23
-kcal = 4184
-mass_unit = 1.e-3 / N_A # g/mol
-
-time_unit_in_fs = 1e-10 * math.sqrt(mass_unit/(kcal/N_A)) * 1e15
-print("time unit in fs", time_unit_in_fs)
-kT_kcal_per_mol = kB *  T_K / (kcal/N_A)
-
-print("kT in kcal/mol", kT_kcal_per_mol)
 
 # Simulation params 
-rho, temperature = 0.0066942767, kT_kcal_per_mol
-timestep = 5 / time_unit_in_fs
+temperature_in_K = 300.
+temperature = temperature_in_K / cf['K']
+rho = 0.0066942767
+timestep_in_fs = 5.0
+timestep = timestep_in_fs / cf['fs']
 filename = 'Data/PE'
 num_timeblocks_equilibration = 64
 num_timeblocks_production = 64
