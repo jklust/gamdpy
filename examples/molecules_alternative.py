@@ -24,7 +24,7 @@ gp.select_gpu()
 rho, temperature = 0.85, 1.5
 N_A, N_B, N_C = 8, 4, 4  # Number of atoms of each tyoe
 particles_per_molecule = N_A + N_B + N_C
-filename = 'Data/chains_alt'
+filename = 'Data/chains_alt_new'
 num_timeblocks = 64
 steps_per_timeblock = 1 * 1024 # 8 * 1024 to show reliable pattern formation
 
@@ -141,26 +141,9 @@ cut = [[2.50, 1.12, 1.12],
 pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
 
 
-
-# Apply pair potential between particles 1 and 4 of each set defining a dihedral interaction which is the
-# pair potential times a fraction "strength_factor", typically 0.5. We have to take the list of dihedrals
-# and construct a separate bond listconsisting of the 1-4 pairs.
-strength_factor = 0.5 # what fraction of the original non-bonding interaction we want to retain between 1-4 pairs
-pair_type_bond_type = {}
-bonds_dihedral14_list = [] # the new bond-list consisting of dihedral 1-4 pairs
-bond14_params = [] # the Lennard-Jones parameters for a given pair type that appears in the 1-4 list
-for dih in configuration.topology.dihedrals:
-    atom0, atom1 = dih[0], dih[3]
-    type0, type1 = sorted((configuration.ptype[atom0], configuration.ptype[atom1])) # so type0 <= type 1
-    if (type0, type1) not in pair_type_bond_type:
-        pair_type_bond_type[(type0, type1)] = len(pair_type_bond_type) # so they get mapped to a bond type which 
-        # is just the order in which the types first appear in the dihhedral list
-        bond14_params.append([sig[type0][type1], strength_factor*eps[type0][type1], cut[type0][type1]])
-    bond_type = pair_type_bond_type[(type0, type1)]
-    bonds_dihedral14_list.append([atom0, atom1, bond_type])
-# Create  a new Bonds object using the same non-bonding function which includes the cutoff, represented by the object pair_func
-bonds14  = gp.Bonds(pair_func, bonds_dihedral14_list, bond14_params)
-
+# Add in the dihedral1-4 pair interactions at half-strength
+pair_list = [ [dihedral[0], dihedral[3]] for dihedral in configuration.topology.dihedrals]
+bonds14 = gp.Bonds_from_PairPotential(pair_pot, pair_list, configuration.ptype, strength_factor=0.5, ok_if_not_excluded=False)
 
 
 # Make integrator
@@ -174,7 +157,6 @@ runtime_actions = [gp.TrajectorySaver(),
                    gp.MomentumReset(100)]
 
 # Set up the simulation
-
 
 
 sim = gp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals, bonds14], integrator, runtime_actions,

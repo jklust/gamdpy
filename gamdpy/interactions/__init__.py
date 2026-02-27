@@ -26,3 +26,4 @@ from .bonds import Bonds
 from .angles import Angles
 from .dihedrals import Dihedrals
 
+from .bonds_from_pair_potential import Bonds_from_PairPotential

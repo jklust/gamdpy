@@ -35,6 +35,7 @@ from .integrators import integrator, NVE, NVT, NVT_Langevin, Brownian, NPT_Atomi
 from .interactions import interaction, add_interactions_list, NbList2, NbListLinkedLists
 from .interactions import PairPotential, TabulatedPairPotential, PairPotentialNsquared, EAM_ZJW_2004
 from .interactions import Bonds, Angles, Dihedrals
+from .interactions import Bonds_from_PairPotential
 from .interactions import make_fixed_interactions, make_planar_calculator, setup_planar_interactions
 from .interactions import Planar, Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
