@@ -87,9 +87,10 @@ dihedral_potential = gp.ryckbell_dihedral
 rbcoef=[-3.0, 3.0, .0, .0, .0, .0]
 dihedrals = gp.Dihedrals(dihedral_potential, configuration.topology.dihedrals, dihedral_parameters=[rbcoef, ])
 
-# Exclusion list
-exclusions = dihedrals.get_exclusions(configuration)
-#exclusions = bonds.get_exclusions(configuration)
+# Exclusion lists (the dihedral one includes the others, so merging is redundant here but we do it for illustration)
+exclusions_bond = bonds.get_exclusions(configuration)
+exclusions_angle= angles.get_exclusions(configuration)
+exclusions_dih = dihedrals.get_exclusions(configuration)
 
 # Make pair potential
 pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
@@ -103,7 +104,7 @@ cut = [[2.50, 1.12, 1.12],
        [1.12, 2.50, 2.50],
        [1.12, 2.50, 2.50]]
 
-pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=exclusions, max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], exclusions=[exclusions_bond, exclusions_angle, exclusions_dih], max_num_nbs=1000)
 
 # Make integrator
 integrator = gp.integrators.NVT(temperature=temperature, tau=0.1, dt=0.004)
