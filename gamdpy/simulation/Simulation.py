@@ -490,6 +490,30 @@ class Simulation():
             st += f'( TPS: {tps_sim:.2e} )\n'
         return st
 
+
+    def compress(self, desired_rho, max_relative_change):
+        done = False
+        timesteps = self.steps_per_block # might make this user-controlable later
+
+        while not done:
+            current_rho = self.configuration.N / self.configuration.get_volume()
+            scale_to = desired_rho
+            if scale_to / current_rho > 1 + max_relative_change:
+                scale_to = current_rho * (1 + max_relative_change)
+            else:
+                done = True
+            self.configuration.atomic_scale(density=scale_to)
+            self.configuration.copy_to_device()
+            self.integrate_self(0.0, timesteps)
+            self.configuration.copy_to_host()
+
+            current_rho = self.configuration.N / self.configuration.get_volume()
+            print(self.status(per_particle=True), f'rho= {current_rho:.3}')
+        return
+
+
+#### Autotuner ###
+
     def autotune_bruteforce1(self, pbs='auto', skins='auto', tps='auto', timesteps=0, repeats=1, verbose=False):
         if verbose:
             print('compute_plan :', self.compute_plan)
