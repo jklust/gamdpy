@@ -450,7 +450,7 @@ class Configuration:
         self.vectors['r'] *= scale_factor
         self.simbox.scale(scale_factor)
 
-    def save(self, output: h5py.File, group_name: str, mode: str="w", 
+    def save(self, output: h5py.File, group_name: str, mode: str="w",
             update_ptype: bool=True, update_topology: bool=True, verbose: bool=True) -> None:
         """ Write a configuration to a HDF5 file
     
