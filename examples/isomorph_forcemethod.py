@@ -19,14 +19,13 @@ import gamdpy as gp
 T = 2.00
 rhos = [1.00, 1.05, 1.10, 1.15, 1.20, 1.00]
 rhos = [1.00, 1.10, 1.20, 1.30, 1.40, 1.00]
-rhos = [1.00, 1.15, 1.30, 1.45, 1.00]
+rhos = [1.00, 1.50, 2.00, 2.50, 1.00]
 data = []
 
 # Setup fcc configuration
 configuration = gp.Configuration(D=3)
 configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=rhos[0])
 configuration['m'] = 1.0
-configuration.randomize_velocities(temperature=2 * T)
 
 # Setup pair potential.
 pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
@@ -38,7 +37,7 @@ evaluator = gp.Evaluator(configuration=configuration, interactions=pair_pot)
 # Setup runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [gp.RestartSaver(),
                     gp.TrajectorySaver(),
-                    gp.ScalarSaver(16, {'W':True}),
+                    gp.ScalarSaver(16),
                     gp.MomentumReset(100)]
 
 
@@ -54,12 +53,13 @@ for index, rho in enumerate(rhos):
 
     if 0 < index < len(rhos)-1:
         T = round( (rhos[index-1]/rho)**(1/3) * (F2sq/F1sq)**(1/2) *  T, 3) # Force Method
+        configuration.randomize_velocities(temperature=T)
+
 
     print(f'\nRho = {rho}, Temperature = {T}')
 
-
      # Setup integrator
-    integrator = gp.integrators.NVT(temperature=T, tau=0.2, dt=0.004)
+    integrator = gp.integrators.NVT(temperature=T, tau=0.2/T**(1/2), dt=0.01/T**(1/2))
 
     # Setup Simulation
     sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
