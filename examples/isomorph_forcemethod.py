@@ -16,16 +16,12 @@ import pickle
 import numpy as np
 import gamdpy as gp
 
-T = 2.00
-rhos = [1.00, 1.05, 1.10, 1.15, 1.20, 1.00]
-rhos = [1.00, 1.10, 1.20, 1.30, 1.40, 1.00]
-rhos = [1.00, 1.50, 2.00, 2.50, 1.00]
-data = []
 
 # Setup fcc configuration
 configuration = gp.Configuration(D=3)
-configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=rhos[0])
+configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
 configuration['m'] = 1.0
+
 
 # Setup pair potential.
 pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6_sigma_epsilon)
@@ -41,11 +37,13 @@ runtime_actions = [gp.RestartSaver(),
                     gp.MomentumReset(100)]
 
 
-evaluater = gp.Evaluator(configuration=configuration, interactions=pair_pot)
+T = 2.00
+rhos = [1.00, 1.50, 2.00, 2.50, 1.00]
+data = []
 
 for index, rho in enumerate(rhos):
 
-    # # Set temperature for simulation bases on Isomorph theory
+    # Set temperature for simulation based on Isomorph theory
     F1sq = np.sum(configuration['f']**2) 
     configuration.atomic_scale(density=rho)
     evaluator.evaluate()
@@ -53,13 +51,12 @@ for index, rho in enumerate(rhos):
 
     if 0 < index < len(rhos)-1:
         T = round( (rhos[index-1]/rho)**(1/3) * (F2sq/F1sq)**(1/2) *  T, 3) # Force Method
-        configuration.randomize_velocities(temperature=T)
-
-
-    print(f'\nRho = {rho}, Temperature = {T}')
+    
+    print(f'\nRho = {rho}, Temperature = {T:.3f}')
 
      # Setup integrator
     integrator = gp.integrators.NVT(temperature=T, tau=0.2/T**(1/2), dt=0.01/T**(1/2))
+    configuration.randomize_velocities(temperature=T)
 
     # Setup Simulation
     sim = gp.Simulation(configuration, pair_pot, integrator, runtime_actions,
