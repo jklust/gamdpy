@@ -34,7 +34,7 @@ class RestartSaver(RuntimeAction):
     
     def initialize_before_timeblock(self,  timeblock: int, output_reference):
         self.configuration.save(output=output_reference, group_name=f"/restarts/restart{timeblock:04d}", mode="w", 
-                                update_ptype=self.update_ptype, update_topology=self.update_topology, verbose=False)
+                                update_ptype=self.update_ptype, use_topology_link=not self.update_topology, verbose=False)
 
 
     def update_at_end_of_timeblock(self,  timeblock: int, output_reference):

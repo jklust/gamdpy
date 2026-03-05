@@ -60,7 +60,7 @@ class TrajectorySaver(RuntimeAction):
         # check that items of saving_list are known
         for item in saving_list:
             if item not in list(self.datatypes.keys()):
-                raise ValueError(f"{item} is not recognized. Accepted values are 'positions', 'images', 'velocities', 'forces'.")
+                raise KeyError(f"{item} is not recognized. Accepted values are 'positions', 'images', 'velocities', 'forces'.")
             self.sid[self.translator[item]]=True
         self.saving_list = saving_list
         self.update_ptype = update_ptype

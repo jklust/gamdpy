@@ -118,7 +118,7 @@ class Simulation():
 
         # Saving initial configuration
         self.configuration.save(output=self.memory, group_name="initial_configuration", mode="w",
-                update_ptype=True, update_topology=True)
+                update_ptype=True, include_topology=True)
         
         self.runtime_actions = runtime_actions
 

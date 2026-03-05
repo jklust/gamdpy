@@ -451,9 +451,9 @@ class Configuration:
         self.simbox.scale(scale_factor)
 
     def save(self, output: h5py.File, group_name: str, mode: str="w",
-            update_ptype: bool=True, update_topology: bool=True, verbose: bool=True) -> None:
+            update_ptype: bool=True, include_topology: bool=True, use_topology_link: bool=False, verbose: bool=True) -> None:
         """ Write a configuration to a HDF5 file
-    
+
         Parameters
         ----------
 
@@ -472,6 +472,9 @@ class Configuration:
 
         include_topology : bool
             Boolean flag indicating whether the topology of the configuration should be included
+
+        use_topology_link : bool
+            Boolean flag indicating the topology should just be a soft link to that of the initial configuration (if present)
 
         verbose : bool
             Boolean flag indicating whether messages should be written            
@@ -545,15 +548,18 @@ class Configuration:
 
         # save simulation box
         output[group_name].attrs['simbox_name'] = self.simbox.get_name()
-        #output[group_name].attrs['simbox_data'] = self.simbox.get_lengths()
         output[group_name].attrs['simbox_data'] = self.simbox.data_array
 
         # For topology decide to save new array every time or link to the one in initial_configuration
-        if update_topology:
-            output[group_name].create_group('topology')
-            self.topology.save(output[f'{group_name}/topology'])
-        else:
-            output[f'{group_name}/topology'] = h5py.SoftLink('/initial_configuration/topology')
+        if include_topology:
+            if use_topology_link:
+                if not output['/initial_configuration/topology']:
+                    raise KeyError("Group '/initial_configuration/topology' not found")
+                output[f'{group_name}/topology'] = h5py.SoftLink('/initial_configuration/topology')
+            else:
+                output[group_name].create_group('topology')
+                self.topology.save(output[f'{group_name}/topology'])
+
 
     # The following is equivalent to overloading in c++ : https://stackoverflow.com/questions/12179271/meaning-of-classmethod-and-staticmethod-for-beginner
     # cls stands for class, in this case the Configuration class
