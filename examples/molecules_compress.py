@@ -9,7 +9,7 @@ rho, temperature = 0.85, 1.5
 N_A, N_B, N_C = 8, 4, 4  # Number of atoms of each tyoe
 particles_per_molecule = N_A + N_B + N_C
 filename = 'Data/chains'
-num_timeblocks = 64
+num_timeblocks = 32
 steps_per_timeblock = 1 * 1024 # 8 * 1024 to show reliable pattern formation
 
 positions = []
@@ -64,7 +64,6 @@ print()
 gp.plot_molecule(top, positions, particle_types, filename="molecule.pdf", block=False)
 
 configuration = gp.replicate_molecules([dict_this_mol], [216], safety_distance=2.0, compute_flags={"stresses":True})
-
 configuration.randomize_velocities(temperature=temperature)
 
 print(f'Number of molecules: {len(configuration.topology.molecules["MyMolecule"])}')
@@ -116,24 +115,22 @@ runtime_actions = [gp.TrajectorySaver(),
                    gp.StressSaver(32, compute_flags={'stresses':True}),
                    gp.MomentumReset(100)]
 
-print('\nCompress and equilibrate: ')
+# Setup simulations
 sim = gp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
                     num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                    storage='memory')
+                    storage=filename+'.h5')
 
-sim.compress(desired_rho=rho, max_relative_change=0.30)
+print('\nCompress: ')
+sim.compress(desired_rho=rho, steps_per_rescale=steps_per_timeblock//2, relative_change=0.10)
 print(configuration)
 
+print('\nEquilibrate: ')
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary())
 print(configuration)
 
 print('\nProduction: ')
-sim = gp.Simulation(configuration, [pair_pot, bonds, angles, dihedrals], integrator, runtime_actions,
-                    num_timeblocks=num_timeblocks, steps_per_timeblock=steps_per_timeblock,
-                    storage=filename+'.h5')
-
 for block in sim.run_timeblocks():
     print(sim.status(per_particle=True))
 print(sim.summary()) 
