@@ -7,6 +7,7 @@ from .universal_zbl_potential import universal_zbl_potential
 from .harmonic_repulsion import harmonic_repulsion
 from .hertzian import hertzian
 from .LJ_SF import LJ_SF
+from .LJ_coulomb_sf import LJ_coulomb_sf
 
 # Intra-molecular potentials
 from .harmonic_bond_function import harmonic_bond_function
@@ -25,3 +26,4 @@ from .apply_shifted_potential_cutoff import apply_shifted_potential_cutoff
 from .apply_cubic_spline_cutoff import apply_cubic_spline_cutoff
 from .apply_gromacs_cutoff import apply_gromacs_cutoff
 from .add_potential_functions import add_potential_functions
+from .use_potential_function import use_potential_function
