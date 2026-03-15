@@ -6,4 +6,5 @@ from .print_h5 import print_h5_structure
 from .print_h5 import print_h5_attributes
 from .calc_molecules import calculate_molecular_center_of_masses, calculate_molecular_velocities, calculate_molecular_dipoles
 from .conversion_factors import conversion_factors
+from .get_NpT_response_functions import get_NpT_response_functions
 from .get_NVT_response_functions import get_NVT_response_functions
