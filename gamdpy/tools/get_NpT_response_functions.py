@@ -99,4 +99,9 @@ def get_NpT_response_functions(N, dof, V, U, W, K, k_B=1.0, T_ext=None, p_ext=No
     gamma_G = beta_v/(k_B*c_V*rho)
     output.update(dict(thermodynamic_gruneisen_parameter=float(gamma_G)))
 
+    # Joule–Thomson coefficient, μ_JT = (δT/δp)_H
+    # REF: https://en.wikipedia.org/wiki/Joule%E2%80%93Thomson_effect#The_Joule%E2%80%93Thomson_(Kelvin)_coefficient
+    mu_JT = (alpha_p*T-1.0)/(c_p*rho*k_B)
+    output.update(dict(joule_thomson_coefficient=mu_JT))
+
     return output
