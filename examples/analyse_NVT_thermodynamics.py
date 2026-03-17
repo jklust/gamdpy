@@ -2,7 +2,7 @@
 
 Usage:
 
-    python NVT_response_functions.py <filename>
+    python analyse_NVT_thermodynamics.py <filename>
 
 """
 

@@ -1,8 +1,8 @@
-""" Compute thermodynamic response functions from an NVT simulation.
+""" Compute thermodynamic response functions from an NpT simulation.
 
 Usage:
 
-    python NVT_response_functions.py <filename>
+    python analyse_NpT_thermodynamics.py <filename>
 
 """
 
