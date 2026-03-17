@@ -38,8 +38,8 @@ to_toml_file = ""
 for key in data:
     print(f'{key:>38} = {data[key]:10.5f}')
     to_toml_file += f'{key} = {data[key]}' + '\n'
-print(to_toml_file, file=open(filename + '_NVT_thermodynamics.toml', 'w'))
-print('Wrote:', filename+'_NVT_thermodynamics.toml')
+print(to_toml_file, file=open(filename + '_NpT_thermodynamics.toml', 'w'))
+print('Wrote:', filename+'_NpT_thermodynamics.toml')
 
 # Plot fluctuations
 times = gp.ScalarSaver.get_times(output, first_block=0)
@@ -77,7 +77,7 @@ axs[2].plot(times[plotindex], K[plotindex] / N, label=label)
 axs[2].axhline(np.mean(K) / N, color='k', linestyle='--')
 axs[2].legend(loc=     'upper right')
 
-fig.savefig(filename+'_NVT_thermodynamics.pdf')
-print('Wrote:', filename+'_NVT_thermodynamics.pdf')
+fig.savefig(filename+'_NpT_thermodynamics.pdf')
+print('Wrote:', filename+'_NpT_thermodynamics.pdf')
 if __name__ == "__main__":
     plt.show(block=True)
