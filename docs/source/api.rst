@@ -203,6 +203,8 @@ A list of runtime actions are passed as an argument to the :class:`~gamdpy.Simul
 .. autoclass:: gamdpy.TrajectorySaver
 
 .. autoclass:: gamdpy.ScalarSaver
+   :members:
+   :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock
 
 .. autoclass:: gamdpy.RestartSaver
 

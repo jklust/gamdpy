@@ -26,9 +26,11 @@ else:
 
 output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
 nblocks, nconfs, N, D = output['trajectory/positions'].shape
-simbox = output['initial_configuration'].attrs['simbox_data']
-U, W, K, V = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K', 'Vol'], per_particle=False, first_block=0)
 dof = D * N - D
+simbox = output['initial_configuration'].attrs['simbox_data']
+# U, W, K, V = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K', 'Vol'], per_particle=False, first_block=0)
+fluctuation_data = gp.ScalarSaver.extract_as_dict(output, per_particle=False)
+V, U, W, K = fluctuation_data['Vol'], fluctuation_data['U'], fluctuation_data['W'], fluctuation_data['K']
 data = gp.tools.get_NpT_response_functions(N, dof, V, U, W, K, k_B=1.0)
 
 # Print and write data
