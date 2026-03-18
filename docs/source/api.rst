@@ -256,6 +256,8 @@ Post-analysis tools
 
 .. autofunction:: gamdpy.extract_scalars
 
+.. autofunction:: gamdpy.tools.get_NpT_response_functions
+
 .. autofunction:: gamdpy.tools.calc_dynamics
 
 .. autofunction:: gamdpy.tools.calculate_molecular_center_of_masses

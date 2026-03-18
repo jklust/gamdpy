@@ -1,9 +1,7 @@
 import numpy as np
 
 def get_NVT_response_functions(N, dof, V, U, W, K, k_B=1.0):
-    """ Compute thermodynamic response functions of a NVT simulation
-    EXPERIMENTAL
-    """
+    """ Compute thermodynamic response functions of a NVT simulation """
     if not all(np.isscalar(x) for x in (N, dof , V)):
         raise TypeError("N, D and V must be scalars")
     for name, value in (("U", U), ("W", W), ("K", K)):

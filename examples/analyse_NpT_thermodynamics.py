@@ -24,25 +24,24 @@ if __name__ == "__main__":
 else:
     filename = 'Data/LJ_p4.70_T2.0_toread'
 
+# Read thermodynamic data and compute response functions
 output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
-nblocks, nconfs, N, D = output['trajectory/positions'].shape
+*_, N, D = output['trajectory/positions'].shape
 dof = D * N - D
-simbox = output['initial_configuration'].attrs['simbox_data']
-# U, W, K, V = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K', 'Vol'], per_particle=False, first_block=0)
-fluctuation_data = gp.ScalarSaver.extract_as_dict(output, per_particle=False)
-V, U, W, K = fluctuation_data['Vol'], fluctuation_data['U'], fluctuation_data['W'], fluctuation_data['K']
-data = gp.tools.get_NpT_response_functions(N, dof, V, U, W, K, k_B=1.0)
+fluctuations = gp.ScalarSaver.extract_as_dict(output)  # Read fluctuation data
+response_functions = gp.tools.get_NpT_response_functions(N, dof, **fluctuations, k_B=1.0)
 
 # Print and write data
 to_toml_file = ""
-for key in data:
-    print(f'{key:>38} = {data[key]:10.5f}')
-    to_toml_file += f'{key} = {data[key]}' + '\n'
+for key in response_functions:
+    print(f'{key:>38} = {response_functions[key]:10.5f}')
+    to_toml_file += f'{key} = {response_functions[key]}' + '\n'
 print(to_toml_file, file=open(filename + '_NpT_thermodynamics.toml', 'w'))
 print('Wrote:', filename+'_NpT_thermodynamics.toml')
 
 # Plot fluctuations
-times = gp.ScalarSaver.get_times(output, first_block=0)
+U, W, K, Vol = fluctuations['U'], fluctuations['W'], fluctuations['K'], fluctuations['Vol']
+times = gp.ScalarSaver.get_times(output)
 
 plotindex = range(len(U))
 if len(U)>max_plot_points:
@@ -53,7 +52,7 @@ fig, axs = plt.subplots(3, 1, figsize=(8, 9), sharex=True)
 fig.subplots_adjust(hspace=0.00)  # Remove vertical space between axes
 R = np.corrcoef(W, U)[0, 1]
 gamma = np.cov(W,U)[0,1]/np.var(U)
-axs[0].set_title(f'N={N},  rho={data['density']:.3f},  T_kin={data['kinetic_temperature']:.3f},  P={data['pressure']:.3f}')
+axs[0].set_title(f'N={N},  rho={response_functions['density']:.3f},  T_kin={response_functions['kinetic_temperature']:.3f},  P={response_functions['pressure']:.3f}')
 axs[0].set_ylabel('U/N')
 axs[1].set_ylabel('V/N')
 axs[2].set_ylabel('K/N')
@@ -67,9 +66,9 @@ axs[0].plot(times[plotindex], U[plotindex] / N, label=label)
 axs[0].axhline(np.mean(U) / N, color='k', linestyle='--')
 axs[0].legend(loc=     'upper right')
 
-label  = f'mean: {np.mean(V)/N:.3f}   std: {np.std(V/N):.3f}'
-axs[1].plot(times[plotindex], V[plotindex] / N, label=label)
-axs[1].axhline(np.mean(V) / N, color='k', linestyle='--')
+label  = f'mean: {np.mean(Vol)/N:.3f}   std: {np.std(Vol/N):.3f}'
+axs[1].plot(times[plotindex], Vol[plotindex] / N, label=label)
+axs[1].axhline(np.mean(Vol) / N, color='k', linestyle='--')
 axs[1].legend(loc=     'upper right')
 
 label  = f'mean: {np.mean(K)/N:.3f}   std: {np.std(K/N):.3f}'
