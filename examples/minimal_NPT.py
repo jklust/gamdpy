@@ -6,8 +6,6 @@ pressure, density and isothermal compressibility.
 
 """
 
-import numpy as np
-
 import gamdpy as gp
 
 # Setup configuration: FCC Lattice
@@ -58,8 +56,8 @@ print(sim.summary())
 
 # Thermodynamic properties
 N, D = configuration.N, configuration.D
-U, W, K, V = gp.ScalarSaver.extract(sim.output, ['U', 'W', 'K', 'Vol'], per_particle=False, first_block=0)
+fluctuations = gp.ScalarSaver.extract_as_dict(sim.output, first_block=0)
 dof = D * N - D
-data = gp.tools.get_NpT_response_functions(N, dof, V, U, W, K, k_B=1.0, T_ext=target_temperature, p_ext=target_pressure)
+data = gp.tools.calculate_response_functions_NpT(N, dof, **fluctuations, T_ext=target_temperature, p_ext=target_pressure)
 for key in data:
     print(f'{key:>32} = {data[key]:10.5f}')

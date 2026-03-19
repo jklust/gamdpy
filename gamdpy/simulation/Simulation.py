@@ -404,7 +404,7 @@ class Simulation():
             if block==0:
                 # Saving initial configuration
                 self.configuration.save(output=self.get_output(mode="a"), group_name="initial_configuration", mode="w",
-                                        update_ptype=True, update_topology=True, verbose=False)
+                                        update_ptype=True, include_topology=True, verbose=False)
 
             self.current_block = block
             for runtime_action in self.runtime_actions:
