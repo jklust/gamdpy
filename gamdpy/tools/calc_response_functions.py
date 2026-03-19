@@ -1,13 +1,15 @@
 import numpy as np
 from collections.abc import Iterable
 
-def get_NpT_response_functions(N: int, dof: int,
-                               U: Iterable[float], W: Iterable[float],
-                               K: Iterable[float], Vol: Iterable[float],
-                               k_B=1.0, T_ext: float=None,
-                               p_ext: float=None, per_particle=True):
+def calculate_response_functions_NpT(
+        N: int, dof: int,
+        U: Iterable[float], W: Iterable[float],
+        K: Iterable[float], Vol: Iterable[float],
+        k_B=1.0, T_ext: float=None,
+        p_ext: float=None, per_particle=True
+):
     r"""
-    Compute thermodynamic response functions from equilibrium fluctuations in an isotropic NpT simulation.
+    Calculate thermodynamic response functions from equilibrium fluctuations in an isotropic NpT simulation.
 
     This function takes time series of extensive thermodynamic observables from an
     NpT (isothermal–isobaric) ensemble—potential energy :math:`U`, configurational
@@ -19,21 +21,20 @@ def get_NpT_response_functions(N: int, dof: int,
 
     - Isotropic NpT ensemble at thermal equilibrium.
     - Time series are assumed stationary and sampled at equal intervals.
-    - If ``per_particle=True``, the inputs ``U``, ``W``, ``K``, ``Vol`` are **per-particle**
-      values and are internally rescaled to extensive totals by multiplying with ``N``.
-      If ``per_particle=False``, the inputs are treated as already extensive.
+    - If ``per_particle=True``, the inputs ``U``, ``W``, ``K``, ``Vol`` are *per-particle*
+      values and if ``per_particle=False``, the inputs are treated as extensive.
     - The instantaneous temperature is computed from equipartition,
       :math:`T_\mathrm{inst} = \frac{2K}{k_B\, \mathrm{dof}}`.
-      The external temperature ``T_ext`` defaults to :math:`\langle T_\mathrm{inst}\rangle`.
+      The external temperature ``T_ext`` defaults to :math:`\langle T_\mathrm{inst}\rangle` if not provided.
     - The instantaneous pressure follows the microscopic virial expression,
       :math:`P = \frac{Nk_B T_\mathrm{inst} + W}{V}`.
-      The external pressure ``p_ext`` defaults to :math:`\langle P\rangle`.
+      The external pressure ``p_ext`` defaults to :math:`\langle P\rangle` if not provided.
 
     **Primary estimators (ensemble averages)**
 
     - Number density: :math:`\rho = \dfrac{N}{\langle V\rangle}`, specific volume: :math:`v = 1/\rho`.
-    - Internal energy (per particle): :math:`e = \langle U + K\rangle / N`.
-    - Enthalpy (per particle): :math:`h = \langle H\rangle/N` with :math:`H = U + K + p_\mathrm{ext} V`.
+    - Internal energy (per particle): :math:`\langle U + K\rangle / N`.
+    - Enthalpy (per particle): :math:`\langle H\rangle/N` with :math:`H = U + K + p_\mathrm{ext} V`.
     - Compressibility factor: :math:`Z = \dfrac{p_\mathrm{ext}}{\rho\, k_B T}`.
 
     **Fluctuation formulas in NpT**
@@ -70,27 +71,24 @@ def get_NpT_response_functions(N: int, dof: int,
     N : int
         Number of particles.
     dof : int
-        Total number of quadratic degrees of freedom of the system (e.g., for a monatomic 3D fluid
-        with fully removed overall translation, typically :math:`\mathrm{dof}\approx 3N - 3`).
+        Total number of quadratic degrees of freedom of the system.
     U : Iterable[float]
-        Time series of potential energy. Per-particle if ``per_particle=True``, otherwise extensive.
+        Time series of potential energy.
     W : Iterable[float]
-        Time series of configurational virial. Per-particle if ``per_particle=True``, otherwise extensive.
+        Time series of configurational virial.
     K : Iterable[float]
-        Time series of kinetic energy. Per-particle if ``per_particle=True``, otherwise extensive.
+        Time series of kinetic energy.
     Vol : Iterable[float]
-        Time series of volume. Per-particle (i.e., volume per particle) if ``per_particle=True``,
-        otherwise the extensive system volume.
+        Time series of volume.
     k_B : float, optional
-        Boltzmann constant in your unit system (default 1.0). Output heat capacities are per particle
-        and carry the same energy-per-temperature units as ``k_B``.
+        Boltzmann constant of used unit system (default 1.0).
     T_ext : float, optional
         External (bath) temperature. If ``None``, the estimator uses :math:`\langle T_\mathrm{inst}\rangle`.
     p_ext : float, optional
         External (bath) pressure. If ``None``, the estimator uses :math:`\langle P\rangle`.
     per_particle : bool, optional
-        If ``True`` (default), inputs are interpreted as per-particle series and are internally rescaled
-        to totals by multiplying with ``N``. If ``False``, inputs are treated as extensive already.
+        If ``True`` (default), inputs are interpreted as per-particle series.
+        If ``False``, inputs are treated as extensive already.
 
     Returns
     -------
@@ -123,19 +121,11 @@ def get_NpT_response_functions(N: int, dof: int,
         - ``thermodynamic_gruneisen_parameter`` (:math:`\gamma_G`)
         - ``joule_thomson_coefficient`` (:math:`\mu_{JT}`)
 
-    Notes
-    -----
-    - All variances and covariances use the unbiased estimator (``ddof=1``).
-    - Consistency requires that the time series are sufficiently long to converge
-      second moments in the NpT ensemble and that drift has been removed.
-    - Units: If energies are in, e.g., eV and ``k_B`` is in eV/K, then heat capacities per particle
-      are in eV/K; compressibilities are in inverse pressure; the Joule–Thomson coefficient is in K/pressure.
-
     References
     ----------
-    .. [AllenTildesley2017] M. P. Allen and D. J. Tildesley, *Computer Simulation of Liquids*, 2nd ed., Oxford, 2017.
-    .. [FrenkelSmit2002] D. Frenkel and B. Smit, *Understanding Molecular Simulation*, 2nd ed., Academic Press, 2002.
-    .. [Callen1985] H. B. Callen, *Thermodynamics and an Introduction to Thermostatistics*, 2nd ed., Wiley, 1985.
+    .. [AllenTildesley2017] M. P. Allen and D. J. Tildesley, *Computer Simulation of Liquids*, 2017.
+    .. [FrenkelSmit2002] D. Frenkel and B. Smit, *Understanding Molecular Simulation*, 2002.
+    .. [Callen1985] H. B. Callen, *Thermodynamics and an Introduction to Thermostatistics*, 1985.
     """
 
     if not all(np.isscalar(x) for x in (N, dof, k_B)):
@@ -263,5 +253,44 @@ def get_NpT_response_functions(N: int, dof: int,
     # Joule–Thomson coefficient, μ_JT = (δT/δp)_H
     mu_JT = (alpha_p*T-1.0)/(c_p*rho)
     output.update(dict(joule_thomson_coefficient=mu_JT))
+
+    return output
+
+
+def calculate_response_functions_NVT(N, dof, V, U, W, K, k_B=1.0):
+    """ Compute thermodynamic response functions of a NVT simulation """
+    if not all(np.isscalar(x) for x in (N, dof , V)):
+        raise TypeError("N, D and V must be scalars")
+    for name, value in (("U", U), ("W", W), ("K", K)):
+        if np.isscalar(value):
+            raise TypeError(f"{name} must be array-like, not a scalar")
+        try:
+            np.asarray(value)
+        except Exception as exc:
+            raise TypeError(f"{name} must be array-like") from exc
+
+    output = {}
+    rho = N / V
+    output.update(dict(density=float(rho)))
+    mU = np.mean(U)
+    output.update(dict(potential_energy=float(mU / N)))
+    mK = np.mean(K)
+    output.update(dict(kinetic_energy=float(mK / N)))
+    E = U + K
+    mE = np.mean(E)
+    output.update(dict(internal_energy=float(mE / N)))
+    T_kin = 2.0 * mK / k_B / dof
+    T = np.mean(T_kin)
+    output.update(dict(kinetic_temperature=float(T_kin)))
+    P = rho * k_B * T + W / V  # Instantaneous pressure
+    output.update(dict(pressure=float(np.mean(P))))
+    c_V = np.var(E, ddof=1) / (k_B * T ** 2 * N)
+    output.update(dict(isochoric_heat_capacity=float(c_V)))
+    cov_PE = np.cov(P, E)[0, 1]
+    beta_V = cov_PE / k_B / T ** 2  # Thermal pressure coefficient: βᵥ = (∂P/∂T)ᵥ
+    output.update(dict(thermal_pressure_coefficient=float(beta_V)))
+
+    # We need hyper-virial to compute K_T. Then we would have a complete set of responce function,
+    # and could compute everything
 
     return output

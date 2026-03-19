@@ -28,9 +28,10 @@ output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
 nblocks, nconfs, N, D = output['trajectory/positions'].shape
 simbox = output['initial_configuration'].attrs['simbox_data']
 V = np.prod(simbox)  # Box volume
-U, W, K = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K'], per_particle=False, first_block=0)
+first_block = 1
+U, W, K = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K'], per_particle=False, first_block=first_block)
 dof = D * N - D
-data = gp.tools.get_NVT_response_functions(N, dof, V, U, W, K)
+data = gp.tools.calculate_response_functions_NVT(N, dof, V, U, W, K)
 
 # Print and write data
 to_toml_file = ""
@@ -41,7 +42,7 @@ print(to_toml_file, file=open(filename + '_thermodynamics.toml', 'w'))
 print('Wrote:', filename+'_thermodynamics.toml')
 
 # Plot fluctuations
-times = gp.ScalarSaver.get_times(output, first_block=0)
+times = gp.ScalarSaver.get_times(output, first_block=first_block)
 
 plotindex = range(len(U))
 if len(U)>max_plot_points:
