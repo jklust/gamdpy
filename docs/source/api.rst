@@ -201,16 +201,24 @@ Runtime Actions
 A list of runtime actions are passed as an argument to the :class:`~gamdpy.Simulation` class.
 
 .. autoclass:: gamdpy.TrajectorySaver
+   :members:
+   :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock
 
 .. autoclass:: gamdpy.ScalarSaver
    :members:
    :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock
 
 .. autoclass:: gamdpy.RestartSaver
+   :members:
+   :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock
 
 .. autoclass:: gamdpy.MomentumReset
+   :members:
+   :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock
 
 .. autoclass:: gamdpy.StressSaver
+   :members:
+   :exclude-members: get_params, get_poststep_kernel, get_prestep_kernel, initialize_before_timeblock, update_at_end_of_timeblock, make_zero_kernel_3
 
 Calculators
 -----------
@@ -254,9 +262,7 @@ IO functions
 Post-analysis tools
 -------------------
 
-.. autofunction:: gamdpy.extract_scalars
-
-.. autofunction:: gamdpy.tools.get_NpT_response_functions
+.. autofunction:: gamdpy.tools.calculate_response_functions_NpT
 
 .. autofunction:: gamdpy.tools.calc_dynamics
 
