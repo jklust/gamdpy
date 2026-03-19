@@ -401,6 +401,11 @@ class Simulation():
 
         for block in range(num_timeblocks):
 
+            if block==0:
+                # Saving initial configuration
+                self.configuration.save(output=self.get_output(mode="a"), group_name="initial_configuration", mode="w",
+                                        update_ptype=True, update_topology=True, verbose=False)
+
             self.current_block = block
             for runtime_action in self.runtime_actions:
                 runtime_action.initialize_before_timeblock(block, self.get_output(mode="a"))
@@ -491,20 +496,40 @@ class Simulation():
         return st
 
 
-    def compress(self, desired_rho, max_relative_change):
+    def compress(self, desired_rho, steps_per_rescale, relative_change):
+        """ Compress simulation to the density 'desired_rho'.
+        This is done by a sequence of small adjustments of the simulation box, each followed by a short simulation.
+    
+        Parameters
+        ----------
+
+        desired_rho : float
+            The final density to scale the simulation to.
+
+        steps_per_rescale : int
+            The number of timesteps performed after each adjustments of the simulation box
+            Can not be larger than the 'steps_per_timeblock' that the simulation object was created with 
+
+        relative_change : float
+            The relative increase in density for each adjustments of the simulation box.
+            The last adjustment is computed to hit the desired density exactly 
+        
+        """    
+        
+        if steps_per_rescale > self.steps_per_block:
+            raise ValueError(f"'steps_per_rescale' must not be larger than 'steps_per_timeblock' of the Simulation object, {steps_per_rescale}>{self.steps_per_block}")
         done = False
-        timesteps = self.steps_per_block # might make this user-controlable later
 
         while not done:
             current_rho = self.configuration.N / self.configuration.get_volume()
             scale_to = desired_rho
-            if scale_to / current_rho > 1 + max_relative_change:
-                scale_to = current_rho * (1 + max_relative_change)
+            if scale_to / current_rho > 1 + relative_change:
+                scale_to = current_rho * (1 + relative_change)
             else:
                 done = True
             self.configuration.atomic_scale(density=scale_to)
             self.configuration.copy_to_device()
-            self.integrate_self(0.0, timesteps)
+            self.integrate_self(0.0, steps_per_rescale)
             self.configuration.copy_to_host()
 
             current_rho = self.configuration.N / self.configuration.get_volume()

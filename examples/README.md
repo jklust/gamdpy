@@ -50,6 +50,8 @@ The following examples of data analysis scripts need a filename as a commandline
 - [analyze_structure.py](analyze_structure.py) Calculates rdf (radial distribution function) for configurations in filename.h5, and stores it in filename_rdf.pdf and filename_rdf.pkl (a pickle file with the computed data).
 - [analyze_dynamics.py](analyze_dynamics.py) Calculates several dynamical properties (mean squared displacement, non-Gaussian parameter, and incoherent intermediate scattering function) from the trajectory stored in filename.h5. Resulting data is stored in filename_dynamics.pkl and plotted in filename_dynamics.pdf.
 - [analyze_thermodynamics.py](analyze_thermodynamics.py) Calculates thermodynamical properties. Results plotted in filename_thermodynamics.pdf.
+- [analyze_NVT_thermodynamics.py](analyze_thermodynamics.py) Calculates thermodynamical properties of a constant NVT simulation.
+- [analyze_NpT_thermodynamics.py](analyze_thermodynamics.py) Calculates thermodynamical properties of a constant NpT simulation.
 
 Other examples of postprocessing. Some of these scripts require the output produced with minimal.py.
 

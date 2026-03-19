@@ -296,7 +296,7 @@ class ScalarSaver(RuntimeAction):
 
     def extract(h5file: h5py.File, columns: list[str], per_particle: bool=True, 
                 first_block: int=0, last_block: int=None, subsample: int=1, function: callable=None) -> list:
-        """ Get a list of time series of available data columns saved in a .h5 file
+        """ Get a tuple of lists of time series of available data columns saved in a .h5 file
         
         Parameters
         ----------
@@ -346,6 +346,25 @@ class ScalarSaver(RuntimeAction):
 
             output.append(data)
         return output
+
+    def extract_as_dict(*args, **kwargs):
+        """ Get a dictionary of time series of available data columns saved in a .h5 file
+
+        Same as :func:`ScalarSaver.extract`, but returns a dictionary.
+        See :func:`ScalarSaver.extract` for more details on the arguments.
+
+        If 'columns' is not specified in kwargs, all available columns are returned.
+
+        """
+
+        if 'columns' not in kwargs.keys():
+            h5file = args[0]
+            h5grp = h5file['scalars']
+            kwargs['columns'] = list(h5grp.attrs['scalar_columns'])
+            # print(kwargs['columns'])
+
+        output = ScalarSaver.extract(*args, **kwargs)
+        return dict(zip(kwargs['columns'], output))
 
     def get_times(h5file, first_block=0, last_block=None, reset_time=True, subsample=1):
         """ Get a numpy array with times associated with data columns saved by ScalarSaver in a .h5 file
