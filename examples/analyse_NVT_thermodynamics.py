@@ -38,8 +38,8 @@ to_toml_file = ""
 for key in data:
     print(f'{key:>32} = {data[key]:10.5f}')
     to_toml_file += f'{key} = {data[key]}' + '\n'
-print(to_toml_file, file=open(filename + '_thermodynamics.toml', 'w'))
-print('Wrote:', filename+'_thermodynamics.toml')
+print(to_toml_file, file=open(filename + '_NVT_thermodynamics.toml', 'w'))
+print('Wrote:', filename+'_NVT_thermodynamics.toml')
 
 # Plot fluctuations
 times = gp.ScalarSaver.get_times(output, first_block=first_block)

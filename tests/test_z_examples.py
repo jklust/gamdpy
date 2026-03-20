@@ -188,10 +188,14 @@ class Test_examples:
 
     def test_analyse_NpT_thermodynamics(self):
         self.make_one("analyse_NpT_thermodynamics",
-                      ["./Data/LJ_p4.70_T2.0_toread_NpT_thermodynamics.toml",
-                       "./Data/LJ_p4.70_T2.0_toread_NpT_thermodynamics.pdf"])
+                      [
+                          "./Data/LJ_p4.70_T2.0_toread_NpT_thermodynamics.toml",
+                          "./Data/LJ_p4.70_T2.0_toread_NpT_thermodynamics.pdf"
+                      ])
 
     def test_analyse_NVT_thermodynamics(self):
         self.make_one("analyse_NVT_thermodynamics",
-                      ["./Data/LJ_p4.70_T2.0_toread_NVT_thermodynamics.toml",
-                       "./Data/LJ_p4.70_T2.0_toread_NVT_thermodynamics.pdf"])
+                      [
+                          "./Data/LJ_r0.973_T0.70_toread_NVT_thermodynamics.toml",
+                          "./Data/LJ_r0.973_T0.70_toread_NVT_thermodynamics.pdf"
+                      ])
