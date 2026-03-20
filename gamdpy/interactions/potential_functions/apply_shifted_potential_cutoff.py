@@ -37,7 +37,7 @@ def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
         truncated and shifted to zero at the cutoff distance of 2.5.
 
         >>> import gamdpy as gp
-        >>> pair_func = gp.apply_shifted_force_cutoff(gp.LJ_12_6)
+        >>> pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6)
         >>> A12, A6, cut = 1.0, 1.0, 2.5
         >>> pair_pot = gp.PairPotential(pair_func, params=[A12, A6, cut], max_num_nbs=1000)
         >>> interactions = [pair_pot, ]  # List of interactions passed to an instance of the Simulation class
