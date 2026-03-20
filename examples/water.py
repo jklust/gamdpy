@@ -50,19 +50,19 @@ angle_params = [[angle0, kangle],]
 angles = gp.Angles(angle_potential, configuration.topology.angles, angle_params)
 
 # Angle exclusions
-exclusion =angles.get_exclusions(configuration)
+exclusion = angles.get_exclusions(configuration)
 
 
 # Make pair potential
-pair_func = gp.use_potential_function(gp.LJ_coulomb_sf)
+pair_func = gp.LJ_coulomb_sf
 sig = [[0.0, 0.0], 
        [0.0, 1.0]]
 eps = [[0.0, 0.0], 
        [0.0, 1.0]]
 charge = [[qH*qH, qH*qO], 
           [qO*qH, qO*qO]]
-cut_lj = np.ones( (2,2) )*2.5 
-cut_coulomb = np.ones( (2,2) )*2.9
+cut_lj = np.ones( (2,2) )*3.0 
+cut_coulomb = np.ones( (2,2) )*3.5
 
 pair_pot = gp.PairPotential(pair_func, params=[sig, eps, charge, cut_lj, cut_coulomb], exclusions=exclusion, max_num_nbs=1000)
 
