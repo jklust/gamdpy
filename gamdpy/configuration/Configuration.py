@@ -564,7 +564,7 @@ class Configuration:
     # The following is equivalent to overloading in c++ : https://stackoverflow.com/questions/12179271/meaning-of-classmethod-and-staticmethod-for-beginner
     # cls stands for class, in this case the Configuration class
     @classmethod
-    def from_h5(cls, h5file: h5py.File, group_name: str, reset_images: bool=False, compute_flags: bool=None, include_topology: bool=False) -> "Configuration":
+    def from_h5(cls, h5file: h5py.File, group_name: str, reset_images: bool=False, compute_flags: bool=None, include_topology: bool=True) -> "Configuration":
         """ Read a configuration from an open HDF5 file identified by group-name
 
         Parameters
@@ -581,6 +581,9 @@ class Configuration:
         compute_flags : bool
             NOTE: still to be developed, should be possible to define compute flags from dictionary
             compute_flags defining what will be stored in the configuration (default None)
+
+        include_topology : bool
+            if True then read also the topology from the file (default True)
 
         Returns
         -------
@@ -646,7 +649,8 @@ class Configuration:
 
         # Read topology
         if include_topology:
-            configuration.topology.from_h5(h5file[group_name]['topology'])
+            if 'topology' in h5file[group_name]:
+                configuration.topology.from_h5(h5file[group_name]['topology'])
 
         return configuration
 

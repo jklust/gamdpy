@@ -161,7 +161,7 @@ class TrajectorySaver(RuntimeAction):
             if 'sim_box' in output['trajectory'].keys():
                 del output['trajectory/sim_box']
             output.create_dataset('trajectory/sim_box', 
-                                  shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data))
+                                  shape=(self.num_timeblocks, self.conf_per_block, self.configuration.simbox.len_sim_box_data), dtype=np.float32)
 
         flag = config.CUDA_LOW_OCCUPANCY_WARNINGS
         config.CUDA_LOW_OCCUPANCY_WARNINGS = False
