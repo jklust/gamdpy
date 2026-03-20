@@ -50,20 +50,21 @@ angle_params = [[angle0, kangle],]
 angles = gp.Angles(angle_potential, configuration.topology.angles, angle_params)
 
 # Angle exclusions
-exclusion =angles.get_exclusions(configuration)
+exclusion = angles.get_exclusions(configuration)
 
 
 # Make pair potential
-pair_func = gp.apply_shifted_force_cutoff(gp.LJ_SF)
+pair_func = gp.LJ_coulomb_sf
 sig = [[0.0, 0.0], 
        [0.0, 1.0]]
 eps = [[0.0, 0.0], 
        [0.0, 1.0]]
 charge = [[qH*qH, qH*qO], 
           [qO*qH, qO*qO]]
-cut = np.ones( (2,2) )*2.9
+cut_lj = np.ones( (2,2) )*3.0 
+cut_coulomb = np.ones( (2,2) )*3.5
 
-pair_pot = gp.PairPotential(pair_func, params=[sig, eps, charge, cut], exclusions=exclusion, max_num_nbs=1000)
+pair_pot = gp.PairPotential(pair_func, params=[sig, eps, charge, cut_lj, cut_coulomb], exclusions=exclusion, max_num_nbs=1000)
 
 # Make integrator
 integrator = gp.integrators.NVT(temperature=temperature, tau=0.1, dt=dt)
