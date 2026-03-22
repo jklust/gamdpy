@@ -28,11 +28,11 @@ def calculate_response_functions_NpT(
       the instantaneous pressure follows from,
       :math:`p_\mathrm{inst} = \frac{Nk_B T_\mathrm{inst} + W}{V}`.
 
-
     The isobaric heat capacity (per particle), :math:`c_p=\frac{1}{N}\left(\frac{\partial H}{\partial T}\right)_p`,
     the isothermal compressibility, :math:`\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_T`, and
     the isobaric expansion coefficient, :math:`\alpha_p = \frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_p`
-    are computed using fluctuation-disipation formulas of the NpT ensemble:
+    are computed using fluctuation-disipation formulas of the NpT ensemble.
+    If :math:`H = U + K + p V` is the instantaneous enthalpy, then
 
     .. math::
 
@@ -40,41 +40,28 @@ def calculate_response_functions_NpT(
         \kappa_T &= \frac{\mathrm{Var}(V)}{\langle V\rangle\, k_B\, T}, \\
         \alpha_p &= \frac{\mathrm{Cov}(V,H)}{\langle V\rangle\, k_B\, T^2}.
 
-    Thermodynamic identities are used to estimate other quantities such as:
-
-    .. math::
-
-        \rho &= N/\langle V \rangle \\
-        c_V &= \frac{1}{N}\left(\frac{\partial U}{\partial T}\right)_V = c_p - \frac{T\, \alpha_p^2}{\rho\, \kappa_T}, \\
-        \gamma &= \frac{c_p}{c_V}, \\
-        \kappa_S &= -\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_S = \kappa_T \frac{c_V}{c_p}, \\
-        K_T &= \kappa_T^{-1}, \quad K_S = \kappa_S^{-1}, \\
-        \beta_v &= \left(\frac{\partial p}{\partial T}\right)_V = \frac{\alpha_p}{\kappa_T}, \\
-        \beta_s &= \left(\frac{\partial p}{\partial T}\right)_S = \frac{\rho\, c_p}{T\, \alpha_p}, \\
-        \alpha_s &= \frac{1}{V} \left(\frac{\partial V}{\partial T}\right)_S  = \alpha_p - \kappa_T\, \beta_s, \\
-        \gamma_G &= V\left(\frac{\partial p}{\partial E}\right)_V = -\left(\frac{\partial \ln T}{\partial \ln V}\right)_S = \frac{\alpha_p}{\rho \, \kappa_T \, c_V}, \\
-        \mu_{JT} &= \left(\frac{\partial T}{\partial p}\right)_H = \frac{T\, \alpha_p - 1}{\rho\, c_p}.
+    From these, other thermodynamic identities are computed (see Returns below).
 
     Parameters
     ----------
     N : int
-        Number of particles.
+        Number of particles, :math:`N`.
     dof : int
-        Total number of degrees of freedom of the system.
+        Total number of degrees of freedom of the system, :math:`N_d`.
     U : Iterable[float]
-        Time series of potential energy.
+        Time series of potential energy, :math:`U`.
     W : Iterable[float]
-        Time series of configurational virial.
+        Time series of configurational virial, :math:`W`.
     K : Iterable[float]
-        Time series of kinetic energy.
+        Time series of kinetic energy, :math:`K`.
     Vol : Iterable[float]
-        Time series of volume.
+        Time series of volume, :math:`V`.
     k_B : float, optional
-        Boltzmann constant of the unit system (default 1.0).
+        Boltzmann constant of the unit system (default 1.0), :math:`k_B`.
     T_ext : float, optional
-        External (bath) temperature. If ``None``, the estimator uses :math:`\langle T_\mathrm{inst}\rangle`.
+        External (bath) temperature, :math:`T`. If ``None``, then :math:`\langle T_\mathrm{inst}\rangle` is used.
     p_ext : float, optional
-        External (bath) pressure. If ``None``, the estimator uses :math:`\langle P\rangle`.
+        External (bath) pressure, :math:`p`. If ``None``, then :math:`\langle p_\mathrm{inst}\rangle` is used.
     per_particle : bool, optional
         If ``True`` (default), the ``U``, ``W``, ``K``, ``Vol`` inputs are interpreted as *per-particle* values.
         If ``False``, they are treated as extensive.
@@ -82,32 +69,32 @@ def calculate_response_functions_NpT(
     Returns
     -------
     dict
-        A dictionary with scalar properties and response functions reported as *intensive* (per particle).
+        A dictionary with scalar properties and response functions reported as intensive.
 
         - ``density``: :math:`\rho = \dfrac{N}{\langle V \rangle}`.
         - ``specific_volume``: :math:`v = \dfrac{1}{\rho}`.
         - ``potential_energy``: :math:`\langle U \rangle / N`.
         - ``kinetic_energy``: :math:`\langle K \rangle / N`.
-        - ``internal_energy``: :math:`\langle U + K \rangle / N`.
+        - ``internal_energy``: :math:`\langle E \rangle / N` where :math:`E=U+K`.
         - ``kinetic_temperature``: :math:`\langle T_\mathrm{inst} \rangle`, with :math:`T_\mathrm{inst} = \dfrac{2K}{k_B\,\mathrm{dof}}`.
         - ``external_temperature``: Provided external :math:`T` (if given).
-        - ``pressure``: :math:`\langle P \rangle`, with :math:`P = \dfrac{N k_B T_\mathrm{inst} + W}{V}`.
+        - ``pressure``: :math:`\langle p_\mathrm{inst} \rangle`, with :math:`p_\mathrm{inst} = \dfrac{N k_B T_\mathrm{inst} + W}{V}`.
         - ``external_pressure``: Provided external :math:`p` (if given).
-        - ``compressibility_factor``: :math:`Z = \dfrac{p_\mathrm{ext}}{\rho\, k_B T}`.
-        - ``enthalpy``: :math:`\langle H \rangle / N`, with :math:`H = U + K + p_\mathrm{ext} V`.
+        - ``compressibility_factor``: :math:`Z = \dfrac{p}{\rho\, k_B T}`.
+        - ``enthalpy``: :math:`\langle H \rangle / N`, with :math:`H = U + K + p V`.
         - ``isobaric_heat_capacity``: :math:`c_p = \dfrac{\mathrm{Var}(H)}{N\, k_B\, T^2}`.
         - ``isothermal_compressibility``: :math:`\kappa_T = \dfrac{\mathrm{Var}(V)}{\langle V \rangle\, k_B\, T}`.
         - ``isothermal_bulk_modulus``: :math:`K_T = \kappa_T^{-1}`.
         - ``isobaric_expansion_coefficient``: :math:`\alpha_p = \dfrac{\mathrm{Cov}(V,H)}{\langle V \rangle\, k_B\, T^2}`.
-        - ``isochoric_heat_capacity``: :math:`c_V = c_p - \dfrac{T\, \alpha_p^2}{\rho\, \kappa_T}`.
-        - ``isochoric_heat_capacity_excess``: :math:`c_V^{\mathrm{ex}} = c_V - c_V^{\mathrm{id}}`, with :math:`c_V^{\mathrm{id}} = \dfrac{\mathrm{dof}}{2N} k_B`.
+        - ``isochoric_heat_capacity``: :math:`c_V = \frac{1}{N}\left(\frac{\partial E}{\partial T}\right)_V =  c_p - \dfrac{T\, \alpha_p^2}{\rho\, \kappa_T}`.
+        - ``isochoric_heat_capacity_excess``: :math:`c_V^{\mathrm{ex}} = \frac{1}{N}\left(\frac{\partial U}{\partial T}\right)_V = c_V - c_V^{\mathrm{id}}`, with :math:`c_V^{\mathrm{id}} = \frac{1}{N}\left(\frac{\partial K}{\partial T}\right)_V  = \dfrac{N_d}{2N} k_B`.
         - ``adiabatic_index``: :math:`\gamma = \dfrac{c_p}{c_V}`.
-        - ``adiabatic_compressibility``: :math:`\kappa_S = \kappa_T \dfrac{c_V}{c_p}`.
+        - ``adiabatic_compressibility``: :math:`\kappa_S = -\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_S = \kappa_T \dfrac{c_V}{c_p}`.
         - ``adiabatic_bulk_modulus``: :math:`K_S = \kappa_S^{-1}`.
-        - ``thermal_pressure_coefficient``: :math:`\beta_v = \left(\dfrac{\partial P}{\partial T}\right)_V = \dfrac{\alpha_p}{\kappa_T}`.
-        - ``adiabatic_pressure_coefficient``: :math:`\beta_s = \left(\dfrac{\partial P}{\partial T}\right)_S = \dfrac{\rho\, c_p}{T\, \alpha_p}`.
-        - ``adiabatic_expansion_coefficient``: :math:`\alpha_s = \alpha_p - \kappa_T\, \beta_s`.
-        - ``thermodynamic_gruneisen_parameter``: :math:`\gamma_G = \dfrac{\alpha_p}{\rho \, \kappa_T \, c_V}`.
+        - ``thermal_pressure_coefficient``: :math:`\beta_v = \left(\dfrac{\partial p}{\partial T}\right)_V = \dfrac{\alpha_p}{\kappa_T}`.
+        - ``adiabatic_pressure_coefficient``: :math:`\beta_s = \left(\dfrac{\partial p}{\partial T}\right)_S = \dfrac{\rho\, c_p}{T\, \alpha_p}`.
+        - ``adiabatic_expansion_coefficient``: :math:`\alpha_s = \frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_s = \alpha_p - \kappa_T\, \beta_s`.
+        - ``thermodynamic_gruneisen_parameter``: :math:`\gamma_G = V\left(\frac{\partial p}{\partial E}\right)_V = -\left(\frac{\partial \ln T}{\partial \ln V}\right)_S = \dfrac{\alpha_p}{\rho \, \kappa_T \, c_V}`.
         - ``joule_thomson_coefficient``: :math:`\mu_{JT} = \left(\dfrac{\partial T}{\partial p}\right)_H = \dfrac{T\, \alpha_p - 1}{\rho\, c_p}`.
 
     """
@@ -132,7 +119,7 @@ def calculate_response_functions_NpT(
     if type(Vol) is not np.ndarray:
         Vol = np.array(Vol)
 
-    # Scale to values
+    # Scale values to per particle if given as extensive
     if per_particle:
         U = U * N
         W = W * N
@@ -157,10 +144,12 @@ def calculate_response_functions_NpT(
     E = U + K
     mE = float(np.mean(E))
     output.update(dict(internal_energy=float(mE / N)))
+
+    # Temperature
     T_inst = 2.0 * K / (k_B * dof)
     mT = float(np.mean(T_inst))
     if T_ext is None:
-        T_ext = mT  # Use ensemble temperature to estimate external temperature
+        T_ext = mT  # Use ensemble temperature to estimate external temperature (if not provided)
     else:
         output.update(dict(external_temperature=float(T_ext)))
     output.update(dict(kinetic_temperature=float(mT)))
@@ -168,9 +157,9 @@ def calculate_response_functions_NpT(
 
     # Pressure
     P = (N * k_B * T_inst + W) / V  # Instantaneous pressure
-    mP = float(np.mean(P))  # Below, we assume that this is the "external pressure", p_ext
+    mP = float(np.mean(P))
     if p_ext is None:
-        p_ext = mP  # Use ensemble pressure to estimate external pressure
+        p_ext = mP  # Use ensemble pressure to estimate external pressure (if not provided)
     else:
         output.update(dict(external_pressure=float(p_ext)))
     output.update(dict(pressure=float(mP)))
