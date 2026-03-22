@@ -45,11 +45,11 @@ def test_calculate_response_functions_NpT():
         'enthalpy': 7.619374279642554, 'isobaric_heat_capacity': 0.719717102182806,
         'isothermal_compressibility': 0.061953206277420306, 'isothermal_bulk_modulus': 16.141214637416816,
         'isobaric_expansion_coefficient': 0.24365934735003494, 'isochoric_heat_capacity': 0.05034575249164963,
-        'isochoric_heat_capacity_excess': -0.5631829556423217, 'adiabatic_index': np.float64(14.295488031531134),
+        'isochoric_heat_capacity_excess': -0.5631829556423217, 'adiabatic_index': 14.295488031531134,
         'adiabatic_compressibility': 0.004333759444992151, 'adiabatic_bulk_modulus': 230.74654066356723,
         'thermal_pressure_coefficient': 3.9329578239898124, 'adiabatic_pressure_coefficient': 4.228769291358482,
         'adiabatic_expansion_coefficient': -0.018326468857117556, 'thermodynamic_gruneisen_parameter': 62.289823550605696,
-        'joule_thomson_coefficient': np.float64(-0.8714201470870574)}
+        'joule_thomson_coefficient': -0.8714201470870574}
 
     for key in expected.keys():
         pytest.approx(expected[key]) == out[key], f"Key {key} not equal to expected values"

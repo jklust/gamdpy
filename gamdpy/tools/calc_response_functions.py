@@ -200,7 +200,7 @@ def calculate_response_functions_NpT(
 
     # Adiabatic index,
     gamma = c_p/c_V
-    output.update(dict(adiabatic_index=gamma))
+    output.update(dict(adiabatic_index=float(gamma)))
 
     # Adiabatic compressibility, κₛ = -(∂V/∂p)ₛ / V
     kappa_s = kappa_T*c_V/c_p
@@ -225,7 +225,7 @@ def calculate_response_functions_NpT(
 
     # Joule–Thomson coefficient, μ_JT = (δT/δp)_H
     mu_JT = (alpha_p*T-1.0)/(c_p*rho)
-    output.update(dict(joule_thomson_coefficient=mu_JT))
+    output.update(dict(joule_thomson_coefficient=float(mu_JT)))
 
     return output
 
