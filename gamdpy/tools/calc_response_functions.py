@@ -119,7 +119,7 @@ def calculate_response_functions_NpT(
     if type(Vol) is not np.ndarray:
         Vol = np.array(Vol)
 
-    # Scale values to per particle if given as extensive
+    # Scale values to per particle if given as intensive
     if per_particle:
         U = U * N
         W = W * N
