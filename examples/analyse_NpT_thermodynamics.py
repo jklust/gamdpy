@@ -61,20 +61,20 @@ axs[0].grid(linestyle='--', alpha=0.5)
 axs[1].grid(linestyle='--', alpha=0.5)
 axs[2].grid(linestyle='--', alpha=0.5)
 
-label  = f'mean: {np.mean(U)/N:.3f}   std: {np.std(U/N):.3f}'
-axs[0].plot(times[plotindex], U[plotindex] / N, label=label)
-axs[0].axhline(np.mean(U) / N, color='k', linestyle='--')
-axs[0].legend(loc=     'upper right')
+label  = f'mean: {np.mean(U):.3f}   std: {np.std(U):.3f}'
+axs[0].plot(times[plotindex], U[plotindex], label=label)
+axs[0].axhline(np.mean(U), color='k', linestyle='--')
+axs[0].legend(loc='upper right')
 
-label  = f'mean: {np.mean(Vol)/N:.3f}   std: {np.std(Vol/N):.3f}'
-axs[1].plot(times[plotindex], Vol[plotindex] / N, label=label)
-axs[1].axhline(np.mean(Vol) / N, color='k', linestyle='--')
-axs[1].legend(loc=     'upper right')
+label  = f'mean: {np.mean(Vol):.3f}   std: {np.std(Vol):.3f}'
+axs[1].plot(times[plotindex], Vol[plotindex] , label=label)
+axs[1].axhline(np.mean(Vol) , color='k', linestyle='--')
+axs[1].legend(loc='upper right')
 
-label  = f'mean: {np.mean(K)/N:.3f}   std: {np.std(K/N):.3f}'
-axs[2].plot(times[plotindex], K[plotindex] / N, label=label)
-axs[2].axhline(np.mean(K) / N, color='k', linestyle='--')
-axs[2].legend(loc=     'upper right')
+label  = f'mean: {np.mean(K):.3f}   std: {np.std(K):.3f}'
+axs[2].plot(times[plotindex], K[plotindex] , label=label)
+axs[2].axhline(np.mean(K) , color='k', linestyle='--')
+axs[2].legend(loc='upper right')
 
 fig.savefig(filename+'_NpT_thermodynamics.pdf')
 print('Wrote:', filename+'_NpT_thermodynamics.pdf')
