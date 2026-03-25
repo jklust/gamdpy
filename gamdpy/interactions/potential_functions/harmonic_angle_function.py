@@ -18,6 +18,17 @@ def make_harmonic_angle_function(SMALL=1.e-6):
     """
     Create a version of harmonic_angle_function with a specified value of the regularization
     parameter SMALL. This prevents overflow when dividing by small values of sin(theta).
+
+    Parameters
+    ----------
+
+    SMALL : float
+        Value to be added to sin(theta) before dividing by the latter to get the gradient
+
+    Returns
+    -------
+
+    angle potential function based on a harmonic potential with a specified SMALL parameter to prevent overflow
     """
     def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
         theta_0 = params[0]
@@ -29,10 +40,14 @@ def make_harmonic_angle_function(SMALL=1.e-6):
     return harmonic_angle_function
 
 
-def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
-    r""" Harmonic angle potential,
+harmonic_angle_function = make_harmonic_angle_function(1.e-6)
 
-    Original version but with a regularization parameter SMALL hard-coded in.
+harmonic_angle_function.__doc__ = r"""
+
+    Harmonic angle potential,
+
+    With a regularization parameter SMALL = 1.e-6 hard-coded in.
+    To change the value of SMALL call make_harmonic_angle_function(SMALL)
     .. math::
 
         u(\theta) = \frac{k}{2} (\theta - \theta_0)^2
@@ -52,8 +67,7 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
     u : float
         Potential energy
     d_u_cos_theta_neg: float
-        Negative derivative of the potential energy with respect to cos(theta)
-
+        Negative derivative of the potential energy with respect to cos(theta). This involves dividing by sin(theta)+SMALL
     See Also
     --------
 
@@ -61,14 +75,4 @@ def harmonic_angle_function(theta: float, params: np.ndarray) -> tuple:
 
     """
 
-    theta_0 = params[0]
-    kspring = params[1]
-    s = math.sin(theta)
-    u = numba.float32(0.5) * kspring * (theta - theta_0) ** 2
-    #d_u_d_cos_theta_neg = kspring * (theta - theta_0) / s
-    # To protect against dividing by zero, inspired by LAMMPS:
-    SMALL = numba.float32(1.e-6)
-    d_u_d_cos_theta_neg = kspring * (theta - theta_0) /  (s+SMALL)
-
-    return u, d_u_d_cos_theta_neg
 
