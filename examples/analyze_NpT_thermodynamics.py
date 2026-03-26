@@ -7,6 +7,7 @@ Usage:
 """
 
 import sys
+import os
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,14 +19,21 @@ argv = sys.argv.copy()
 argv.pop(0)  # remove script name
 if __name__ == "__main__":
     if argv:
-        filename = argv.pop(0) # get filename (.h5 added by script)
+        filename_h5 = argv.pop(0) # get h5 filename as the first argument of the command line
     else:
-        filename = 'Data/LJ_p4.70_T2.0_toread' # Used in testing
+        filename_h5 = 'Data/LJ_p4.70_T2.0_toread.h5' # Used in testing
 else:
-    filename = 'Data/LJ_p4.70_T2.0_toread'
+    filename_h5 = 'Data/LJ_p4.70_T2.0_toread.h5'
+
+fname_root, fname_suffix = os.path.splitext(filename_h5)
+
+if fname_suffix != '.h5':  # Try to add the .h5 extension
+    fname_root = filename_h5
+    fname_suffix = '.h5'
+    filename_h5 = fname_root + fname_suffix
 
 # Read thermodynamic data and compute response functions
-output = gp.tools.TrajectoryIO(filename+'.h5').get_h5()
+output = gp.tools.TrajectoryIO(filename_h5).get_h5()
 *_, N, D = output['trajectory/positions'].shape
 dof = D * N - D
 fluctuations = gp.ScalarSaver.extract_as_dict(output)  # Read fluctuation data
@@ -36,8 +44,8 @@ to_toml_file = ""
 for key in response_functions:
     print(f'{key:>38} = {response_functions[key]:10.5f}')
     to_toml_file += f'{key} = {response_functions[key]}' + '\n'
-print(to_toml_file, file=open(filename + '_NpT_thermodynamics.toml', 'w'))
-print('Wrote:', filename+'_NpT_thermodynamics.toml')
+print(to_toml_file, file=open(fname_root + '_NpT_thermodynamics.toml', 'w'))
+print('Wrote:', fname_root+'_NpT_thermodynamics.toml')
 
 # Plot fluctuations
 U, W, K, Vol = fluctuations['U'], fluctuations['W'], fluctuations['K'], fluctuations['Vol']
@@ -76,7 +84,7 @@ axs[2].plot(times[plotindex], K[plotindex] , label=label)
 axs[2].axhline(np.mean(K) , color='k', linestyle='--')
 axs[2].legend(loc='upper right')
 
-fig.savefig(filename+'_NpT_thermodynamics.pdf')
-print('Wrote:', filename+'_NpT_thermodynamics.pdf')
+fig.savefig(fname_root+'_NpT_thermodynamics.pdf')
+print('Wrote:', fname_root+'_NpT_thermodynamics.pdf')
 if __name__ == "__main__":
     plt.show(block=True)
