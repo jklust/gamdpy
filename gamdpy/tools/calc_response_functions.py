@@ -71,30 +71,33 @@ def calculate_response_functions_NpT(
     dict
         A dictionary with scalar properties and response functions reported as intensive.
 
-        - ``density``: :math:`\rho = \dfrac{N}{\langle V \rangle}`.
-        - ``specific_volume``: :math:`v = \dfrac{1}{\rho}`.
+        - ``density``: :math:`\rho = N \langle 1/V \rangle`.
+        - ``specific_volume``: :math:`v = \langle V \rangle/N`.
+        - ``jensen_bias_density_volume``: :math:`\rho v - 1`
         - ``potential_energy``: :math:`\langle U \rangle / N`.
         - ``kinetic_energy``: :math:`\langle K \rangle / N`.
         - ``internal_energy``: :math:`\langle E \rangle / N` where :math:`E=U+K`.
-        - ``kinetic_temperature``: :math:`\langle T_\mathrm{inst} \rangle`, with :math:`T_\mathrm{inst} = \dfrac{2K}{k_B\,\mathrm{dof}}`.
+        - ``kinetic_temperature``: :math:`\langle T_\mathrm{inst} \rangle`, with :math:`T_\mathrm{inst} = 2K/k_B N_d`.
         - ``external_temperature``: Provided external :math:`T` (if given).
-        - ``pressure``: :math:`\langle p_\mathrm{inst} \rangle`, with :math:`p_\mathrm{inst} = \dfrac{N k_B T_\mathrm{inst} + W}{V}`.
+        - ``pressure``: :math:`\langle p_\mathrm{inst} \rangle`, with :math:`p_\mathrm{inst} = (N k_B T_\mathrm{inst} + W)/V`.
         - ``external_pressure``: Provided external :math:`p` (if given).
-        - ``compressibility_factor``: :math:`Z = \dfrac{p}{\rho\, k_B T}`.
+        - ``compressibility_factor``: :math:`Z = p/\rho\, k_B T`.
         - ``enthalpy``: :math:`\langle H \rangle / N`, with :math:`H = U + K + p V`.
-        - ``isobaric_heat_capacity``: :math:`c_p = \dfrac{\mathrm{Var}(H)}{N\, k_B\, T^2}`.
-        - ``isothermal_compressibility``: :math:`\kappa_T = \dfrac{\mathrm{Var}(V)}{\langle V \rangle\, k_B\, T}`.
-        - ``isothermal_bulk_modulus``: :math:`K_T = \kappa_T^{-1}`.
-        - ``isobaric_expansion_coefficient``: :math:`\alpha_p = \dfrac{\mathrm{Cov}(V,H)}{\langle V \rangle\, k_B\, T^2}`.
+        - ``isobaric_heat_capacity``: :math:`c_p = \mathrm{Var}(H)/N k_B T^2`.
+        - ``isothermal_compressibility``: :math:`\kappa_T = \mathrm{Var}(V) / \langle V \rangle k_B T`.
+        - ``isothermal_bulk_modulus``: :math:`K_T = 1/\kappa_T`.
+        - ``isobaric_expansion_coefficient``: :math:`\alpha_p = \mathrm{Cov}(V,H) / \langle V \rangle k_B T^2`.
         - ``isochoric_heat_capacity``: :math:`c_V = \frac{1}{N}\left(\frac{\partial E}{\partial T}\right)_V =  c_p - \dfrac{T\, \alpha_p^2}{\rho\, \kappa_T}`.
         - ``isochoric_heat_capacity_excess``: :math:`c_V^{\mathrm{ex}} = \frac{1}{N}\left(\frac{\partial U}{\partial T}\right)_V = c_V - c_V^{\mathrm{id}}`, with :math:`c_V^{\mathrm{id}} = \frac{1}{N}\left(\frac{\partial K}{\partial T}\right)_V  = \dfrac{N_d}{2N} k_B`.
         - ``adiabatic_index``: :math:`\gamma = \dfrac{c_p}{c_V}`.
         - ``adiabatic_compressibility``: :math:`\kappa_S = -\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_S = \kappa_T \dfrac{c_V}{c_p}`.
-        - ``adiabatic_bulk_modulus``: :math:`K_S = \kappa_S^{-1}`.
-        - ``thermal_pressure_coefficient``: :math:`\beta_v = \left(\dfrac{\partial p}{\partial T}\right)_V = \dfrac{\alpha_p}{\kappa_T}`.
+        - ``adiabatic_bulk_modulus``: :math:`K_S = 1/\kappa_S`.
+        - ``isochoric_pressure_coefficient``: :math:`\beta_v = \left(\dfrac{\partial p}{\partial T}\right)_V = \dfrac{\alpha_p}{\kappa_T}`.
+        - ``isochoric_pressure_coefficient_excess``: :math:`\beta_v^{\mathrm{ex}} = \left(\dfrac{\partial W}{\partial T}\right)_V / V =\beta_v-\rho k_B`.
         - ``adiabatic_pressure_coefficient``: :math:`\beta_s = \left(\dfrac{\partial p}{\partial T}\right)_S = \dfrac{\rho\, c_p}{T\, \alpha_p}`.
         - ``adiabatic_expansion_coefficient``: :math:`\alpha_s = \frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_s = \alpha_p - \kappa_T\, \beta_s`.
-        - ``thermodynamic_gruneisen_parameter``: :math:`\gamma_G = V\left(\frac{\partial p}{\partial E}\right)_V = -\left(\frac{\partial \ln T}{\partial \ln V}\right)_S = \dfrac{\alpha_p}{\rho \, \kappa_T \, c_V}`.
+        - ``thermodynamic_gruneisen_parameter``: :math:`\gamma_G = V\left(\frac{\partial p}{\partial E}\right)_V = \left(\frac{\partial \ln T}{\partial \ln \rho}\right)_S = \dfrac{\alpha_p}{\rho \, \kappa_T \, c_V}`.
+        - ``configurational_adiabatic_scaling_exponent``: :math:`\gamma = \left(\dfrac{\partial \ln T}{\partial \ln \rho}\right)_{S_\textrm{ex}} = \beta_v^{\mathrm{ex}} / \rho c_V^{\mathrm{ex}}`.`
         - ``joule_thomson_coefficient``: :math:`\mu_{JT} = \left(\dfrac{\partial T}{\partial p}\right)_H = \dfrac{T\, \alpha_p - 1}{\rho\, c_p}`.
 
     """
@@ -132,9 +135,15 @@ def calculate_response_functions_NpT(
     # Density
     V = Vol
     mV = float(np.mean(V))
-    rho = N/mV
+    mV_inv = float(np.mean(1.0/V))  # Mean inverse volume
+    rho = N*mV_inv
     output.update(dict(density=float(rho)))
-    output.update(dict(specific_volume=float(1/rho)))
+    output.update(dict(specific_volume=float(mV/N)))
+
+    # Relative volume/density discrepancy due to Jensen’s inequality, ref: https://en.wikipedia.org/wiki/Jensen%27s_inequality
+    # <1/V>  >  1/<V>
+    jensen_rho_v = float(rho*mV/N-1)
+    output.update(dict(jensen_bias_density_volume=float(jensen_rho_v)))
 
     # Energies
     mU = float(np.mean(U))
@@ -199,17 +208,21 @@ def calculate_response_functions_NpT(
     output.update(dict(isochoric_heat_capacity_excess=float(c_V_ex)))
 
     # Adiabatic index,
-    gamma = c_p/c_V
-    output.update(dict(adiabatic_index=float(gamma)))
+    adiabatic_index = c_p/c_V
+    output.update(dict(adiabatic_index=float(adiabatic_index)))
 
     # Adiabatic compressibility, κₛ = -(∂V/∂p)ₛ / V
     kappa_s = kappa_T*c_V/c_p
     output.update(dict(adiabatic_compressibility=float(kappa_s)))
     output.update(dict(adiabatic_bulk_modulus=float(1/kappa_s)))
 
-    # Thermal pressure coefficient: βᵥ = (∂P/∂T)ᵥ
+    # Isochoric pressure coefficient: βᵥ = (∂P/∂T)ᵥ
     beta_v = alpha_p/kappa_T
-    output.update(dict(thermal_pressure_coefficient=float(beta_v)))
+    output.update(dict(isochoric_pressure_coefficient=float(beta_v)))
+
+    # Excess Isochoric pressure coefficient: β_v^ex = (∂W/∂T)ᵥ/V = (∂p/∂T)_V - ρ k_B
+    beta_v_ex = beta_v - rho*k_B
+    output.update(dict(isochoric_pressure_coefficient_excess=float(beta_v_ex)))
 
     # Adiabatic pressure coefficient: βₛ = (∂P/∂T)ₛ
     beta_s = rho*c_p/(T*alpha_p)
@@ -222,6 +235,25 @@ def calculate_response_functions_NpT(
     # Thermodynamic Grüneisen parameter (dimensionless)
     gamma_G = beta_v/(c_V*rho)
     output.update(dict(thermodynamic_gruneisen_parameter=float(gamma_G)))
+
+    # Configurational adiabatic scaling exponent,
+    gamma = beta_v_ex/(rho*c_V_ex)
+    output.update(dict(configurational_adiabatic_scaling_exponent=float(gamma)))
+
+    # # Note: With the hypervirial it is possible to compute the WU-correlation coefficient from response function.
+    # # However, here we use a "conditional" R_WU|V, i.e. remove V contribution to WU fluctuations.
+    # WU = np.cov(W, U, ddof=1)[0,1]
+    # WV = np.cov(W, V, ddof=1)[0,1]
+    # UV = np.cov(U, V, ddof=1)[0,1]
+    # VV = np.var(V, ddof=1)
+    # WW = np.var(W, ddof=1)
+    # UU = np.var(U, ddof=1)
+    # top=WU-WV*UV/VV
+    # bottom=(WW-WV**2/VV)**0.5*(UU-UV**2/VV)**0.5
+    # R_WU = top/bottom
+    # gamma_conditional=(WU-WV*UV/VV)/(UU-UV**2/VV)
+    # output.update(dict(configurational_adiabatic_scaling_exponent_conditional=float(gamma_conditional)))
+    # output.update(dict(canonical_virial_energy_correlation=float(R_WU)))
 
     # Joule–Thomson coefficient, μ_JT = (δT/δp)_H
     mu_JT = (alpha_p*T-1.0)/(c_p*rho)

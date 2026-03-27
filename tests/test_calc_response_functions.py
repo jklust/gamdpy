@@ -34,22 +34,21 @@ def test_calculate_response_functions_NpT():
     )
     assert type(out) == dict
 
-    # print(out)
+    #print(out)
     ## Generated with above
-    expected = {
-        'density': 1.2541207459863282, 'specific_volume': 0.7973713880424887,
-        'potential_energy': 1.9529325489435667, 'kinetic_energy': 2.9298631269371653,
-        'internal_energy': 4.8827956758807325, 'external_temperature': 0.876,
-        'kinetic_temperature': 4.775429557075258, 'external_pressure': 3.432,
-        'pressure': 8.61112915846658, 'compressibility_factor': 2.5397952665124377,
-        'enthalpy': 7.619374279642554, 'isobaric_heat_capacity': 0.719717102182806,
-        'isothermal_compressibility': 0.061953206277420306, 'isothermal_bulk_modulus': 16.141214637416816,
-        'isobaric_expansion_coefficient': 0.24365934735003494, 'isochoric_heat_capacity': 0.05034575249164963,
-        'isochoric_heat_capacity_excess': -0.5631829556423217, 'adiabatic_index': 14.295488031531134,
-        'adiabatic_compressibility': 0.004333759444992151, 'adiabatic_bulk_modulus': 230.74654066356723,
-        'thermal_pressure_coefficient': 3.9329578239898124, 'adiabatic_pressure_coefficient': 4.228769291358482,
-        'adiabatic_expansion_coefficient': -0.018326468857117556, 'thermodynamic_gruneisen_parameter': 62.289823550605696,
-        'joule_thomson_coefficient': -0.8714201470870574}
+    expected = {'density': 1.2542044778216794, 'specific_volume': 0.7973713880424889,
+     'jensen_bias_density_volume': 6.676536977745506e-05, 'potential_energy': 1.9529325489435667,
+     'kinetic_energy': 2.9298631269371653, 'internal_energy': 4.8827956758807325, 'external_temperature': 0.876,
+     'kinetic_temperature': 4.775429557075258, 'external_pressure': 3.432, 'pressure': 8.61112915846658,
+     'compressibility_factor': 2.539625707462983, 'enthalpy': 7.619374279642554,
+     'isobaric_heat_capacity': 0.719717102182806, 'isothermal_compressibility': 0.061953206277420306,
+     'isothermal_bulk_modulus': 16.141214637416816, 'isobaric_expansion_coefficient': 0.24365934735003494,
+     'isochoric_heat_capacity': 0.05039044033372986, 'isochoric_heat_capacity_excess': -0.5631382678002415,
+     'adiabatic_index': 14.282810338949329, 'adiabatic_compressibility': 0.004337606171838147,
+     'adiabatic_bulk_modulus': 230.54190730649714, 'isochoric_pressure_coefficient': 3.9329578239898124,
+     'isochoric_pressure_coefficient_excess': 2.3902863162691466, 'adiabatic_pressure_coefficient': 4.2290516267039235,
+     'adiabatic_expansion_coefficient': -0.018343960437013113, 'thermodynamic_gruneisen_parameter': 62.23042812021032,
+     'configurational_adiabatic_scaling_exponent': -3.384281950112405, 'joule_thomson_coefficient': -0.8713619702829014}
 
     for key in expected.keys():
         pytest.approx(expected[key]) == out[key], f"Key {key} not equal to expected values"
@@ -57,18 +56,6 @@ def test_calculate_response_functions_NpT():
     for key in out.keys():
         assert key in out_arg.keys()
         pytest.approx(out_arg[key]) == out[key]
-
-    # print(out.keys())
-    expected_keys = [
-        'density', 'specific_volume', 'potential_energy', 'kinetic_energy', 'internal_energy',
-        'external_temperature', 'kinetic_temperature', 'external_pressure', 'pressure', 'compressibility_factor',
-        'enthalpy', 'isobaric_heat_capacity', 'isothermal_compressibility', 'isothermal_bulk_modulus', 'isobaric_expansion_coefficient',
-        'isochoric_heat_capacity', 'isochoric_heat_capacity_excess', 'adiabatic_index', 'adiabatic_compressibility', 'adiabatic_bulk_modulus',
-        'thermal_pressure_coefficient', 'adiabatic_pressure_coefficient', 'adiabatic_expansion_coefficient', 'thermodynamic_gruneisen_parameter',
-        'joule_thomson_coefficient']
-
-    for key in expected_keys:
-        assert key in out.keys(), f"Key {key} not found in output of calculate_response_functions_NpT"
 
 if __name__ == "__main__":
     test_calculate_response_functions_NpT()
