@@ -10,7 +10,6 @@ from ..simulation_boxes import Orthorhombic
 from ..misc.make_function import make_function_constant
 from .integrator import Integrator
 
-import gamdpy as gp # NECESSARY FOR DOCSTRING TESTING ???!!!
 
 
 class NPT_Langevin(Integrator):
@@ -97,6 +96,7 @@ class NPT_Langevin(Integrator):
 
     Example of setting parameters for the NPT langevin barostat (see above) in "Lennard-Jones like" reduced units.
 
+    >>> import gamdpy as gp
     >>> tau_T = 2.0
     >>> tau_V = 8.0
     >>> zeta = 0.2

@@ -9,7 +9,6 @@ from ..simulation_boxes import LeesEdwards
 from .integrator import Integrator
 
 
-import gamdpy as gp # NECESSARY FOR DOCSTRING TESTING ???!!!
 
 class SLLOD(Integrator):
     """ The SLLOD integrator
@@ -49,6 +48,7 @@ class SLLOD(Integrator):
 
     An example of how to set up a Lees Edwards simulation box and a SLLOD integrator in a Lennard-Jones like system.
 
+    >>> import gamdpy as gp
     >>> configuration = gp.Configuration(D=3, compute_flags={'stresses': True})
     >>> configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=0.973)
     >>> configuration['m'] = 1.0
