@@ -41,10 +41,12 @@ class NVT(Integrator):
 
     def save_internal_state(self, output: h5py.File, group_name: str):
         thermostat_state = self.d_thermostat_state.copy_to_host()[0]
-        output[group_name].attrs['integrator_state'] = thermostat_state
+        #output[group_name].attrs['integrator_state'] = thermostat_state
+        output[group_name].create_dataset('integrator_state', data=thermostat_state, dtype=np.float32)
 
     def load_internal_state(self, output: h5py.File, group_name: str):
-        thermostat_state = output[group_name].attrs['integrator_state']
+        #thermostat_state = output[group_name].attrs['integrator_state']
+        thermostat_state = output[group_name]['integrator_state'][()]
         self.d_thermostat_state.copy_to_host(self.thermostat_state)
         self.thermostat_state[0] = thermostat_state # probably don't get to preserve the [1] so could avoid the copy from device
         self.d_thermostat_state.copy_to_device(self.thermostat_state)

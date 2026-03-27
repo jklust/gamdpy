@@ -38,7 +38,7 @@ class RestartSaver(RuntimeAction):
                                 update_ptype=self.update_ptype, use_topology_link=not self.update_topology, verbose=False)
         self.simulation.integrator.save_internal_state(output_reference, group_name_this_restart)
 
-    def update_at_end_of_timeblock(self,  timeblock: int, output_reference):
+    def update_at_end_of_timeblock(self, timeblock: int, output_reference):
         pass
 
     def get_prestep_kernel(self, configuration, compute_plan, verbose=False):

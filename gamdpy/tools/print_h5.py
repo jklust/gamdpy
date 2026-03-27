@@ -22,6 +22,7 @@ def print_h5_structure(node, indent=0):
         vectors  (Dataset, shape=(3, 2048, 3), dtype=float32)
     restarts/ (Group)
         restart0000/ (Group)
+            integrator_state  (Dataset, shape=(), dtype=float32)
             ptype  (Dataset, shape=(2048,), dtype=int32)
             r_im  (Dataset, shape=(2048, 3), dtype=int32)
             scalars  (Dataset, shape=(2048, 4), dtype=float32)
@@ -32,6 +33,7 @@ def print_h5_structure(node, indent=0):
                 molecules/ (Group)
             vectors  (Dataset, shape=(3, 2048, 3), dtype=float32)
         restart0001/ (Group)
+            integrator_state  (Dataset, shape=(), dtype=float32)
             ptype  (Dataset, shape=(2048,), dtype=int32)
             r_im  (Dataset, shape=(2048, 3), dtype=int32)
             scalars  (Dataset, shape=(2048, 4), dtype=float32)
@@ -99,7 +101,6 @@ def print_h5_attributes(obj, path="/"):
     Attributes at /restarts/:
         - timeblocks_between_restarts: 1
     Attributes at /restarts/restart0000/:
-        - integrator_state: -1.37335155159235e-06
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0000/scalars:
@@ -109,7 +110,6 @@ def print_h5_attributes(obj, path="/"):
     Attributes at /restarts/restart0000/vectors:
         - vector_columns: ['r' 'v' 'f']
     Attributes at /restarts/restart0001/:
-        - integrator_state: -0.23973797261714935
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0001/scalars:
