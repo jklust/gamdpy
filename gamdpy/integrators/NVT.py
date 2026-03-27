@@ -1,7 +1,9 @@
 import numpy as np
 import numba
 from numba import cuda
-import gamdpy as gp
+import h5py
+from ..configuration import Configuration
+from ..misc.make_function import make_function_constant
 from .integrator import Integrator
 
 class NVT(Integrator):
@@ -23,21 +25,31 @@ class NVT(Integrator):
 
     """
 
-    def __init__(self, temperature, tau: float, dt: float) -> None: 
+    def __init__(self, temperature, tau: float, dt: float) -> None:
         self.temperature = temperature
         self.tau = tau 
         self.dt = dt
         self.thermostat_state = np.zeros(2, dtype=np.float32)           # Right time to allocate and copy to device?
         self.d_thermostat_state = cuda.to_device(self.thermostat_state) # - or in get_params
 
-    def get_params(self, configuration: gp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
+    def get_params(self, configuration: Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         omega2 = np.float32(4.0 * np.pi * np.pi / self.tau / self.tau)
         degrees = configuration.N * configuration.D - configuration.D
         return (dt, omega2, degrees, self.d_thermostat_state)   # Needs to be compatible with unpacking in
                                                                 # step() and update_thermostat_state() below.
 
-    def get_kernel(self, configuration: gp.Configuration, compute_plan: dict, compute_flags: dict, interactions_kernel, verbose=False):
+    def save_internal_state(self, output: h5py.File, group_name: str):
+        thermostat_state = self.d_thermostat_state.copy_to_host()[0]
+        output[group_name].attrs['integrator_state'] = thermostat_state
+
+    def load_internal_state(self, output: h5py.File, group_name: str):
+        thermostat_state = output[group_name].attrs['integrator_state']
+        self.d_thermostat_state.copy_to_host(self.thermostat_state)
+        self.thermostat_state[0] = thermostat_state # probably don't get to preserve the [1] so could avoid the copy from device
+        self.d_thermostat_state.copy_to_device(self.thermostat_state)
+
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict, interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N
@@ -48,7 +60,7 @@ class NVT(Integrator):
         if callable(self.temperature):
             temperature_function = self.temperature
         else:
-            temperature_function = gp.make_function_constant(value=float(self.temperature))
+            temperature_function = make_function_constant(value=float(self.temperature))
 
         if verbose:
             print(f'Generating NVT kernel for {num_part} particles in {D} dimensions:')

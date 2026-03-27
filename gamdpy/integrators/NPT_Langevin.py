@@ -2,10 +2,16 @@ import numpy as np
 import numba
 from numba import cuda
 import math
+import h5py
 from numba.cuda.random import create_xoroshiro128p_states
 from numba.cuda.random import xoroshiro128p_normal_float32
-import gamdpy as gp
+from ..configuration import Configuration
+from ..simulation_boxes import Orthorhombic
+from ..misc.make_function import make_function_constant
 from .integrator import Integrator
+
+import gamdpy as gp # NECESSARY FOR DOCSTRING TESTING ???!!!
+
 
 class NPT_Langevin(Integrator):
     r""" Constant NPT Langevin integrator with isotropic volume fluctuations.
@@ -116,7 +122,7 @@ class NPT_Langevin(Integrator):
         self.volume_velocity = volume_velocity
         self.seed = seed
 
-    def get_params(self, configuration: gp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
+    def get_params(self, configuration: Configuration, interactions_params: tuple, verbose=False) -> tuple:
         dt = np.float32(self.dt)
         alpha = np.float32(self.alpha)
         alpha_baro = np.float32(self.alpha_barostat)
@@ -129,11 +135,17 @@ class NPT_Langevin(Integrator):
         d_length_ratio = cuda.to_device(np.ones(configuration.D, dtype=np.float32))
         return (dt, alpha, alpha_baro, mass_baro, # Needs to be compatible with unpacking in step() below
                 rng_states, d_barostat_state, d_barostatVirial, d_length_ratio)
-    
-    def get_kernel(self, configuration: gp.Configuration, compute_plan: dict, compute_flags:dict[str,bool], interactions_kernel, verbose=False):
+
+    def save_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+    def load_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags:dict[str,bool], interactions_kernel, verbose=False):
 
         # This integrator is designed for an Orthorhombic simulation box
-        if not isinstance(configuration.simbox, gp.Orthorhombic):
+        if not isinstance(configuration.simbox, Orthorhombic):
             raise TypeError(f"The NPT Langevin integrator expected Orthorhombic simulation box but got {type(configuration.simbox)}")
 
         # Unpack parameters from configuration and compute_plan
@@ -145,11 +157,11 @@ class NPT_Langevin(Integrator):
         if callable(self.temperature):
             temperature_function = self.temperature
         else:
-            temperature_function = gp.make_function_constant(value=float(self.temperature))
+            temperature_function = make_function_constant(value=float(self.temperature))
         if callable(self.pressure):
             pressure_function = self.pressure
         else:
-            pressure_function = gp.make_function_constant(value=float(self.pressure))
+            pressure_function = make_function_constant(value=float(self.pressure))
 
         if verbose:
             print(f'Generating NPT langevin integrator for {num_part} particles in {D} dimensions:')

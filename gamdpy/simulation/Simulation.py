@@ -143,7 +143,7 @@ class Simulation():
                 raise ValueError('compute_flags["%s]" set for Simulation but not in Configuration' % k)
 
         for runtime_action in self.runtime_actions:
-            runtime_action.setup(configuration=self.configuration, num_timeblocks=num_timeblocks,
+            runtime_action.setup(configuration=self.configuration, simulation=self, num_timeblocks=num_timeblocks,
                                 steps_per_timeblock=steps_per_timeblock, output=self.memory )
 
         self.vectors_list = []
@@ -158,7 +158,7 @@ class Simulation():
         if self.storage and self.storage[-3:] == '.h5':
             self.memory.close()
 
-    # __del__ is supposed to work also if __init__ fails. This means you can't use attributed defined in __init__
+    # __del__ is supposed to work also if __init__ fails. This means you can't use attributes defined in __init__
     # https://www.algorithm.co.il/programming/python-gotchas-1-__del__-is-not-the-opposite-of-__init__/
 
     def get_output(self, mode="r"):
@@ -409,7 +409,7 @@ class Simulation():
             self.current_block = block
             for runtime_action in self.runtime_actions:
                 runtime_action.initialize_before_timeblock(block, self.get_output(mode="a"))
-            
+
             if self.timing: 
                 start_block.record()
 

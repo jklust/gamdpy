@@ -27,9 +27,10 @@ class StressSaver(RuntimeAction):
         return self.compute_flags
 
 
-    def setup(self, configuration, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:
+    def setup(self, configuration, simulation, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:
 
         self.configuration = configuration
+        self.simulation = simulation
         D = configuration.D
 
         if type(num_timeblocks) != int or num_timeblocks < 0:

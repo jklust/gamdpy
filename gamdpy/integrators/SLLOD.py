@@ -1,11 +1,15 @@
 import numpy as np
 import numba
-import gamdpy as gp
+import h5py
 from numba import cuda
 import math
+from ..configuration import Configuration
+from ..misc.make_function import make_function_constant
+from ..simulation_boxes import LeesEdwards
 from .integrator import Integrator
 
 
+import gamdpy as gp # NECESSARY FOR DOCSTRING TESTING ???!!!
 
 class SLLOD(Integrator):
     """ The SLLOD integrator
@@ -79,10 +83,17 @@ class SLLOD(Integrator):
 
         return (dt, self.d_thermostat_sums)
 
+    def save_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+    def load_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+
     def get_kernel(self, configuration, compute_plan, compute_flags, interactions_kernel, verbose=False):
 
         # Expects a Lees Edwards type simulation box
-        if not isinstance(configuration.simbox, gp.LeesEdwards):
+        if not isinstance(configuration.simbox, LeesEdwards):
             raise ValueError(f'The SLLOD integrator requires a Lees-Edwards simulation box, but got {type(configuration.simbox)}')
 
         # Unpack parameters from configuration and compute_plan
@@ -93,7 +104,7 @@ class SLLOD(Integrator):
         if callable(self.shear_rate):
             shear_rate_function = self.shear_rate
         else:
-            shear_rate_function = gp.make_function_constant(value=float(self.shear_rate))
+            shear_rate_function = make_function_constant(value=float(self.shear_rate))
 
         if verbose:
             print(f'Generating SLLOD kernel for {num_part} particles in {D} dimensions:')

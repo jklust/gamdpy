@@ -2,9 +2,10 @@ import numpy as np
 import numba
 from numba import cuda
 import math
+import h5py
 from numba.cuda.random import create_xoroshiro128p_states
 from numba.cuda.random import xoroshiro128p_normal_float32
-import gamdpy as gp
+from ..configuration import Configuration
 from .integrator import Integrator
 
 
@@ -96,7 +97,7 @@ class ActiveOUP(Integrator):
         self.dt = dt            #timestep
         self.seed = seed        
 
-    def get_params(self, configuration: gp.Configuration, interactions_params: tuple, verbose=False) -> tuple:
+    def get_params(self, configuration: Configuration, interactions_params: tuple, verbose=False) -> tuple:
         DT = np.float32(self.DT)
         DA = np.float32(self.DA)
         mu = np.float32(self.mu)
@@ -107,8 +108,14 @@ class ActiveOUP(Integrator):
         d_eta = cuda.to_device(eta)
         return (DT, DA, mu, tau, dt, rng_states, d_eta) # Needs to be compatible with unpacking in
                                                    # step() 
-                                                   
-    def get_kernel(self, configuration: gp.Configuration, compute_plan: dict, compute_flags: dict[str,bool], interactions_kernel, verbose=False):
+
+    def save_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+    def load_internal_state(self, output: h5py.File, group_name: str):
+        pass
+
+    def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], interactions_kernel, verbose=False):
         import math
         # Unpack parameters from configuration and compute_plan
         D, num_part = configuration.D, configuration.N

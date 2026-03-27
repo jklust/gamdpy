@@ -99,6 +99,7 @@ def print_h5_attributes(obj, path="/"):
     Attributes at /restarts/:
         - timeblocks_between_restarts: 1
     Attributes at /restarts/restart0000/:
+        - integrator_state: -1.37335155159235e-06
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0000/scalars:
@@ -108,6 +109,7 @@ def print_h5_attributes(obj, path="/"):
     Attributes at /restarts/restart0000/vectors:
         - vector_columns: ['r' 'v' 'f']
     Attributes at /restarts/restart0001/:
+        - integrator_state: -0.23973797261714935
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0001/scalars:
