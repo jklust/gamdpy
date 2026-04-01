@@ -57,5 +57,59 @@ def test_calculate_response_functions_NpT():
         assert key in out_arg.keys()
         pytest.approx(out_arg[key]) == out[key]
 
+
+def sample_harmonic_oscillator(n_samples, k=1.0, m=1.0, T=1.0):
+    # Note. k_B = 1.0
+    sigma_x = np.sqrt(T / k)
+    sigma_p = np.sqrt(m * T)
+
+    x = np.random.normal(0, sigma_x, size=n_samples)
+    p = np.random.normal(0, sigma_p, size=n_samples)
+
+    U = 0.5 * k * x ** 2
+    K = p ** 2 / (2 * m)
+    W = k * x ** 2
+
+    return U, W, K
+
+def test_harmonic_oscillator_response_functions():
+    k = 2.35  # spring constant
+    T = 1.2342  # physical temperature
+    m = 1.23  # mass of particle
+    n = 2000000  # sample size
+
+    U, W, K = sample_harmonic_oscillator(n, k=k, m=m, T=T)
+
+    data = gp.tools.calculate_response_functions_NVT(
+        N=1,
+        dof=1,
+        V=1.0,
+        U=U,
+        W=W,
+        K=K,
+        k_B=1.0,
+        T_ext=T,
+        per_particle=True
+    )
+
+    # Analytical values
+    analytic = {
+        "potential_energy": 0.5 * T,
+        "kinetic_energy": 0.5 * T,
+        "internal_energy": T,
+        "isochoric_heat_capacity": 1.0,
+        "isochoric_heat_capacity_excess": 0.5,
+        "configurational_adiabatic_scaling_exponent": 2.0,
+        "canonical_virial_energy_correlation": 1.0,
+    }
+
+    # Assert that the analytical values are close to the calculated values
+    tol = 5e-3
+    for key, expected in analytic.items():
+        value = data[key]
+        assert abs(value - expected) < tol, f"{key}: {value} vs {expected}"
+
+
 if __name__ == "__main__":
     test_calculate_response_functions_NpT()
+    test_harmonic_oscillator_response_functions()

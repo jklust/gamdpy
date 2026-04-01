@@ -2,12 +2,17 @@ import numpy as np
 from collections.abc import Iterable
 
 def calculate_response_functions_NpT(
-        N: int, dof: int,
-        U: Iterable[float], W: Iterable[float],
-        K: Iterable[float], Vol: Iterable[float],
-        k_B=1.0, T_ext: float=None,
-        p_ext: float=None, per_particle=True
-):
+        N: int,
+        dof: int,
+        U: Iterable[float],
+        W: Iterable[float],
+        K: Iterable[float],
+        Vol: Iterable[float],
+        k_B=1.0,
+        T_ext: float=None,
+        p_ext: float=None,
+        per_particle=True
+) -> dict:
     r"""
     Calculate thermodynamic response functions from equilibrium fluctuations in an isotropic NpT simulation.
 
@@ -203,7 +208,7 @@ def calculate_response_functions_NpT(
     output.update(dict(isochoric_heat_capacity=float(c_V)))
 
     # Ideal gas heat capacity, c_V_ex = c_V - c_V_id
-    c_V_id = dof/N*k_B/2
+    c_V_id = 0.5 * k_B * dof / N
     c_V_ex = c_V - c_V_id
     output.update(dict(isochoric_heat_capacity_excess=float(c_V_ex)))
 
@@ -240,7 +245,7 @@ def calculate_response_functions_NpT(
     gamma = beta_v_ex/(rho*c_V_ex)
     output.update(dict(configurational_adiabatic_scaling_exponent=float(gamma)))
 
-    # # Note: With the hypervirial it is possible to compute the WU-correlation coefficient from response function.
+    # # Note: With the hypervirial it is possible to compute the WU-correlation coefficient from the response function.
     # # However, here we use a "conditional" R_WU|V, i.e. remove V contribution to WU fluctuations.
     # WU = np.cov(W, U, ddof=1)[0,1]
     # WV = np.cov(W, V, ddof=1)[0,1]
@@ -262,8 +267,69 @@ def calculate_response_functions_NpT(
     return output
 
 
-def calculate_response_functions_NVT(N, dof, V, U, W, K, k_B=1.0):
-    """ Compute thermodynamic response functions of a NVT simulation """
+def calculate_response_functions_NVT(
+        N: int,
+        dof: int,
+        V: float,
+        U: Iterable[float],
+        W: Iterable[float],
+        K: Iterable[float],
+        k_B=1.0,
+        T_ext: float=None,
+        per_particle=True
+) -> dict:
+    r""" Calculate thermodynamic response functions from equilibrium fluctuations in an isotropic NVT simulation.
+
+    The implementation analyses time series of thermodynamic observables from a constant :math:`NVT` (canonical) ensemble,
+    specifically potential energy :math:`U`,
+    configurational virial :math:`W= \left. \frac{\partial U\!\left(\lambda\mathbf{r}^N\right)}{\partial \lambda} \right|_{\lambda=1}`,
+    kinetic energy :math:`K`, and volume :math:`V`, and computes thermodynamic response functions.
+    The implementation assumes:
+
+    - An isotropic :math:`NVT` ensemble at equilibrium.
+    - If ``per_particle=True`` (default), the inputs ``V``, ``U``, ``W``, ``K``  are *per-particle*
+      values and if ``per_particle=False``, the inputs are treated as values for the entire system. ``N`` is used in the conversion.
+    - The external temperature (``T_ext``), :math:`T`, defaults to :math:`\langle T_\mathrm{inst}\rangle` if not provided, where
+      the instantaneous temperature is computed from equipartition,
+      :math:`T_\mathrm{inst} = \frac{2K}{k_B\, N_d}` and :math:`\mathrm{N_d}` is the number of degrees of freedom (``dof``).
+
+    The isochoric heat capacity (per particle), :math:`c_v=\frac{1}{N}\left(\frac{\partial E}{\partial T}\right)_V`,
+    is computed as
+
+    .. math::
+
+        c_v &= \frac{\mathrm{Var}(E)}{N\, k_B\, T^2}, \\
+
+    where :math:`E = U + K`.
+
+    Parameters
+    ----------
+    N : int
+        Number of particles, :math:`N`.
+    dof : int
+        Total number of degrees of freedom of the system, :math:`N_d`.
+    V : float
+        Volume of simulation box, :math:`V`.
+    U : Iterable[float]
+        Time series of potential energy, :math:`U`.
+    W : Iterable[float]
+        Time series of configurational virial, :math:`W`.
+    K : Iterable[float]
+        Time series of kinetic energy, :math:`K`.
+    k_B : float, optional
+        Boltzmann constant of the unit system (default 1.0), :math:`k_B`.
+    T_ext : float, optional
+        External (bath) temperature, :math:`T`. If ``None``, then :math:`\langle T_\mathrm{inst}\rangle` is used.
+    per_particle : bool, optional
+        If ``True`` (default), the ``U``, ``W``, ``K``, ``Vol`` inputs are interpreted as *per-particle* values.
+        If ``False``, they are treated as extensive.
+
+    Returns
+    -------
+    dict
+        A dictionary with scalar properties and response functions reported as intensive.
+
+    """
     if not all(np.isscalar(x) for x in (N, dof , V)):
         raise TypeError("N, D and V must be scalars")
     for name, value in (("U", U), ("W", W), ("K", K)):
@@ -273,6 +339,21 @@ def calculate_response_functions_NVT(N, dof, V, U, W, K, k_B=1.0):
             np.asarray(value)
         except Exception as exc:
             raise TypeError(f"{name} must be array-like") from exc
+
+    # Convert to numpy arrays
+    if type(U) is not np.ndarray:
+        U = np.array(U)
+    if type(W) is not np.ndarray:
+        W = np.array(W)
+    if type(K) is not np.ndarray:
+        K = np.array(K)
+
+    # Scale values to per particle if given as intensive
+    if per_particle:
+        V = V * N
+        U = U * N
+        W = W * N
+        K = K * N
 
     output = {}
     rho = N / V
@@ -284,18 +365,40 @@ def calculate_response_functions_NVT(N, dof, V, U, W, K, k_B=1.0):
     E = U + K
     mE = np.mean(E)
     output.update(dict(internal_energy=float(mE / N)))
-    T_kin = 2.0 * mK / k_B / dof
-    T = np.mean(T_kin)
-    output.update(dict(kinetic_temperature=float(T_kin)))
+
+    T_inst = 2.0 * K / k_B / dof  # Instantaneous kinetic temperature
+    mT_kin = np.mean(T_inst)
+    output.update(dict(kinetic_temperature=float(mT_kin)))
+
+    # Fall back to sample estimate if external temperature is not provided
+    T = T_ext if T_ext else np.mean(T_inst)
+    if T_ext:
+        output.update(dict(external_temperature=float(T)))
+
     P = rho * k_B * T + W / V  # Instantaneous pressure
     output.update(dict(pressure=float(np.mean(P))))
-    c_V = np.var(E, ddof=1) / (k_B * T ** 2 * N)
+
+    var_EE = np.var(E, ddof=1)
+    c_V = var_EE / (k_B * T ** 2 * N)
     output.update(dict(isochoric_heat_capacity=float(c_V)))
+
+    var_UU = np.var(U, ddof=1)
+    c_V_ex = var_UU / (k_B * T ** 2 * N)
+    output.update(dict(isochoric_heat_capacity_excess=float(c_V_ex)))
+
     cov_PE = np.cov(P, E)[0, 1]
     beta_V = cov_PE / k_B / T ** 2  # Thermal pressure coefficient: βᵥ = (∂P/∂T)ᵥ
     output.update(dict(thermal_pressure_coefficient=float(beta_V)))
 
-    # We need hyper-virial to compute K_T. Then we would have a complete set of responce function,
-    # and could compute everything
+    cov_WU = np.cov(W, U)[0, 1]
+    beta_V_ex = cov_WU / k_B / T ** 2 / V
+    output.update(dict(thermal_pressure_coefficient_excess=float(beta_V_ex)))
+
+    gamma = cov_WU / var_UU
+    output.update(dict(configurational_adiabatic_scaling_exponent=float(gamma)))
+
+    var_WW = np.var(W, ddof=1)
+    R_WU = cov_WU / (var_WW * var_UU)**0.5
+    output.update(dict(canonical_virial_energy_correlation=float(R_WU)))
 
     return output

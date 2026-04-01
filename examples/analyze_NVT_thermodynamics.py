@@ -39,7 +39,7 @@ V = np.prod(simbox)  # Box volume
 first_block = 1
 U, W, K = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K'], per_particle=False, first_block=first_block)
 dof = D * N - D
-data = gp.tools.calculate_response_functions_NVT(N, dof, V, U, W, K)
+data = gp.tools.calculate_response_functions_NVT(N, dof, V, U, W, K, per_particle=False)
 
 # Print and write data
 to_toml_file = ""
@@ -59,8 +59,8 @@ if len(U)>max_plot_points:
 
 fig, axs = plt.subplots(3, 1, figsize=(8, 9), sharex=True)
 fig.subplots_adjust(hspace=0.00)  # Remove vertical space between axes
-R = np.corrcoef(W, U)[0, 1]
-gamma = np.cov(W,U)[0,1]/np.var(U)
+R = data['canonical_virial_energy_correlation'] # np.corrcoef(W, U)[0, 1]
+gamma = data['configurational_adiabatic_scaling_exponent'] # np.cov(W,U)[0,1]/np.var(U)
 axs[0].set_title(f'N={N},  rho={data['density']:.3f},  T_kin={data['kinetic_temperature']:.3f},  P={data['pressure']:.3f},  R={R:.3f},  gamma={gamma:.3f}')
 axs[0].set_ylabel('U/N')
 axs[1].set_ylabel('W/N')
