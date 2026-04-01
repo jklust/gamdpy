@@ -264,6 +264,8 @@ Post-analysis tools
 
 .. autofunction:: gamdpy.tools.calculate_response_functions_NpT
 
+.. autofunction:: gamdpy.tools.calculate_response_functions_NVT
+
 .. autofunction:: gamdpy.tools.calc_dynamics
 
 .. autofunction:: gamdpy.tools.calculate_molecular_center_of_masses

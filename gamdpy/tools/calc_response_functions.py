@@ -109,7 +109,7 @@ def calculate_response_functions_NpT(
 
     if not all(np.isscalar(x) for x in (N, dof, k_B)):
         raise TypeError("N, dof and k_B must be scalars")
-    for name, value in (("Vol", Vol), ("U", U), ("W", W), ("K", K)):
+    for name, value in (("Volumes, Vol", Vol), ("Potential energies, U", U), ("Virials, W", W), ("Kinetic energies, K", K)):
         if np.isscalar(value):
             raise TypeError(f"{name} must be array-like, not a scalar")
         try:
@@ -245,21 +245,6 @@ def calculate_response_functions_NpT(
     gamma = beta_v_ex/(rho*c_V_ex)
     output.update(dict(configurational_adiabatic_scaling_exponent=float(gamma)))
 
-    # # Note: With the hypervirial it is possible to compute the WU-correlation coefficient from the response function.
-    # # However, here we use a "conditional" R_WU|V, i.e. remove V contribution to WU fluctuations.
-    # WU = np.cov(W, U, ddof=1)[0,1]
-    # WV = np.cov(W, V, ddof=1)[0,1]
-    # UV = np.cov(U, V, ddof=1)[0,1]
-    # VV = np.var(V, ddof=1)
-    # WW = np.var(W, ddof=1)
-    # UU = np.var(U, ddof=1)
-    # top=WU-WV*UV/VV
-    # bottom=(WW-WV**2/VV)**0.5*(UU-UV**2/VV)**0.5
-    # R_WU = top/bottom
-    # gamma_conditional=(WU-WV*UV/VV)/(UU-UV**2/VV)
-    # output.update(dict(configurational_adiabatic_scaling_exponent_conditional=float(gamma_conditional)))
-    # output.update(dict(canonical_virial_energy_correlation=float(R_WU)))
-
     # Joule–Thomson coefficient, μ_JT = (δT/δp)_H
     mu_JT = (alpha_p*T-1.0)/(c_p*rho)
     output.update(dict(joule_thomson_coefficient=float(mu_JT)))
@@ -283,7 +268,7 @@ def calculate_response_functions_NVT(
     The implementation analyses time series of thermodynamic observables from a constant :math:`NVT` (canonical) ensemble,
     specifically potential energy :math:`U`,
     configurational virial :math:`W= \left. \frac{\partial U\!\left(\lambda\mathbf{r}^N\right)}{\partial \lambda} \right|_{\lambda=1}`,
-    kinetic energy :math:`K`, and volume :math:`V`, and computes thermodynamic response functions.
+    kinetic energy :math:`K`, and computes thermodynamic response functions.
     The implementation assumes:
 
     - An isotropic :math:`NVT` ensemble at equilibrium.
@@ -294,13 +279,14 @@ def calculate_response_functions_NVT(
       :math:`T_\mathrm{inst} = \frac{2K}{k_B\, N_d}` and :math:`\mathrm{N_d}` is the number of degrees of freedom (``dof``).
 
     The isochoric heat capacity (per particle), :math:`c_v=\frac{1}{N}\left(\frac{\partial E}{\partial T}\right)_V`,
-    is computed as
+    and thermal pressure coefficient :math:`\beta_v = \left(\frac{\partial p}{\partial T}\right)_V` are computed as
 
     .. math::
 
         c_v &= \frac{\mathrm{Var}(E)}{N\, k_B\, T^2}, \\
+        \beta_V &= \frac{\mathrm{Cov}(p,E)}{k_B T^2}.
 
-    where :math:`E = U + K`.
+    respectively, where the internal energy is :math:`E = U + K` and the instantaneous pressure is :math:`p = (N k_B T + W) / V`
 
     Parameters
     ----------
@@ -321,7 +307,7 @@ def calculate_response_functions_NVT(
     T_ext : float, optional
         External (bath) temperature, :math:`T`. If ``None``, then :math:`\langle T_\mathrm{inst}\rangle` is used.
     per_particle : bool, optional
-        If ``True`` (default), the ``U``, ``W``, ``K``, ``Vol`` inputs are interpreted as *per-particle* values.
+        If ``True`` (default), the ``V``, ``U``, ``W``, ``K`` inputs are interpreted as *per-particle* values.
         If ``False``, they are treated as extensive.
 
     Returns
@@ -329,10 +315,26 @@ def calculate_response_functions_NVT(
     dict
         A dictionary with scalar properties and response functions reported as intensive.
 
+        - ``density``: :math:`\rho = N /V`.
+        - ``specific_volume``: :math:`v = V / N`.
+        - ``potential_energy``: Average potential energy per particle, :math:`\langle U\rangle/N`.
+        - ``kinetic_energy``: Average kinetic energy per particle, :math:`\langle K\rangle/N`.
+        - ``internal_energy``: Average internal energy per particle, :math:`\langle E\rangle/N` where :math:`E = U + K`.
+        - ``kinetic_temperature``: Instantaneous kinetic temperature, :math:`\langle T_\textrm{inst}\rangle/N` where :math:`T_\textrm{inst} = 2K/k_B\, N_d`.
+        - ``external_temperature``: External bath temperature (if provided), :math:`T`.
+        - ``pressure``: Average instantaneous pressure, :math:`\langle p\rangle`, where :math:`p = (N k_B T_\textrm{inst} + W) / V`.
+        - ``isochoric_heat_capacity``: Isochoric heat capacity per particle, :math:`c_V = \frac{1}{N}\left(\frac{\partial E}{\partial T}\right)_V = \textrm{Var}(E)/(N k_B T^2)`.
+        - ``isochoric_heat_capacity_excess``: Excess (configurational) heat capacity per particle, :math:`c_V^\textrm{ex} = \frac{1}{N}\left(\frac{\partial U}{\partial T}\right)_V = \textrm{Var}(U)/(N k_B T^2)`.
+        - ``thermal_pressure_coefficient``: Thermal pressure coefficient :math:`\beta_V = \left(\frac{\partial p}{\partial T}\right)_V = \textrm{Cov}(p,E)/(k_B T^2)`.
+        - ``thermal_pressure_coefficient_excess``: Excess thermal pressure coefficient :math:`\beta_V^\textrm{ex} = \frac{1}{V} \left(\frac{\partial W}{\partial T}\right)_V = \textrm{Cov}(W,U)/(V k_B T^2)`.
+        - ``thermodynamic_gruneisen_parameter``: :math:`\gamma_G = V\left(\frac{\partial p}{\partial E}\right)_V = \left(\frac{\partial \ln T}{\partial \ln \rho}\right)_S = \dfrac{\beta_V}{\rho \, c_V}`.
+        - ``configurational_adiabatic_scaling_exponent``: :math:`\gamma = \left(\dfrac{\partial \ln T}{\partial \ln \rho}\right)_{s_\textrm{ex}} = \textrm{Cov}(W,U)/\textrm{Var}(U)` where :math:`s_\textrm{ex}` is the excess entropy.
+        - ``canonical_virial_energy_correlation``: Pearson correlation coefficient between :math:`W` and :math:`U`, :math:`R=\textrm{Cov}(W,U)/\sqrt{\textrm{Var}(W)\textrm{Var}(U)}`.
+
     """
-    if not all(np.isscalar(x) for x in (N, dof , V)):
-        raise TypeError("N, D and V must be scalars")
-    for name, value in (("U", U), ("W", W), ("K", K)):
+    if not all(np.isscalar(x) for x in (N, dof , V, k_B)):
+        raise TypeError("N, dof, V and k_B must be scalars")
+    for name, value in (("Potential energies, U", U), ("Virials, W", W), ("Kinetic energies, K", K)):
         if np.isscalar(value):
             raise TypeError(f"{name} must be array-like, not a scalar")
         try:
@@ -355,16 +357,22 @@ def calculate_response_functions_NVT(
         W = W * N
         K = K * N
 
+    # Dictionary to store output
     output = {}
+
     rho = N / V
     output.update(dict(density=float(rho)))
+    output.update(dict(specific_volume=float( V / N )))
+
     mU = np.mean(U)
-    output.update(dict(potential_energy=float(mU / N)))
+    output.update(dict(potential_energy=float( mU / N )))
+
     mK = np.mean(K)
-    output.update(dict(kinetic_energy=float(mK / N)))
+    output.update(dict(kinetic_energy=float( mK / N )))
+
     E = U + K
     mE = np.mean(E)
-    output.update(dict(internal_energy=float(mE / N)))
+    output.update(dict(internal_energy=float( mE / N )))
 
     T_inst = 2.0 * K / k_B / dof  # Instantaneous kinetic temperature
     mT_kin = np.mean(T_inst)
@@ -375,8 +383,8 @@ def calculate_response_functions_NVT(
     if T_ext:
         output.update(dict(external_temperature=float(T)))
 
-    P = rho * k_B * T + W / V  # Instantaneous pressure
-    output.update(dict(pressure=float(np.mean(P))))
+    p = rho * k_B * T_inst + W / V  # Instantaneous pressure
+    output.update(dict(pressure=float(np.mean(p))))
 
     var_EE = np.var(E, ddof=1)
     c_V = var_EE / (k_B * T ** 2 * N)
@@ -386,13 +394,17 @@ def calculate_response_functions_NVT(
     c_V_ex = var_UU / (k_B * T ** 2 * N)
     output.update(dict(isochoric_heat_capacity_excess=float(c_V_ex)))
 
-    cov_PE = np.cov(P, E)[0, 1]
-    beta_V = cov_PE / k_B / T ** 2  # Thermal pressure coefficient: βᵥ = (∂P/∂T)ᵥ
+    cov_pE = np.cov(p, E, ddof=1)[0, 1]
+    beta_V = cov_pE / k_B / T ** 2  # Thermal pressure coefficient: βᵥ = (∂p/∂T)ᵥ
     output.update(dict(thermal_pressure_coefficient=float(beta_V)))
 
-    cov_WU = np.cov(W, U)[0, 1]
+    cov_WU = np.cov(W, U, ddof=1)[0, 1]
     beta_V_ex = cov_WU / k_B / T ** 2 / V
     output.update(dict(thermal_pressure_coefficient_excess=float(beta_V_ex)))
+
+    gruneisen = beta_V / rho / c_V
+    output.update(dict(thermodynamic_gruneisen_parameter=float(gruneisen)))
+
 
     gamma = cov_WU / var_UU
     output.update(dict(configurational_adiabatic_scaling_exponent=float(gamma)))
