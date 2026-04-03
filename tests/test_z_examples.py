@@ -144,14 +144,14 @@ class Test_examples:
     def test_hydrocorr(self):
         self.make_one("hydrocorr", ["jacf.dat", "dacf.dat"])
 
-    def test_isomorph(self):        # Note: this script produces Data/isomorph.pkl needed by next two. File gets remove in next
+    def test_isomorph(self):        # Note: this script produces Data/isomorph.pkl
         self.make_one("isomorph")
+   
+    def test_isomorph_forcemethod(self):        # Note: this script produces Data/isomorph.pkl. File gets remove in next
+        self.make_one("isomorph_forcemethod")
 
-    def test_plot_isomorph_rdf(self):        
-        self.make_one("plot_isomorph_rdf", ["isomorph_rdf.pdf"])
-
-    def test_plot_isomorph_dynamics(self):
-        self.make_one("plot_isomorph_dynamics", ["Data/isomorph.pkl", "isomorph_dynamics.pdf"])
+    def test_plot_isomorph(self):        
+        self.make_one("plot_isomorph", ["Data/isomorph.pkl", "isomorph.pdf"])
 
     def test_consistency_NPT(self):
         self.make_one("consistency_NPT")
