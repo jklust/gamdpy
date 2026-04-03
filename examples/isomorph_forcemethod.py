@@ -1,12 +1,11 @@
 """ Example of performing several simulation in one go using gamdpy.
 
-An isomorph is traced out using the gamma method. The script demomstrates
+An isomorph is traced out using the force method. The script demomstrates
 the possibility of keeping the output of the simulation in memory (storage='memory').
 This is usefull when a lot of short simulations are performed.
 
 To plot the results do: 
-python plot_isomorph_dynamics.py (generates: isomorph_dynamics.pdf)
-python plot_isomorph_rdf.py (generates: isomorph_rdf.pdf)
+python plot_isomorph.py (generates: isomorph.pdf)
 
 For a simpler script performing multiple simulations, see isochore.py
 
@@ -17,9 +16,9 @@ import numpy as np
 import gamdpy as gp
 
 
-# Setup fcc configuration
+# Setup configuration
 configuration = gp.Configuration(D=3)
-configuration.make_lattice(gp.unit_cells.FCC, cells=[8, 8, 8], rho=1.0)
+configuration.make_positions(N=2000, rho=1.0)
 configuration['m'] = 1.0
 
 
@@ -40,6 +39,7 @@ runtime_actions = [gp.RestartSaver(),
 T = 2.00
 rhos = [1.00, 1.50, 2.00, 2.50, 1.00]
 data = []
+print('Generating isomorph using the Force Method [Schrøder, PRL (2022]')
 
 for index, rho in enumerate(rhos):
 
@@ -55,7 +55,8 @@ for index, rho in enumerate(rhos):
     print(f'\nRho = {rho}, Temperature = {T:.3f}')
 
      # Setup integrator
-    integrator = gp.integrators.NVT(temperature=T, tau=0.2/T**(1/2), dt=0.01/T**(1/2))
+    tau0 = T**(-1/2)*rho**(-1/3)
+    integrator = gp.integrators.NVT(temperature=T, tau=0.2*tau0, dt=0.01*tau0/1.2**index)
     configuration.randomize_velocities(temperature=T)
 
     # Setup Simulation
@@ -84,5 +85,5 @@ for index, rho in enumerate(rhos):
 with open('Data/isomorph.pkl', 'wb') as f:
     pickle.dump(data, f)
 
-# To generat plots (isomorph_dynamics.pdf & isomorph_rdf.pdf) of data: 
-# python plot_isomorph_dynamics.py; python plot_isomorph_rdf.py
+# To generat plots (isomorph.pdf) of data: 
+# python3 plot_isomorph.py
