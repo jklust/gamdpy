@@ -7,7 +7,7 @@ from numba import cuda
 
 from .colarray import colarray
 from ..simulation_boxes import Orthorhombic, LeesEdwards
-from .topology import Topology, duplicate_topology, replicate_topologies
+from .topology import Topology, replicate_topologies
 from ..simulation.get_default_compute_flags import get_default_compute_flags
 from .Configuration import Configuration
 

@@ -17,7 +17,7 @@ from .configuration.Configuration import replicate_molecules
 from .simulation_boxes.orthorhombic import Orthorhombic
 from .simulation_boxes.lees_edwards import LeesEdwards
 from .configuration.topology import Topology
-from .configuration.topology import bonds_from_positions, angles_from_bonds, dihedrals_from_angles, molecules_from_bonds, duplicate_topology, replicate_topologies
+from .configuration.topology import bonds_from_positions, angles_from_bonds, dihedrals_from_angles, molecules_from_bonds, replicate_topologies
 from .configuration.colarray import colarray 
 from .configuration import unit_cells
 # make_lattice is imported in configuration/__init__.py

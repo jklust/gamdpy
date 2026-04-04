@@ -183,45 +183,72 @@ def dihedrals_from_angles(angles, dihedral_type):
             
     return dihedrals
 
-def molecules_from_bonds(bonds):
-    molecules = []
-    for bond in bonds:
-        found = False
-        for molecule in molecules:
-            if bond[0] in molecule:
-                found = True
-                if bond[1] not in molecule:
-                    molecule.append(bond[1])
-                break
-            if bond[1] in molecule:
-                found = True
-                if bond[0] not in molecule:
-                    molecule.append(bond[0])
-                break
-        if not found:
-            molecules.append(bond[0:2]) # If not bonded to existing molecule, the bond is part of a new molecule
-    return molecules
 
-def duplicate_topology(topology, num_molecules):
-    new_topology = Topology()
-    assert len(topology.molecules)==1 # Only one type (for now)
-    for molecule_type in topology.molecules:
-        assert len(topology.molecules[molecule_type])==1 # Only one molecule
-        molecule_name = molecule_type
-    new_topology.add_molecule_name(molecule_name)
-    particles_per_molecule = len(topology.molecules[molecule_name][0])
-    for molecule in range(num_molecules):
-        first = molecule * particles_per_molecule
-        for bond in topology.bonds:
-            new_topology.bonds.append([bond[0] + first, bond[1] + first, bond[2]])
-        for angle in topology.angles:
-            new_topology.angles.append([angle[0] + first, angle[1] + first, angle[2]+ first, angle[3]])
-        for dihedral in topology.dihedrals:
-            new_topology.dihedrals.append(dihedral.copy()) # Copy needed?
-            for index in range(4):
-                new_topology.dihedrals[-1][index] += first
-        new_topology.molecules[molecule_name].append([index + first for index in topology.molecules[molecule_name][0]]) 
-    return new_topology
+def molecules_from_bonds(bonds):
+    """
+    Identify and group connected molecular components with sorted indices.
+
+    This function processes a list of bonds to find connected components (molecules).
+    It ensures that the atom indices within each resulting molecule are returned 
+    in ascending order, providing a deterministic output.
+
+    Parameters
+    ----------
+    bonds : list of list
+        A list of bonds where each bond is [atom1, atom2, ...]. 
+        Additional metadata beyond the first two elements is ignored.
+
+    Returns
+    -------
+    molecules : list of list of int
+        A list of molecules, where each inner list contains unique, 
+        sorted atom indices belonging to that connected component.
+        The list of molecules is sorted by the index of first atom 
+        for each molecule.
+
+    Examples
+    --------
+    >>> bonds = [[5, 4], [3, 2, 'single'], [1, 0, 'single'], [2, 1, 'double']]
+    >>> molecules_from_bonds(bonds)
+    [[0, 1, 2, 3], [4, 5]]
+    """
+
+    # Initialize molecules as sorted pairs from bonds
+    molecules = [sorted([bond[0], bond[1]]) for bond in bonds]
+    initial_num_molecules = len(molecules)
+    
+    for index1 in range(initial_num_molecules - 1, 0, -1): 
+        for index2 in range(index1):
+            # Check for connectivity
+            if not set(molecules[index1]).isdisjoint(molecules[index2]):
+                # Merge, remove duplicates, and sort
+                molecules[index2] = sorted(set(molecules[index1]).union(molecules[index2]))
+                molecules.pop(index1)
+                break
+                
+    return sorted(molecules, key=lambda x: x[0])
+
+
+# def duplicate_topology(topology, num_molecules):
+#     new_topology = Topology()
+#     assert len(topology.molecules)==1 # Only one type (for now)
+#     for molecule_type in topology.molecules:
+#         assert len(topology.molecules[molecule_type])==1 # Only one molecule
+#         molecule_name = molecule_type
+#     new_topology.add_molecule_name(molecule_name)
+#     particles_per_molecule = len(topology.molecules[molecule_name][0])
+#     for molecule in range(num_molecules):
+#         first = molecule * particles_per_molecule
+#         for bond in topology.bonds:
+#             new_topology.bonds.append([bond[0] + first, bond[1] + first, bond[2]])
+#         for angle in topology.angles:
+#             new_topology.angles.append([angle[0] + first, angle[1] + first, angle[2]+ first, angle[3]])
+#         for dihedral in topology.dihedrals:
+#             new_topology.dihedrals.append(dihedral.copy()) # Copy needed?
+#             for index in range(4):
+#                 new_topology.dihedrals[-1][index] += first
+#         new_topology.molecules[molecule_name].append([index + first for index in topology.molecules[molecule_name][0]]) 
+#     return new_topology
 
 
 def replicate_topologies(mol_topology_list, num_molecules_each_type_list, mol_types_list, size_molecules_type_list):
