@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from gamdpy import bonds_from_positions  # Replace with your actual module name
+from gamdpy import bonds_from_positions  
 
 def test_single_bond():
     """Test two atoms within the cutoff distance."""
@@ -58,7 +58,7 @@ def test_3d_distance_calculation():
     assert bonds_from_positions(positions, 1.7, "3d") == []
     # Should bond at cutoff 1.8
     assert len(bonds_from_positions(positions, 1.8, "3d")) == 1
-    
+
 # --- 2D Space Tests ---
 
 def test_2d_diagonal_bond():

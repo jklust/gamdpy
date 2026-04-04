@@ -87,6 +87,36 @@ def bonds_from_positions(positions, cut_off, bond_type):
     return bonds
 
 def angles_from_bonds(bonds, angle_type):
+    """
+    Identifies and generates a list of angles from a given set of bonds.
+
+    This function performs a combinatorial search through the bond list to 
+    identify pairs of bonds that share a common atom (vertex). For every 
+    connected pair found, it records the three-atom sequence forming the angle.
+
+    Parameters
+    ----------
+        bonds (list of list/tuple): A list where each element represents a 
+            bond as a pair of atom indices (e.g., [[0, 1, ..], [1, 2, ...]]).
+            Further entries beyond the two atom indices (eg. bond type) is
+            ignored.
+        angle_type (any): A label or parameter defining the type of angle 
+            to be assigned to the detected triplets.
+
+    Returns:
+    -------
+        list of list: A list of detected angles. Each entry contains:
+            - The index of the first outer atom.
+            - The index of the shared central atom (vertex).
+            - The index of the second outer atom.
+            - The provided `angle_type`.
+
+     See also
+    --------
+
+    :class:`gamdpy.Angles`
+    
+    """
     angles = []
     for bond_index, bond in enumerate(bonds):
         for other_bond in bonds[bond_index+1:]:
