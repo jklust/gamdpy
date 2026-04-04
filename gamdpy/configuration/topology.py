@@ -115,7 +115,7 @@ def angles_from_bonds(bonds, angle_type):
     --------
 
     :class:`gamdpy.Angles`
-    
+
     """
     angles = []
     for bond_index, bond in enumerate(bonds):
@@ -131,6 +131,44 @@ def angles_from_bonds(bonds, angle_type):
     return angles
 
 def dihedrals_from_angles(angles, dihedral_type):
+    """
+    Construct dihedral definitions by joining overlapping bond angles.
+
+    Identifies sequences of four atoms that form a torsion angle by 
+    finding pairs of three-atom angles that share a common central bond. 
+    The function accounts for various atom orderings within the angle 
+    definitions to ensure all contiguous chains are captured.
+
+    Parameters
+    ----------
+    angles : list of list of int
+        A collection of angles, where each angle is defined by three 
+        atom indices (e.g., [atom1, atom2, atom3]).
+        Further entries beyond the three atom indices (eg. angle type) is
+        ignored.
+    dihedral_type : int, str, or float
+        The parameter or type identifier to be assigned to the 
+        resulting dihedral definitions.
+
+    Returns
+    -------
+    dihedrals : list of list
+        A list of dihedrals, where each element is a list containing 
+        four atom indices and the specified dihedral type:
+        [atom1, atom2, atom3, atom4, dihedral_type].
+
+    See Also
+    --------
+    :class:`gamdpy.Dihedrals`
+
+    Notes
+    -----
+    A dihedral is formed when two angles, i-j-k and j-k-l, share the 
+    central bond j-k. Because angles can be defined in either direction 
+    (i-j-k or k-j-i), this function checks four permutations of atom 
+    connectivity to correctly sequence the four-atom chain.
+    """
+
     dihedrals = []
     for angle_index, angle in enumerate(angles):
         for other_angle in angles[angle_index+1:]:
