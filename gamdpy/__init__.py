@@ -52,6 +52,7 @@ from .calculators import CalculatorRadialDistribution, CalculatorStructureFactor
 # Import from tools subpackage
 # To make type checking work (e.g. pylance): 
 from .tools import TrajectoryIO, calc_dynamics, save_configuration, calc_conductivity
+from .tools import read_h5
 # Side effect gp.calc_dynamics does also work! Same problem for integrators
 # TrajectoryIO, save_configuration and calc_dynamics are not directly imported and are called via gp.tools.*
 from .tools import conversion_factors

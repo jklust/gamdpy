@@ -8,10 +8,10 @@ Usage:
 
 import sys
 import os
-import h5py
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 import gamdpy as gp
 
 max_plot_points = 100_000
@@ -34,7 +34,7 @@ if fname_suffix != '.h5':  # Try to add the .h5 extension
     filename_h5 = fname_root + fname_suffix
 
 # Read thermodynamic data and compute response functions
-output = h5py.File(filename_h5, "r")
+output = gp.read_h5(filename_h5)
 *_, N, D = output['trajectory/positions'].shape
 dof = D * N - D
 fluctuations = gp.ScalarSaver.extract_as_dict(output)  # Read fluctuation data
