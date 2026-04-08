@@ -32,7 +32,7 @@ if fname_suffix != '.h5':  # Try to add the .h5 extension
     fname_suffix = '.h5'
     filename_h5 = fname_root + fname_suffix
 
-output = gp.tools.TrajectoryIO(filename_h5).get_h5()
+output = gp.read_h5(filename_h5)
 nblocks, nconfs, N, D = output['trajectory/positions'].shape
 simbox = output['initial_configuration'].attrs['simbox_data']
 V = np.prod(simbox)  # Box volume
