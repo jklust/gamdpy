@@ -1,7 +1,7 @@
 def test_read_h5():
     import gamdpy as gp
     import h5py
-    file = 'Data/LJ_cooled_0.70.h5'
+    file = './tests/Data/LJ_cooled_0.70.h5'
     h5_a = gp.read_h5(file)
     h5_b = gp.tools.read_h5(file)
     h5_c = h5py.File(file, 'r')
