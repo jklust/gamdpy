@@ -1,6 +1,7 @@
 # Particle pair potentials
 from .LJ_12_6 import LJ_12_6
 from .LJ_12_6_sigma_epsilon import LJ_12_6_sigma_epsilon
+from .exponential_repulsion import exponential_repulsion
 from .yukawa import yukawa
 from .SAAP import SAAP
 from .universal_zbl_potential import universal_zbl_potential

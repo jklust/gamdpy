@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+
 import gamdpy as gp
 
 def test_potential_functions_lennard_jones() -> None:
@@ -31,6 +33,18 @@ def test_make_potential_function_from_sympy() -> None:
     potLJ = 4*e*((s/r)**(12)-(s/r)**6)
     potLJ_gp = gp.make_potential_function_from_sympy(potLJ, (s, e))
     assert potLJ_gp(1, (2,3)) == gp.LJ_12_6_sigma_epsilon(1, [2, 3]), "Problem with gp.make_potential_function_from_sympy"
+
+def test_exponential_repulsion() -> None:
+    sigma, epsilon = params = 1.234, 0.987
+    dist = 0.456
+    pot_exp = gp.exponential_repulsion(dist, params)
+    assert len(pot_exp) == 3
+    u_expected = epsilon * np.exp( -dist / sigma )
+    assert pot_exp[0] == pytest.approx(u_expected)
+    s_expected = epsilon * np.exp( -dist / sigma ) / sigma / dist
+    assert pot_exp[1] == pytest.approx(s_expected)
+    du2dr2 = epsilon * np.exp( -dist / sigma ) / (sigma**2)
+    assert pot_exp[2] == pytest.approx(du2dr2)
 
 def test_potential_function_yukawa() -> None:
     params = [1.23, 0.891]
@@ -116,6 +130,7 @@ if __name__ == '__main__':  # pragma: no cover
     test_bond_function_harmonic()
     test_make_potential_function_ipl_n()
     test_make_potential_function_from_sympy()
+    test_exponential_repulsion()
     test_potential_function_yukawa()
     test_potential_function_zbl()
     test_potential_function_harmonic_repulsion()
