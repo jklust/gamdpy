@@ -34,6 +34,23 @@ def test_make_potential_function_from_sympy() -> None:
     potLJ_gp = gp.make_potential_function_from_sympy(potLJ, (s, e))
     assert potLJ_gp(1, (2,3)) == gp.LJ_12_6_sigma_epsilon(1, [2, 3]), "Problem with gp.make_potential_function_from_sympy"
 
+
+def test_gaussian_core_model():
+    sigma = 2.34
+    epsilon = 3.21
+    params = np.array([sigma, epsilon])
+    r = 0.987
+    kappa = 1 / sigma**2
+
+    u_expected = epsilon * np.exp(-kappa * r * r)
+    s_expected = u_expected * (2 * kappa)
+    d2u_expected = u_expected * (4 * kappa**2 * r**2 - 2 * kappa)
+    u, s, d2u = gp.gaussian_core_model(r, params)
+    assert np.isclose(u, u_expected)
+    assert np.isclose(s, s_expected)
+    assert np.isclose(d2u, d2u_expected)
+
+
 def test_exponential_repulsion() -> None:
     sigma, epsilon = params = 1.234, 0.987
     dist = 0.456
@@ -130,6 +147,7 @@ if __name__ == '__main__':  # pragma: no cover
     test_bond_function_harmonic()
     test_make_potential_function_ipl_n()
     test_make_potential_function_from_sympy()
+    test_gaussian_core_model()
     test_exponential_repulsion()
     test_potential_function_yukawa()
     test_potential_function_zbl()

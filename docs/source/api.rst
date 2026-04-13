@@ -112,6 +112,8 @@ Pair potential functions
 
 .. autofunction:: gamdpy.yukawa
 
+.. autofunction:: gamdpy.gaussian_core_model
+
 .. autofunction:: gamdpy.exponential_repulsion
 
 .. autofunction:: gamdpy.harmonic_repulsion

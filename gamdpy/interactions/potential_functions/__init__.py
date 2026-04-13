@@ -1,6 +1,7 @@
 # Particle pair potentials
 from .LJ_12_6 import LJ_12_6
 from .LJ_12_6_sigma_epsilon import LJ_12_6_sigma_epsilon
+from .gaussian_core_model import gaussian_core_model
 from .exponential_repulsion import exponential_repulsion
 from .yukawa import yukawa
 from .SAAP import SAAP
