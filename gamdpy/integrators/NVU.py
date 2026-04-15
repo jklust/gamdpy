@@ -57,7 +57,7 @@ class NVU(Integrator):
         pb, tp, gridsync = [compute_plan[key] for key in ['pb', 'tp', 'gridsync']]
         num_blocks = (num_part - 1) // pb + 1
 
-        # Convert temperature to a function if isn't allready (better be a number then...)
+        # Convert temperature to a function if isn't already (better be a number then...)
         if callable(self.U_0):
             U_0_function = self.U_0
         else:
