@@ -8,9 +8,12 @@
 
 ### New features
 
-* Integrator gamdpy.ActiveOUP for Active Ornstein-Uhlenbeck Particle.
-* Smooth truncation with Cubic spline using the modifier gamdpy.apply_cubic_spline_cutoff
-* Added Universal ZBL Pair Potential as gamdpy.universal_zbl_potential
+* Integrator for Active Ornstein-Uhlenbeck Particle (gamdpy.ActiveOUP)
+* Smooth Cubic spline truncations (gamdpy.apply_cubic_spline_cutoff)
+* Smooth Gromacs style truncations (gamdpy.apply_gromacs_cutoff)
+* Pair-potentials: Universal ZBL Potential, Gaussian-core model, Yukawa, Exponential repulsion, harmonic repulsion and Hertzian repulsion
+* Tools for unit conversions (gp.conversion_factors)
+* Tools for analyzing thermodynamics fluctuations
 
 ## Version 0.8.2, Aug 3, 2025
 
