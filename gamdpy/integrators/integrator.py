@@ -26,9 +26,3 @@ class Integrator(ABC):
         """
         # It could be that each integrator uses its own attribute, i.e. we don't need to insist that it's always called the generic name integrator_state
 
-
-    @abstractmethod
-    def load_internal_state(self, output: h5py.File, group_name: str):
-        """
-        Read the internal state from the specified group as the attribute integrator_state
-        """

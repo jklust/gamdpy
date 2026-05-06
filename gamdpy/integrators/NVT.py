@@ -48,11 +48,6 @@ class NVT(Integrator):
         to_save = np.asarray(thermostat_state, dtype=np.float32).reshape(-1) #make an array instead of a scalar
         output[group_name].create_dataset('integrator_state', data=to_save)
 
-    def load_internal_state(self, output: h5py.File, group_name: str):
-        thermostat_state = output[group_name]['integrator_state'][:]
-        self.d_thermostat_state.copy_to_host(self.thermostat_state)
-        self.thermostat_state[0] = thermostat_state # probably don't get to preserve the [1] so could avoid the copy from device
-        self.d_thermostat_state.copy_to_device(self.thermostat_state)
 
     def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict, interactions_kernel, verbose=False):
 

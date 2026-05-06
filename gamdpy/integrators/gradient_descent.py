@@ -32,9 +32,6 @@ class GradientDescent(Integrator):
     def save_internal_state(self, output: h5py.File, group_name: str):
         pass
 
-    def load_internal_state(self, output: h5py.File, group_name: str):
-        pass
-
     def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict[str,bool], interactions_kernel, verbose=False):
 
         # Unpack parameters from configuration and compute_plan

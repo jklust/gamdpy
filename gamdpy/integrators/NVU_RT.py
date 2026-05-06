@@ -167,10 +167,6 @@ class NVU_RT(Integrator):
     def save_internal_state(self, output: h5py.File, group_name: str):
         pass
 
-    def load_internal_state(self, output: h5py.File, group_name: str):
-        pass
-
-
     def update_at_end_of_timeblock(self, storage: str, nblocks: int, block: int):
         if self.save_path_u:
             self.d_step[0] = 0

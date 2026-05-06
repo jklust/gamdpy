@@ -77,9 +77,6 @@ class NPT_Atomic(Integrator):
     def save_internal_state(self, output: h5py.File, group_name: str):
         pass
 
-    def load_internal_state(self, output: h5py.File, group_name: str):
-        pass
-
     def get_kernel(self, configuration: Configuration, compute_plan: dict, compute_flags: dict, interactions_kernel, verbose=False):
 
         # This integrator is designed for an Orthorhombic simulation box
