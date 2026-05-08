@@ -5,12 +5,17 @@
 ### Bug fixes
 
 * Fixed bug in make_lattice that gave wrong density for D!=3 and rho!=None.
+* Fixed bug in calc_dynmamics when using Lees-Edwards boundary conditions.
 
 ### New features
 
+* Mechanism for integators to save their internal state for the purpose of correctly restarting an interrupted simulation (for NVT and NPT_Langevin so far). 
 * Integrator for Active Ornstein-Uhlenbeck Particle (gamdpy.ActiveOUP)
 * Smooth Cubic spline truncations (gamdpy.apply_cubic_spline_cutoff)
 * Smooth Gromacs style truncations (gamdpy.apply_gromacs_cutoff)
+* Harmonic bond angle potential
+* Possibility to partially exclude pairs interactions as for example for atoms 1,4 of dihedral interactions.
+* Embedded atom methhod (EAM) potential with parameters for 16 elements, based on Zhou, Johnsonm, Wadley, Phys. Rev. B 69, 144113  (2004) 
 * Pair-potentials: Universal ZBL Potential, Gaussian-core model, Yukawa, Exponential repulsion, harmonic repulsion and Hertzian repulsion
 * Tools for unit conversions (gp.conversion_factors)
 * Tools for analyzing thermodynamics fluctuations
