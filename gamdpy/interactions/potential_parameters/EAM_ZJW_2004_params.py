@@ -47,4 +47,4 @@ EAM_ZJW_2004_params =  {'Cu': array([ 2.556162,  1.554485, 21.175871, 21.175395,
         0.558572, -3.219176]), 'Zr': array([ 3.199978,  2.230909, 30.879991, 30.879991,  8.55919 ,  4.564902,
         0.424667,  0.640054,  0.5     ,  1.      , -4.485793, -0.293129,
         0.990148, -3.202516, -4.51    ,  0.      ,  0.928602, -0.98187 ,
-        0.597133, -4.509025])}
+        0.597133, -4.509025]), 'comment': {'Embedded-atom method (EAM) potential parameters for the Zhou-Johnson-Wadley formulation of the EAM. Parameters for 16 elements as provided in the 2004 paper are given These are: Cu, Ag, Au, Ni, Pd, Pt, Al, Pb, Fe, Mo, Ta, W, Mg, Co, Ti, and Zr. Units are eV and Å.'}, 'reference': {'title': 'Misfit-energy-increasing dislocations in vapor-deposited CoFe/NiFe multilayers', 'volume': 69, 'DOI': '10.1103/PhysRevB.69.144113', 'url': 'http://dx.doi.org/10.1103/PhysRevB.69.144113', 'number': 14, 'journal': 'Physical Review B', 'shortjournal': 'Phys. Rev. B', 'author': ['X. W. Zhou', 'R. A. Johnson', 'H. N. G. Wadley'], 'year': 2004, 'month': 'apr'}}

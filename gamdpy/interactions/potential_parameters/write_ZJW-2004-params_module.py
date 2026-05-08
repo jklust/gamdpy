@@ -34,6 +34,25 @@ for element in column_names:
 
     EAM_ZJW_2004_params[element] = df[element].to_numpy()
 
+
+EAM_ZJW_2004_params['comment'] = {'Embedded-atom method (EAM) potential parameters for the Zhou-Johnson-Wadley formulation of the EAM. Parameters for 16 elements as provided in the 2004 paper are given These are: Cu, Ag, Au, Ni, Pd, Pt, Al, Pb, Fe, Mo, Ta, W, Mg, Co, Ti, and Zr. Units are eV and Å.'}
+
+EAM_ZJW_2004_params['reference'] = {
+            'title': 'Misfit-energy-increasing dislocations in vapor-deposited CoFe/NiFe multilayers',
+            'volume': 69,
+            'DOI': '10.1103/PhysRevB.69.144113',
+            'url': 'http://dx.doi.org/10.1103/PhysRevB.69.144113',
+            'number': 14,
+            'journal': 'Physical Review B',
+            'shortjournal': 'Phys. Rev. B',
+            'author': ['X. W. Zhou', 'R. A. Johnson', 'H. N. G. Wadley'],
+            'year': 2004,
+            'month': 'apr'
+            }
+
+
+
+
 outfilename = "EAM_ZJW_2004_params.py.tmp"
 
 if script_dir == cwd:
