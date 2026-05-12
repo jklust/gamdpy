@@ -39,7 +39,7 @@ V = np.prod(simbox)  # Box volume
 first_block = 1
 U, W, K = gp.ScalarSaver.extract(output, columns=['U', 'W', 'K'], per_particle=False, first_block=first_block)
 dof = D * N - D
-data = gp.tools.calculate_response_functions_NVT(N, dof, V, U, W, K, per_particle=False)
+data = gp.tools.thermodynamics_NVT(N, dof, V, U, W, K, per_particle=False)
 
 # Print and write data
 to_toml_file = ""

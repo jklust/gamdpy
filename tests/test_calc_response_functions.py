@@ -7,7 +7,7 @@ def test_calculate_response_functions_NpT():
     np.random.seed(2026)  # Set seed for reproducibility
     n = 10_000  # Number of datapoints in synthetic data
 
-    out_arg = gp.tools.calculate_response_functions_NpT(
+    out_arg = gp.tools.thermodynamics_NpT(
         1254,
         1251,
         2449+np.random.randn(n)*4.1,
@@ -20,7 +20,7 @@ def test_calculate_response_functions_NpT():
         False
     )
 
-    out = gp.tools.calculate_response_functions_NpT(
+    out = gp.tools.thermodynamics_NpT(
         N=1254,
         dof=1251,
         U=2449+np.random.randn(n)*4.1,
@@ -80,7 +80,7 @@ def test_harmonic_oscillator_response_functions():
 
     U, W, K = sample_harmonic_oscillator(n, k=k, m=m, T=T)
 
-    data = gp.tools.calculate_response_functions_NVT(
+    data = gp.tools.thermodynamics_NVT(
         N=1,
         dof=1,
         V=1.0,

@@ -1,7 +1,7 @@
 import numpy as np
 from collections.abc import Iterable
 
-def calculate_response_functions_NpT(
+def thermodynamics_NpT(
         N: int,
         dof: int,
         U: Iterable[float],
@@ -252,7 +252,7 @@ def calculate_response_functions_NpT(
     return output
 
 
-def calculate_response_functions_NVT(
+def thermodynamics_NVT(
         N: int,
         dof: int,
         V: float,
@@ -265,7 +265,7 @@ def calculate_response_functions_NVT(
 ) -> dict:
     r""" Calculate thermodynamic response functions from equilibrium fluctuations in an isotropic NVT simulation.
 
-    The implementation analyses time series of thermodynamic observables from a constant :math:`NVT` (canonical) ensemble,
+    The implementation analyzes time series of thermodynamic observables from a constant :math:`NVT` (canonical) ensemble,
     specifically potential energy :math:`U`,
     configurational virial :math:`W= \left. \frac{\partial U\!\left(\lambda\mathbf{r}^N\right)}{\partial \lambda} \right|_{\lambda=1}`,
     kinetic energy :math:`K`, and computes thermodynamic response functions.

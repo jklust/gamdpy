@@ -58,6 +58,6 @@ print(sim.summary())
 N, D = configuration.N, configuration.D
 fluctuations = gp.ScalarSaver.extract_as_dict(sim.output, first_block=0)
 dof = D * N - D
-data = gp.tools.calculate_response_functions_NpT(N, dof, **fluctuations, T_ext=target_temperature, p_ext=target_pressure)
+data = gp.tools.thermodynamics_NpT(N, dof, **fluctuations, T_ext=target_temperature, p_ext=target_pressure)
 for key in data:
     print(f'{key:>32} = {data[key]:10.5f}')

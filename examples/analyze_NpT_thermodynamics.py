@@ -38,7 +38,7 @@ output = gp.read_h5(filename_h5)
 *_, N, D = output['trajectory/positions'].shape
 dof = D * N - D
 fluctuations = gp.ScalarSaver.extract_as_dict(output)  # Read fluctuation data
-response_functions = gp.tools.calculate_response_functions_NpT(N, dof, **fluctuations, k_B=1.0)
+response_functions = gp.tools.thermodynamics_NpT(N, dof, **fluctuations, k_B=1.0)
 
 # Print and write data
 to_toml_file = ""
