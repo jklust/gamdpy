@@ -143,7 +143,7 @@ class Simulation():
                 raise ValueError('compute_flags["%s]" set for Simulation but not in Configuration' % k)
 
         for runtime_action in self.runtime_actions:
-            runtime_action.setup(configuration=self.configuration, simulation=self, num_timeblocks=num_timeblocks,
+            runtime_action.setup(simulation=self, num_timeblocks=num_timeblocks,
                                 steps_per_timeblock=steps_per_timeblock, output=self.memory )
 
         self.vectors_list = []

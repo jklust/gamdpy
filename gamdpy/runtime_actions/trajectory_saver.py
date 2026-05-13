@@ -83,9 +83,10 @@ class TrajectorySaver(RuntimeAction):
     def extract_forces(h5file):
         return h5file['trajectory/forces']
 
-    def setup(self, configuration, simulation, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
-        self.configuration = configuration
+    def setup(self, simulation, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
+
         self.simulation = simulation
+        self.configuration = self.simulation.configuration
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
             raise ValueError(f'num_timeblocks ({num_timeblocks}) should be non-negative integer.')

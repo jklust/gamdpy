@@ -33,10 +33,10 @@ class ScalarSaver(RuntimeAction):
     def get_compute_flags(self):
         return self.compute_flags
 
-    def setup(self, configuration, simulation, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:
+    def setup(self, simulation, num_timeblocks:int, steps_per_timeblock:int, output, verbose=False) -> None:
 
-        self.configuration = configuration
         self.simulation = simulation
+        self.configuration = self.simulation.configuration
 
         if type(num_timeblocks) != int or num_timeblocks < 0:
             raise ValueError(f'num_timeblocks ({num_timeblocks}) should be non-negative integer.')
@@ -50,7 +50,7 @@ class ScalarSaver(RuntimeAction):
             raise ValueError(f'scalar_output ({self.steps_between_output}) must be less than or equal to steps_per_timeblock ({steps_per_timeblock})')
 
         # per block saving of scalars
-        compute_flags = configuration.compute_flags
+        compute_flags = self.configuration.compute_flags
         self.num_scalars = 0
         sid_list = ['U', 'W', 'lapU', 'K', 'Fsq', 'Vol']
         self.sid = {}

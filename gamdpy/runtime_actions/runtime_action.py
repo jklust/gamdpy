@@ -13,7 +13,7 @@ class RuntimeAction(ABC):
     def get_compute_flags(self):
         return None
 
-    def setup(self, configuration: Configuration, simulation: Simulation, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
+    def setup(self, simulation: Simulation, num_timeblocks: int, steps_per_timeblock: int, output, verbose=False) -> None:
         pass
 
     @abstractmethod   

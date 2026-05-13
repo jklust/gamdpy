@@ -15,11 +15,12 @@ class RestartSaver(RuntimeAction):
         # Later: Give user influence on what and how often is saved
         self.timeblocks_between_restarts = timeblocks_between_restarts
 
-    def setup(self, configuration, simulation, num_timeblocks : int, steps_per_timeblock : int, output: h5py.File,
+    def setup(self, simulation, num_timeblocks : int, steps_per_timeblock : int, output: h5py.File,
             update_ptype: bool=False, update_topology: bool=False, verbose: bool=False) -> None:
 
-        self.configuration = configuration
+        
         self.simulation = simulation
+        self.configuration = simulation.configuration
         self.update_ptype = update_ptype
         self.update_topology = update_topology
 
