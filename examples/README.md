@@ -65,7 +65,7 @@ Other examples of postprocessing. Some of these scripts require the output produ
 - [thermodynamics.py](thermodynamics.py) : Calculate thermodynamic properties.
 - [isochore.py](isochore.py) : Performing several simulations (an isochore) in one script.
 - [isomorph.py](isomorph.py) : An isomorph is traced out using the gamma method. Results can be plotted with [plot_isomorph.py](plot_isomorph.py). The script demonstrates the possibility of keeping the output of the simulation in memory (storage='memory'), useful when a lot of short simulations are performed.
-- [isomorph_forcemethod.py](isomorph_forcemethod.py) : An isomorph is traced out using the gamma method. Results can be plotted with [plot_isomorph.py](plot_isomorph.py).
+- [isomorph_forcemethod.py](isomorph_forcemethod.py) : An isomorph is traced out using the force method. Results can be plotted with [plot_isomorph.py](plot_isomorph.py).
 - [structure_factor.py](structure_factor.py) : Calculate the structure factor of a Lennard-Jones system and plot it.
 - [consistency_NPT.py](consistency_NPT.py) Calcuate several thermodynamic quantities (dP/dT|<sub>V</sub>, $\beta$<sub>P</sub>, c<sub>V</sub>, c<sub>P</sub>, K<sub>T</sub>) and check consistency of NVT and NPT fluctuations. 
 - [widoms_particle_insertion.py](widoms_particle_insertion.py) Widom's particle insertion method for calculating the chemical potential.
