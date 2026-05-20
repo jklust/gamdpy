@@ -97,10 +97,10 @@ def check_gpu(device_id=None):
           device.MAX_BLOCK_DIM_X, device.MAX_BLOCK_DIM_Y, device.MAX_BLOCK_DIM_Z)
     print("Max Grid Dimensions (x, y, z):",
           device.MAX_GRID_DIM_X, device.MAX_GRID_DIM_Y, device.MAX_GRID_DIM_Z)
-    print("Max Shared Memory Per Block:", device.MAX_SHARED_MEMORY_PER_BLOCK)
-    print("Total Constant Memory:", device.TOTAL_CONSTANT_MEMORY)
+    print("Max Shared Memory Per Block:", device.MAX_SHARED_MEMORY_PER_BLOCK/1024, "KB")
+    print("Total Constant Memory:", device.TOTAL_CONSTANT_MEMORY/1024, "KB")
     print("Warp Size:", device.WARP_SIZE)
-    print("L2 cache size:", device.L2_CACHE_SIZE)
+    print("L2 cache size:", device.L2_CACHE_SIZE/1024/1024, "MB")
     print("Max registers per block:", device.MAX_REGISTERS_PER_BLOCK)
     print("Single to double performance ratio:", device.SINGLE_TO_DOUBLE_PRECISION_PERF_RATIO)
  
