@@ -1,6 +1,13 @@
 # Change log for `gamdpy`
 
-## Version 0.8.3dev
+## Version 0.8.4dev
+
+### Bug fixes
+
+### New features
+
+
+## Version 0.8.3, May 18, 2026
 
 ### Bug fixes
 
