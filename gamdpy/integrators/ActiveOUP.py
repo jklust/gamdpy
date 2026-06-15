@@ -89,7 +89,7 @@ class ActiveOUP(Integrator):
 
     """
 
-    def __init__(self, DT: float,DA:float,mu:float, tau: float, dt: float, seed = 0) -> None:
+    def __init__(self, DT: np.array,DA:np.array,mu:np.array, tau: np.array, dt: float, seed = 0) -> None:
         self.DT = DT      #sqrt of termal diffusion
         self.DA = DA      #sqrt of active diffusion 
         self.mu = mu            #mobility
@@ -98,11 +98,11 @@ class ActiveOUP(Integrator):
         self.seed = seed        
 
     def get_params(self, configuration: Configuration, interactions_params: tuple, verbose=False) -> tuple:
-        DT = np.float32(self.DT)
-        DA = np.float32(self.DA)
-        mu = np.float32(self.mu)
-        tau = np.float32(self.tau)
-        dt = np.float32(self.dt)
+        DT = np.array(self.DT, dtype=np.float32)
+        DA = np.array(self.DA, dtype=np.float32)
+        mu = np.array(self.mu,  dtype=np.float32)
+        tau = np.array(self.tau,  dtype=np.float32)
+        dt = np.array(self.dt)
         rng_states = create_xoroshiro128p_states(configuration.N, seed=self.seed)
         eta = np.zeros((configuration.N, configuration.D), dtype=np.float32)    #colored noise
         d_eta = cuda.to_device(eta)
