@@ -4,7 +4,7 @@ import math
 from numba import cuda
 
 def apply_shifted_potential_cutoff(pair_potential: callable) -> callable:
-    """ Apply shifted potential cutoff to a pair-potential function
+    r""" Apply shifted potential cutoff to a pair-potential function
 
         If the input pair potential is :math:`u(r)`,
         then the shifted potential is
