@@ -67,6 +67,7 @@ def conversion_factors(**kwargs):
     >>> cf = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kJ_per_mol=1.0, unit_mass_in_u = 1.0)  # Atomistic SI-like units
     >>> cf = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_eV=1.0, unit_mass_in_u = 1.0)  # Metallic units
     """
+    from math import pi
 
     # Check that one, and only one energy, length and mass is given
     for prefix in 'unit_length', 'unit_energy', 'unit_mass':
@@ -98,6 +99,7 @@ def conversion_factors(**kwargs):
         'unit_length_in_cm': 1e-2,
         'unit_length_in_nm': 1e-9,
         'unit_length_in_Å': 1e-10,
+        'unit_length_in_A': 1e-10,
         'unit_length_in_Angstrom': 1e-10,
         'unit_length_in_Ångström': 1e-10,
         'unit_length_in_bohr_radius': bohr_radius,
@@ -144,7 +146,9 @@ def conversion_factors(**kwargs):
 
     # Check that a length, energy and mass have been given in keyword arguments
     if unit_length == None or unit_energy == None or unit_mass == None:
-        raise KeyError(f'Some unit_length, unit_energy and unit_mass needs to be specified. Got {kwargs}')
+        print(f'{unit_length = }, {unit_energy = }, {unit_mass = }')
+        print(f'{possible_lengths = }\n{possible_energies = }\n{possible_masses = }')
+        raise KeyError(f'Some unit_length, unit_energy and unit_mass needs to be specified. Got {kwargs}.')
 
     # Derived units. N.B. Below we assume D=3 spatial dimensions
     unit_time = unit_length * (unit_mass / unit_energy) ** 0.5  # s
@@ -153,6 +157,14 @@ def conversion_factors(**kwargs):
     unit_density = unit_mass / unit_length ** 3  # kg/m^3
     unit_area = unit_length**2
     unit_volume = unit_length**3
+
+    # For handeling charges in Columbs law
+    coulombs_constant_SI = 8987551786
+    coulombs_constant = coulombs_constant_SI/unit_force/unit_length**2
+    coulomb_charge_prefactor = coulombs_constant**0.5
+    elementary_charge_SI = 1.602176634e-19
+    elementary_charge_prefactor = coulombs_constant**0.5*elementary_charge_SI
+    coulombs_constant_with_elementary_charges = coulombs_constant_SI/elementary_charge_SI**2
 
     return {
         # Length
@@ -210,8 +222,9 @@ def conversion_factors(**kwargs):
         "ag": unit_mass*1e21,
         "yoctogram": unit_mass*1e27,
         "yg": unit_mass*1e27,
-        "u": unit_mass/atomic_mass,
-        "dalton": unit_mass/atomic_mass,
+        "u": unit_mass / atomic_mass,
+        "amu": unit_mass / atomic_mass,
+        "dalton": unit_mass / atomic_mass,
         "kg/mol": unit_mass * Avogadro,
         "g/mol": unit_mass * 1e3 * Avogadro,
 
@@ -310,4 +323,13 @@ def conversion_factors(**kwargs):
         'cubic_Angstrom': unit_volume*1e30,
         'cubic_Ångström': unit_volume*1e30,
         'Å3': unit_volume*1e30,
+
+        # Angles
+        'degrees': 180/pi,
+
+        # For charges
+        'coulombs_constant': coulombs_constant,
+        'coulomb_charge_prefactor': coulomb_charge_prefactor,
+        'coulombs_constant_with_elementary_charges': coulombs_constant_with_elementary_charges,
+        'elementary_charge_prefactor': elementary_charge_prefactor
     }
