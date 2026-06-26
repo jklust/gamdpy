@@ -126,7 +126,7 @@ pair_pot = gp.PairPotential(
 # Make integrator
 integrator = gp.integrators.NVT(temperature=temperature, tau=tau, dt=dt)
 
-# Setup runtime actions, i.e. actions performed during simulation of timeblocks
+# Set up runtime actions, i.e. actions performed during simulation of timeblocks
 runtime_actions = [gp.MomentumReset(100), ]
 
 # Eq. setup simulation
