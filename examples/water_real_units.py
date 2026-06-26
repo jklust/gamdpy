@@ -12,7 +12,8 @@ from math import exp
 cf = gp.conversion_factors(
     unit_length_in_A=3.165492,              # Oxygen Lennard-Jones sigma
     unit_energy_in_kcal_per_mol=0.1554253,  # Oxygen Lennard-Jones epsilon
-    unit_mass_in_amu=15.999                 # Oxygen mass
+    unit_mass_in_amu=15.999,                # Oxygen mass
+    unit_charge_in_e=1.0,                   # Use unit charge
 )
 
 number_of_molecules = 500
@@ -31,8 +32,8 @@ temperature = temperature_in_K/cf['K']
 
 qH_real = 0.41
 qO_real = -2*qH_real
-qH = qH_real*cf['elementary_charge_prefactor']
-qO = qO_real*cf['elementary_charge_prefactor']
+qH = qH_real*cf['charge_coulomb_natural_units']
+qO = qO_real*cf['charge_coulomb_natural_units']
 
 mH = 1.008/cf['u']  # 1.0
 mO = 1.0

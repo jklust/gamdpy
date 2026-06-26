@@ -158,15 +158,7 @@ def conversion_factors(**kwargs):
     unit_area = unit_length**2
     unit_volume = unit_length**3
 
-    # For handeling charges in Columbs law
-    coulombs_constant_SI = 8987551786
-    coulombs_constant = coulombs_constant_SI/unit_force/unit_length**2
-    coulomb_charge_prefactor = coulombs_constant**0.5
-    elementary_charge_SI = 1.602176634e-19
-    elementary_charge_prefactor = coulombs_constant**0.5*elementary_charge_SI
-    coulombs_constant_with_elementary_charges = coulombs_constant_SI/elementary_charge_SI**2
-
-    return {
+    output = {
         # Length
         "unit_length": unit_length,  # m
         "in_parsec": unit_length / parsec,
@@ -325,11 +317,37 @@ def conversion_factors(**kwargs):
         'Å3': unit_volume*1e30,
 
         # Angles
-        'degrees': 180/pi,
-
-        # For charges
-        'coulombs_constant': coulombs_constant,
-        'coulomb_charge_prefactor': coulomb_charge_prefactor,
-        'coulombs_constant_with_elementary_charges': coulombs_constant_with_elementary_charges,
-        'elementary_charge_prefactor': elementary_charge_prefactor
+        'degrees': 180/pi,  # for converting from radians
     }
+
+    # For handeling charges in Columbs law
+    unit_charge = None
+    elementary_charge_SI = 1.602176634e-19
+    possible_charges = {
+        'unit_charge': 1.0,  # Coulombs
+        'unit_charge_in_Coulombs': 1.0,
+        'unit_charge_in_elementary_charge': elementary_charge_SI,
+        'unit_charge_in_e': elementary_charge_SI,
+    }
+    matches = [k for k in kwargs if k.startswith('unit_charge')]
+    if len(matches) > 1:
+        raise KeyError(f'Expected only one unit_charge key, but got {len(matches)}: {matches}')
+    if len(matches) == 1:
+        unit_charge = kwargs[matches[0]] * possible_charges[matches[0]]
+
+    if unit_charge is not None:
+        coulombs_constant_SI = 8987551786
+        coulombs_constant = coulombs_constant_SI * unit_charge**2 / unit_force / unit_length ** 2
+        charge_coulomb_natural_units = coulombs_constant ** 0.5
+        #elementary_charge_SI = 1.602176634e-19
+        #elementary_charge_prefactor = coulombs_constant ** 0.5 * elementary_charge_SI
+        #coulombs_constant_with_elementary_charges = coulombs_constant_SI / elementary_charge_SI ** 2
+        output.update({
+            'unit_charge': unit_charge,
+            'coulomb': unit_charge,
+            'e': unit_charge/elementary_charge_SI,
+            'coulombs_constant': coulombs_constant,
+            'charge_coulomb_natural_units': charge_coulomb_natural_units,
+        })
+
+    return output
