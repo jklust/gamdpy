@@ -69,7 +69,6 @@ def conversion_factors(**kwargs):
     >>> cf = conversion_factors(unit_length_in_cm=1.0, unit_energy_in_erg=1.0, unit_mass_in_g=1.0)  # centimetre–gram–second (CGS) system
     >>> cf = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kJ_per_mol=1.0, unit_mass_in_u = 1.0)  # Atomistic SI-like units
     >>> cf = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_eV=1.0, unit_mass_in_u = 1.0)  # Metallic units
-    >>> cf = conversion_factors(unit_length_in_nm=1.0, unit_energy_kJ_per_mol=1.0, unit_mass_in_u = 1.0, unit_charge_in_e=1.0)  # Unit system with charge
     >>> cf = conversion_factors(unit_length_in_Angstrom=3.165492, unit_energy_in_kcal_per_mol=0.1554253, unit_mass_in_u=15.999, unit_charge_in_e=1.0)  # SPC/Fw Oxygen Water units
     """
     from math import pi
