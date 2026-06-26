@@ -30,10 +30,10 @@ temperature_in_Celcius = 25.0
 temperature_in_K = temperature_in_Celcius + 273.15
 temperature = temperature_in_K/cf['K']
 
-qH_real = 0.41
-qO_real = -2*qH_real
-qH = qH_real*cf['charge_coulomb_natural_units']
-qO = qO_real*cf['charge_coulomb_natural_units']
+qH = 0.41  # e
+qO = -2 * qH  # e
+qH_natural = qH * cf['charge_coulomb_natural_units']  # Natural units where Columbs constant is k_e = 1.0
+qO_natural = qO * cf['charge_coulomb_natural_units']
 
 mH = 1.008/cf['u']  # 1.0
 mO = 1.0
@@ -104,8 +104,8 @@ eps = [
     [0.0, 1.0]
 ]
 charge = [
-    [qH * qH, qH * qO],
-    [qO * qH, qO * qO]
+    [qH_natural * qH_natural, qH_natural * qO_natural],
+    [qO_natural * qH_natural, qO_natural * qO_natural]
 ]
 cut_lj = [
     [3.0, 3.0],
