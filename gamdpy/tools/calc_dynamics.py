@@ -1,4 +1,5 @@
 import math
+from attr import attributes
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -81,15 +82,15 @@ def calc_dynamics(trajectory, first_block, qvalues=7.5, overlap_distances=0.3, e
     >>> sim = gp.get_default_sim()  # Replace with your simulation object
     >>> for block in sim.run_timeblocks(): pass
     >>> dynamics = gp.calc_dynamics(sim.output, first_block=0, qvalues=7.25, overlap_distances=0.3)
-    ...
+    extra_times_method='log', scale_factor=2.000
+    0.......
     >>> dynamics.keys()
     dict_keys(['times', 'msd', 'alpha2', 'qvalues', 'Fs', 'overlap_distances', 'Qs', 'count'])
 
     """
     ptype = trajectory['initial_configuration/ptype'][:].copy()
     attributes = trajectory.attrs
-    steps_in_blocks = trajectory['trajectory']['steps'][:]
-    
+   
     simbox_name = trajectory['initial_configuration'].attrs['simbox_name']
     simbox_data = trajectory['initial_configuration'].attrs['simbox_data'].copy()
 
@@ -104,7 +105,20 @@ def calc_dynamics(trajectory, first_block, qvalues=7.5, overlap_distances=0.3, e
     #print('Calculating Qs using overlap_distances:', overlap_distances)
         
     num_blocks, conf_per_block, N, D = trajectory['trajectory/positions'].shape
-    steps_per_timeblock = trajectory['trajectory'].attrs['steps_per_timeblock']
+
+    if 'steps' in trajectory['trajectory'].keys():
+        #print('Using steps from trajectory/steps')
+        steps_in_blocks = trajectory['trajectory']['steps'][:]
+        assert len(steps_in_blocks) == conf_per_block, "Number of steps in trajectory/steps does not match number of configurations per block"
+        steps_per_timeblock = trajectory['trajectory'].attrs['steps_per_timeblock']
+        #print(steps_in_blocks)
+    else: # trajectory is from before schedulers, so must be log2 schedule
+        #print('Using steps from trajectory')
+        steps_per_timeblock = conf_per_block
+        steps_in_blocks = np.array([0] + [2**k for k in range(conf_per_block-1)]) 
+        steps_per_timeblock = steps_in_blocks[-1]
+        #print(steps_in_blocks)
+ 
     blocks = trajectory['trajectory/positions']  # If picking out dataset in inner loop: Very slow!
     images = trajectory['trajectory/images']
     if simbox_name == "Orthorhombic":
@@ -128,7 +142,7 @@ def calc_dynamics(trajectory, first_block, qvalues=7.5, overlap_distances=0.3, e
     # determine the extra steps to use for times longer than the blocks
     if extra_times_method == 'log':
         scale_factor = steps_in_blocks[-1]/steps_in_blocks[-2]
-        print(f'{extra_times_method=}, {scale_factor=}')
+        print(f'{extra_times_method=}, {scale_factor=:.3f}')
         this_step = steps_in_blocks[-1]*scale_factor
         while this_step <= num_blocks*steps_per_timeblock/2:
             extra_steps.append(int(this_step))
@@ -136,7 +150,7 @@ def calc_dynamics(trajectory, first_block, qvalues=7.5, overlap_distances=0.3, e
 
     if extra_times_method == 'linear':
         extra_timestep = steps_in_blocks[-1] - steps_in_blocks[-2]
-        print(f'{extra_times_method=}, {extra_timestep=}')
+        print(f'{extra_times_method=}, {extra_timestep=:d}')
         this_step = steps_in_blocks[-1] + extra_timestep
         while this_step <= num_blocks*steps_per_timeblock/2:
             extra_steps.append(int(this_step))
@@ -151,7 +165,7 @@ def calc_dynamics(trajectory, first_block, qvalues=7.5, overlap_distances=0.3, e
         num_blocks_diff = this_step // steps_per_timeblock
         missing_time = this_step - steps_per_timeblock*num_blocks_diff
         index = 0
-        while steps_in_blocks[index] < missing_time:
+        while index < len(steps_in_blocks)-1 and steps_in_blocks[index] < missing_time:
             index += 1
         if extra_times_method == 'log' and index>0:
             if (steps_in_blocks[index]/missing_time) > (missing_time/steps_in_blocks[index-1]):
