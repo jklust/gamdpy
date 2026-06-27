@@ -115,7 +115,34 @@ def test_conversion_factors(verbose=False):
     cf = gp.conversion_factors()
     assert cf["(kcal/mol)/Angstrom"] == pytest.approx(cf["kcal/mol"] / cf["Angstrom"])
 
-if __name__ == "__main__":
+def test_conversion_factors_with_charge(verbose=False):
+    cf = gp.conversion_factors(unit_length=1.0, unit_energy=1.0, unit_mass=1.0, unit_charge=1.0)
+    assert cf["unit_charge"] == pytest.approx(1.0)
+    assert 1.602176634e-19*cf["e"] == pytest.approx(1.0)
+    assert 3.33564e-30*cf["D"] == pytest.approx(1.0)
+    if verbose:
+        print("  ..:: Conversion factors with charge ::.. ")
+        pprint(cf)
+    cf = gp.conversion_factors(unit_length=1.0, unit_energy=1.0, unit_mass=1.0, unit_charge_in_e=1.0)
+    assert cf["e"] == pytest.approx(1.0)
+    assert cf["unit_charge"] == pytest.approx(1.602176634e-19)
+    assert cf["coulomb"] == pytest.approx(1.602176634e-19)
+    if verbose:
+        print("  ..:: Conversion factors with charge using elementary charge ::.. ")
+        pprint(cf)
 
+    # Dipole moment test. 1 e and 1 Å
+    cf = gp.conversion_factors(
+        unit_length_in_Angstrom=1.0,
+        unit_energy_in_eV=1.0,
+        unit_mass_in_u=1.0,
+        unit_charge_in_e=1.0,
+    )
+    assert cf["Debye"] == pytest.approx(4.80320427)
+    assert cf["coulomb_meter"] == pytest.approx(4.80320427*3.33564e-30)
+
+
+if __name__ == "__main__":
     test_conversion_factors(verbose=True)
     test_conversion_factors_against_scipy_constants()
+    test_conversion_factors_with_charge(verbose=True)
