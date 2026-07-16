@@ -40,6 +40,7 @@ from .interactions import make_fixed_interactions, make_planar_calculator, setup
 from .interactions import Planar, Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 from .interactions.potential_parameters import *
+from .interactions import Steinhardt_Q6
 
 # Import from runtime_actions subpackage (Actions that can be inserted into the stimulation  kernel)
 from .runtime_actions import RuntimeAction, add_runtime_actions_list, TrajectorySaver, RestartSaver, ScalarSaver, MomentumReset, StressSaver
