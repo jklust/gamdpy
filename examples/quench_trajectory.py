@@ -32,11 +32,11 @@ else:
 # function to interface with minimize function from scipy
 def calc_u(Rflat):
         configuration2['r'] = Rflat.reshape(N,D).astype('float32')
-        evaluator.evaluate(configuration2)
+        evaluator.evaluate()
         return np.sum(configuration2['U'].astype('float64'))
 def calc_du(Rflat):
         configuration2['r'] = Rflat.reshape(N,D).astype('float32')
-        evaluator.evaluate(configuration2)
+        evaluator.evaluate()
         return -configuration2['f'].astype('float64').flatten()
 
 # Load existing configuration, twice for convenience 
@@ -57,7 +57,7 @@ cut = np.array(sig)*2.5
 pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
 evaluator = gp.Evaluator(configuration2, pair_pot)
-evaluator.evaluate(configuration2)
+evaluator.evaluate()
 print(configuration2)
 
 # Check that we are using the same model

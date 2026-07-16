@@ -45,7 +45,7 @@ evaluator = gp.Evaluator(sim.configuration, ipl12)
 # Run simulation
 u_ipl = []
 for block in sim.run_timeblocks():
-    evaluator.evaluate(sim.configuration)  # Evaluate IPL for final configuration of timeblock
+    evaluator.evaluate()  # Evaluate IPL for final configuration of timeblock
     u_ipl.append(np.sum(evaluator.configuration['U']))
 
 print(f'Mean IPL potential energy: {np.mean(u_ipl)}')
