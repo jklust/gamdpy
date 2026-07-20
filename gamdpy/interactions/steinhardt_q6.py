@@ -125,10 +125,10 @@ class Steinhardt_Q6(Interaction):
         eleven = numba.float32(11.)
         thirteen = numba.float32(13.)
         four_pi_two_lp1 = 4.*math.pi / thirteen
-        # default value of phi when theta is zero or pi
-        phi_def = numba.float32(math.pi/2)
-        cos_phi_def = numba.float32(math.cos(phi_def))
-        sin_phi_def = numba.float32(math.sin(phi_def))
+        # default value of phi when theta is zero or pi # CHANGE TO ZERO to avoid defining these!!!!
+        #phi_def = numba.float32(math.pi/2)
+        #cos_phi_def = numba.float32(math.cos(phi_def))
+        #sin_phi_def = numba.float32(math.sin(phi_def))
         EPS = numba.float32(1.e-7)
         # TO DO
         # 1. In loop over neighbors, initialize angles and distances DONE 27/6
@@ -138,8 +138,11 @@ class Steinhardt_Q6(Interaction):
         # 5. Atomically add contributions to normalization and q6m sums (FORCE==False) DONE 1/7
         # 6. Read in summed norm+q6m at beginning (FORCE==True) DONE 13/7
         # 7. Try testing in gamdpy DONE 14/7. Runs (though incomplete). Makes the minimal example slower by a factor 100 though.
-        # 8. Add force loop
-        # 9. Test again. Make a test to compare with a simple case (one phase) in RUMD
+        # 8. Add force loop DONE 17/7 Forces give nans
+        # 9. Next test: Run without forces on an LJ sample and calculate the value of Q6. Need to include this as a scalar or something.
+        # 10. Once have correct Q6, start debugging forces
+        # 11. Start examining 32 vs 64 bit floats and reducing unnecessary double-precision and unnecessary casts.
+
         
 
         @cuda.jit( device=gridsync )  
@@ -213,7 +216,7 @@ class Steinhardt_Q6(Interaction):
   
                         if(abs_sin_theta < EPS):
                             inv_sin_theta = one/EPS
-                            phi, cos_phi, sin_phi = phi_def, cos_phi_def, sin_phi_def
+                            phi, cos_phi, sin_phi = zero, one, zero # phi_def, cos_phi_def, sin_phi_def
                         else:
                             phi = numba.float32(math.atan2(my_dr[1], my_dr[0]))
                             cos_phi = my_dr[0] / dist_xy
@@ -256,7 +259,7 @@ class Steinhardt_Q6(Interaction):
                                 P6_m = P_current_minus_1 * sin_theta_m
                                 P6_m_over_sin_theta = P_current_minus_1 * sin_theta_m_minus_1
                                  # sqrt(13) comes from same formula as above with l=6,, m=5
-                                P6_deriv_sin1 = -( six* cos_theta*P_current_minus_1 - math.sqrt(thirteen)*P_current_minus_2) * sin_theta_m_minus_1;#sin_theta_m * inv_sin_theta
+                                P6_deriv_sin1 = -( six* cos_theta*P_current_minus_1 - math.sqrt(thirteen)*P_current_minus_2) * sin_theta_m_minus_1#sin_theta_m * inv_sin_theta
                             else:
                                 #my_Y6[5] += complex64(switch_factor * P_current_minus_1 * sin_theta_m * cos_m_phi, switch_factor * P_current_minus_1 * sin_theta_m * cos_m_phi)
                          	    my_Y6[5] += switch_factor * P_current_minus_1 * sin_theta_m * cos_sin_m_phi
@@ -279,7 +282,7 @@ class Steinhardt_Q6(Interaction):
                             P_current = a_lm * cos_theta * P_current_minus_1 + b_lm * P_current_minus_2
 
 
-                            if l == 6: # m must be at most 4, but m=5,6 already taken care of
+                            if l == 6: # m must be at most 4, but m=5,6 already taken care of CAN PRESUAMBLY MOVE THIS OUT OF THE LOOP BEAUSE l=6 AT THE END
                                 if(FORCES):
                                     P6_m = P_current * sin_theta_m
                                     P6_m_over_sin_theta = P_current * sin_theta_m_minus_1 # incorrect, but needed, for m=0
@@ -295,11 +298,46 @@ class Steinhardt_Q6(Interaction):
                                     #Y_6[m].x += switch_factor * P_current * sin_theta_m *cos_m_phi;
                                     #Y_6[m].y += switch_factor * P_current * sin_theta_m *sin_m_phi;
 
-
-	  
+                            # The following line is why we can't move the if  l== 6 out of the loop: P_current_minus_1 is needed before it gets updated.
                             P_current_minus_2 = P_current_minus_1;
                             P_current_minus_1 = P_current;
                             # end loop over l
+
+
+                        if(FORCES):
+                            q6_m = sigma_f_Y6[m] / sigma_f
+                            double_counting_factor = 2
+                            if m > 0: double_counting_factor = 4
+                            k1 = double_counting_factor*switch_deriv/(sigma_f*sigma_f*dist)
+
+
+                            D1 = -k1*sigma_f_Y6[m] + sigma_f * P6_m * cos_sin_m_phi
+
+                            s = prefactor_A * (q6_m.real * D1.real + q6_m.imag * D1.imag)
+
+                            #for k in range(3):
+                            #    my_f[k] = s*my_dr[k]
+
+                            D2 = double_counting_factor * switch_factor * P6_deriv_sin1 / (sigma_f * dist_sq)*cos_sin_m_phi #  Term  2, involving derivative of cos theta
+                            s = prefactor_A * (q6_m.real * D2.real + q6_m.imag * D2.imag)
+
+                            #my_f[0] += - s * cos_phi * my_dr[2]
+                            #my_f[1] += - s * sin_phi * my_dr[2]
+                            #my_f[2] += s * dist_xy
+
+                            if(m>0):
+                                k4 = double_counting_factor * switch_factor * P6_m_over_sin_theta * m/(sigma_f*dist );
+                                D_m3 = complex(k4 * sin_m_phi, -k4 * cos_m_phi) #  Term 3, involving derivatives of exp (i m phi)
+                                s = prefactor_A * (q6_m.real * D_m3.real + q6_m.imag * D_m3.imag)
+
+                                #my_f[0] += s*sin_phi
+                                #my_f[1] += -s*cos_phi
+
+                            if global_id < num_part: # IS THIS NECESSARY????
+                                for k in range(D):
+                                    cuda.atomic.add(vectors[f_id], (global_id, k), my_f[k])
+
+
 
                         sin_theta_m *= abs_sin_theta
                         if m > 0:
