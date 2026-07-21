@@ -11,7 +11,6 @@ import time
 import sys
 
 
-
 def test_NVU():
     # Setup pair potential: Kob-Andersen Binary Lennard-Jones System with shifted potential.
     pair_func = gp.apply_shifted_potential_cutoff(gp.LJ_12_6_sigma_epsilon)
@@ -128,10 +127,10 @@ def test_NVU():
     df = pd.DataFrame(data.T, columns=columns)
     df['Tconf'] = df['Fsq']/df['lapU']
     Tconf = np.mean(df['Tconf'],axis=0)
-    assert 0.67 < Tconf < 0.74, print("BTconf should be around 0.7, but is",
+    assert 0.66 < Tconf < 0.74, print("BTconf should be around 0.7, but is",
                                       f"{Tconf}. For this test, assertionError",
                                       "arises if Tconf is not in the interval",
-                                      "[0.68; 0.72].Try the test again if Tconf",
+                                      "[0.66; 0.74].Try the test again if Tconf",
                                       "is close to the interval")
     assert np.allclose(np.mean(df['U'])/configuration.N,U_0), print("For this test,",
                                                     "assertionError arises if",

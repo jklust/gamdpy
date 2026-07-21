@@ -42,7 +42,7 @@ class Configuration:
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f']
     >>> print(conf.scalar_columns) # Print names of scalar columns
-    ['U', 'W', 'K', 'm']
+    ['U', 'W', 'K', 'm', 'q']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
     (1000, 3)
     >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
