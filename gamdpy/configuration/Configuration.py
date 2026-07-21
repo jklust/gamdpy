@@ -79,7 +79,7 @@ class Configuration:
     The default values can be seen with :func:`~gamdpy.get_default_compute_flags`:
 
     >>> gp.get_default_compute_flags()
-    {'U': True, 'W': True, 'K': True, 'lapU': False, 'Fsq': False, 'stresses': False, 'Vol': False, 'Ptot': False}
+    {'U': True, 'W': True, 'K': True, 'lapU': False, 'Fsq': False, 'stresses': False, 'orientations': False, 'Vol': False, 'Ptot': False}
 
     """
 
@@ -403,20 +403,17 @@ class Configuration:
         if self.D is None:
             raise ValueError('Cannot randomize velocities. Start by assigning positions.')
             
-        if self.D == 3: 
-	        phi = np.random.uniform(0, 2*np.pi, self.N)
-	        u   = np.random.uniform(-1, 1, self.N)
-	        s = np.sqrt(1 - u*u)
-	        self['n'][:,0] = s*np.cos(phi)
-	        self['n'][:,1] = s*np.sin(phi)
-	        self['n'][:,2] = u
+        if self.D == 3:
+            phi = np.random.uniform(0, 2*np.pi, self.N)
+            u   = np.random.uniform(-1, 1, self.N)
+            s = np.sqrt(1 - u*u)
+            self['n'][:,0] = s*np.cos(phi)
+            self['n'][:,1] = s*np.sin(phi)
+            self['n'][:,2] = u
         if self.D ==2:
-	        phi = np.random.uniform(0, 2*np.pi, self.N)
-	        orientations[:,0] = np.cos(phi)
-	        orientations[:,1] = np.sin(phi)
-
-        
-        
+            phi = np.random.uniform(0, 2*np.pi, self.N)
+            self['n'][:,0] = np.cos(phi)
+            self['n'][:,1] = np.sin(phi)
 
 
     def make_lattice(self, unit_cell: dict, cells: list, rho: float = None, ptype_unit_cell: list = None) -> None:
