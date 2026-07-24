@@ -33,7 +33,7 @@ sim = gp.Simulation(configuration, [pair_pot], integrator, runtime_actions,
 
 # Run simulation
 for timeblock in sim.run_timeblocks():
-        print(sim.status(per_particle=True))
+    print(sim.status(per_particle=True))
 print(sim.summary())
 
 # Print current status of configuration

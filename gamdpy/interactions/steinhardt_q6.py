@@ -85,17 +85,15 @@ class Steinhardt_Q6(Interaction):
         self.switch_sum = self.d_switch_sum.copy_to_host()
         self.q6_sum = self.d_q6_sum.copy_to_host()
         sum_qlm_non_norm2 = self.q6_sum[0].real**2
-        print("sigma_f_Y6m")
-        print(0, self.q6_sum[0].real, self.q6_sum[0].imag)
+
         for m in range(1, 7):
             sigma_f_Y6m = self.q6_sum[m]
-            print(m, sigma_f_Y6m.real, sigma_f_Y6m.imag)
             sum_qlm_non_norm2 += 2.*(sigma_f_Y6m.real**2 + sigma_f_Y6m.imag**2)
 
         four_pi_two_lp1 = 4.*math.pi/(2*6+1)
         Q6 = math.sqrt(four_pi_two_lp1 * sum_qlm_non_norm2)/self.switch_sum
         prefactor_A = -self.kappa6 * (Q6-self.anchor6) * four_pi_two_lp1 / Q6
-        print(f"switch_sum, prefactor_A, Q6 {self.switch_sum} {prefactor_A} {Q6}")
+
         return Q6
 
     def get_kernel(self, configuration: gp.Configuration, compute_plan: dict, compute_flags: dict[str,bool], verbose=False):
@@ -159,9 +157,11 @@ class Steinhardt_Q6(Interaction):
         # 9. Next test: Run without forces on an LJ sample and calculate the value of Q6. DONE, and debugged enough to compare
         # and get at least roughly correct Q6. But using print statments in the kernel to see it. Have gained a factor 13 in speed in the process!
         # 9.5 Make a better way to display the value of Q6 once per block (ie from the main loop) DONE 23/7
-        # 10. Once have correct Q6, start debugging forces
-        # 11. Start examining 32 vs 64 bit floats and reducing unnecessary double-precision and unnecessary casts.
-
+        # 10. Once have correct Q6, start debugging forces DONE 24/7
+        # 11. Once force debugged, test speed again. DONE 24/7, factor 33 slower still
+        # 12. Start examining 32 vs 64 bit floats and reducing unnecessary double-precision and unnecessary casts. Look for places to improve the code generally
+        # 13. Implement a proper way to store and extract the value of Q6 (needed for IP calculations).
+        
         @cuda.jit(device=gridsync)
         def zero_sum_arrays(switch_sum, q6_sum):
             my_block = cuda.blockIdx.x
@@ -196,13 +196,13 @@ class Steinhardt_Q6(Interaction):
             my_Y6 = cuda.local.array(shape=7, dtype=numba.complex64)
             my_switch_factor_sum = zero
 
-            if global_id < num_part and FORCES == False:
+            #if global_id < num_part and FORCES == False:
 
-                for k in range(D):
-                    my_f[k] = numba.float32(0.0)
+            #    for k in range(D):
+            #        my_f[k] = numba.float32(0.0)
 
-                for k in range(num_cscalars):
-                    my_cscalars[k] = numba.float32(0.0)
+            #    for k in range(num_cscalars):
+            #        my_cscalars[k] = numba.float32(0.0)
 
 
             assert UtilizeNIII == False
@@ -218,25 +218,25 @@ class Steinhardt_Q6(Interaction):
                 if(FORCES):
                     # Read in the summed values
                     sigma_f = switch_sum[0]
-                    sum_qlm_non_norm2 = zero
-                    for m in range(7):
+                    sigma_f_Y6[0] = q6_sum[0]
+                    sum_qlm_non_norm2 = sigma_f_Y6[0].real**2
+                    for m in range(1, 7):
                         sigma_f_Y6[m] = q6_sum[m]
-                        sum_qlm_non_norm2 += sigma_f_Y6[m].real**2 + sigma_f_Y6[m].imag**2
+                        sum_qlm_non_norm2 += 2*(sigma_f_Y6[m].real**2 + sigma_f_Y6[m].imag**2)
 
 
                     Q6 = math.sqrt(four_pi_two_lp1 * sum_qlm_non_norm2)/sigma_f
                     prefactor_A = -kappa6 * (Q6-anchor6) * four_pi_two_lp1 / Q6
-                    #if global_id == 0 and my_t == 0:
-                    #    print(sigma_f, sum_qlm_non_norm2, Q6, prefactor_A)
+
 
                 for i in range(my_t, nblist[global_id, max_nbs], tp):
                     other_id = nblist[global_id, i] 
                     
-                    dist_sq = dist_sq_dr_function(vectors[r_id][other_id], vectors[r_id][global_id], sim_box, my_dr)
+                    # calling the distance function with the first two arguments the other way around to match
+                    # what RUMD does (otherwise have to include an extra minus sign on the forces somewhere)
+                    dist_sq = dist_sq_dr_function(vectors[r_id][global_id], vectors[r_id][other_id], sim_box, my_dr)
                     if dist_sq < cut*cut:
                         dist = numba.float32(math.sqrt(dist_sq))
-
-                    
                         dist_xy2 = my_dr[0]*my_dr[0] + my_dr[1]*my_dr[1]
                         dist_xy = numba.float32(math.sqrt(dist_xy2))
                         cos_theta = my_dr[2] / dist
@@ -262,12 +262,10 @@ class Steinhardt_Q6(Interaction):
                         # the following expression should be safe against the exp factor getting huge
                         switch_deriv = - one/( (exp_switch + two + one/exp_switch) * switch_width)
                     
-                        #if FORCES == False and global_id == 1:
-                        #    print("SW ", my_t, i, other_id, dist, switch_factor)
                         my_switch_factor_sum += switch_factor;
                         P6_m, P6_m_over_sin_theta = zero, zero
 
-                        cos_m_phi, sin_m_phi = one, one
+                        #cos_m_phi, sin_m_phi = one, one
 
                         for m in range(7):
 
@@ -336,15 +334,12 @@ class Steinhardt_Q6(Interaction):
                             if(FORCES):
                                 q6_m = sigma_f_Y6[m] / sigma_f
                                 double_counting_factor = 2
-                                if m > 0: double_counting_factor = 4
+                                if m > 0:
+                                    double_counting_factor = 4
                                 k1 = double_counting_factor*switch_deriv/(sigma_f*sigma_f*dist)
-
-
-                                D1 = -k1*sigma_f_Y6[m] + sigma_f * P6_m * cos_sin_m_phi
-
+                                D1 = k1*(-sigma_f_Y6[m] + (sigma_f * P6_m) * cos_sin_m_phi)
                                 s = prefactor_A * (q6_m.real * D1.real + q6_m.imag * D1.imag)
-                                #if global_id == 0 and m == 0:
-                                #    print("m, k1*1e12, switch_deriv*1e6, dist", m, k1*1e12, switch_deriv*1e6, dist)
+
                                 for k in range(3):
                                     my_f[k] = s*my_dr[k]
 
@@ -357,7 +352,7 @@ class Steinhardt_Q6(Interaction):
 
                                 if(m>0):
                                     k4 = double_counting_factor * switch_factor * P6_m_over_sin_theta * m/(sigma_f*dist );
-                                    D_m3 = complex(k4 * sin_m_phi, -k4 * cos_m_phi) #  Term 3, involving derivatives of exp (i m phi)
+                                    D_m3 = complex(k4 * cos_sin_m_phi.imag, -k4 * cos_sin_m_phi.real) #  Term 3, involving derivatives of exp (i m phi)
                                     s = prefactor_A * (q6_m.real * D_m3.real + q6_m.imag * D_m3.imag)
 
                                     my_f[0] += s*sin_phi
