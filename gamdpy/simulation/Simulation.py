@@ -199,8 +199,17 @@ class Simulation():
                     self.compute_plan['gridsync'] = False
                 else:
                     print(f'FAILURE. Can not handle cuda error {e}')
-                    exit()
+                    exit()  # Consider raising an error, instead of clean exit
+                    # raise RuntimeError(f'FAILURE. Can not handle cuda error {e}')
+
                 print('Trying adjusted compute_plan :', self.compute_plan)
+            except ValueError as e:
+                if "The specified grid size" in str(e) and "exceeds the limit" in str(e) and adjust_compute_plan:
+                    print("Warning: ", e)
+                    self.compute_plan['tp'] = self.compute_plan['tp']//2
+                    print(f"Adjust compute plan: tp = {self.compute_plan['tp']}")
+                else:
+                    raise e
 
     def get_kernels_and_params(self, verbose=False):
         # Interactions
