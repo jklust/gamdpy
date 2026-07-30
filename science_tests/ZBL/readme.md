@@ -19,14 +19,19 @@ The figures below show results of liquid state points
 ### Gamdpy
 
 ![gp_u](./energy.png)
+![gp_u_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/energy.png)
 
 ![gp_p](./pressure.png)
+![gp_p_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/pressure.png)
 
 ![gp_uw](./UW.png)
+![gp_uw_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/UW.png)
 
 ![gp_rdf](./rdf.png)
+![gp_rdf_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/rdf.png)
 
 ![gp_msd](./msd.png)
+![gp_msd_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/msd.png)
 
 ## Run simulations and analysis
 
