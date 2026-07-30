@@ -25,7 +25,7 @@ with open(filename, 'r') as f:
 
 column_names = header_line.lstrip('#').split()
 
-df = pd.read_csv(filename, sep='\s+', skiprows=1, names=column_names)
+df = pd.read_csv(filename, sep=r'\s+', skiprows=1, names=column_names)
 
 
 EAM_ZJW_2004_params = {}

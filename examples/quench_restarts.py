@@ -32,13 +32,13 @@ else:
 
 # function to interface with minimize function from scipy
 def calc_u(Rflat):
-        configuration2['r'] = Rflat.reshape(N,D).astype('float32')
-        evaluator.evaluate(configuration2)
-        return np.sum(configuration2['U'].astype('float64'))
+    configuration2['r'] = Rflat.reshape(N,D).astype('float32')
+    evaluator.evaluate(configuration2)
+    return np.sum(configuration2['U'].astype('float64'))
 def calc_du(Rflat):
-        configuration2['r'] = Rflat.reshape(N,D).astype('float32')
-        evaluator.evaluate(configuration2)
-        return -configuration2['f'].astype('float64').flatten()
+    configuration2['r'] = Rflat.reshape(N,D).astype('float32')
+    evaluator.evaluate(configuration2)
+    return -configuration2['f'].astype('float64').flatten()
 
 # Load existing configuration, twice for convenience 
 with h5py.File(filename, 'r') as f:

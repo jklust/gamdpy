@@ -30,6 +30,9 @@ def conversion_factors(**kwargs):
         If no keyword arguments are given, SI base units are assumed:
         `unit_length = 1 m`, `unit_energy = 1 J`, `unit_mass = 1 kg`.
 
+        If the keyword provides a unit_charge, then the output dictionary contains information for charge conversions,
+        and the value of Coulombs constant of the unit system.
+
         Special option:
         `get_possible_inputs=True` returns a dictionary mapping all accepted
         input keyword names to their conversion factors to SI.
@@ -66,7 +69,9 @@ def conversion_factors(**kwargs):
     >>> cf = conversion_factors(unit_length_in_cm=1.0, unit_energy_in_erg=1.0, unit_mass_in_g=1.0)  # centimetre–gram–second (CGS) system
     >>> cf = conversion_factors(unit_length_in_nm=1.0, unit_energy_in_kJ_per_mol=1.0, unit_mass_in_u = 1.0)  # Atomistic SI-like units
     >>> cf = conversion_factors(unit_length_in_Angstrom=1.0, unit_energy_in_eV=1.0, unit_mass_in_u = 1.0)  # Metallic units
+    >>> cf = conversion_factors(unit_length_in_Angstrom=3.165492, unit_energy_in_kcal_per_mol=0.1554253, unit_mass_in_u=15.999, unit_charge_in_e=1.0)  # SPC/Fw Oxygen Water units
     """
+    from math import pi
 
     # Check that one, and only one energy, length and mass is given
     for prefix in 'unit_length', 'unit_energy', 'unit_mass':
@@ -86,6 +91,7 @@ def conversion_factors(**kwargs):
     solar_masses = 1.988416e30  # kg
     hartree = 4.3597447222060e-18  # J
     bohr_radius = 5.29177210544e-11 # m
+    elementary_charge = 1.602176634e-19  # C
 
     # What unit one in reduced units corresponds to in SI units
     unit_length, unit_energy, unit_mass = None, None, None
@@ -98,6 +104,7 @@ def conversion_factors(**kwargs):
         'unit_length_in_cm': 1e-2,
         'unit_length_in_nm': 1e-9,
         'unit_length_in_Å': 1e-10,
+        'unit_length_in_A': 1e-10,
         'unit_length_in_Angstrom': 1e-10,
         'unit_length_in_Ångström': 1e-10,
         'unit_length_in_bohr_radius': bohr_radius,
@@ -137,14 +144,23 @@ def conversion_factors(**kwargs):
         if key in kwargs:
             unit_mass = kwargs[key]*val
 
+    possible_charges = {
+        'unit_charge': 1.0,  # Coulombs
+        'unit_charge_in_Coulombs': 1.0,
+        'unit_charge_in_elementary_charge': elementary_charge,
+        'unit_charge_in_e': elementary_charge,
+    }
+
     # Return a dict with possible inputs and their
     if 'get_possible_inputs' in kwargs:
         if kwargs['get_possible_inputs']:
-            return possible_lengths | possible_energies | possible_masses
+            return possible_lengths | possible_energies | possible_masses | possible_charges
 
     # Check that a length, energy and mass have been given in keyword arguments
     if unit_length == None or unit_energy == None or unit_mass == None:
-        raise KeyError(f'Some unit_length, unit_energy and unit_mass needs to be specified. Got {kwargs}')
+        print(f'{unit_length = }, {unit_energy = }, {unit_mass = }')
+        print(f'{possible_lengths = }\n{possible_energies = }\n{possible_masses = }')
+        raise KeyError(f'Some unit_length, unit_energy and unit_mass needs to be specified. Got {kwargs}.')
 
     # Derived units. N.B. Below we assume D=3 spatial dimensions
     unit_time = unit_length * (unit_mass / unit_energy) ** 0.5  # s
@@ -154,7 +170,7 @@ def conversion_factors(**kwargs):
     unit_area = unit_length**2
     unit_volume = unit_length**3
 
-    return {
+    output = {
         # Length
         "unit_length": unit_length,  # m
         "in_parsec": unit_length / parsec,
@@ -210,8 +226,9 @@ def conversion_factors(**kwargs):
         "ag": unit_mass*1e21,
         "yoctogram": unit_mass*1e27,
         "yg": unit_mass*1e27,
-        "u": unit_mass/atomic_mass,
-        "dalton": unit_mass/atomic_mass,
+        "u": unit_mass / atomic_mass,
+        "amu": unit_mass / atomic_mass,
+        "dalton": unit_mass / atomic_mass,
         "kg/mol": unit_mass * Avogadro,
         "g/mol": unit_mass * 1e3 * Avogadro,
 
@@ -310,4 +327,33 @@ def conversion_factors(**kwargs):
         'cubic_Angstrom': unit_volume*1e30,
         'cubic_Ångström': unit_volume*1e30,
         'Å3': unit_volume*1e30,
+
+        # Angles
+        'degrees': 180/pi,  # for converting from radians
     }
+
+    # For handling charges and Columbs law
+    unit_charge = None
+    matches = [k for k in kwargs if k.startswith('unit_charge')]
+    if len(matches) > 1:
+        raise KeyError(f'Expected only one unit_charge key, but got {len(matches)}: {matches}')
+    if len(matches) == 1:
+        unit_charge = kwargs[matches[0]] * possible_charges[matches[0]]
+
+    if unit_charge is not None:
+        coulombs_constant_SI = 8987551786
+        coulombs_constant = coulombs_constant_SI * unit_charge**2 / unit_force / unit_length ** 2
+        charge_coulomb_natural_units = coulombs_constant ** 0.5  # Coulomb’s law becomes F = q1*q2 / r^2 in these units
+        output.update({
+            'unit_charge': unit_charge,
+            'coulomb': unit_charge,
+            'e': unit_charge/elementary_charge,
+            'coulombs_constant': coulombs_constant,
+            'k_e': coulombs_constant,
+            'charge_coulomb_natural_units': charge_coulomb_natural_units,
+            'coulomb_meter': unit_charge*unit_length,
+            'D': unit_charge*unit_length/3.33564e-30,
+            'Debye': unit_charge*unit_length/3.33564e-30
+        })
+
+    return output

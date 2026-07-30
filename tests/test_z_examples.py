@@ -186,6 +186,16 @@ class Test_examples:
     def test_zbl(self):
         self.make_one("zbl", ["Data/zbl.h5"])
 
+    def test_water(self):
+        self.make_one("water", ["Data/water.h5"])
+
+    def test_water_real_units(self):
+        self.make_one("water_real_units", ["Data/water.h5"])
+
+    def test_ewald_molten_salt(self):
+        self.make_one("ewald_molten_salt")
+
+
     def test_analyze_NpT_thermodynamics(self):
         self.make_one("analyze_NpT_thermodynamics",
                       [

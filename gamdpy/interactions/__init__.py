@@ -8,6 +8,8 @@ from .nblist_linked_lists import NbListLinkedLists
 # Pair potential
 from .pair_potential import PairPotential
 from .pair_potential_nsquared import PairPotentialNsquared
+from .electrostatics import Electrostatics
+
 from .tabulated_pair_potential import TabulatedPairPotential
 
 # Many body EAM
@@ -25,5 +27,5 @@ from .gravity import Gravity
 from .bonds import Bonds
 from .angles import Angles
 from .dihedrals import Dihedrals
-
 from .bonds_from_pair_potential import Bonds_from_PairPotential
+from .steinhardt_q6 import Steinhardt_Q6

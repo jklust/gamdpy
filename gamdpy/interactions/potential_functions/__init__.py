@@ -9,6 +9,7 @@ from .universal_zbl_potential import universal_zbl_potential
 from .harmonic_repulsion import harmonic_repulsion
 from .hertzian import hertzian
 from .LJ_coulomb_sf import LJ_coulomb_sf
+from .screened_coulomb import gaussian_screened_coulomb
 
 # Intra-molecular potentials
 from .harmonic_bond_function import harmonic_bond_function

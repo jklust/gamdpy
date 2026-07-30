@@ -2,7 +2,7 @@ import numba
 
 def apply_shifted_force_cutoff(pair_potential):  
     # Cut-off by computing potential twice, avoiding changes to params
-    """ Apply shifted force cutoff to a pair-potential function
+    r""" Apply shifted force cutoff to a pair-potential function
 
     If the input pair potential is :math:`u(r)`, then the shifted force potential is
 

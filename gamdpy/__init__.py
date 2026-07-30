@@ -33,13 +33,14 @@ from .integrators import integrator, NVE, NVT, NVT_Langevin, Brownian, NPT_Atomi
 
 # Import from interactions subpackage
 from .interactions import interaction, add_interactions_list, NbList2, NbListLinkedLists
-from .interactions import PairPotential, TabulatedPairPotential, PairPotentialNsquared, EAM_ZJW_2004
+from .interactions import PairPotential, TabulatedPairPotential, PairPotentialNsquared, Electrostatics, EAM_ZJW_2004
 from .interactions import Bonds, Angles, Dihedrals
 from .interactions import Bonds_from_PairPotential
 from .interactions import make_fixed_interactions, make_planar_calculator, setup_planar_interactions
 from .interactions import Planar, Gravity, Relaxtemp, Tether
 from .interactions.potential_functions import *
 from .interactions.potential_parameters import *
+from .interactions import Steinhardt_Q6
 
 # Import from runtime_actions subpackage (Actions that can be inserted into the stimulation  kernel)
 from .runtime_actions import RuntimeAction, add_runtime_actions_list, TrajectorySaver, RestartSaver, ScalarSaver, MomentumReset, StressSaver
@@ -71,4 +72,4 @@ from .misc.plot_molecule import plot_molecule
 # Import from visualization 
 #from .visualization import *
 
-__version__ = "0.8.4dev"
+__version__ = "0.8.3"

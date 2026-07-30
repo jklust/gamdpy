@@ -42,7 +42,7 @@ class Configuration:
     >>> print(conf.vector_columns)  # Print names of vector columns
     ['r', 'v', 'f']
     >>> print(conf.scalar_columns) # Print names of scalar columns
-    ['U', 'W', 'K', 'm']
+    ['U', 'W', 'K', 'm', 'q']
     >>> print(conf['r'].shape) # Vectors are stored as (N, D) numpy arrays
     (1000, 3)
     >>> print(conf['m'].shape) # Scalars are stored as (N,) numpy arrays
@@ -79,14 +79,15 @@ class Configuration:
     The default values can be seen with :func:`~gamdpy.get_default_compute_flags`:
 
     >>> gp.get_default_compute_flags()
-    {'U': True, 'W': True, 'K': True, 'lapU': False, 'Fsq': False, 'stresses': False, 'Vol': False, 'Ptot': False}
+    {'U': True, 'W': True, 'K': True, 'lapU': False, 'Fsq': False, 'stresses': False, 'orientations': False, 'Vol': False, 'Ptot': False}
 
     """
 
-    scalar_parameters = ['m']
+    scalar_parameters = ['m', 'q']
     scalar_computables_interactions = ['U', 'W', 'lapU']
     scalar_computables_integrator = ['K', 'Fsq']
     scalar_decriptions = {'m': 'Particle mass.',
+                          'q': 'Particle charge.',
                           'U': 'Potential energy.',
                           'W': 'Virial.',
                           'lapU': 'Laplace(U).',
@@ -119,6 +120,10 @@ class Configuration:
             if self.D > 4:
                 raise ValueError("compute_flags['stresses'] should not be set for D>4")
             self.vector_columns += ['sx', 'sy', 'sz','sw'][:self.D]
+        if self.compute_flags['orientations']:
+            if self.D > 4:
+                raise ValueError("compute_flags['orientations'] should not be set for D>4")
+            self.vector_columns += ['n'][:self.D]
 
 
         self.num_cscalars = 0
@@ -264,6 +269,67 @@ class Configuration:
 
         return ptype_function
 
+    def set_charges_from_types(self, charges_per_type):
+        """
+        Set charges property as per the associated particle types.
+
+        Parameters
+        ----------
+        charges_per_type : list of floats
+            A list where the ith element is the charge of particles of type i.
+        """
+        num_types = np.max(self.ptype)+1
+        if len(charges_per_type) != num_types:
+            raise ValueError("The number of charges does not coincide with the number of types.")
+
+        self['q'] = np.array([charges_per_type[t] for t in self.ptype], dtype=np.float32)
+
+    def get_charged_particles(self):
+        """
+        Retrieve charged particles in a configuration.
+
+        Returns
+        -------
+        charges : numpy array
+            Array of charges discarding neutral particles
+
+        charged_idx : numpy array
+            Array containing the indices of charged particles
+        """
+        charged_idx = np.argwhere(self['q'] != 0.0).flatten().astype(self.itype)
+        charges = self['q'][charged_idx]
+        return charges, charged_idx
+
+    # def order_charged_system(self, charges_per_type, reorder=False):
+    #     """Create a new ordering such as the particles are organized into charged ones first."""
+    #     charges_array = np.array([charges_per_type[t] for t in self.ptype], dtype=np.float32)
+    #     charged_idx = np.argwhere(charges_array != 0).flatten()
+    #     neutral_idx = np.argwhere(charges_array == 0).flatten()
+    #     new_order = np.concatenate([charged_idx, neutral_idx])
+    #     num_charged = len(charged_idx)
+
+    #     if reorder:
+    #         # THIS MUST BE CAREFULLY CHECKED
+    #         self.reorder_particles(new_order)
+
+    #     return new_order, num_charged
+    
+    # def reorder_particles(self, order):
+    #     """
+    #     Reorder all per-particle data using a new indexing.
+
+    #     :WARNING: this probably must be generalized for the topology class
+    #     """
+    #     if order.shape != (self.N, ):
+    #         raise ValueError(f"New order must have shape ({self.N},), got {order.shape}")
+    #     if set(order) != set(range(self.N)):
+    #         raise ValueError("New order is not a permutation of particles")
+
+    #     self.vectors.array = np.ascontiguousarrray(self.vectors.array[:, order, :])
+    #     self.scalars = np.ascontiguousarray(self.scalars[order])
+    #     self.r_im = np.ascontiguousarray(self.r_im[order])
+    #     self.ptype = np.ascontiguousarray(self.ptype[order])
+
     def get_potential_energy(self) -> float:
         """ Get total potential energy of the configuration """
         return float(np.sum(self['U']))
@@ -329,6 +395,26 @@ class Configuration:
             self.set_kinetic_temperature(temperature=temperature, ndofs=ndofs)
         else:
             self['v'] = np.zeros((self.N, self.D), np.float32)
+            
+    def randomize_orientations(self, seed=None) -> None:
+        """ Randomize orientations
+
+        """
+        if self.D is None:
+            raise ValueError('Cannot randomize velocities. Start by assigning positions.')
+            
+        if self.D == 3:
+            phi = np.random.uniform(0, 2*np.pi, self.N)
+            u   = np.random.uniform(-1, 1, self.N)
+            s = np.sqrt(1 - u*u)
+            self['n'][:,0] = s*np.cos(phi)
+            self['n'][:,1] = s*np.sin(phi)
+            self['n'][:,2] = u
+        if self.D ==2:
+            phi = np.random.uniform(0, 2*np.pi, self.N)
+            self['n'][:,0] = np.cos(phi)
+            self['n'][:,1] = np.sin(phi)
+
 
     def make_lattice(self, unit_cell: dict, cells: list, rho: float = None, ptype_unit_cell: list = None) -> None:
         """ Generate a lattice configuration

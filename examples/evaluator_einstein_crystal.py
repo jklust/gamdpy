@@ -59,7 +59,7 @@ evaluator = gp.Evaluator(sim.configuration, [none_interacting, harmonic_springs]
 u_spring = []
 displacements = []
 for block in sim.run_timeblocks():
-    evaluator.evaluate(sim.configuration)
+    evaluator.evaluate()
     this_u_spring = evaluator.configuration['U']
     u_spring.append(np.sum(this_u_spring))
 

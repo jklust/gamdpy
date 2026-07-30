@@ -13,7 +13,7 @@ def print_h5_structure(node, indent=0):
     initial_configuration/ (Group)
         ptype  (Dataset, shape=(2048,), dtype=int32)
         r_im  (Dataset, shape=(2048, 3), dtype=int32)
-        scalars  (Dataset, shape=(2048, 4), dtype=float32)
+        scalars  (Dataset, shape=(2048, 5), dtype=float32)
         topology/ (Group)
             angles  (Dataset, shape=(0,), dtype=int32)
             bonds  (Dataset, shape=(0,), dtype=int32)
@@ -25,7 +25,7 @@ def print_h5_structure(node, indent=0):
             integrator_state  (Dataset, shape=(1,), dtype=float32)
             ptype  (Dataset, shape=(2048,), dtype=int32)
             r_im  (Dataset, shape=(2048, 3), dtype=int32)
-            scalars  (Dataset, shape=(2048, 4), dtype=float32)
+            scalars  (Dataset, shape=(2048, 5), dtype=float32)
             topology/ (Group)
                 angles  (Dataset, shape=(0,), dtype=int32)
                 bonds  (Dataset, shape=(0,), dtype=int32)
@@ -36,7 +36,7 @@ def print_h5_structure(node, indent=0):
             integrator_state  (Dataset, shape=(1,), dtype=float32)
             ptype  (Dataset, shape=(2048,), dtype=int32)
             r_im  (Dataset, shape=(2048, 3), dtype=int32)
-            scalars  (Dataset, shape=(2048, 4), dtype=float32)
+            scalars  (Dataset, shape=(2048, 5), dtype=float32)
             topology/ (Group)
                 angles  (Dataset, shape=(0,), dtype=int32)
                 bonds  (Dataset, shape=(0,), dtype=int32)
@@ -93,7 +93,7 @@ def print_h5_attributes(obj, path="/"):
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /initial_configuration/scalars:
-        - scalar_columns: ['U' 'W' 'K' 'm']
+        - scalar_columns: ['U' 'W' 'K' 'm' 'q']
     Attributes at /initial_configuration/topology/molecules/:
         - names: []
     Attributes at /initial_configuration/vectors:
@@ -104,7 +104,7 @@ def print_h5_attributes(obj, path="/"):
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0000/scalars:
-        - scalar_columns: ['U' 'W' 'K' 'm']
+        - scalar_columns: ['U' 'W' 'K' 'm' 'q']
     Attributes at /restarts/restart0000/topology/molecules/:
         - names: []
     Attributes at /restarts/restart0000/vectors:
@@ -113,7 +113,7 @@ def print_h5_attributes(obj, path="/"):
         - simbox_data: [12.815602 12.815602 12.815602]
         - simbox_name: Orthorhombic
     Attributes at /restarts/restart0001/scalars:
-        - scalar_columns: ['U' 'W' 'K' 'm']
+        - scalar_columns: ['U' 'W' 'K' 'm' 'q']
     Attributes at /restarts/restart0001/topology/molecules/:
         - names: []
     Attributes at /restarts/restart0001/vectors:

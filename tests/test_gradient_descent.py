@@ -14,7 +14,7 @@ def test_gradient_descent(verbose=False):
     pair_pot = gp.PairPotential(pair_func, params=[sig, eps, cut], max_num_nbs=1000)
 
     evaluator = gp.Evaluator(configuration, pair_pot)
-    evaluator.evaluate(configuration)
+    evaluator.evaluate()
     U_ref = np.sum(configuration['U'].astype(np.float64))/configuration.N
     Fsq_ref = np.sum(configuration['f'].astype(np.float64)**2)/configuration.N
     if verbose:
@@ -24,7 +24,7 @@ def test_gradient_descent(verbose=False):
     np.random.seed(1234)
     configuration['r'] += np.random.uniform(-.2, +.2, configuration['r'].shape)
     configuration.copy_to_device()
-    evaluator.evaluate(configuration)
+    evaluator.evaluate()
     U_init = np.sum(configuration['U'].astype(np.float64))/configuration.N
     Fsq_init = np.sum(configuration['f'].astype(np.float64)**2)/configuration.N
     if verbose:
