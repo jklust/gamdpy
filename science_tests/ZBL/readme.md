@@ -18,7 +18,7 @@ The figures below show results of liquid state points
 
 ### Gamdpy
 
-A comparison between codebase illustrations and daily scientific test results to ensure correctness. Due to a chaotic behavior, the illustrations differ slightly for each run. The scientific tests is scheduled to run nightly at 2:00.
+A comparison between codebase illustrations and daily scientific test results to ensure correctness. Due to a chaotic behavior, the illustrations differ slightly for each run. The scientific tests are scheduled to run nightly at 2:00.
 
 <h3>Energy Comparison</h3>
 <table>
