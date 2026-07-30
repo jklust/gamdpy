@@ -18,20 +18,45 @@ The figures below show results of liquid state points
 
 ### Gamdpy
 
-![gp_u](./energy.png)
-![gp_u_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/energy.png)
+<h3>Energy Comparison</h3>
+<table>
+  <tr>
+    <td><img src="./energy.png" alt="gp_u" width="100%"></td>
+    <td><img src="https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/energy.png" alt="gp_u_latest" width="100%"></td>
+  </tr>
+</table>
 
-![gp_p](./pressure.png)
-![gp_p_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/pressure.png)
+<h3>Pressure Comparison</h3>
+<table>
+  <tr>
+    <td><img src="./pressure.png" alt="gp_p" width="100%"></td>
+    <td><img src="https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/pressure.png" alt="gp_p_latest" width="100%"></td>
+  </tr>
+</table>
 
-![gp_uw](./UW.png)
-![gp_uw_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/UW.png)
+<h3>UW Comparison</h3>
+<table>
+  <tr>
+    <td><img src="./UW.png" alt="gp_uw" width="100%"></td>
+    <td><img src="https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/UW.png" alt="gp_uw_latest" width="100%"></td>
+  </tr>
+</table>
 
-![gp_rdf](./rdf.png)
-![gp_rdf_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/rdf.png)
+<h3>RDF Comparison</h3>
+<table>
+  <tr>
+    <td><img src="./rdf.png" alt="gp_rdf" width="100%"></td>
+    <td><img src="https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/rdf.png" alt="gp_rdf_latest" width="100%"></td>
+  </tr>
+</table>
 
-![gp_msd](./msd.png)
-![gp_msd_latest](https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/msd.png)
+<h3>MSD Comparison</h3>
+<table>
+  <tr>
+    <td><img src="./msd.png" alt="gp_msd" width="100%"></td>
+    <td><img src="https://dirac.ruc.dk/gamdpyci/reports/latest/science_tests/ZBL/msd.png" alt="gp_msd_latest" width="100%"></td>
+  </tr>
+</table>
 
 ## Run simulations and analysis
 
